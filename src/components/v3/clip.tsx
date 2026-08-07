@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 const R2 = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/video";
 
+/* R2 serves these immutable for a year, so a reshot clip under the same name
+   would keep showing the old cut to anyone who had already loaded it. Bump
+   this and every clip is fetched again. */
+const V = "3";
+
 /**
  * A feature clip that costs nothing until it is nearly on screen.
  *
@@ -52,11 +57,11 @@ export function V3Clip({ name, label }: { name: string; label: string }) {
       loop
       playsInline
       preload="none"
-      poster={`${R2}/${name}-poster.jpg`}
+      poster={`${R2}/${name}-poster.jpg?v=${V}`}
       aria-label={label}
     >
-      {near && <source src={`${R2}/${name}-1920.mp4`} type="video/mp4" media="(min-width: 700px)" />}
-      {near && <source src={`${R2}/${name}-900.mp4`} type="video/mp4" />}
+      {near && <source src={`${R2}/${name}-1920.mp4?v=${V}`} type="video/mp4" media="(min-width: 700px)" />}
+      {near && <source src={`${R2}/${name}-900.mp4?v=${V}`} type="video/mp4" />}
     </video>
   );
 }
