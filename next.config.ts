@@ -119,6 +119,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        // API access and MCP are Pro features, so both docs left the Business
+        // category. This path is in the live sitemap and keeps working.
+        source: "/docs/business-features/api-access",
+        destination: "/docs/integrations/api-access",
+        permanent: true,
+      },
+      {
         // ai-post-generator consolidated into the homepage
         source: "/features/ai-post-generator",
         destination: "/",

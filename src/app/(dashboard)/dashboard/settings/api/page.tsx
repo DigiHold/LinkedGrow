@@ -197,7 +197,7 @@ showError("Failed to delete API key");
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
-            <Link href="/docs/business-features/api-access" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white">
+            <Link href="/docs/integrations/api-access" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white">
               <HelpCircle className="w-3.5 h-3.5" />
               Docs
             </Link>
@@ -320,7 +320,7 @@ showError("Failed to delete API key");
                   page is the docs article, which is also what the support
                   chatbot answers from. */}
               <a
-                href="/docs/business-features/api-access"
+                href="/docs/integrations/api-access"
                 target="_blank"
                 className="inline-flex items-center gap-1 text-sm text-cyan-600 hover:text-cyan-700 mt-2"
               >

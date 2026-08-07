@@ -1,8 +1,8 @@
 ---
 title: "API Access"
 description: "Integrate LinkedGrow into your workflow with REST API access for managing posts programmatically."
-category: "business-features"
-order: 3
+category: "integrations"
+order: 2
 ---
 
 ## Overview

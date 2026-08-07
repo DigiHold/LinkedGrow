@@ -18,7 +18,7 @@ import { FILL, FILL_LIGHT, URLBAR, URLBAR_INPUT, URLWRAP } from "./kit";
  */
 
 export function V3UrlForm({
-  label = "Launch my agent for free",
+  label = "Launch my agent for $0",
   className = "",
   style,
 }: {
