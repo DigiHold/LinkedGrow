@@ -88,6 +88,7 @@ type Payload = {
   agent: Agent;
   sources: Source[];
   steps: Record<string, number>;
+  needsYou: number;
   events: Event[];
   queuedToday: number;
   chart: ChartDay[];
@@ -191,10 +192,16 @@ function since(iso: string): string {
   return "today";
 }
 
-/** "51 out of 100", the conversion into this step. */
-function rateOf(value: number, base: number): string {
+/**
+ * How many of the previous step got this far, as a percentage of it.
+ *
+ * It printed "35 out of 100", which reads as a score out of a hundred rather
+ * than a conversion rate, and nobody could say what the hundred was. It is
+ * 30 contacted out of 86 found, so it says exactly that.
+ */
+function rateOf(value: number, base: number, of: string): string {
   if (!base) return "nothing yet";
-  return `${Math.round((value / base) * 100)} out of 100`;
+  return `${Math.round((value / base) * 100)}% of ${of}`;
 }
 
 /** First name and last initial: "Nicolas L.", which is how the header says it. */
@@ -307,6 +314,13 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Overview");
+  /** Set by a funnel counter, so the Leads tab opens on the same people it counted. */
+  const [leadStage, setLeadStage] = useState("");
+
+  function openLeads(stage: string) {
+    setLeadStage(stage);
+    setTab("Leads");
+  }
   const [busy, setBusy] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -394,7 +408,7 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
     );
   }
 
-  const { agent, sources, steps, queuedToday, chart, replies } = data;
+  const { agent, sources, steps, needsYou, queuedToday, chart, replies } = data;
   const status = STATUS[agent.status];
   const on = agent.status === "active" || agent.status === "warming";
   const running = on && isWorkingNow(agent);
@@ -409,7 +423,12 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
     .reduce((a, b) => a + b, 0);
   const replied = steps.replied ?? 0;
   // The last column of the spine: people who answered and were not written off.
-  const interested = steps.finished ?? 0;
+  /**
+   * The conversations the agent handed to you, for a buying signal or a
+   * refusal. Not "Interested": this counted step 'finished', which is an
+   * invitation nobody answered for twenty-one days, withdrawn by the agent.
+   */
+  const needsYouCount = needsYou ?? 0;
 
   return (
     <PageShell>
@@ -551,36 +570,52 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
             <div className="mb-[18px] mt-[18px] grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-5">
               {(
                 [
-                  { label: "Found", value: found, rate: "all time", fill: "opacity-100" },
+                  {
+                    label: "Found",
+                    value: found,
+                    rate: "all time",
+                    fill: "opacity-100",
+                    go: () => openLeads(""),
+                    hint: "Every lead this agent has found",
+                  },
                   {
                     label: "Contacted",
                     value: contacted,
-                    rate: rateOf(contacted, found),
+                    rate: rateOf(contacted, found, "found"),
                     fill: "opacity-[.76]",
+                    go: () => openLeads("contacted"),
+                    hint: "The leads it has invited or gone further with",
                   },
                   {
                     label: "Accepted",
                     value: accepted,
-                    rate: rateOf(accepted, contacted),
+                    rate: rateOf(accepted, contacted, "contacted"),
                     fill: "opacity-[.54]",
+                    go: () => openLeads("accepted"),
+                    hint: "The leads who accepted the invitation",
                   },
                   {
                     label: "Replied",
                     value: replied,
-                    rate: rateOf(replied, accepted),
+                    rate: rateOf(replied, accepted, "accepted"),
                     fill: "opacity-[.34]",
+                    go: () => router.push("/dashboard/replies"),
+                    hint: "Read the conversations on the Replies page",
                   },
                   {
-                    label: "Interested",
-                    value: interested,
-                    rate: "judged by AI",
+                    label: "Needs you",
+                    value: needsYouCount,
+                    rate: rateOf(needsYouCount, replied, "replied"),
                     fill: "opacity-[.18]",
+                    go: () => openLeads("needs-you"),
+                    hint: "The agent stopped writing to these and gave them to you",
                   },
                 ] as const
               ).map((s) => (
                 <button
                   key={s.label}
-                  onClick={() => setTab("Leads")}
+                  onClick={s.go}
+                  title={s.hint}
                   type="button"
                   className="relative border-b border-r border-border px-4 pb-4 pt-3.5 text-left last:border-r-0 hover:bg-slate-50 sm:border-b-0 dark:hover:bg-white/5"
                 >
@@ -727,7 +762,7 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
         </div>
       )}
 
-      {tab === "Leads" && <LeadsTab agentId={agentId} />}
+      {tab === "Leads" && <LeadsTab agentId={agentId} stage={leadStage} />}
       {tab === "Today's queue" && <QueueTab agentId={agentId} />}
       {tab === "Messages" && <MessagesTab agentId={agentId} />}
       {tab === "Activity" && <ActivityTab agentId={agentId} />}

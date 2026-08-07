@@ -149,7 +149,18 @@ function longAgo(iso: string): string {
   return "today";
 }
 
-export function LeadsTab({ agentId }: { agentId: string }) {
+export function LeadsTab({
+  agentId,
+  stage = "",
+}: {
+  agentId: string;
+  /**
+   * Opened from one of the funnel counters, so the list shows the same people
+   * the number counted. "contacted" means invited or anything after it, which
+   * a single step cannot express.
+   */
+  stage?: string;
+}) {
   const [data, setData] = useState<Payload | null>(null);
   const [search, setSearch] = useState("");
   const [step, setStep] = useState("");
@@ -164,6 +175,9 @@ export function LeadsTab({ agentId }: { agentId: string }) {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (step) params.set("step", step);
+      // The step dropdown wins: touching it is the customer narrowing the list
+      // themselves, and the counter they arrived from should stop applying.
+      else if (stage) params.set("stage", stage);
       if (source) params.set("source", source);
       if (minScore) params.set("minScore", minScore);
       if (page) params.set("page", String(page));
@@ -175,7 +189,7 @@ export function LeadsTab({ agentId }: { agentId: string }) {
       setData(await res.json());
       setLoading(false);
     },
-    [agentId, search, step, source, minScore, page]
+    [agentId, search, step, stage, source, minScore, page]
   );
 
   // Typing re-runs the query, so it waits for a pause rather than firing on
@@ -224,7 +238,7 @@ export function LeadsTab({ agentId }: { agentId: string }) {
 
   const leads = data?.leads ?? [];
   const sources = data?.sources ?? [];
-  const filtered = Boolean(search || step || source || minScore);
+  const filtered = Boolean(search || step || stage || source || minScore);
 
   return (
     <div className="mt-6 space-y-3">

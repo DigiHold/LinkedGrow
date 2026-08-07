@@ -250,10 +250,31 @@ export async function GET(
     const steps: Record<string, number> = {};
     for (const row of funnel) steps[row.step] = row.total;
 
+    /**
+     * The conversations the agent stopped and gave to the customer.
+     *
+     * Counted off sequence_status rather than off the funnel step, because the
+     * step for a hand-over is "replied", the same as for somebody the agent is
+     * still answering. The overview used to read this off step 'finished'
+     * instead, and 'finished' is an invitation that went unanswered for
+     * twenty-one days and was withdrawn: the opposite of a warm lead.
+     */
+    const [handedOver] = await db
+      .select({ total: count() })
+      .from(agentLeads)
+      .where(
+        and(
+          eq(agentLeads.agentId, id),
+          eq(agentLeads.workspaceId, workspaceId),
+          eq(agentLeads.sequenceStatus, "handed_over")
+        )
+      );
+
     return NextResponse.json({
       agent: { ...agent, accountAgentCount: siblings[0]?.total ?? 1 },
       sources,
       steps,
+      needsYou: handedOver?.total ?? 0,
       events,
       queuedToday:
         (drafted[0]?.total ?? 0) +

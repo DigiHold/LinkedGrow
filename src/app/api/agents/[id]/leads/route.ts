@@ -37,6 +37,20 @@ const STEPS = [
   "excluded",
 ] as const;
 
+/**
+ * The funnel counters on the overview, expressed as sets of steps.
+ *
+ * A single `step` cannot say "contacted", because contacted means invited or
+ * anything after it: somebody who has since accepted and replied was still
+ * contacted. The overview counts them that way, so clicking the counter has to
+ * filter the same way or the page shows 1 person where the tile said 30.
+ */
+const STAGES: Record<string, readonly string[]> = {
+  contacted: ["invited", "accepted", "messaged", "replied", "finished"],
+  accepted: ["accepted", "messaged", "replied", "finished"],
+  replied: ["replied", "finished"],
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -78,7 +92,16 @@ export async function GET(
       eq(agentLeads.agentId, id),
       eq(agentLeads.workspaceId, workspaceId),
     ];
-    if ((STEPS as readonly string[]).includes(stepParam)) {
+    const stageParam = url.searchParams.get("stage") ?? "";
+    const stage = STAGES[stageParam];
+    // The one the funnel counts off sequence_status rather than off the step.
+    if (stageParam === "needs-you") {
+      filters.push(eq(agentLeads.sequenceStatus, "handed_over"));
+    } else if (stage) {
+      filters.push(
+        inArray(agentLeads.step, stage as unknown as (typeof STEPS)[number][])
+      );
+    } else if ((STEPS as readonly string[]).includes(stepParam)) {
       filters.push(
         eq(agentLeads.step, stepParam as (typeof STEPS)[number])
       );
