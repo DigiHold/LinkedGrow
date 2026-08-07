@@ -155,7 +155,7 @@ import {
  */
 
 export function V3Landing() {
-  useEffect(() => initV3Landing(), []);
+  useEffect(() => { try { return initV3Landing(); } catch (e) { console.error("landing effects failed", e); } }, []);
 
   return (
     <div className={V3_ROOT}>

@@ -247,6 +247,7 @@ export function initV3Landing() {
      that stays quiet withers and gets struck through. The shapes are fixed so
      the frame is the same for everybody, and it only runs while on screen. */
   (function () {
+    try {
     const cv = document.getElementById("constellation");
     if (!cv) return;
     const c = cv.getContext("2d");
@@ -346,6 +347,7 @@ export function initV3Landing() {
     }, { threshold: .05 });
     io.observe(cv);
     observers.push(io, ro);
+    } catch (e) { console.error("constellation failed", e); }
   })();
 
   return () => {
