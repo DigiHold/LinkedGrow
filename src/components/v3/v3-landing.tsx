@@ -501,6 +501,11 @@ export function V3Landing() {
         </div>
       </div>
 
+      {/*═══ 10. ÉNONCÉ 2 ═══*/}
+      <section className="py-[clamp(88px,11.5vw,164px)]">
+        <div className={NARROW}><p className={`${WSPLIT} mx-auto max-w-[21ch] text-center font-v3-display! text-[clamp(28px,4.3vw,53px)] font-medium! leading-[1.13]! tracking-[-.04em]!`}>The people who need you are already saying so in public. They are <em className={EM_GRAD}>just not saying it to you.</em></p></div>
+      </section>
+
       {/*═══ 11. TARIFS ═══*/}
       <V3Plans />
 
