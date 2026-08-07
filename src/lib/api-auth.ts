@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, timingSafeEqual } from "crypto";
-import { db, apiKeys, apiLogs, users } from "@/lib/db";
+import { db, apiKeys, apiLogs } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { canAccessFeature, PlanId } from "@/lib/plans";
+import { canAccessFeature, effectivePlan, PlanId } from "@/lib/plans";
+import { loadSessionUser } from "@/lib/auth-user";
 
 // Rate limiting configuration
 const RATE_LIMITS = {
@@ -194,16 +195,35 @@ export async function authenticateApiRequest(
     };
   }
 
-  // Verify user has Business plan (API access is Business-only)
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, keyRecord.userId),
-  });
+  /* The plan, on the workspace that pays for it.
+     The paywall closes the dashboard and the worker refuses to run an agent
+     for an unpaid workspace. This is the third door, and it was standing open:
+     a key outlives the subscription it was made under, so a cancelled account
+     that kept one went on reading its leads and scheduling posts through an
+     assistant. A team member's key answers to the owner's plan, and a lifetime
+     holder keeps their access with no plan at all, which is the same rule the
+     worker applies in loadRunnableAgents. */
+  const account = await loadSessionUser(keyRecord.userId);
 
-  if (!user) {
+  if (!account) {
     await logApiRequest(keyRecord.id, keyRecord.userId, endpoint, method, 403, Date.now() - startTime);
     return {
       success: false,
       error: "User not found",
+      statusCode: 403,
+    };
+  }
+
+  const plan = effectivePlan({
+    plan: account.owner?.plan ?? account.user.plan,
+    isAdmin: account.user.isAdmin,
+  });
+
+  if (plan === "free" && !account.user.isLifetimeDeal) {
+    await logApiRequest(keyRecord.id, keyRecord.userId, endpoint, method, 403, Date.now() - startTime);
+    return {
+      success: false,
+      error: "This workspace has no active plan. The API and the MCP server need Pro or Business.",
       statusCode: 403,
     };
   }
