@@ -220,8 +220,6 @@ export const PR =
   "mt-5 flex items-baseline gap-[9px] font-v3-display text-[clamp(43px,5.1vw,59px)] font-semibold leading-none tracking-[-.055em] " +
   "[&>small]:font-v3-sans [&>small]:text-[16px] [&>small]:font-medium [&>small]:tracking-normal [&>small]:text-v3-mut dark:[&>small]:text-v3-mut-d";
 export const YR = "mt-[9px] min-h-[20px] text-[13.5px] text-v3-mut dark:text-v3-mut-d";
-export const WORTH =
-  "mt-[22px] rounded-[15px] border border-[rgba(21,93,252,.12)] bg-v3-wash px-[19px] py-[17px] text-[14px] leading-[1.58] text-v3-ink2 dark:bg-v3-wash-d dark:text-v3-ink2-d";
 export const INC =
   "mt-6 border-t border-v3-line pt-[22px] font-v3-mono text-[10.5px] uppercase tracking-[.14em] text-v3-faint dark:border-v3-line-d dark:text-v3-faint-d";
 export const PLAN_UL = "mx-0 mb-7 mt-[22px] grid list-none gap-3 p-0 text-[15px]";

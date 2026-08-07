@@ -6,7 +6,7 @@ import { V3_BLOCK } from "./root";
 import {
   FILL, FILL_LG, FILL_LIGHT, FILL_PRI, FILL_WIDE, H2, INC, LEAD_MUT, PD, PIP,
   PLAN, PLAN_BEST, PLAN_LI, PLAN_LI_I, PLAN_PLAIN, PLAN_TAG, PLAN_UL, PLANS, PN,
-  PR, RV, RV_STATE, SEC, TGNOTE, TOGGLE, WORTH, WRAP, YR,
+  PR, RV, RV_STATE, SEC, TGNOTE, TOGGLE, WRAP, YR,
 } from "./kit";
 
 /**
@@ -27,7 +27,6 @@ export function V3PlanCards() {
           <div className={`${PLAN} ${PLAN_BEST} ${RV_STATE}`}><span className={PLAN_TAG}>Where most founders start</span>
             <div className={PN}>Pro</div><div className={PD}>Two agents working every day for you</div>
             <div className={PR}><span>$99</span><small>/ month</small></div>
-            <div className={WORTH}>A rep costs around $4,000 a month, an outreach tool $99, an AI subscription $20, two proxies $30. You are paying for one of those four.</div>
             <div className={INC}>What's included</div>
             <ul className={PLAN_UL}>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span><b>2 AI agents</b>, 2 LinkedIn accounts</span></li>
@@ -43,7 +42,6 @@ export function V3PlanCards() {
           <div className={`${PLAN} ${PLAN_PLAIN} ${RV_STATE}`}>
             <div className={PN}>Business</div><div className={PD}>Three agents and the team around them</div>
             <div className={PR}><span>$179</span><small>/ month</small></div>
-            <div className={WORTH}>A lead that never reaches the CRM does not exist. This tier puts every one of them there automatically and gives each reply an owner.</div>
             <div className={INC}>Everything in Pro, plus</div>
             <ul className={PLAN_UL}>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span><b>3 AI agents</b>, 3 LinkedIn accounts</span></li>
