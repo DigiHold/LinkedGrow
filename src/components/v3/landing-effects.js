@@ -221,16 +221,6 @@ export function initV3Landing() {
      g.style.left=(e.clientX-r.left-260)+'px'; g.style.top=(e.clientY-r.top-260)+'px'; g.style.opacity='1';});
    s.addEventListener('mouseleave',function(){g.style.opacity='0';});})();
 
-  /* ── bascule mensuel / annuel ── */
-  (function(){
-    var tg=document.getElementById('tg'),pip=document.getElementById('pip'),bs=[].slice.call(tg.querySelectorAll('button'));
-    function move(b){pip.style.width=b.offsetWidth+'px';pip.style.transform='translateX('+(b.offsetLeft-5)+'px)';}
-    move(bs[0]); on(window,'resize',function(){move(tg.querySelector('.on'));});
-    bs.forEach(function(b){b.onclick=function(){
-      bs.forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); move(b);
-      var k=b.dataset.p;
-      document.querySelectorAll('[data-'+k+']').forEach(function(el){el.textContent=el.dataset[k];});};});
-  })();
 
   /* ── faq ── */
   document.querySelectorAll('#faq .q').forEach(function(q){
