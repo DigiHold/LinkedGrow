@@ -321,10 +321,19 @@ export async function scoreLead(
     about?: string;
     signal?: string;
   }
+, 
+  /**
+   * What this agent has learned about who actually converts.
+   *
+   * Passed in rather than read here, so ai.ts stays a thin layer over the model
+   * and one pass reads the memory once instead of once per lead.
+   */
+  memory = ""
 ): Promise<{ score: number; reason: string }> {
   const answer = await generate(
     ctx,
     `Ideal customer: ${icp}
+${memory ? `\n${memory}\n` : ""}
 
 Prospect:
 Name: ${profile.name}
@@ -342,7 +351,9 @@ Score from 0 to 100. What they were doing when they were found counts as much as
         // "Answer only as SCORE|reason" invited the model to repeat that line
         // before answering, which is what broke the parsing. Showing a filled
         // example instead of a template gives it nothing to echo.
-        "You score how well a prospect matches an ideal customer profile. Be strict: 80 and above means they clearly are one. Reply with one line and nothing else, a number then a pipe then the reason, like this: 72|Founder at a small SaaS, buys their own tools.",
+        "You score how well a prospect matches an ideal customer profile. Be strict: 80 and above means they clearly are one.\n\n" +
+        "When the agent's own learning is given, it outranks the written profile: it is what happened rather than what somebody hoped would happen. Somebody matching a shape that has been contacted and ignored scores low however good the title reads.\n\n" +
+        "Reply with one line and nothing else, a number then a pipe then the reason, like this: 72|Founder at a small SaaS, buys their own tools.",
     }
   );
 

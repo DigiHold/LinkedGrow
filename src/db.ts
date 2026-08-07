@@ -263,7 +263,14 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
   });
 }
 
-/** The enabled sources an agent should mine, newest last so the oldest is refreshed first. */
+/**
+ * The enabled sources an agent should mine.
+ *
+ * Ordered oldest-first here and re-ordered by what each one has been worth in
+ * sourcing.ts. This query stays dumb on purpose: the ranking needs the outcome
+ * columns and a policy, and both belong in learn.ts where they can be read and
+ * tested on their own.
+ */
 export async function loadSources(ctx: AgentContext) {
   const { rows } = await db().execute({
     sql: `SELECT id, type, label, config, last_mined_at

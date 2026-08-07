@@ -12,6 +12,8 @@ import { BudgetExceededError, scoreLead } from "../ai.ts";
 import { announce, keepAlive } from "../store.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, type Engager } from "./miner.ts";
+import { learn, miningOrder, recordPass, scoreSources } from "./learn.ts";
+import { asPrompt, readMemory, reviseMemory } from "./memory.ts";
 import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
 import { ensureTargeting } from "./derive.ts";
 
@@ -75,13 +77,20 @@ function parseConfig(raw: string | null): Record<string, unknown> {
   }
 }
 
-async function markMined(sourceId: string, found: number): Promise<void> {
-  await db().execute({
-    sql: `UPDATE agent_sources
-             SET last_mined_at = ?, leads_found = leads_found + ?
-           WHERE id = ?`,
-    args: [Math.floor(Date.now() / 1000), found, sourceId],
+/**
+ * How many of what a source just claimed are worth writing to.
+ *
+ * Counted here rather than derived later, because a lead's score can be
+ * rewritten and the question this answers is "what did this source produce on
+ * the day it ran", which is the only honest basis for ranking it.
+ */
+async function goodAmong(sourceId: string, since: number): Promise<number> {
+  const { rows } = await db().execute({
+    sql: `SELECT COUNT(*) n FROM agent_leads
+           WHERE source_id = ? AND created_at >= ? AND match_score >= 70`,
+    args: [sourceId, since],
   });
+  return Number(rows[0]?.n ?? 0);
 }
 
 /** Turns whatever a miner returned into claimed rows, and says so out loud. */
@@ -240,7 +249,22 @@ export async function sourcePass(
   page: Page,
   opts: { firstRun?: boolean } = {}
 ): Promise<number> {
-  const sources = await loadSources(ctx);
+  const all = await loadSources(ctx);
+
+  /**
+   * Attention follows results.
+   *
+   * This used to be whatever loadSources returned, oldest-mined first, so a
+   * query that had produced seven good leads and one that had produced none
+   * were opened equally often. Untried sources still come first: they are the
+   * cheapest information the agent can buy.
+   */
+  const scores = await scoreSources(ctx);
+  const sources = miningOrder(
+    all,
+    scores,
+    new Map(all.map((s) => [s.id, s.lastMinedAt ? s.lastMinedAt.getTime() : 0]))
+  );
 
   // What the customer typed always goes first. This only decides whether there is anything left to
   // do once their own sources are exhausted, which for an agent set up with one competitor and
@@ -435,7 +459,7 @@ export async function sourcePass(
         source: source.label,
         reason: error instanceof Error ? error.message : String(error),
       });
-      await markMined(source.id, 0);
+      await recordPass(source.id, 0, 0);
       continue;
     } finally {
       // Runs on every way out of the block, including the two `continue`s and
@@ -443,11 +467,41 @@ export async function sourcePass(
       clearInterval(alive);
     }
 
+    const startedAt = Math.floor(Date.now() / 1000) - 1;
     const claimed = await claimAll(ctx, source.id, source.label, found);
-    await markMined(source.id, claimed);
+    const good = claimed > 0 ? await goodAmong(source.id, startedAt) : 0;
+    await recordPass(source.id, claimed, good);
     total += claimed;
 
-    log("source mined", { source: source.label, seen: found.length, claimed });
+    log("source mined", { source: source.label, seen: found.length, claimed, good });
+  }
+
+  /**
+   * The agent thinking about its own results, once per pass.
+   *
+   * At the end rather than the start, so it judges what just happened. Both
+   * halves are rationed: retiring and ranking are SQL, growing costs one model
+   * call and only when a source has earned it, and the memory is revised only
+   * once enough new evidence has landed to change it.
+   */
+  try {
+    const lesson = await learn(ctx);
+    if (lesson.retired || lesson.learned) {
+      log("the agent adjusted its sources", {
+        agentId: ctx.agentId,
+        retired: lesson.retired,
+        learned: lesson.learned,
+        best: lesson.best,
+      });
+    }
+    await reviseMemory(ctx);
+  } catch (error) {
+    // Learning is an improvement, never a dependency. A pass that found people
+    // has already done its job.
+    log("the learning pass did not complete", {
+      agentId: ctx.agentId,
+      reason: error instanceof Error ? error.message : String(error),
+    });
   }
 
   // The toggle the wizard calls "Keep looking when the topics run dry", finally doing what it says.
@@ -493,18 +547,27 @@ async function scorePass(ctx: AgentContext): Promise<void> {
   const waiting = await unscoredLeads(ctx, SCORED_PER_PASS);
   if (waiting.length === 0) return;
 
+  // Read once for the whole pass, not once per lead. It is a few hundred bytes
+  // and it is the same for all twenty of them.
+  const memory = asPrompt(await readMemory(ctx));
+
   let done = 0;
   for (const row of waiting) {
     const name = String(row.full_name ?? "");
     const headline = String(row.headline ?? "");
     if (!name) continue;
     try {
-      const { score, reason } = await scoreLead(ctx, icp, {
-        name,
-        headline,
-        company: row.company ? String(row.company) : undefined,
-        signal: row.signal_text ? String(row.signal_text) : undefined,
-      });
+      const { score, reason } = await scoreLead(
+        ctx,
+        icp,
+        {
+          name,
+          headline,
+          company: row.company ? String(row.company) : undefined,
+          signal: row.signal_text ? String(row.signal_text) : undefined,
+        },
+        memory
+      );
       await setLeadScore(ctx, String(row.id), score, reason);
       done += 1;
     } catch (error) {

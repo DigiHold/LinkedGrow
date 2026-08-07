@@ -49,13 +49,19 @@ export async function judgeAsking(ctx: AgentContext, postText: string): Promise<
  * the config rather than a keyword list. Keyword rules pass anyone whose title contains "marketing",
  * which is how a supermarket planning assistant ends up in a queue meant for website owners.
  */
-export async function judgeIcpFit(ctx: AgentContext, headline: string, context: string): Promise<boolean> {
+export async function judgeIcpFit(
+  ctx: AgentContext,
+  headline: string,
+  context: string,
+  memory = ""
+): Promise<boolean> {
   // Volume skips the judgement entirely: the customer asked for reach and the headline gate has
   // already run. Precision and balanced differ in what the model is told to do when it hesitates.
   if (ctx.matchLevel === "volume") return true;
 
   const prompt = [
     `We sell to: ${ctx.cfg.leads.icp}`,
+    memory,
     ctx.companySizes.length ? `Company sizes worth having: ${ctx.companySizes.join(", ")}` : "",
     "",
     `Person's headline: ${headline}`,
