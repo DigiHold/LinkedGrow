@@ -31,7 +31,7 @@ export function V3PlanCards() {
             <div className={INC}>What's included</div>
             <ul className={PLAN_UL}>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span><b>2 AI agents</b>, 2 LinkedIn accounts</span></li>
-              <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Up to 1,000 leads a month</span></li>
+              <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Up to 1,000 buyers contacted a month</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Anti-slop gate on every message</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Unified reply inbox with instant email alerts</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>CRM, API and <b>MCP</b> integrations</span></li>
@@ -47,7 +47,7 @@ export function V3PlanCards() {
             <div className={INC}>Everything in Pro, plus</div>
             <ul className={PLAN_UL}>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span><b>3 AI agents</b>, 3 LinkedIn accounts</span></li>
-              <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Up to 1,500 leads a month</span></li>
+              <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Up to 1,500 buyers contacted a month</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Your whole team in one workspace</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Hand a conversation to a teammate, history and all</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>A/B testing across your sequences</span></li>
