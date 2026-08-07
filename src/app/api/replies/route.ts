@@ -166,6 +166,30 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Which conversation?" }, { status: 400 });
     }
 
+    /**
+     * Taking the conversation over by hand.
+     *
+     * The agent keeps talking to most people who reply, which is the point of
+     * it, but the customer has to be able to step in on any one of them without
+     * pausing the whole agent. Writing `handed_over` is the same state the
+     * engine sets when it decides a reply needs a person, so the sequence
+     * already knows to leave this thread alone for good.
+     *
+     * Ownership is in the WHERE. A lead id from another workspace changes
+     * nothing and still answers ok, because telling a stranger which ids exist
+     * is its own small leak.
+     */
+    if (body?.action === "take-over") {
+      if (!leadId) {
+        return NextResponse.json({ error: "Which conversation?" }, { status: 400 });
+      }
+      await db
+        .update(agentLeads)
+        .set({ sequenceStatus: "handed_over", updatedAt: new Date() })
+        .where(and(eq(agentLeads.id, leadId), eq(agentLeads.workspaceId, workspaceId)));
+      return NextResponse.json({ ok: true, sequenceStatus: "handed_over" });
+    }
+
     // Ownership in the WHERE, so a lead id from another workspace marks nothing.
     const where = [
       eq(agentMessages.workspaceId, workspaceId),

@@ -4,16 +4,22 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PageShell, PageHeader, Panel, Pill, EmptyState } from "@/components/dashboard/ui/page";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ReplyIcon } from "@/components/dashboard/nav-icons";
 import { Avatar, LinkedInGlyph, MatchBar } from "@/components/dashboard/agents/lead-bits";
 
 /**
  * The people who answered.
  *
- * A reply ends the sequence for that person for good, so this page is where
- * the product hands the conversation back. It shows the whole thread rather
- * than the last line: answering somebody without reading what was already
- * said in your name is how you contradict your own agent.
+ * A reply does not end the sequence, which is the difference between this and
+ * every broadcast tool: the agent reads what came back and answers it, and
+ * only stops when somebody asks for a price, a demo, a call, or anything else
+ * a person has to give. This page shows which of the two is happening on every
+ * thread, and lets the customer take any one of them over by hand.
+ *
+ * It shows the whole thread rather than the last line: answering somebody
+ * without reading what was already said in your name is how you contradict
+ * your own agent.
  *
  * There is no reply box. Sending from here would mean driving the customer's
  * LinkedIn to write a message they did not have the thread in front of them
@@ -48,6 +54,15 @@ type Thread = {
  * answer, and saying otherwise on this page told the customer to take over a
  * conversation the agent was still running.
  */
+/** The state in two words, so it reads off the list without opening anything. */
+function statusPill(status: string | null) {
+  return whatHappensNext(status).done ? (
+    <Pill tone="warn">Yours now</Pill>
+  ) : (
+    <Pill tone="brand">Agent replying</Pill>
+  );
+}
+
 function whatHappensNext(status: string | null): { done: boolean; line: string } {
   switch (status) {
     case "handed_over":
@@ -82,6 +97,9 @@ function ago(iso: string): string {
 export function RepliesContent() {
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  /** The conversation the confirm modal is asking about, if any. */
+  const [takingOver, setTakingOver] = useState<string | null>(null);
+  const [handing, setHanding] = useState(false);
 
   const load = useCallback(() => {
     fetch("/api/replies")
@@ -101,6 +119,36 @@ export function RepliesContent() {
     return () => clearInterval(timer);
   }, [load]);
 
+  /**
+   * Stops the agent on one conversation, and only that one.
+   *
+   * The agent keeps working every other thread. This writes the same state the
+   * engine sets when it decides a reply needs a person, so there is one way to
+   * be handed over rather than two.
+   */
+  async function takeOver(leadId: string) {
+    setHanding(true);
+    try {
+      const res = await fetch("/api/replies", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId, action: "take-over" }),
+      });
+      if (res.ok) {
+        setThreads((all) =>
+          (all ?? []).map((t) =>
+            t.leadId === leadId ? { ...t, sequenceStatus: "handed_over" } : t
+          )
+        );
+      }
+    } catch {
+      // The list is reloaded every 20 seconds anyway.
+    } finally {
+      setHanding(false);
+      setTakingOver(null);
+    }
+  }
+
   /** Opening a conversation is reading it. */
   async function openThread(leadId: string) {
     const next = open === leadId ? null : leadId;
@@ -117,12 +165,13 @@ export function RepliesContent() {
   }
 
   const unread = (threads ?? []).filter((t) => t.unread).length;
+  const takingOverThread = (threads ?? []).find((t) => t.leadId === takingOver) ?? null;
 
   return (
     <PageShell>
       <PageHeader
         title="Replies"
-        description="Everyone who answered. The agent goes permanently silent for anybody who replies, so the conversation is yours from here."
+        description="Everyone who answered. The agent reads each reply and keeps the conversation going, and hands it to you when somebody asks for something only you can give. Take any thread over yourself at any point."
         meta={unread > 0 ? <Pill tone="good">{unread} unread</Pill> : undefined}
       />
 
@@ -178,6 +227,7 @@ export function RepliesContent() {
                       <LinkedInGlyph />
                     </span>
                     {thread.unread && <Pill tone="good">New</Pill>}
+                    {statusPill(thread.sequenceStatus)}
                     <span className="text-xs text-slate-400 dark:text-slate-500">
                       {ago(thread.repliedAt)}
                     </span>
@@ -243,6 +293,15 @@ export function RepliesContent() {
                     >
                       Answer on LinkedIn
                     </a>
+                    {!whatHappensNext(thread.sequenceStatus).done && (
+                      <button
+                        type="button"
+                        onClick={() => setTakingOver(thread.leadId)}
+                        className="rounded-lg border border-border px-3.5 py-2 text-[13px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-white dark:text-slate-200 dark:hover:border-white/20 dark:hover:bg-white/5"
+                      >
+                        Take over
+                      </button>
+                    )}
                     <span className="self-center text-xs text-slate-500 dark:text-slate-400">
                       {whatHappensNext(thread.sequenceStatus).line}
                     </span>
@@ -253,6 +312,24 @@ export function RepliesContent() {
           ))}
         </ul>
       </div>
+
+      {/* Never the browser's own confirm box: it carries the domain name, it
+          cannot be styled, and it stops the page dead. */}
+      <ConfirmModal
+        confirmText="Stop the agent here"
+        description={
+          takingOverThread
+            ? `Your agent will not write to ${takingOverThread.fullName} again, on this conversation or any later one. Every other conversation carries on exactly as it is. This cannot be undone from here.`
+            : undefined
+        }
+        loading={handing}
+        onClose={() => setTakingOver(null)}
+        onConfirm={() => {
+          if (takingOver) void takeOver(takingOver);
+        }}
+        open={!!takingOver}
+        title="Take this conversation over?"
+      />
     </PageShell>
   );
 }
