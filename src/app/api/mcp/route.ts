@@ -651,6 +651,14 @@ export async function POST(request: NextRequest) {
   }
   const { workspaceId, timezone: workspaceZone } = workspace;
 
+  /* A notification carries no id and, by the protocol, must never be answered.
+     Every client sends notifications/initialized the moment the handshake is
+     done, and replying to it with an error is what made the connection log a
+     failure before the first tool was ever listed. */
+  if (typeof body.method === "string" && body.method.startsWith("notifications/")) {
+    return new Response(null, { status: 202 });
+  }
+
   if (body.method === "initialize") {
     return rpc(id, {
       protocolVersion: PROTOCOL_VERSION,
