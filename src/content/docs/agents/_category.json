@@ -1,0 +1,11 @@
+{
+  "title": "Agents & Leads",
+  "description": "How your agents find buyers on LinkedIn, decide who is worth contacting, open the conversation, and get better at it every week.",
+  "overview": [
+    "An agent is the part of LinkedGrow that works while you do something else. It signs in to your LinkedIn account in a real browser, looks for people who match the buyer you described, reads their profiles, decides which ones are worth your time, sends the invitation, and opens the conversation when they accept.",
+    "It also keeps score. Every place it looks is judged on the people it actually brought back, and every reply tells it something about your buyer that your description did not. What works gets more of the day and grows new searches of its own. What stays quiet is dropped. That is why an agent running for two months is noticeably better than the same agent in week one.",
+    "The articles below cover creating an agent, how it decides who to contact, what happens in the inbox when somebody answers, and the limits it works inside so your account stays safe."
+  ],
+  "order": 2,
+  "icon": "bot"
+}
