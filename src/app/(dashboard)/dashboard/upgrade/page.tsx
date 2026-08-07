@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   Check,
@@ -59,6 +59,31 @@ export default function UpgradePage() {
   const isLtd = session?.user?.isLifetimeDeal || false;
 
   const [isYearly, setIsYearly] = useState(true);
+  /**
+   * The lifetime holder's discount, read from Stripe through the billing route.
+   *
+   * Not computed here. The card and the checkout have to quote the same number
+   * or somebody sees $99 on one screen and pays something else on the next,
+   * which is the surprise this product cannot afford on a pricing page.
+   */
+  const [ltdOff, setLtdOff] = useState<{ percentOff: number | null; amountOff: number | null } | null>(null);
+
+  useEffect(() => {
+    if (!isLtd) return;
+    fetch("/api/stripe/billing")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setLtdOff(d?.ltdDiscount ?? null))
+      .catch(() => setLtdOff(null));
+  }, [isLtd]);
+
+  /** The list price after the lifetime discount, in whole dollars. */
+  const afterLtd = (amount: number): number => {
+    if (!ltdOff) return amount;
+    if (ltdOff.percentOff) return Math.round(amount * (1 - ltdOff.percentOff / 100));
+    if (ltdOff.amountOff) return Math.max(0, amount - Math.round(ltdOff.amountOff / 100));
+    return amount;
+  };
+  const hasLtdOff = !!ltdOff && (!!ltdOff.percentOff || !!ltdOff.amountOff);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
@@ -263,8 +288,16 @@ showError("Something went wrong. Please try again.");
                 {/* Price */}
                 <div className="mt-4 mb-5">
                   <div className="flex items-baseline gap-1">
+                    {hasLtdOff && plan.price > 0 && (
+                      <span className="text-xl font-medium text-slate-400 line-through dark:text-slate-500">
+                        ${isYearly ? Math.round(plan.yearlyPrice / 12) : plan.price}
+                      </span>
+                    )}
                     <span className="text-3xl font-bold text-slate-900 dark:text-white">
-                      ${isYearly ? Math.round(plan.yearlyPrice / 12) : plan.price}
+                      $
+                      {afterLtd(
+                        isYearly ? Math.round(plan.yearlyPrice / 12) : plan.price
+                      )}
                     </span>
                     <span className="text-slate-500 dark:text-slate-400">
                       /mo
@@ -273,12 +306,17 @@ showError("Something went wrong. Please try again.");
                   {isYearly && plan.yearlyPrice > 0 && (
                     <div className="mt-1">
                       <span className="text-xs text-slate-400 dark:text-slate-500">
-                        Billed ${plan.yearlyPrice}/year
+                        Billed ${afterLtd(plan.yearlyPrice)}/year
                       </span>
                       <span className="ml-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                        Save ${plan.price * 12 - plan.yearlyPrice}/yr
+                        Save ${afterLtd(plan.price) * 12 - afterLtd(plan.yearlyPrice)}/yr
                       </span>
                     </div>
+                  )}
+                  {hasLtdOff && plan.price > 0 && (
+                    <p className="mt-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      Your lifetime price, for as long as you keep the plan
+                    </p>
                   )}
                 </div>
 
