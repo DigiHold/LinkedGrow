@@ -519,25 +519,52 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
       return;
     }
     await menu.click().catch(() => {});
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
 
-    const del = page.getByRole("button", { name: /delete post|supprimer le post|delete|supprimer/i }).first();
-    if (!(await del.isVisible().catch(() => false))) {
+    /**
+     * Everything the menu offers, because Delete is not a button called Delete.
+     *
+     * The first version looked for a button whose accessible name matched
+     * /delete post/, and on 2026-08-08 it found nothing on three posts in a row
+     * while the menu was plainly open. LinkedIn's overflow menu is a list of
+     * items rather than a row of buttons, so the item is matched by its text
+     * wherever it sits, and what was on screen is printed when it still misses.
+     */
+    const items = await page.evaluate(() =>
+      Array.from(
+        document.querySelectorAll(
+          '[role="menu"] *, [role="menuitem"], [role="dialog"] li, ul[role="list"] li'
+        )
+      )
+        .map((el) => (el as HTMLElement).innerText?.trim() ?? "")
+        .filter((t) => t && t.length < 60)
+        .filter((t, i, all) => all.indexOf(t) === i)
+        .slice(0, 25)
+    );
+    console.log(`  menu: ${JSON.stringify(items)}`);
+
+    const wanted = /delete post|delete|supprimer le post|supprimer/i;
+    const entry = page
+      .locator('[role="menuitem"], [role="menu"] button, [role="menu"] div, li')
+      .filter({ hasText: wanted })
+      .last();
+    if (!(await entry.isVisible().catch(() => false))) {
       console.log(`NO DELETE IN THE MENU. Delete it by hand: ${postUrl}`);
       return;
     }
-    await del.click().catch(() => {});
-    await page.waitForTimeout(1500);
+    await entry.click().catch(() => {});
+    await page.waitForTimeout(2000);
 
-    const confirm = page.getByRole("button", { name: /^(delete|supprimer)$/i }).last();
+    const confirm = page
+      .locator("button")
+      .filter({ hasText: /^(delete|supprimer)$/i })
+      .last();
     if (await confirm.isVisible().catch(() => false)) await confirm.click().catch(() => {});
     await page.waitForTimeout(5000);
 
     // Read it back rather than trusting the click, the same way publishing does.
     await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
     await page.waitForTimeout(4000);
-    // Any of the three check texts, because remove is called on whichever post
-    // the run just published and they do not share an opening sentence.
     let stillThere = false;
     for (const text of [TEXT, IMAGE_TEXT, CAROUSEL_TEXT]) {
       const seen = await page
