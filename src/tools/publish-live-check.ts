@@ -543,24 +543,42 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
     );
     console.log(`  menu: ${JSON.stringify(items)}`);
 
-    const wanted = /delete post|delete|supprimer le post|supprimer/i;
-    const entry = page
-      .locator('[role="menuitem"], [role="menu"] button, [role="menu"] div, li')
-      .filter({ hasText: wanted })
-      .last();
+    /**
+     * The exact item, not whatever contains its words.
+     *
+     * Matching on "contains delete" walks up to the wrapper that holds the
+     * whole menu, and clicking a wrapper does nothing. The menu prints
+     * "Delete post" as its own line, so the exact text is the anchor.
+     */
+    const entry = page.getByText("Delete post", { exact: true }).last();
     if (!(await entry.isVisible().catch(() => false))) {
       console.log(`NO DELETE IN THE MENU. Delete it by hand: ${postUrl}`);
       return;
     }
     await entry.click().catch(() => {});
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(2500);
 
-    const confirm = page
-      .locator("button")
-      .filter({ hasText: /^(delete|supprimer)$/i })
-      .last();
-    if (await confirm.isVisible().catch(() => false)) await confirm.click().catch(() => {});
-    await page.waitForTimeout(5000);
+    // Whatever the confirmation offers, printed, because it is the next thing
+    // that will have moved.
+    const asks = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('dialog[open] button, [role="alertdialog"] button, [role="dialog"] button'))
+        .map((b) => (b.getAttribute("aria-label") || (b as HTMLElement).innerText || "").trim())
+        .filter(Boolean)
+        .slice(0, 12)
+    );
+    console.log(`  confirmation offers: ${JSON.stringify(asks)}`);
+
+    for (const name of [/^delete$/i, /^supprimer$/i, /^yes$/i, /^confirm$/i]) {
+      const button = page
+        .locator('dialog[open] button, [role="alertdialog"] button, [role="dialog"] button, button')
+        .filter({ hasText: name })
+        .last();
+      if (await button.isVisible().catch(() => false)) {
+        await button.click().catch(() => {});
+        break;
+      }
+    }
+    await page.waitForTimeout(6000);
 
     // Read it back rather than trusting the click, the same way publishing does.
     await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
