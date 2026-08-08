@@ -36,6 +36,7 @@ import { PostingHeatmap } from "@/components/dashboard/analytics/posting-heatmap
 import { DemographicsCharts } from "@/components/dashboard/analytics/demographics-charts";
 import { ExportReport } from "@/components/dashboard/analytics/export-report";
 import { VideoModal } from "@/components/dashboard/video-modal";
+import { TeamProduction } from "@/components/dashboard/analytics/team-production";
 
 interface AdvancedAnalyticsData {
   summary: {
@@ -188,6 +189,9 @@ export default function AdvancedAnalyticsPage() {
             </Button>
           </div>
         </div>
+
+        {/* Agents and people, which have data even on a week with no posts. */}
+        <TeamProduction days={days} />
 
         {/* Loading State */}
         {isLoading && (

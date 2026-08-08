@@ -41,8 +41,24 @@ type Thread = {
   matchScore: number | null;
   signalText: string | null;
   sequenceStatus: string | null;
+  assignedTo: string | null;
   messages: Message[];
 };
+
+type Member = {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+  isOwner: boolean;
+};
+
+/** First name where there is one, the address otherwise. Nobody reads a uuid. */
+function memberLabel(member: Member | undefined): string {
+  if (!member) return "Someone";
+  const name = (member.name ?? "").trim();
+  return name ? name.split(" ")[0] : member.email.split("@")[0];
+}
 
 /**
  * Whether the agent is done with this person, and what it does next.
@@ -96,6 +112,10 @@ function ago(iso: string): string {
 
 export function RepliesContent() {
   const [threads, setThreads] = useState<Thread[] | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [me, setMe] = useState<string | null>(null);
+  /** all, or the ones I own, or the ones nobody owns. Teams only. */
+  const [scope, setScope] = useState<"all" | "mine" | "free">("all");
   const [open, setOpen] = useState<string | null>(null);
   /** The conversation the confirm modal is asking about, if any. */
   const [takingOver, setTakingOver] = useState<string | null>(null);
@@ -104,7 +124,11 @@ export function RepliesContent() {
   const load = useCallback(() => {
     fetch("/api/replies")
       .then((r) => (r.ok ? r.json() : null))
-      .then((json) => setThreads(json?.threads ?? []))
+      .then((json) => {
+        setThreads(json?.threads ?? []);
+        setMembers(json?.members ?? []);
+        setMe(json?.me ?? null);
+      })
       .catch(() => setThreads([]));
   }, []);
 
@@ -149,6 +173,23 @@ export function RepliesContent() {
     }
   }
 
+  /**
+   * Hands one thread to a teammate, or puts it back in the pile.
+   *
+   * The point is not permission, it is that two people do not answer the same
+   * prospect an hour apart each assuming the other had seen it.
+   */
+  async function assign(leadId: string, assignee: string | null) {
+    setThreads((all) =>
+      (all ?? []).map((t) => (t.leadId === leadId ? { ...t, assignedTo: assignee } : t))
+    );
+    await fetch("/api/replies", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId, action: "assign", assignee }),
+    }).catch(() => load());
+  }
+
   /** Opening a conversation is reading it. */
   async function openThread(leadId: string) {
     const next = open === leadId ? null : leadId;
@@ -163,6 +204,19 @@ export function RepliesContent() {
       body: JSON.stringify({ leadId }),
     }).catch(() => {});
   }
+
+  /* One person in the workspace means nothing to divide, so the whole idea of
+     an owner stays off the screen until there is a team. */
+  const isTeam = members.length > 1;
+  const byMember = new Map(members.map((m) => [m.id, m]));
+  const all = threads ?? [];
+  const shown = !isTeam
+    ? all
+    : scope === "mine"
+      ? all.filter((t) => t.assignedTo === me)
+      : scope === "free"
+        ? all.filter((t) => !t.assignedTo)
+        : all;
 
   const unread = (threads ?? []).filter((t) => t.unread).length;
   const takingOverThread = (threads ?? []).find((t) => t.leadId === takingOver) ?? null;
@@ -205,8 +259,34 @@ export function RepliesContent() {
           </Panel>
         )}
 
+        {isTeam && threads !== null && threads.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {(
+              [
+                ["all", `Everyone (${all.length})`],
+                ["mine", `Mine (${all.filter((t) => t.assignedTo === me).length})`],
+                ["free", `Unassigned (${all.filter((t) => !t.assignedTo).length})`],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setScope(key)}
+                className={cn(
+                  "rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors",
+                  scope === key
+                    ? "border-blue-500/40 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+                    : "border-border text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <ul className="space-y-3">
-          {(threads ?? []).map((thread) => (
+          {shown.map((thread) => (
             <li
               key={thread.leadId}
               className={cn(
@@ -228,6 +308,13 @@ export function RepliesContent() {
                     </span>
                     {thread.unread && <Pill tone="good">New</Pill>}
                     {statusPill(thread.sequenceStatus)}
+                    {isTeam && thread.assignedTo && (
+                      <Pill tone="neutral">
+                        {thread.assignedTo === me
+                          ? "Mine"
+                          : memberLabel(byMember.get(thread.assignedTo))}
+                      </Pill>
+                    )}
                     <span className="text-xs text-slate-400 dark:text-slate-500">
                       {ago(thread.repliedAt)}
                     </span>
@@ -301,6 +388,23 @@ export function RepliesContent() {
                       >
                         Take over
                       </button>
+                    )}
+                    {isTeam && (
+                      <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        Owner
+                        <select
+                          value={thread.assignedTo ?? ""}
+                          onChange={(e) => void assign(thread.leadId, e.target.value || null)}
+                          className="rounded-lg border border-border bg-white px-2.5 py-2 text-[13px] font-medium text-slate-700 dark:bg-white/5 dark:text-slate-200"
+                        >
+                          <option value="">Nobody yet</option>
+                          {members.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.id === me ? "Me" : memberLabel(m)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                     )}
                     <span className="self-center text-xs text-slate-500 dark:text-slate-400">
                       {whatHappensNext(thread.sequenceStatus).line}

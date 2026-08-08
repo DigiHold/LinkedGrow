@@ -1327,6 +1327,18 @@ export const agentLeads = sqliteTable("agent_leads", {
   sequenceStatus: text("sequence_status"),
   /** The angle the last message took, so the next one does not repeat it. */
   angle: text("angle"),
+  /**
+   * Who on the team owns this conversation.
+   *
+   * Null until somebody takes it, which is the normal state on a one-person
+   * workspace and the reason nothing about assignment shows there. On a team it
+   * is what stops two people answering the same person an hour apart, each
+   * assuming the other had not seen it.
+   */
+  assignedTo: text("assigned_to").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  assignedAt: integer("assigned_at", { mode: "timestamp" }),
   stepAt: integer("step_at", { mode: "timestamp" }),
   foundAt: integer("found_at", { mode: "timestamp" }).notNull(),
   rejectedAt: integer("rejected_at", { mode: "timestamp" }),

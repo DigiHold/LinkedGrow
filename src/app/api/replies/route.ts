@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { agentLeads, agentMessages, agents } from "@/lib/db/schema";
 import { loadSessionUser } from "@/lib/auth-user";
+import { workspaceMembers } from "@/lib/team-utils";
 
 /**
  * Everyone who answered, and the thread that led there.
@@ -63,7 +64,7 @@ export async function GET() {
     }
     const leadIds = [...newestByLead.keys()].slice(0, MAX_THREADS);
 
-    const [people, everyMessage, mine] = await Promise.all([
+    const [people, everyMessage, mine, members] = await Promise.all([
       db
         .select({
           id: agentLeads.id,
@@ -79,6 +80,7 @@ export async function GET() {
           // somebody the agent is about to answer and for somebody it has
           // stopped writing to for good, and those are opposite facts.
           sequenceStatus: agentLeads.sequenceStatus,
+          assignedTo: agentLeads.assignedTo,
         })
         .from(agentLeads)
         .where(
@@ -107,6 +109,7 @@ export async function GET() {
         .select({ id: agents.id, name: agents.name })
         .from(agents)
         .where(eq(agents.workspaceId, workspaceId)),
+      workspaceMembers(workspaceId),
     ]);
 
     const person = new Map(people.map((p) => [p.id, p]));
@@ -131,6 +134,7 @@ export async function GET() {
           matchScore: who.matchScore,
           signalText: who.signalText,
           sequenceStatus: who.sequenceStatus,
+          assignedTo: who.assignedTo,
           messages: everyMessage
             .filter((m) => m.leadId === leadId)
             .map((m) => ({ from: m.direction, body: m.body, at: m.sentAt })),
@@ -141,6 +145,10 @@ export async function GET() {
     return NextResponse.json({
       threads,
       unread: threads.filter((t) => t.unread).length,
+      /* Who could own a thread, and who is reading. A solo workspace gets one
+         member back and the page hides the whole idea. */
+      members,
+      me: data.user.id,
     });
   } catch {
     return NextResponse.json({ error: "Failed to load replies" }, { status: 500 });
@@ -188,6 +196,39 @@ export async function PATCH(request: NextRequest) {
         .set({ sequenceStatus: "handed_over", updatedAt: new Date() })
         .where(and(eq(agentLeads.id, leadId), eq(agentLeads.workspaceId, workspaceId)));
       return NextResponse.json({ ok: true, sequenceStatus: "handed_over" });
+    }
+
+    /**
+     * Giving a conversation an owner, or taking the owner off it.
+     *
+     * The assignee has to be somebody in this workspace, checked against the
+     * member list rather than trusted from the body: an id from anywhere else
+     * would otherwise print a stranger's name on a customer's thread. Null is
+     * allowed and means nobody has it.
+     */
+    if (body?.action === "assign") {
+      if (!leadId) {
+        return NextResponse.json({ error: "Which conversation?" }, { status: 400 });
+      }
+      const assignee = typeof body?.assignee === "string" ? body.assignee : null;
+      if (assignee && assignee.length > 64) {
+        return NextResponse.json({ error: "Unknown teammate" }, { status: 400 });
+      }
+      if (assignee) {
+        const members = await workspaceMembers(workspaceId);
+        if (!members.some((m) => m.id === assignee)) {
+          return NextResponse.json({ error: "Unknown teammate" }, { status: 400 });
+        }
+      }
+      await db
+        .update(agentLeads)
+        .set({
+          assignedTo: assignee,
+          assignedAt: assignee ? new Date() : null,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(agentLeads.id, leadId), eq(agentLeads.workspaceId, workspaceId)));
+      return NextResponse.json({ ok: true, assignedTo: assignee });
     }
 
     // Ownership in the WHERE, so a lead id from another workspace marks nothing.

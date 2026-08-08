@@ -1,5 +1,5 @@
-import { db, teamInvites } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { db, teamInvites, teams, teamMembers, users } from "@/lib/db";
+import { and, eq, isNotNull, ne } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 
 /**
@@ -52,3 +52,47 @@ export async function hasPendingTeamInvite(email: string): Promise<boolean> {
   return false;
 }
 
+
+/**
+ * Everybody who can be handed a conversation in this workspace.
+ *
+ * The owner first, then the members who actually accepted their invitation: a
+ * pending invite is an email address, not somebody who can answer a prospect.
+ * One person comes back on a solo workspace, which is how the Replies page
+ * knows to show no assignment control at all.
+ */
+export async function workspaceMembers(workspaceId: string) {
+  const owner = await db.query.users.findFirst({
+    where: eq(users.id, workspaceId),
+    columns: { id: true, name: true, email: true, image: true },
+  });
+
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.ownerId, workspaceId),
+    columns: { id: true },
+  });
+
+  const others = team
+    ? await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
+        })
+        .from(teamMembers)
+        .innerJoin(users, eq(users.id, teamMembers.userId))
+        .where(
+          and(
+            eq(teamMembers.teamId, team.id),
+            isNotNull(teamMembers.acceptedAt),
+            ne(teamMembers.userId, workspaceId)
+          )
+        )
+    : [];
+
+  return [
+    ...(owner ? [{ ...owner, isOwner: true }] : []),
+    ...others.map((m) => ({ ...m, isOwner: false })),
+  ];
+}
