@@ -571,12 +571,35 @@ async function dmProbe(accountId: string, profileUrl: string): Promise<void> {
       return;
     }
 
+    // What production does: a hard navigation to the compose link.
     await page.goto(new URL(found.ownHref, "https://www.linkedin.com").toString(), {
       waitUntil: "domcontentloaded",
     });
     await page.waitForSelector(".msg-form__contenteditable", { timeout: 12_000 }).catch(() => {});
     await page.waitForTimeout(3000);
-    await look("thread");
+    await look("navigated");
+
+    /**
+     * And the other way in: clicking the link rather than loading it.
+     *
+     * The href carries interop=msgOverlay, which says out loud that it is meant
+     * to open the overlay through the app's own router. A hard navigation asks
+     * the server for a page that does not mount a composer, which is what
+     * openThread has been doing.
+     */
+    await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(5000);
+    const clicked = await page.evaluate(() => {
+      const topcard = document.querySelector('[componentkey$="Topcard"]');
+      const own = topcard?.querySelector('a[href*="/messaging/compose"]') as HTMLAnchorElement | null;
+      if (!own) return false;
+      own.click();
+      return true;
+    });
+    console.log(`  clicked the top card compose link: ${clicked}`);
+    await page.waitForSelector(".msg-form__contenteditable", { timeout: 15_000 }).catch(() => {});
+    await page.waitForTimeout(4000);
+    await look("clicked");
   } finally {
     await closeSession(session).catch(() => {});
   }
