@@ -326,6 +326,40 @@ export async function loadDuePosts(limit = 25): Promise<DuePost[]> {
  * which is a failure with a sentence the customer can act on rather than a
  * silent skip.
  */
+/**
+ * Is somebody sitting in front of a screen waiting for this account to post?
+ *
+ * The agent and the publisher share one browser slot per LinkedIn account, and
+ * they took it first-come-first-served. Watching a live pass on 2026-08-08
+ * showed what that costs: the agent held the slot for eighteen minutes while
+ * the publish loop logged "no slot free, publishing on the next pass" every
+ * sixty seconds. Nobody had pressed Publish that time. When somebody does, they
+ * would sit in front of a spinner for a quarter of an hour with nothing wrong.
+ *
+ * So the agent asks this before it starts, and stands aside if the answer is
+ * yes. Sourcing loses one pass out of a day; a person loses nothing. Only work
+ * that is due RIGHT NOW counts: a post scheduled for tomorrow evening is not
+ * somebody waiting, and it must not keep the agent off LinkedIn all day.
+ */
+export async function publishingIsWaiting(linkedinAccountId: string): Promise<boolean> {
+  const { rows } = await db().execute({
+    sql: `SELECT 1
+            FROM posts p
+           WHERE (
+                   p.linkedin_account_id = ?
+                   OR (p.linkedin_account_id IS NULL
+                       AND p.user_id = (SELECT workspace_id FROM linkedin_accounts WHERE id = ?))
+                 )
+             AND (
+                   p.status = 'queued'
+                   OR (p.status = 'scheduled' AND p.scheduled_at <= ?)
+                 )
+           LIMIT 1`,
+    args: [linkedinAccountId, linkedinAccountId, nowSeconds()],
+  });
+  return rows.length > 0;
+}
+
 export async function accountForPost(post: DuePost): Promise<PublishAccount | null> {
   if (post.linkedinAccountId) {
     const { rows } = await db().execute({

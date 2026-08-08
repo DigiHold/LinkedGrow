@@ -20,6 +20,7 @@ import { allocationFor, isProduction } from "./proxy/allocation.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { connectPass } from "./linkedin/connect-pass.ts";
 import { publishPass } from "./publish/pass.ts";
+import { publishingIsWaiting } from "./publish/store.ts";
 import { insightsPass, copyLeadFaces } from "./insights/pass.ts";
 import { isWithinBusinessHours } from "./safety/envelope.ts";
 import { currentVisit } from "./safety/rhythm.ts";
@@ -368,6 +369,18 @@ async function pass(): Promise<void> {
       // LinkedIn account and therefore shares one browser and one address.
       const first = group[0];
       if (!first) return;
+
+      // Somebody pressing Publish beats an agent reading comment sections. The
+      // two share one browser per account and used to take it first-come, so an
+      // agent mid-pass could keep a person waiting a quarter of an hour with
+      // nothing wrong. Sourcing gives up one pass out of a day instead.
+      if (await publishingIsWaiting(first.linkedinAccountId).catch(() => false)) {
+        log("standing aside, something is waiting to be published", {
+          linkedinAccountId: first.linkedinAccountId,
+        });
+        return;
+      }
+
       let lease;
       try {
         lease = takeSlot(first.linkedinAccountId);
