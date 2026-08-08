@@ -3,6 +3,7 @@ import { log, logError } from "../logger.ts";
 import { closeSession, isSignedIn, openSession } from "../browser/driver.ts";
 import { allocationFor, isProduction } from "../proxy/allocation.ts";
 import { NoSlotError, takeSlot } from "../safety/slots.ts";
+import { SignInFailed } from "./signin.ts";
 import { withWatchdog } from "../safety/watchdog.ts";
 import { currentRun } from "../safety/run-context.ts";
 import { decryptSecret } from "../crypto.ts";
@@ -283,6 +284,13 @@ export async function connectPass(): Promise<void> {
       await withWatchdog(() => connectOne(account));
     } catch (error) {
       logError("sign-in failed", error, { accountId: account.id });
+      /* A permanent failure has already written its own reason and its own
+         state onto the account: a checkpoint or a restriction, which no retry
+         can clear. Counting it as an attempt and coming back in two minutes is
+         what turned one restricted account into a knocking loop. */
+      if (error instanceof SignInFailed && error.permanent) {
+        continue;  // the finally below releases the slot
+      }
       // The attempt was counted before it ran, so this is the last one when the
       // count has reached the ceiling. Saying so beats a spinner that never
       // resolves and a loop that never stops.

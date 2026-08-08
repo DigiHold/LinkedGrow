@@ -98,6 +98,15 @@ export type ChallengeKind =
  */
 const CHECKPOINT_URL = /\/checkpoint\/(challenge|challengesV2)/;
 
+/**
+ * The wording LinkedIn uses when it has restricted an account outright, in the
+ * languages the product is sold in. Read off the real notice on 2026-08-08:
+ * "Your account has been temporarily restricted ... it has accessed an
+ * unusually high volume of LinkedIn profile data".
+ */
+const RESTRICTED_NOTICE =
+  /(account has been (temporarily )?restricted|temporarily restricted your account|votre compte a (été|ete) (temporairement )?restreint|unusually high volume)/i;
+
 /** Words for "we sent a notification to your app", in the languages we sell into. */
 const APP_APPROVAL =
   /(linkedin app|appli linkedin|app linkedin|linkedin-app|aplicación de linkedin|app di linkedin|tap yes|touchez oui|toque en sí|tippen sie auf ja|tocca sì|benachrichtigung|notification|notificación|notifica)/i;
@@ -387,6 +396,50 @@ export async function signIn(input: SignInInput): Promise<void> {
     // checkpoint and a redesigned form all reach this line and each needs a
     // different answer.
     const says = await capturePage(page, accountId, "signin-no-form").catch(() => null);
+
+    /**
+     * Three different pages used to arrive here and get the same answer.
+     *
+     * A redesigned form deserves another try in ten minutes. A security
+     * checkpoint and a restriction notice deserve the opposite: LinkedIn is
+     * already unhappy with this account, and knocking on the door every two
+     * minutes with the same credentials is the single worst thing the worker
+     * can do to it. On 2026-08-08 that is exactly what happened to a restricted
+     * account, for as long as the attempts lasted.
+     *
+     * Both are permanent as far as the worker is concerned. Only a person can
+     * clear them, and the account says so until they do.
+     */
+    const url = page.url();
+    const text = says ?? "";
+    if (CHECKPOINT_URL.test(url) || RESTRICTED_NOTICE.test(text)) {
+      const restricted = RESTRICTED_NOTICE.test(text);
+      await db().execute({
+        sql: `UPDATE linkedin_accounts
+                 SET status = 'challenged', challenge_state = 'failed',
+                     status_reason = ?, last_challenge_at = ?, updated_at = ?
+               WHERE id = ?`,
+        args: [
+          restricted
+            ? "LinkedIn has restricted this account. Nothing will run on it until you sign in on linkedin.com yourself and the restriction is lifted."
+            : "LinkedIn is asking this account to verify itself. Nothing will be retried until you finish that on linkedin.com.",
+          Math.floor(Date.now() / 1000),
+          Math.floor(Date.now() / 1000),
+          accountId,
+        ],
+      });
+      log(restricted ? "account restricted by LinkedIn, everything stopped" : "checkpoint, everything stopped", {
+        accountId,
+        url,
+      });
+      throw new SignInFailed(
+        restricted
+          ? "LinkedIn has restricted this account. Nothing was retried."
+          : "LinkedIn is asking this account to verify itself. Nothing was retried.",
+        true
+      );
+    }
+
     throw new SignInFailed(
       `The login form did not appear and the session is not signed in.${
         says ? ` The page says: "${says}".` : ""
