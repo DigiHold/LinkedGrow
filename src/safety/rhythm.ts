@@ -144,10 +144,16 @@ export function localClock(
  * profile that nobody is sitting behind.
  */
 function visitCount(rnd: () => number, weekday: number): number {
-  if (weekday === 7) return rnd() < 0.7 ? 0 : 1;
+  // Sunday off, always. Nicolas's call on 2026-08-08, and it is what a business
+  // account looks like anyway: silent on a Sunday is the normal shape, not a
+  // suspicious one.
+  if (weekday === 7) return 0;
+  // Saturday works, a little lighter than a weekday. Plenty of the people this
+  // sells to work then, and losing a sixth of a seven-day trial to the calendar
+  // costs leads on the days somebody is deciding whether to pay.
   if (weekday === 6) {
-    const r = rnd();
-    return r < 0.4 ? 0 : r < 0.85 ? 1 : 2;
+    if (rnd() < 0.05) return 0;
+    return 2 + Math.floor(rnd() * 2);
   }
   if (rnd() < 0.07) return 0; // roughly one working day a month, off entirely
   return 3 + Math.floor(rnd() * 3);

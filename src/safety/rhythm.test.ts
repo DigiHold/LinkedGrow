@@ -81,13 +81,32 @@ test("visits never touch, and never run into the night", () => {
   }
 });
 
-test("the weekend is quieter than the week, and some days are skipped entirely", () => {
+test("Sunday is off and Saturday is not, which is what a business account looks like", () => {
   const days = month();
-  const weekday = days.filter((d) => d.weekday <= 5).reduce((n, d) => n + d.plan.length, 0);
-  const weekend = days.filter((d) => d.weekday >= 6).reduce((n, d) => n + d.plan.length, 0);
-  assert.ok(weekend * 2 < weekday, "a weekend should not look like a working week");
+  const sunday = days.filter((d) => d.weekday === 7);
+  assert.ok(sunday.length >= 4, "the fixture month needs Sundays in it");
   assert.ok(
-    days.some((d) => d.plan.length === 0),
+    sunday.every((d) => d.plan.length === 0),
+    "Sunday is off, always"
+  );
+  const saturdays = days.filter((d) => d.weekday === 6);
+  assert.ok(
+    saturdays.filter((d) => d.plan.length > 0).length >= saturdays.length - 1,
+    "Saturday works, because a seven-day trial cannot afford to lose two days to the calendar"
+  );
+});
+
+test("Saturday is lighter than a weekday, and some working days are skipped", () => {
+  const days = month();
+  const weekdayAvg =
+    days.filter((d) => d.weekday <= 5).reduce((n, d) => n + d.plan.length, 0) /
+    days.filter((d) => d.weekday <= 5).length;
+  const saturdayAvg =
+    days.filter((d) => d.weekday === 6).reduce((n, d) => n + d.plan.length, 0) /
+    days.filter((d) => d.weekday === 6).length;
+  assert.ok(saturdayAvg < weekdayAvg, "a Saturday should not look like a Tuesday");
+  assert.ok(
+    days.some((d) => d.weekday <= 5 && d.plan.length === 0),
     "an account that never misses a day is an account with nobody behind it"
   );
 });

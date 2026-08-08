@@ -283,14 +283,24 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
 export async function ensureProfileCaptured(page: Page, accountId: string): Promise<void> {
   try {
     const { rows } = await db().execute({
-      sql: `SELECT COALESCE(profile_url, '') AS profile_url, COALESCE(full_name, '') AS full_name
+      sql: `SELECT COALESCE(profile_url, '') AS profile_url,
+                   COALESCE(full_name, '') AS full_name,
+                   COALESCE(maturity, '') AS maturity
               FROM linkedin_accounts WHERE id = ? LIMIT 1`,
       args: [accountId],
     });
     const row = rows[0];
-    // The URL is the load-bearing one: publishing reads a post back from it and
-    // the follower count comes off it. A name without it is not enough.
-    if (row && String(row.profile_url) && String(row.full_name)) return;
+    /**
+     * The URL is the load-bearing one: publishing reads a post back from it and
+     * the follower count comes off it. A name without it is not enough.
+     *
+     * Maturity is in the condition rather than alongside it, and that matters:
+     * every account connected before this existed already has a URL and a name,
+     * so a check on those two alone would return early for ever and the age
+     * would never be read on a single existing account. The reading ramp would
+     * then hold every current customer at the cautious floor permanently.
+     */
+    if (row && String(row.profile_url) && String(row.full_name) && String(row.maturity)) return;
 
     const profile = await readOwnProfile(page);
     if (!profile) return;
