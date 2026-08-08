@@ -550,12 +550,36 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
      * whole menu, and clicking a wrapper does nothing. The menu prints
      * "Delete post" as its own line, so the exact text is the anchor.
      */
-    const entry = page.getByText("Delete post", { exact: true }).last();
-    if (!(await entry.isVisible().catch(() => false))) {
+    /**
+     * Clicked in the page, by finding the leaf whose own text is the item.
+     *
+     * Three selector shapes were tried against this menu and each missed for a
+     * different reason: a button name that does not exist, a contains-match
+     * that resolves to the wrapper holding the whole menu, and an exact-text
+     * match that Playwright then judged not visible. Reading the DOM and
+     * clicking the deepest element whose trimmed text IS the label sidesteps
+     * all three, and this is a check tool rather than a human being imitated.
+     */
+    const clicked = await page.evaluate(() => {
+      const wanted = ["Delete post", "Supprimer le post"];
+      const all = Array.from(document.querySelectorAll("span,div,li,button,p,a"));
+      for (const el of all) {
+        const text = (el as HTMLElement).innerText?.trim() ?? "";
+        if (!wanted.includes(text)) continue;
+        const deeper = Array.from(el.querySelectorAll("*")).some(
+          (child) => ((child as HTMLElement).innerText?.trim() ?? "") === text
+        );
+        if (deeper) continue; // not the leaf, keep going down
+        const target = (el.closest('[role="menuitem"]') as HTMLElement | null) ?? (el as HTMLElement);
+        target.click();
+        return true;
+      }
+      return false;
+    });
+    if (!clicked) {
       console.log(`NO DELETE IN THE MENU. Delete it by hand: ${postUrl}`);
       return;
     }
-    await entry.click().catch(() => {});
     await page.waitForTimeout(2500);
 
     // Whatever the confirmation offers, printed, because it is the next thing
