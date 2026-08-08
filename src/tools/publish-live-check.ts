@@ -213,6 +213,64 @@ async function queueAndWatch(accountId: string): Promise<void> {
 }
 
 /**
+ * Looks at what was actually published, and at the composer, in one session.
+ *
+ * The status column says a post went out and the URL proves it exists. Neither
+ * says the picture made it, and "published a shell with no media in it" is a
+ * failure this composer has produced before. A screenshot is the only answer
+ * that is not an inference.
+ *
+ * The composer shot is here for a second reason. On 2026-08-08 a carousel fell
+ * back from LinkedIn's own scheduler with "the composer has no Schedule control
+ * on this account", and whether that is LinkedIn removing it or a selector that
+ * moved cannot be settled from a log line.
+ *
+ * Everything here reads. Nothing is posted and nothing is deleted.
+ */
+async function inspect(accountId: string, urls: string[]): Promise<void> {
+  const acct = await account(accountId);
+  const session = await openSession(
+    { linkedinAccountId: accountId, country: acct.country, timezone: "Europe/Paris" },
+    acct.allocation
+  );
+  try {
+    if (!(await isSignedIn(session.context))) throw new Error("signed out");
+    const page = session.page;
+    for (const [i, url] of urls.entries()) {
+      await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
+      await page.waitForTimeout(6000);
+      const path = `/tmp/check-post-${i + 1}.png`;
+      await page.screenshot({ path, fullPage: false });
+      console.log(`SHOT ${path}  <-  ${url}`);
+    }
+
+    // And the composer, to settle the missing Schedule control.
+    await page.goto("https://www.linkedin.com/feed/", { waitUntil: "domcontentloaded" }).catch(() => {});
+    await page.waitForTimeout(4000);
+    const start = page
+      .getByRole("button", { name: /start a post|créer un post|commencer un post/i })
+      .first();
+    if (await start.isVisible().catch(() => false)) {
+      await start.click().catch(() => {});
+      await page.waitForTimeout(4000);
+      await page.screenshot({ path: "/tmp/check-composer.png", fullPage: false });
+      console.log("SHOT /tmp/check-composer.png  <-  the composer");
+      const controls = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('[role="dialog"] button'))
+          .map((b) => (b.getAttribute("aria-label") || (b as HTMLElement).innerText || "").trim())
+          .filter(Boolean)
+          .slice(0, 40)
+      );
+      console.log("COMPOSER BUTTONS:", JSON.stringify(controls));
+    } else {
+      console.log("could not open the composer to look at it");
+    }
+  } finally {
+    await closeSession(session).catch(() => {});
+  }
+}
+
+/**
  * Takes it down again.
  *
  * A post left standing on a real profile is the worst outcome of this check, so
@@ -351,6 +409,7 @@ async function main(): Promise<void> {
   if (!accountId) throw new Error("Which account?");
   if (mode === "queue") return queueAndWatch(accountId);
   if (mode === "queue-image") return queueWithImage(accountId);
+  if (mode === "inspect") return inspect(accountId, process.argv.slice(4).filter(Boolean));
   if (mode === "schedule-carousel") {
     const at = Number(process.argv[4]);
     if (!Number.isFinite(at)) throw new Error("Give the slot as epoch seconds");
@@ -369,7 +428,7 @@ async function main(): Promise<void> {
     if (!url) throw new Error("Which post?");
     return remove(accountId, url);
   }
-  throw new Error("Mode is queue, queue-image, schedule-carousel, watch or remove");
+  throw new Error("Mode is queue, queue-image, schedule-carousel, watch, inspect or remove");
 }
 
 main().then(
