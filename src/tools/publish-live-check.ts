@@ -30,6 +30,9 @@ import { openSession, closeSession, isSignedIn } from "../browser/driver.ts";
 const TEXT =
   "Testing our publishing pipeline this morning. This post is removed as soon as the check passes.";
 
+const CAROUSEL_TEXT =
+  "Two slides, checking that documents still upload and schedule correctly. Removed once the check passes.";
+
 const WAIT_MS = 9 * 60_000;
 const POLL_MS = 5_000;
 
@@ -158,17 +161,102 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
   }
 }
 
+/**
+ * A carousel handed to LinkedIn's own scheduler.
+ *
+ * The slot has to clear two rules in actionFor, or this tests something else
+ * entirely: more than 90 minutes away, or the post goes out the direct way at
+ * its slot and the native picker is never touched; and within four hours, or
+ * the composing window refuses to write anything before 07:00.
+ */
+async function scheduleCarousel(accountId: string, atSeconds: number): Promise<string> {
+  const acct = await account(accountId);
+  const id = `livecheck-carousel-${Date.now()}`;
+  const nowSec = Math.floor(Date.now() / 1000);
+  const minutes = Math.round((atSeconds * 1000 - Date.now()) / 60000);
+
+  await db().execute({
+    sql: `INSERT INTO posts (id, user_id, content, post_type, status, scheduled_at,
+                             linkedin_account_id, publish_attempts, created_at, updated_at)
+          VALUES (?, ?, ?, 'carousel', 'scheduled', ?, ?, 0, ?, ?)`,
+    args: [id, acct.workspaceId, CAROUSEL_TEXT, atSeconds, accountId, nowSec, nowSec],
+  });
+  await db().execute({
+    sql: `INSERT INTO media (id, user_id, post_id, storage_key, storage_url,
+                             file_name, mime_type, file_size, sort_order, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'application/pdf', 896, 0, 'ready', ?)`,
+    args: [
+      `${id}-pdf`, acct.workspaceId, id, "checks/carousel-check.pdf",
+      "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/checks/carousel-check.pdf",
+      "carousel-check.pdf", nowSec,
+    ],
+  });
+  console.log(`scheduled ${id} for ${new Date(atSeconds * 1000).toISOString()} (${minutes} minutes out)`);
+  console.log(minutes > 90 ? "  over 90 minutes, so the native scheduler is the path" : "  UNDER 90 MINUTES: this will publish directly at the slot instead");
+  return id;
+}
+
+/** Waits for one row to reach a state, printing every change on the way. */
+async function watch(postId: string, minutes: number, want: "prepared" | "published"): Promise<void> {
+  const until = Date.now() + minutes * 60_000;
+  let last = "";
+  while (Date.now() < until) {
+    const { rows } = await db().execute({
+      sql: `SELECT status, linkedin_scheduled_at, linkedin_post_url, error_message,
+                   first_comment_posted_at, publish_attempts
+              FROM posts WHERE id = ?`,
+      args: [postId],
+    });
+    const row = rows[0];
+    if (!row) throw new Error("the row vanished");
+    const line = `${row.status} native=${row.linkedin_scheduled_at ?? "no"} attempts=${row.publish_attempts}`;
+    if (line !== last) {
+      console.log(`  ${new Date().toISOString()}  ${line}`);
+      last = line;
+    }
+    if (want === "prepared" && row.linkedin_scheduled_at !== null) {
+      console.log("PREPARED: LinkedIn's own scheduler has it");
+      return;
+    }
+    if (String(row.status) === "published") {
+      console.log(`PUBLISHED ${row.linkedin_post_url ?? "(no url read back)"}`);
+      console.log(`first comment at: ${row.first_comment_posted_at ?? "none set"}`);
+      console.log(`REMOVE WITH: remove ${row.linkedin_post_url ?? ""}`);
+      return;
+    }
+    if (String(row.status) === "failed") {
+      console.log(`FAILED ${row.error_message ?? "(no reason recorded)"}`);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, POLL_MS));
+  }
+  console.log(`TIMED OUT after ${minutes} minutes, last seen ${last}`);
+}
+
 async function main(): Promise<void> {
   const accountId = process.argv[2];
   const mode = (process.argv[3] ?? "").toLowerCase();
   if (!accountId) throw new Error("Which account?");
   if (mode === "queue") return queueAndWatch(accountId);
+  if (mode === "schedule-carousel") {
+    const at = Number(process.argv[4]);
+    if (!Number.isFinite(at)) throw new Error("Give the slot as epoch seconds");
+    const id = await scheduleCarousel(accountId, at);
+    console.log(`CAROUSEL ID: ${id}`);
+    await watch(id, Number(process.argv[5] ?? 8), "prepared");
+    return;
+  }
+  if (mode === "watch") {
+    const id = process.argv[4];
+    if (!id) throw new Error("Which post?");
+    return watch(id, Number(process.argv[5] ?? 10), "published");
+  }
   if (mode === "remove") {
     const url = process.argv[4];
     if (!url) throw new Error("Which post?");
     return remove(accountId, url);
   }
-  throw new Error("Mode is queue or remove");
+  throw new Error("Mode is queue, schedule-carousel, watch or remove");
 }
 
 main().then(
