@@ -52,6 +52,8 @@ type Agent = {
   accountHeadline: string | null;
   accountStatus: string;
   accountLastChallengeAt: string | null;
+  /** What the worker last recorded, in its own words, rather than an inference. */
+  accountStatusReason: string | null;
   accountCountry: string;
 };
 
@@ -683,16 +685,20 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                   style={{ width: agent.accountStatus === "active" ? "88%" : "35%" }}
                 />
               </div>
-              {/* What we know, rather than what the current status implies.
-                  This claimed LinkedIn had never asked for a verification,
-                  which it read off the account being green today. It said so
-                  hours after LinkedIn had asked for one. */}
+              {/* Only what is recorded, and never an inference about the gap.
+                  This used to end "and it has been signing in without a problem
+                  since", which is a claim about a whole period built from one
+                  timestamp and a green status today. On 2026-08-09 it said
+                  exactly that about an account LinkedIn had restricted the
+                  previous morning. Nothing here knew about the restriction, and
+                  the honest response to not knowing is to say less. */}
               <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                 {agent.accountStatus !== "active"
-                  ? "Open the accounts page and answer what LinkedIn is asking, and the agent picks up on its own."
+                  ? agent.accountStatusReason ||
+                    "Open the accounts page and answer what LinkedIn is asking, and the agent picks up on its own."
                   : agent.accountLastChallengeAt
-                    ? `LinkedIn last asked this account to verify itself ${since(agent.accountLastChallengeAt)}, and it has been signing in without a problem since.`
-                    : "LinkedIn has not asked this account to verify anything so far."}
+                    ? `LinkedIn last asked this account to verify itself ${since(agent.accountLastChallengeAt)}.`
+                    : "No verification request from LinkedIn has been recorded for this account."}
               </p>
             </div>
 

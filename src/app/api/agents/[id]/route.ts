@@ -132,6 +132,10 @@ export async function GET(
         accountStatus: linkedinAccounts.status,
         // Whether LinkedIn ever asked, which the current status cannot say.
         accountLastChallengeAt: linkedinAccounts.lastChallengeAt,
+        // What the worker last recorded about this account, in its own words.
+        // Without it the card can only describe the account as it is right now,
+        // and it filled the gap by inferring that nothing had gone wrong.
+        accountStatusReason: linkedinAccounts.statusReason,
         accountCountry: linkedinAccounts.country,
         accountId: linkedinAccounts.id,
       })
