@@ -381,9 +381,48 @@ async function carouselProbe(accountId: string): Promise<void> {
     }
     console.log("    PDF handed over");
 
-    for (const wait of [6000, 8000, 10000]) {
+    for (const wait of [6000, 8000]) {
       await page.waitForTimeout(wait);
       await dump(`after-upload-${wait}ms`);
+    }
+
+    /**
+     * And out of the document screen, which is where the real run stops.
+     *
+     * The document screen offers Dismiss, Back and Done, and no Post at all.
+     * waitForUpload presses Done and then looks for Post, and the failure
+     * message it recorded was the composer showing nothing but the author name,
+     * so the interesting question is what the page looks like after Done.
+     */
+    const done = page.locator('dialog[open] button').filter({ hasText: /^done$/i }).first();
+    const visibleDone = await done.isVisible().catch(() => false);
+    const disabledDone = visibleDone ? await done.isDisabled().catch(() => true) : true;
+    console.log(`    Done inside the dialog: visible=${visibleDone} disabled=${disabledDone}`);
+    if (visibleDone && !disabledDone) {
+      await done.click();
+      await page.waitForTimeout(4000);
+      await dump("after-done");
+      const post = page.locator('dialog[open] button').filter({ hasText: /^post$/i }).first();
+      console.log(
+        `    Post after Done: visible=${await post.isVisible().catch(() => false)} disabled=${await post
+          .isDisabled()
+          .catch(() => true)}`
+      );
+      // Every control at the bottom right, named or not, so the schedule clock
+      // can be identified. It is missing from the named list, which is exactly
+      // why the Schedule selector finds nothing.
+      const bottom = await page.evaluate(() => {
+        const open = document.querySelector("dialog[open]");
+        if (!open) return [];
+        return Array.from(open.querySelectorAll("button")).map((b) => ({
+          label: b.getAttribute("aria-label"),
+          text: (b as HTMLElement).innerText.trim().slice(0, 24),
+          testid: b.getAttribute("data-testid"),
+          svg: b.querySelector("svg")?.getAttribute("data-test-icon") ?? null,
+          disabled: (b as HTMLButtonElement).disabled,
+        }));
+      });
+      console.log("    EVERY BUTTON: " + JSON.stringify(bottom));
     }
   } finally {
     await dump("final").catch(() => {});
