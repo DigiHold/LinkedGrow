@@ -493,6 +493,77 @@ async function carouselProbe(accountId: string): Promise<void> {
 }
 
 /**
+ * Looks at the messaging surface, because the DMs stopped going out.
+ *
+ * Twelve messages went out on 2026-08-07 and three failed on 2026-08-08, two
+ * with "could not open a conversation" and one with "message typed but the
+ * composer did not clear". Nothing in actions.ts changed between those two
+ * days, and four separate LinkedIn controls were found redesigned on the 8th:
+ * the composer became a native dialog, Schedule became an unnamed clock icon,
+ * the document screen grew a required title, and Delete moved into a menu.
+ *
+ * Every messaging selector in actions.ts is an old-style class name:
+ * .msg-form__contenteditable, .msg-overlay-conversation-bubble,
+ * button.msg-form__send-button. This reports whether they still exist, which
+ * settles whether the fifth redesign is what broke the outreach.
+ *
+ * Reads only. It opens a conversation and types nothing.
+ */
+async function dmProbe(accountId: string, profileUrl: string): Promise<void> {
+  const acct = await account(accountId);
+  const session = await openSession(
+    { linkedinAccountId: accountId, country: acct.country, timezone: "Europe/Paris" },
+    acct.allocation
+  );
+  const page = session.page;
+  const look = async (what: string) => {
+    const path = `/tmp/dm-${what}.png`;
+    await page.screenshot({ path }).catch(() => {});
+    const state = await page
+      .evaluate(() => ({
+        oldComposer: document.querySelectorAll(".msg-form__contenteditable").length,
+        oldBubble: document.querySelectorAll(".msg-overlay-conversation-bubble").length,
+        oldSend: document.querySelectorAll("button.msg-form__send-button").length,
+        oldListItem: document.querySelectorAll(".msg-s-event-listitem").length,
+        anyMsgClass: Array.from(document.querySelectorAll("[class]"))
+          .flatMap((el) => Array.from(el.classList))
+          .filter((c) => c.startsWith("msg-"))
+          .filter((c, i, all) => all.indexOf(c) === i)
+          .slice(0, 12),
+        textboxes: document.querySelectorAll('[contenteditable="true"]').length,
+        nativeDialogs: document.querySelectorAll("dialog[open]").length,
+        messageLinks: Array.from(document.querySelectorAll('a[href*="/messaging/"]'))
+          .map((a) => ((a as HTMLElement).innerText || a.getAttribute("aria-label") || "").trim())
+          .filter(Boolean)
+          .slice(0, 6),
+      }))
+      .catch(() => null);
+    console.log(`\n[${what}] ${path}\n  ${JSON.stringify(state)}`);
+  };
+
+  try {
+    if (!(await isSignedIn(session.context))) throw new Error("signed out");
+    await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(6000);
+    await look("profile");
+
+    const message = page
+      .locator('a[href*="/messaging/"], button')
+      .filter({ hasText: /^(message|envoyer un message)$/i })
+      .first();
+    if (!(await message.isVisible().catch(() => false))) {
+      console.log("  NO MESSAGE CONTROL on the top card");
+      return;
+    }
+    await message.click().catch(() => {});
+    await page.waitForTimeout(7000);
+    await look("thread-open");
+  } finally {
+    await closeSession(session).catch(() => {});
+  }
+}
+
+/**
  * Takes it down again.
  *
  * A post left standing on a real profile is the worst outcome of this check, so
@@ -710,6 +781,7 @@ async function main(): Promise<void> {
   if (mode === "queue-carousel") return queueCarousel(accountId);
   if (mode === "inspect") return inspect(accountId, process.argv.slice(4).filter(Boolean));
   if (mode === "carousel-probe") return carouselProbe(accountId);
+  if (mode === "dm-probe") return dmProbe(accountId, process.argv[4] ?? "");
   if (mode === "schedule-carousel") {
     const at = Number(process.argv[4]);
     if (!Number.isFinite(at)) throw new Error("Give the slot as epoch seconds");
