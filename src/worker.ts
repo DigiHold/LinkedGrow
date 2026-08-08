@@ -27,6 +27,8 @@ import { runSequence } from "./linkedin/sequence.ts";
 import { sourcePass } from "./linkedin/sourcing.ts";
 import { browserActions } from "./linkedin/actions.ts";
 import { ensureProfileCaptured } from "./linkedin/profile.ts";
+import { refreshTier } from "./linkedin/tier.ts";
+import { tierOf } from "./safety/reading.ts";
 import { onlyContact } from "./safety/allowlist.ts";
 import {
   RELATIONSHIP_STEPS,
@@ -180,6 +182,11 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       await copyLeadFaces(session).catch((error: unknown) => {
         logError("could not copy the lead pictures", error, { agentId: ctx.agentId });
       });
+      // Which LinkedIn subscription this account has, read off the page the
+      // pass has just finished with. It costs no navigation, and until it
+      // existed every account was held to the free reading budget including
+      // the ones paying LinkedIn for a bigger one.
+      await refreshTier(session.page, ctx.linkedinAccountId, ctx.timezone, tierOf(ctx.tier));
     } catch (error) {
       // Sourcing failing must never stop the sequence: there may already be
       // people in the queue who are owed a reply.
