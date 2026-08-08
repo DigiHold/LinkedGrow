@@ -2,6 +2,8 @@ import "dotenv/config";
 import { db } from "../db.ts";
 import { decryptSecret } from "../crypto.ts";
 import { openSession, closeSession, isSignedIn } from "../browser/driver.ts";
+import { putObject } from "../storage/r2.ts";
+import { deflateSync } from "node:zlib";
 
 /**
  * The one check no rehearsal can give: a post published for real.
@@ -33,8 +35,76 @@ const TEXT =
 const CAROUSEL_TEXT =
   "Two slides, checking that documents still upload and schedule correctly. Removed once the check passes.";
 
+const IMAGE_TEXT =
+  "Checking that an image still uploads and publishes correctly. This post is removed as soon as the check passes.";
+
 const WAIT_MS = 9 * 60_000;
 const POLL_MS = 5_000;
+
+/**
+ * A picture, generated rather than shipped.
+ *
+ * The check needs a real image file that a real LinkedIn upload will accept,
+ * and committing a binary to test a binary path is how a repository fills up
+ * with fixtures nobody can regenerate. A PNG is a signature, a header, one
+ * zlib-compressed block of scanlines and a CRC, all of which Node can produce
+ * from its own standard library.
+ *
+ * Deliberately a plain dark gradient with no text on it. It is seen for a few
+ * minutes on somebody's real profile, so it should look like nothing rather
+ * than like a mistake.
+ */
+function testPng(width = 1200, height = 627): Buffer {
+  const raw = Buffer.alloc((width * 3 + 1) * height);
+  let at = 0;
+  for (let y = 0; y < height; y += 1) {
+    raw[at++] = 0; // no per-scanline filter
+    for (let x = 0; x < width; x += 1) {
+      const across = x / width;
+      const down = y / height;
+      raw[at++] = Math.round(12 + across * 18 + down * 8);
+      raw[at++] = Math.round(18 + across * 34 + down * 14);
+      raw[at++] = Math.round(34 + across * 62 + down * 26);
+    }
+  }
+
+  const chunk = (type: string, body: Buffer): Buffer => {
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.length);
+    const typed = Buffer.concat([Buffer.from(type, "ascii"), body]);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(typed));
+    return Buffer.concat([length, typed, crc]);
+  };
+
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // truecolour
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", ihdr),
+    chunk("IDAT", deflateSync(raw, { level: 9 })),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n += 1) {
+    let c = n;
+    for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(buf: Buffer): number {
+  let c = 0xffffffff;
+  for (const byte of buf) c = (CRC_TABLE[(c ^ byte) & 0xff] as number) ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
 
 async function account(accountId: string) {
   const { rows } = await db().execute({
@@ -60,6 +130,42 @@ async function account(accountId: string) {
       expectedIp: String(row.last_exit_ip ?? ""),
     },
   };
+}
+
+/**
+ * Publish now, with a picture, which is the path nothing had ever exercised.
+ *
+ * The plain text check proves the composer and the button. An image adds the
+ * file input, the upload wait and the Next screen, and those are three separate
+ * places a redesign breaks. The picture is generated and uploaded to the same
+ * bucket the dashboard uses, so the media row is the same shape the app writes.
+ */
+async function queueWithImage(accountId: string): Promise<void> {
+  const acct = await account(accountId);
+  const id = `livecheck-image-${Date.now()}`;
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  const png = testPng();
+  const key = `checks/${id}.png`;
+  const url = await putObject(key, png, "image/png");
+  if (!url) throw new Error("no bucket configured, so there is nowhere to put the picture");
+  console.log(`uploaded ${png.length} bytes to ${url}`);
+
+  await db().execute({
+    sql: `INSERT INTO posts (id, user_id, content, status, scheduled_at,
+                             linkedin_account_id, publish_attempts, created_at, updated_at)
+          VALUES (?, ?, ?, 'queued', ?, ?, 0, ?, ?)`,
+    args: [id, acct.workspaceId, IMAGE_TEXT, nowSec, accountId, nowSec, nowSec],
+  });
+  await db().execute({
+    sql: `INSERT INTO media (id, user_id, post_id, storage_key, storage_url,
+                             file_name, mime_type, file_size, sort_order, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'image/png', ?, 0, 'ready', ?)`,
+    args: [`${id}-png`, acct.workspaceId, id, key, url, "check-image.png", png.length, nowSec],
+  });
+
+  console.log(`queued ${id} with an image, waiting for the worker to publish it`);
+  await watch(id, 10, "published");
 }
 
 /** The row the app writes when somebody presses Publish, written by hand. */
@@ -150,11 +256,17 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
     // Read it back rather than trusting the click, the same way publishing does.
     await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
     await page.waitForTimeout(4000);
-    const stillThere = await page
-      .getByText(TEXT.slice(0, 40), { exact: false })
-      .first()
-      .isVisible()
-      .catch(() => false);
+    // Any of the three check texts, because remove is called on whichever post
+    // the run just published and they do not share an opening sentence.
+    let stillThere = false;
+    for (const text of [TEXT, IMAGE_TEXT, CAROUSEL_TEXT]) {
+      const seen = await page
+        .getByText(text.slice(0, 40), { exact: false })
+        .first()
+        .isVisible()
+        .catch(() => false);
+      if (seen) stillThere = true;
+    }
     console.log(stillThere ? `STILL VISIBLE. Delete it by hand: ${postUrl}` : "removed, and verified gone");
   } finally {
     await closeSession(session).catch(() => {});
@@ -238,6 +350,7 @@ async function main(): Promise<void> {
   const mode = (process.argv[3] ?? "").toLowerCase();
   if (!accountId) throw new Error("Which account?");
   if (mode === "queue") return queueAndWatch(accountId);
+  if (mode === "queue-image") return queueWithImage(accountId);
   if (mode === "schedule-carousel") {
     const at = Number(process.argv[4]);
     if (!Number.isFinite(at)) throw new Error("Give the slot as epoch seconds");
@@ -256,7 +369,7 @@ async function main(): Promise<void> {
     if (!url) throw new Error("Which post?");
     return remove(accountId, url);
   }
-  throw new Error("Mode is queue, schedule-carousel, watch or remove");
+  throw new Error("Mode is queue, queue-image, schedule-carousel, watch or remove");
 }
 
 main().then(
