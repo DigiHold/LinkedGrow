@@ -76,16 +76,40 @@ const MIN_PROFILES_PER_SOURCE = MIN_VISIT_READ;
  * It matters because searches are the scarce pool: on a free account there are
  * eight a day against eighty people to read.
  */
-export function searchCost(type: string): number {
+export function searchCost(type: string, queries = 1): number {
+  const n = Math.max(1, queries);
   switch (type) {
     case "keyword":
     case "market":
     case "linkedin_search":
+      // One search over posts and one over people, for EVERY query the source
+      // carries. Charging a flat 2 per source undercounted by the number of
+      // queries: on 2026-08-08 a live pass ran 12 searches and booked 4.
+      return 2 * n;
     case "buying_event":
-      return 2;
+      // One search per role, for each of the two kinds of buying event.
+      return 2 * n;
     default:
+      // A company page and its posts, or the profile-views page. Opening a URL
+      // is not a search, and the commercial use limit does not count it.
       return 0;
   }
+}
+
+/**
+ * How many searches a source will really run, read off its own configuration.
+ *
+ * A keyword source stores its queries in `config.queries` and falls back to its
+ * label, and a buying-event source searches the customer's roles rather than
+ * anything stored on the row. Both were charged as if they ran one.
+ */
+export function queriesIn(type: string, config: Record<string, unknown>, roles: number): number {
+  if (type === "buying_event") {
+    const kinds = typeof config.kind === "string" ? 1 : 2;
+    return Math.max(1, Math.min(4, roles)) * kinds;
+  }
+  const queries = config.queries;
+  return Array.isArray(queries) && queries.length > 0 ? queries.length : 1;
 }
 
 /**
@@ -449,11 +473,15 @@ export async function sourcePass(
     1,
     Math.min(wanted, Math.floor(room.profiles / MIN_PROFILES_PER_SOURCE))
   );
+  const roles = ctx.cfg.leads.icpKeywords.length;
+  const costOf = (source: (typeof sources)[number]): number =>
+    searchCost(source.type, queriesIn(source.type, parseConfig(source.config), roles));
+
   const chosen: typeof sources = [];
   let searchesLeft = room.searches;
   for (const source of sources) {
     if (chosen.length >= maxSources) break;
-    const cost = searchCost(source.type);
+    const cost = costOf(source);
     if (cost > searchesLeft) continue;
     searchesLeft -= cost;
     chosen.push(source);
@@ -491,7 +519,7 @@ export async function sourcePass(
        that dies halfway has still been seen by LinkedIn, and a counter that
        only credits finished work lets a crash loop read all day for free. */
     await book(ctx.linkedinAccountId, ctx.timezone, {
-      searches: searchCost(source.type),
+      searches: costOf(source),
       profiles: budget.posts * budget.perPost,
     }).catch(() => {});
 
@@ -836,7 +864,7 @@ async function fallbackPass(
   if (queries.length === 0) return 0;
   // A search is the last resort, and it waits when the pool is out rather than
   // quietly running one more on top of the day's allowance.
-  if (searchesLeft < 1) {
+  if (searchesLeft < queries.length) {
     log("no searches left today, so the widened search waits", { agentId: ctx.agentId });
     return 0;
   }
@@ -852,7 +880,7 @@ async function fallbackPass(
   let found: Engager[] = [];
   await announce(ctx, "widening the search to", undefined, queries.join(", "));
   await book(ctx.linkedinAccountId, ctx.timezone, {
-    searches: 1,
+    searches: queries.length,
     profiles: queries.length * budget.perPost,
   }).catch(() => {});
   const alive = setInterval(() => {

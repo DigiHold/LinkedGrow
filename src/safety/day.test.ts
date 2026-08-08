@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { dayPlan } from "./rhythm.ts";
 import { dayAllowance, roomFrom } from "./reading.ts";
-import { readingShape, searchCost } from "../linkedin/sourcing.ts";
+import { readingShape, searchCost, queriesIn } from "../linkedin/sourcing.ts";
 
 /**
  * The three pieces, run together as one day.
@@ -130,4 +130,44 @@ test("a brand-new account starts slower and reaches full pace within three weeks
   const grown = walkDay(ACCOUNT, "2026-08-10", 1, COMPETITOR_LED, 30);
   assert.ok(dayOne.profiles < grown.profiles, "a cold account must not open at full speed");
   assert.ok(dayOne.profiles > 0, "and it must not open at zero either");
+});
+
+/**
+ * A live pass on 2026-08-08 ran 12 searches against a budget that had booked 4.
+ *
+ * The cost was charged per SOURCE and spent per QUERY. A keyword source holds
+ * several queries and searches each one twice, once over posts and once over
+ * people, so a source with four queries runs eight searches and was billed two.
+ * The commercial use limit is the one ceiling LinkedIn admits to, and a counter
+ * that reads a third of the truth is worse than no counter, because it reports
+ * a comfortable margin that is not there.
+ */
+test("a source is charged for every query it actually searches", () => {
+  const oneQuery = searchCost("keyword", queriesIn("keyword", {}, 0));
+  const fourQueries = searchCost("keyword", queriesIn("keyword", { queries: ["a", "b", "c", "d"] }, 0));
+  assert.equal(oneQuery, 2, "one query is a post search and a people search");
+  assert.equal(fourQueries, 8, "four queries cost four times as much, not the same");
+});
+
+test("engagement still costs nothing, which is the whole point of counting", () => {
+  assert.equal(searchCost("competitor", queriesIn("competitor", {}, 12)), 0);
+  assert.equal(searchCost("brand", queriesIn("brand", {}, 12)), 0);
+  assert.equal(searchCost("csv", 1), 0);
+});
+
+test("a buying-event source is charged per role and per kind", () => {
+  const both = searchCost("buying_event", queriesIn("buying_event", {}, 4));
+  const one = searchCost("buying_event", queriesIn("buying_event", { kind: "hiring" }, 4));
+  assert.ok(both > one, "searching for role changes AND hiring costs more than one of them");
+  assert.ok(both >= 8, `four roles across two kinds is at least eight searches, got ${both}`);
+});
+
+test("what a real day of search-led sourcing costs is inside the free pool", () => {
+  // The pass that ran on 2026-08-08 held sources of four queries each.
+  const perSource = searchCost("keyword", queriesIn("keyword", { queries: ["a", "b", "c", "d"] }, 0));
+  const perDay = dayAllowance("free", "searches", 0, 365, "established");
+  assert.ok(
+    perSource <= perDay,
+    `one source costs ${perSource} searches and a day allows ${perDay}, so nothing would ever run`
+  );
 });
