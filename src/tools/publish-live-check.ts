@@ -592,17 +592,24 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
     );
     console.log(`  confirmation offers: ${JSON.stringify(asks)}`);
 
-    for (const name of [/^delete$/i, /^supprimer$/i, /^yes$/i, /^confirm$/i]) {
-      const button = page
-        .locator('dialog[open] button, [role="alertdialog"] button, [role="dialog"] button, button')
-        .filter({ hasText: name })
-        .last();
-      if (await button.isVisible().catch(() => false)) {
-        await button.click().catch(() => {});
-        break;
+    // The same DOM click, for the same reason: the menu taught us not to trust
+    // a name match on this page.
+    const confirmed = await page.evaluate(() => {
+      const wanted = /^(delete|supprimer|yes|confirm)$/i;
+      const buttons = Array.from(
+        document.querySelectorAll('dialog[open] button, [role="alertdialog"] button, [role="dialog"] button')
+      );
+      for (const b of buttons) {
+        const text = ((b as HTMLElement).innerText || b.getAttribute("aria-label") || "").trim();
+        if (wanted.test(text)) {
+          (b as HTMLButtonElement).click();
+          return text;
+        }
       }
-    }
-    await page.waitForTimeout(6000);
+      return null;
+    });
+    console.log(`  pressed: ${confirmed ?? "nothing"}`);
+    await page.waitForTimeout(7000);
 
     // Read it back rather than trusting the click, the same way publishing does.
     await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
