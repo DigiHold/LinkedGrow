@@ -105,6 +105,17 @@ async function goodAmong(sourceId: string, since: number): Promise<number> {
  * person" column on the queue were blank down the page. This costs no model
  * call: the shape is already in the type.
  */
+/** A LinkedIn company slug, made readable: "cal-com" becomes "Cal Com". */
+export function humanCompanyName(slug: string): string {
+  return slug
+    .replace(/-(dev|com|inc|io|hq|app|official)$/i, "")
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+    .trim();
+}
+
 export function signalSentence(
   signalType: string | null,
   sourceLabel: string
@@ -112,11 +123,23 @@ export function signalSentence(
   const [kind, ...rest] = (signalType ?? "").split(":");
   const subject = rest.join(":").trim();
   const named = subject || sourceLabel;
+  /**
+   * A company is called by its name, never by its URL.
+   *
+   * The subject carried on a reaction or a comment is the slug out of the
+   * company page address, and a real message went out on 2026-08-08 saying "you
+   * reacted to that lovable-dev post". Nobody writes that. Worse, the slug is
+   * often not even the name: Cursor's page is /company/anysphere, so the same
+   * sentence would have told somebody they reacted to a post by anysphere,
+   * which is simply untrue. The source's own label is the human name, so it
+   * wins, and the slug is only tidied up when there is no label at all.
+   */
+  const company = sourceLabel.trim() || humanCompanyName(subject);
   switch (kind) {
     case "comment":
-      return `Commented on a post by ${named}`;
+      return `Commented on a post by ${company}`;
     case "reaction":
-      return `Reacted to a post by ${named}`;
+      return `Reacted to a post by ${company}`;
     case "search":
       return `Came up in a search for "${named}"`;
     case "question":
