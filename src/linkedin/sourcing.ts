@@ -327,7 +327,10 @@ export async function sourcePass(
    * than running as often as the loop happens to come round.
    */
   const tier = tierOf(ctx.tier);
-  const room = await roomToRead(ctx.linkedinAccountId, tier, ctx.timezone);
+  const ageDays = Math.floor(
+    (Date.now() - (ctx.warmupStartedAt?.getTime() ?? Date.now())) / 86_400_000
+  );
+  const room = await roomToRead(ctx.linkedinAccountId, tier, ctx.timezone, ageDays);
   if (!room.ok) {
     await recordEvent(
       ctx,
@@ -342,7 +345,7 @@ export async function sourcePass(
     ? Math.min(FIRST_RUN_SOURCES, sources.length)
     : SOURCES_PER_PASS;
   // One search per source, so the number of sources is capped by the searches left.
-  const take = Math.max(1, Math.min(wanted, room.searches));
+  const take = Math.max(1, Math.min(wanted, Math.max(1, Math.floor(room.actions / 12))));
   const chosen = sources.slice(0, take);
 
   await recordEvent(
@@ -355,7 +358,7 @@ export async function sourcePass(
 
   // Spread what is left across the sources this pass will open, so one source
   // cannot eat the day. Never below five, or a pass brings back nothing useful.
-  const perSourceProfiles = Math.max(5, Math.floor(room.profiles / chosen.length));
+  const perSourceProfiles = Math.max(5, Math.floor((room.actions - chosen.length) / chosen.length));
   budget.perPost = Math.max(5, Math.min(budget.perPost, Math.floor(perSourceProfiles / budget.posts)));
 
   let total = 0;

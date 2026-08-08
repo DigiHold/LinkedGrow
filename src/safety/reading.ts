@@ -2,53 +2,91 @@ import { db } from "../db.ts";
 import { log } from "../logger.ts";
 
 /**
- * What an account is allowed to READ in a day.
+ * What an account is allowed to READ, and why the shape of this matters more
+ * than the numbers in it.
  *
- * Everything else in this folder counts what the account sends. Nothing counted
- * what it reads, and on 2026-08-08 that is what got an account restricted:
+ * Everything else in this folder counts what an account sends. Nothing counted
+ * what it reads, and reading is what got an account restricted on 2026-08-08:
  * "we detected that over time, it has accessed an unusually high volume of
- * LinkedIn profile data". Not one invitation was involved. Fifteen had gone out
- * in total, against a ceiling of a hundred a week.
+ * LinkedIn profile data". Fifteen invitations had gone out in that account's
+ * life, against a ceiling of a hundred a week. The outreach was never the
+ * problem.
  *
- * What had gone out of control was sourcing. Two sources a pass, four to eight
- * posts opened, their reaction and comment lists expanded, up to 25 people read
- * from each, and the pass ran every few minutes: 56 to 75 passes on the days
- * before the restriction, which is on the order of a hundred searches a day and
- * thousands of profile records.
+ * The first version of this file capped profiles per day at a flat 60, taken
+ * from the "80 a day on a free account" that every automation blog repeats.
+ * That number is the wrong shape, and LinkedIn's own help page says so.
  *
- * The ceilings below are the ones the tooling industry converges on, checked
- * 2026-08-08. LinkedIn publishes none of them.
+ * What LinkedIn actually operates is the **commercial use limit**: one pooled
+ * monthly counter, reset at midnight PST on the 1st, fed by "searching for
+ * LinkedIn profiles", "browsing profiles using the People Also Viewed section"
+ * and "viewing member profiles on the People tab of Pages". Searching and
+ * viewing share one allowance rather than having a cap each. LinkedIn states
+ * plainly that it will not say what the number is: "We are not able to display
+ * the exact number of searches or views you have left." Premium Business,
+ * Recruiter Lite and Sales Navigator raise it, and some Premium tiers do not.
  *
- *   free              80 profile views a day, and a commercial use limit of
- *                     roughly 250 to 350 searches a month
- *   premium           150 a day, and the same monthly search limit: Premium
- *                     does not lift it
- *   sales navigator   150 a day on linkedin.com, far more inside Sales
- *                     Navigator itself, and no commercial use limit
+ * That is why a person can open eighty profiles in an afternoon and never hear
+ * about it. The counter is monthly, most of what a person opens is inside their
+ * own network, and the warnings appear long before anything is enforced. A tool
+ * gets none of that: LinkedIn's other help page warns that third-party plug-ins
+ * "may run searches and view profiles in the background, which can cause you to
+ * surpass the limit without actually seeing any of the incremental warnings".
  *
- * What this module allows is deliberately under those, because they are the
- * line at which accounts get restricted rather than a target to aim at, and
- * because a restriction lands on the customer's own account rather than on us.
+ * So the model here is a **monthly pool with a daily pace**, not a daily cap:
+ *
+ *   - a month's allowance per tier, spent by searches and by profile reads
+ *     together, because LinkedIn pools them
+ *   - a day may spend at most a share of what is left, so a single day cannot
+ *     empty the month and the account never shows a spike
+ *   - the pace grows with the account's age, because a profile that has done
+ *     this for two months is read differently from one that started yesterday
+ *
+ * The monthly numbers are an estimate. LinkedIn publishes none, the figure
+ * repeated across the industry for a free account is 250 to 350 actions, and
+ * these sit under the bottom of that. They are the floor of a range, chosen so
+ * that being wrong costs a slower month rather than a customer's account.
  */
 
 export type AccountTier = "free" | "premium" | "sales_navigator";
 
 export interface ReadBudget {
-  /** Profile records read: a search row, a reaction, a commenter, all of them. */
-  profilesPerDay: number;
-  /** Searches opened. The monthly commercial use limit divided into days. */
-  searchesPerDay: number;
+  /** Searches and non-connection profile reads together, per calendar month. */
+  actionsPerMonth: number;
+  /** The most one day may take out of the month, as a share of what is left. */
+  dailyShare: number;
+  /** A floor, so a nearly empty month still brings somebody back. */
+  minPerDay: number;
 }
 
 const BUDGETS: Record<AccountTier, ReadBudget> = {
-  // 240 searches a month against a limit of 250 to 350, and 60 profiles a day
-  // against 80. Both leave room for the customer's own browsing on the account.
-  free: { profilesPerDay: 60, searchesPerDay: 8 },
-  // Premium doubles the profile allowance and changes nothing about search.
-  premium: { profilesPerDay: 110, searchesPerDay: 8 },
-  // No commercial use limit, and the higher view ceiling.
-  sales_navigator: { profilesPerDay: 400, searchesPerDay: 30 },
+  // Under the 250 that the industry puts at the bottom of the free range.
+  free: { actionsPerMonth: 200, dailyShare: 0.08, minPerDay: 10 },
+  // Premium Business and Recruiter Lite raise the allowance. By how much is not
+  // published, so this is deliberately timid: twice the free pool, not ten times.
+  premium: { actionsPerMonth: 450, dailyShare: 0.08, minPerDay: 20 },
+  // Sales Navigator removes the commercial use limit for people search. The
+  // ceiling that remains is the anti-scraping detector, which is about pattern
+  // rather than a number, so this stays a pace rather than becoming unlimited.
+  sales_navigator: { actionsPerMonth: 3000, dailyShare: 0.08, minPerDay: 60 },
 };
+
+/**
+ * What one day may spend: a share of what the month has left, never less than
+ * the floor, and never more than the whole remainder.
+ *
+ * A share rather than a fixed daily number is what keeps the shape human. An
+ * account that has been quiet has more to spend and spends it gradually; one
+ * that has been busy slows down on its own, without anybody deciding to.
+ */
+export function dayAllowance(tier: AccountTier, spentThisMonth: number, ageDays: number): number {
+  const budget = budgetFor(tier);
+  const left = Math.max(0, budget.actionsPerMonth - spentThisMonth);
+  if (left <= 0) return 0;
+  // A new account reads less, and reaches its full pace over three weeks.
+  const ramp = Math.min(1, 0.35 + (Math.max(0, ageDays) / 21) * 0.65);
+  const share = Math.floor(left * budget.dailyShare * ramp);
+  return Math.max(0, Math.min(left, Math.max(budget.minPerDay, share)));
+}
 
 export function budgetFor(tier: AccountTier): ReadBudget {
   return BUDGETS[tier] ?? BUDGETS.free;
@@ -110,47 +148,65 @@ export async function book(
   });
 }
 
+/** Everything spent this calendar month, which is the pool LinkedIn counts. */
+export async function spentThisMonth(accountId: string, timeZone: string): Promise<number> {
+  const month = today(timeZone).slice(0, 7);
+  const { rows } = await db().execute({
+    sql: `SELECT COALESCE(SUM(profiles), 0) AS p, COALESCE(SUM(searches), 0) AS s
+            FROM account_reading
+           WHERE linkedin_account_id = ? AND day LIKE ?`,
+    args: [accountId, `${month}%`],
+  });
+  return Number(rows[0]?.p ?? 0) + Number(rows[0]?.s ?? 0);
+}
+
 export interface ReadingRoom {
   ok: boolean;
-  /** How many profile records are still allowed today. Zero when spent. */
-  profiles: number;
-  searches: number;
+  /** Searches and profile reads together, because LinkedIn pools them. */
+  actions: number;
   reason: string | null;
 }
 
 /**
- * Whether there is room to read at all, and how much.
+ * How much this account may still read today.
  *
- * The caller shrinks its own plan to fit rather than being refused outright,
- * so an account near its ceiling still brings back a few people instead of
- * nothing at all.
+ * One number rather than two, because the commercial use limit does not
+ * separate a search from a profile view: both come out of the same monthly
+ * allowance. The caller shrinks its own plan to fit rather than being refused,
+ * so an account near its pace still brings a few people back.
  */
 export async function roomToRead(
   accountId: string,
   tier: AccountTier,
-  timeZone: string
+  timeZone: string,
+  ageDays: number
 ): Promise<ReadingRoom> {
-  const budget = budgetFor(tier);
-  const spent = await spentToday(accountId, timeZone);
-  const profiles = Math.max(0, budget.profilesPerDay - spent.profiles);
-  const searches = Math.max(0, budget.searchesPerDay - spent.searches);
+  const [month, day] = await Promise.all([
+    spentThisMonth(accountId, timeZone),
+    spentToday(accountId, timeZone),
+  ]);
+  const allowance = dayAllowance(tier, month, ageDays);
+  const usedToday = day.profiles + day.searches;
+  const left = Math.max(0, allowance - usedToday);
 
-  if (searches <= 0) {
-    return { ok: false, profiles, searches: 0, reason: "the searches for today are spent" };
+  if (allowance <= 0) {
+    return { ok: false, actions: 0, reason: "this month's reading allowance is spent" };
   }
-  if (profiles <= 0) {
-    return { ok: false, profiles: 0, searches, reason: "the reading allowance for today is spent" };
+  if (left <= 0) {
+    return { ok: false, actions: 0, reason: "today's share of the month is spent" };
   }
-  return { ok: true, profiles, searches, reason: null };
+  return { ok: true, actions: left, reason: null };
 }
 
-/** Says once a day, in the log, where an account stands against its ceiling. */
-export function reportReading(accountId: string, tier: AccountTier, spent: Spent): void {
-  const budget = budgetFor(tier);
-  log("reading so far today", {
+/** Where an account stands against its month, in the log. */
+export function reportReading(
+  accountId: string,
+  tier: AccountTier,
+  spentMonth: number
+): void {
+  log("reading this month", {
     accountId,
     tier,
-    profiles: `${spent.profiles}/${budget.profilesPerDay}`,
-    searches: `${spent.searches}/${budget.searchesPerDay}`,
+    spent: `${spentMonth}/${budgetFor(tier).actionsPerMonth}`,
   });
 }
