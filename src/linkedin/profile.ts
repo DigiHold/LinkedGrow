@@ -4,6 +4,14 @@ import { log, logError } from "../logger.ts";
 import { dwell } from "../browser/human.ts";
 import { putObject, bucketConfig } from "../storage/r2.ts";
 import { db } from "../db.ts";
+import {
+  accountMaturity,
+  countNear,
+  oldestYearIn,
+  CONNECTION_WORDS,
+  FOLLOWER_WORDS,
+  type Maturity,
+} from "../safety/maturity.ts";
 
 /**
  * Who this account actually is, read off LinkedIn once it is signed in.
@@ -25,6 +33,18 @@ export interface Profile {
   fullName: string | null;
   headline: string | null;
   avatarUrl: string | null;
+  /**
+   * How long this account has existed, judged from its own profile.
+   *
+   * The reading ramp started every account at a third of its pace for three
+   * weeks, which is right for an account created yesterday and wrong for one
+   * with ten years of jobs on it. LinkedIn shows no join date anywhere, but the
+   * connection count, the follower count and the oldest year in the experience
+   * section together answer the question well enough, and this page is already
+   * open.
+   */
+  maturity: Maturity;
+  connections: number | null;
 }
 
 /** The public slug in a LinkedIn profile URL, which is the stable id we key on. */
@@ -221,12 +241,25 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
         }
       }
     }
-    return { name, headline, photo };
+    // The whole page as text, for the age signals below. The counts sit in the
+    // top card and the years sit in Experience and Education, so the cheapest
+    // reliable read is the document rather than three more selectors that
+    // LinkedIn can rename.
+    const body = (document.body?.innerText ?? "").slice(0, 20_000);
+    return { name, headline, photo, body };
   });
 
   const avatarUrl = read.photo
     ? await storeAvatar(page, read.photo, `linkedin/accounts/${profileId}`)
     : null;
+
+  const thisYear = new Date().getFullYear();
+  const connections = countNear(read.body, CONNECTION_WORDS);
+  const signals = {
+    connections,
+    followers: countNear(read.body, FOLLOWER_WORDS),
+    oldestYear: oldestYearIn(read.body, thisYear),
+  };
 
   return {
     profileUrl,
@@ -234,6 +267,8 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
     fullName: read.name || null,
     headline: read.headline || null,
     avatarUrl,
+    maturity: accountMaturity(signals, thisYear),
+    connections,
   };
 }
 
@@ -265,6 +300,7 @@ export async function ensureProfileCaptured(page: Page, accountId: string): Prom
                    full_name = COALESCE(?, full_name),
                    headline = COALESCE(?, headline),
                    avatar_url = COALESCE(?, avatar_url),
+                   maturity = ?, connections = ?,
                    updated_at = ?
              WHERE id = ?`,
       args: [
@@ -273,6 +309,8 @@ export async function ensureProfileCaptured(page: Page, accountId: string): Prom
         profile.fullName,
         profile.headline,
         profile.avatarUrl,
+        profile.maturity,
+        profile.connections,
         Math.floor(Date.now() / 1000),
         accountId,
       ],
@@ -281,6 +319,8 @@ export async function ensureProfileCaptured(page: Page, accountId: string): Prom
       accountId,
       name: profile.fullName,
       avatar: profile.avatarUrl ? "stored" : "none",
+      maturity: profile.maturity,
+      connections: profile.connections,
     });
   } catch (error) {
     // Never fatal: the session is signed in either way, and the work the

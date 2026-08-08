@@ -58,6 +58,29 @@ const DEFAULTS = { maxPerPost: 25, maxPostsPerTarget: 2 };
 const MAX_MINE_DEPTH = 24;
 
 /**
+ * How a post's reading allowance splits between the people who wrote something
+ * and the people who clicked a button.
+ *
+ * The file has always said commenters carry more intent than reactors. The
+ * budget never acted on it: both took `maxPerPost`, and since a post has a
+ * handful of comments and hundreds of reactions, the cap only ever bound on
+ * reactions. So reactions supplied most of the volume.
+ *
+ * Measured on 90 real leads from one agent, by how many reached the score a
+ * lead needs before anybody writes to them:
+ *
+ *   comment    13 leads, 46% qualified, average score 46
+ *   search     49 leads, 31% qualified, average score 28
+ *   reaction   28 leads, 11% qualified, average score 17
+ *
+ * A like is worth roughly a quarter of a comment and it was supplying two
+ * thirds of the people. Reactions now take about a third of a post's
+ * allowance, and the allowance itself is spread over more posts, because every
+ * extra post opened brings its own comment section with it.
+ */
+const REACTION_SHARE = 0.35;
+
+/**
  * Mines engagement leads from competitor content. This is browser activity on the account, so it
  * moves at a human pace and reads only: it opens a post, opens its reactions and comments, and
  * extracts the people, never liking, commenting, connecting or messaging.
@@ -545,7 +568,13 @@ async function mineTarget(
 
   // Commenters first: they carry more intent than reactors (they wrote about the topic), and
   // expanding comments in place is lighter than opening the reactions modal repeatedly.
-  const commenters = await extractCommenters(cfg, page, label, maxPosts, maxPerPost, skip);
+  // Comments get the larger half and reactions the smaller one. Comments are
+  // supply-limited anyway, so in practice this caps the likes and leaves the
+  // written signal free to take everything a post has.
+  const reactionCap = Math.max(2, Math.floor(maxPerPost * REACTION_SHARE));
+  const commentCap = Math.max(3, maxPerPost - reactionCap);
+
+  const commenters = await extractCommenters(cfg, page, label, maxPosts, commentCap, skip);
   engagers.push(...commenters);
   log(`  ${commenters.length} commenters on ${label}.`);
 
@@ -557,7 +586,7 @@ async function mineTarget(
   for (const i of range) {
     const opened = await openReactionsModal(page, i);
     if (!opened) continue;
-    const reactors = await extractFromDialog(page, `reaction:${label}`, maxPerPost, !cfg.skipConnected);
+    const reactors = await extractFromDialog(page, `reaction:${label}`, reactionCap, !cfg.skipConnected);
     engagers.push(...reactors);
     await closeDialog(page);
     await sleep(actionDelayMs(cfg));

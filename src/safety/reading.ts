@@ -1,5 +1,6 @@
 import { db } from "../db.ts";
 import { log } from "../logger.ts";
+import { rampFloor, type Maturity } from "./maturity.ts";
 
 /**
  * What an account is allowed to READ, and why there are two counters rather
@@ -120,14 +121,26 @@ export function dayAllowance(
   tier: AccountTier,
   kind: ReadKind,
   spentThisMonth: number,
-  ageDays: number
+  ageDays: number,
+  /**
+   * How long the LinkedIn account itself has existed, which is not the same as
+   * how long it has been ours.
+   *
+   * The ramp used to start every account at 0.35 whatever it was, so a profile
+   * with ten years of jobs and 500+ connections spent the first week of its
+   * owner's trial at a third of its pace. That is the week that decides whether
+   * they pay. An established profile starts at 0.6 instead and still reaches
+   * full pace over the same three weeks. Unknown means new, which is the
+   * cautious reading and the right one when the profile could not be read.
+   */
+  maturity: Maturity = "new"
 ): number {
   const budget = budgetFor(tier);
   const pool = kind === "searches" ? budget.searchesPerMonth : budget.profilesPerMonth;
   const left = Math.max(0, pool - spentThisMonth);
   if (left <= 0) return 0;
-  // A new account reads less, and reaches its full pace over three weeks.
-  const ramp = Math.min(1, 0.35 + (Math.max(0, ageDays) / 21) * 0.65);
+  const floorRamp = rampFloor(maturity);
+  const ramp = Math.min(1, floorRamp + (Math.max(0, ageDays) / 21) * (1 - floorRamp));
   const paced = Math.floor((pool / ACTIVE_DAYS_IN_MONTH) * ramp);
   const floor = kind === "searches" ? 2 : budget.minProfilesPerDay;
   return Math.min(left, Math.max(floor, paced));
@@ -261,7 +274,8 @@ export async function roomToRead(
   tier: AccountTier,
   timeZone: string,
   ageDays: number,
-  pace?: Pace
+  pace?: Pace,
+  maturity: Maturity = "new"
 ): Promise<ReadingRoom> {
   const [month, day] = await Promise.all([
     spentThisMonth(accountId, timeZone),
@@ -269,8 +283,8 @@ export async function roomToRead(
   ]);
 
   return roomFrom(
-    dayAllowance(tier, "profiles", month.profiles, ageDays),
-    dayAllowance(tier, "searches", month.searches, ageDays),
+    dayAllowance(tier, "profiles", month.profiles, ageDays, maturity),
+    dayAllowance(tier, "searches", month.searches, ageDays, maturity),
     day,
     pace
   );

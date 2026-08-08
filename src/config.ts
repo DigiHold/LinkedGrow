@@ -51,6 +51,14 @@ export interface AgentContext {
   country: string;
   /** free, premium or sales_navigator. Decides how much the account may read. */
   tier: string;
+  /**
+   * new, young or established: how long the LinkedIn account itself has existed.
+   *
+   * Read off its own profile, and separate from tier. It decides where the
+   * reading ramp starts, because a profile with years of history behind it is
+   * only new to us and the ramp used to treat it as new to LinkedIn.
+   */
+  maturity: string;
   /** The account's own timezone, so a daily reading budget resets where it lives. */
   timezone: string;
   /** The ceiling belongs to the account, and its agents divide it. Section 5c. */
