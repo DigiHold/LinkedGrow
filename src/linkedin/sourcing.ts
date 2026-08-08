@@ -650,10 +650,8 @@ export async function sourcePass(
   // It fires when the customer never gave the agent anything to search for, or when everything
   // they did give came back empty this pass. An agent that goes quiet because its one competitor is
   // exhausted is the failure the toggle exists to prevent, and it looks broken from the outside.
-  // Widening the search is itself a search, so it waits when the pool is out
-  // rather than quietly running one more on top of the day's allowance.
-  if (ctx.smartLeadFinder && (!hasOwnQueries || total === 0) && searchesLeft >= 1) {
-    total += await fallbackPass(ctx, page, budget, hasOwnQueries);
+  if (ctx.smartLeadFinder && (!hasOwnQueries || total === 0)) {
+    total += await fallbackPass(ctx, page, budget, hasOwnQueries, searchesLeft);
   }
 
   await recordEvent(
@@ -749,22 +747,80 @@ async function scorePass(ctx: AgentContext): Promise<void> {
 }
 
 /**
- * Searching from what the business is, rather than from what the customer typed.
+ * Working from what the business is, rather than from what the customer typed.
  *
- * The queries are derived once per agent and cached on its row, so this costs one model call in the
+ * The targeting is derived once per agent and cached on its row, so this costs one model call in the
  * lifetime of an agent rather than one per pass. Leads found here are claimed and deduplicated
  * exactly like any other, and they carry a source label saying where they came from, because a
  * customer looking at their queue deserves to know which of these they asked for.
+ *
+ * ## Rivals first, search second, and the order is the point
+ *
+ * This used to go straight to an intent search, which is the worst of the two
+ * options on both counts that matter.
+ *
+ * It is the expensive one. A search feeds LinkedIn's commercial use limit;
+ * opening a named company's posts by URL and reading who reacted underneath
+ * feeds nothing, because no search is run and no profile is visited.
+ *
+ * And it is the polluted one. The people who talk most about "cookie consent"
+ * on LinkedIn are the people selling cookie consent, which is how the founder
+ * of a rival cookie-consent widget ended up being messaged on 2026-08-08. Under
+ * a competitor's post you find the same category of person having already shown
+ * interest in it, without the keyword selecting for vendors.
  */
 async function fallbackPass(
   ctx: AgentContext,
   page: Page,
   budget: { perPost: number; posts: number },
-  hadOwnQueries: boolean
+  hadOwnQueries: boolean,
+  searchesLeft: number
 ): Promise<number> {
   const targeting = await ensureTargeting(ctx);
+
+  const rivals = targeting.competitors.slice(0, 3);
+  if (rivals.length > 0) {
+    await recordEvent(
+      ctx,
+      "sourcing",
+      hadOwnQueries
+        ? "Your own topics came back empty, so the agent is reading who engages with similar companies"
+        : "Working out who to read from your business, starting with similar companies"
+    ).catch(() => {});
+    await announce(ctx, "reading who engages with", undefined, rivals.join(", "));
+    // One search covers resolving a name we have not seen before. After that
+    // the company URL is cached on the account and mining it costs none.
+    await book(ctx.linkedinAccountId, ctx.timezone, {
+      searches: 1,
+      profiles: budget.posts * budget.perPost,
+    }).catch(() => {});
+    try {
+      const engaged = await mine(ctx, page, ctx.cfg, {
+        competitorNames: rivals,
+        maxPerPost: budget.perPost,
+        maxPostsPerTarget: budget.posts,
+        dryRun: true,
+      });
+      const claimed = await claimAll(ctx, null, "a similar company's audience", engaged);
+      log("fallback mined engagement", { rivals: rivals.length, seen: engaged.length, claimed });
+      // Enough. Widening into a search on top of this would spend the scarce
+      // pool for the weaker source.
+      if (claimed > 0) return claimed;
+    } catch (error) {
+      log("the similar-company pass could not be read", {
+        reason: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   const queries = targeting.intentQueries.slice(0, 3);
   if (queries.length === 0) return 0;
+  // A search is the last resort, and it waits when the pool is out rather than
+  // quietly running one more on top of the day's allowance.
+  if (searchesLeft < 1) {
+    log("no searches left today, so the widened search waits", { agentId: ctx.agentId });
+    return 0;
+  }
 
   await recordEvent(
     ctx,
