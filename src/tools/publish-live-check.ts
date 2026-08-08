@@ -271,6 +271,96 @@ async function inspect(accountId: string, urls: string[]): Promise<void> {
 }
 
 /**
+ * Walks the carousel flow one step at a time and photographs each one.
+ *
+ * The carousel failed three times on 2026-08-08 with "the attachment did not
+ * finish uploading, the composer says: Maria LECOCQ", while an image published
+ * fine two minutes earlier and the PDF is a valid two-page document. The same
+ * file's own comments record six attempts spent guessing at this flow, so this
+ * looks instead: every step is photographed and every button in the dialog is
+ * printed, which is what a moved selector looks like from the outside.
+ *
+ * It attaches a file and never presses Post. The composer is discarded at the
+ * end, so nothing reaches the profile.
+ */
+async function carouselProbe(accountId: string): Promise<void> {
+  const acct = await account(accountId);
+  const session = await openSession(
+    { linkedinAccountId: accountId, country: acct.country, timezone: "Europe/Paris" },
+    acct.allocation
+  );
+  const page = session.page;
+  let step = 0;
+  const shot = async (what: string) => {
+    step += 1;
+    const path = `/tmp/carousel-${String(step).padStart(2, "0")}-${what}.png`;
+    await page.screenshot({ path }).catch(() => {});
+    const buttons = await page
+      .evaluate(() =>
+        Array.from(document.querySelectorAll('[role="dialog"] button, [role="dialog"] [role="button"]'))
+          .map((b) => (b.getAttribute("aria-label") || (b as HTMLElement).innerText || "").trim())
+          .filter(Boolean)
+          .slice(0, 30)
+      )
+      .catch(() => [] as string[]);
+    console.log(`\n[${step}] ${what}\n     ${path}\n     buttons: ${JSON.stringify(buttons)}`);
+  };
+
+  try {
+    if (!(await isSignedIn(session.context))) throw new Error("signed out");
+    await page.goto("https://www.linkedin.com/feed/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(5000);
+
+    const start = page.getByRole("button", { name: /start a post|créer un post/i }).first();
+    if (!(await start.isVisible().catch(() => false))) throw new Error("no Start a post control");
+    await start.click();
+    await page.waitForTimeout(4000);
+    await shot("composer-open");
+
+    // Everything but Photo hides behind this on the current composer.
+    const expand = page.locator('[aria-label*="Expand content types" i]').first();
+    console.log(`     expand control visible: ${await expand.isVisible().catch(() => false)}`);
+    if (await expand.isVisible().catch(() => false)) {
+      await expand.click();
+      await page.waitForTimeout(2500);
+      await shot("content-types-expanded");
+    }
+
+    const doc = page
+      .getByRole("button", { name: /add a document|document|ajouter un document/i })
+      .first();
+    console.log(`     document entry visible: ${await doc.isVisible().catch(() => false)}`);
+    if (await doc.isVisible().catch(() => false)) {
+      await doc.click();
+      await page.waitForTimeout(3000);
+      await shot("document-screen");
+    }
+
+    const inputs = await page.locator('input[type="file"]').count();
+    console.log(`     file inputs on the page: ${inputs}`);
+    if (inputs > 0) {
+      const { writeFileSync, mkdtempSync } = await import("node:fs");
+      const { tmpdir } = await import("node:os");
+      const { join } = await import("node:path");
+      const res = await fetch(
+        "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/checks/carousel-check.pdf"
+      );
+      const file = join(mkdtempSync(join(tmpdir(), "probe-")), "carousel-check.pdf");
+      writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+      await page.locator('input[type="file"]').first().setInputFiles(file);
+      console.log("     PDF handed to the file input");
+      await page.waitForTimeout(8000);
+      await shot("after-upload");
+      await page.waitForTimeout(8000);
+      await shot("after-upload-plus-8s");
+    }
+  } finally {
+    await shot("final").catch(() => {});
+    await closeSession(session).catch(() => {});
+  }
+}
+
+/**
  * Takes it down again.
  *
  * A post left standing on a real profile is the worst outcome of this check, so
@@ -410,6 +500,7 @@ async function main(): Promise<void> {
   if (mode === "queue") return queueAndWatch(accountId);
   if (mode === "queue-image") return queueWithImage(accountId);
   if (mode === "inspect") return inspect(accountId, process.argv.slice(4).filter(Boolean));
+  if (mode === "carousel-probe") return carouselProbe(accountId);
   if (mode === "schedule-carousel") {
     const at = Number(process.argv[4]);
     if (!Number.isFinite(at)) throw new Error("Give the slot as epoch seconds");
@@ -428,7 +519,7 @@ async function main(): Promise<void> {
     if (!url) throw new Error("Which post?");
     return remove(accountId, url);
   }
-  throw new Error("Mode is queue, queue-image, schedule-carousel, watch, inspect or remove");
+  throw new Error("Mode is queue, queue-image, schedule-carousel, watch, inspect, carousel-probe or remove");
 }
 
 main().then(
