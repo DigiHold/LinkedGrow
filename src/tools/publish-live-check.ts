@@ -606,6 +606,92 @@ async function dmProbe(accountId: string, profileUrl: string): Promise<void> {
 }
 
 /**
+ * Reads the two pages the acceptance check depends on, before anything is coded.
+ *
+ * Three prospects were marked as having accepted an invitation on 2026-08-07
+ * and none of them had. The agent then tried to message them, and LinkedIn
+ * answered a free account trying to write to a second-degree connection with a
+ * Premium upsell, which is what "could not open a conversation" really was.
+ *
+ * recentConnections takes every /in/ link inside main and treats the first line
+ * of its row as somebody who just connected. The connections page carries
+ * suggestion modules full of /in/ links, so this prints what is actually in
+ * there and how the real rows differ from the suggestions.
+ *
+ * Then it reads the degree off two profiles, one the agent has really messaged
+ * and one it has not, so the difference between first and second degree can be
+ * read rather than assumed.
+ */
+async function networkProbe(accountId: string, first: string, second: string): Promise<void> {
+  const acct = await account(accountId);
+  const session = await openSession(
+    { linkedinAccountId: accountId, country: acct.country, timezone: "Europe/Paris" },
+    acct.allocation
+  );
+  const page = session.page;
+  try {
+    if (!(await isSignedIn(session.context))) throw new Error("signed out");
+
+    await page.goto("https://www.linkedin.com/mynetwork/invite-connect/connections/", {
+      waitUntil: "domcontentloaded",
+    });
+    await page.waitForTimeout(7000);
+    await page.screenshot({ path: "/tmp/net-connections.png" }).catch(() => {});
+
+    const list = await page.evaluate(() => {
+      const links = Array.from(document.querySelectorAll('main a[href*="/in/"]')) as HTMLAnchorElement[];
+      const rows = links.slice(0, 24).map((a) => {
+        const li = a.closest("li");
+        const row = (li ?? a.parentElement) as HTMLElement | null;
+        const section = a.closest("section");
+        return {
+          name: (row?.innerText ?? "").split("\n").map((l) => l.trim()).find(Boolean) ?? "",
+          inLi: Boolean(li),
+          // What distinguishes a real connection row from a suggestion, if
+          // anything does: the nearest section's own heading.
+          heading:
+            (section?.querySelector("h1,h2,h3") as HTMLElement | null)?.innerText?.trim().slice(0, 40) ??
+            null,
+          componentkey: (a.closest("[componentkey]")?.getAttribute("componentkey") ?? "").slice(0, 60),
+        };
+      });
+      const headings = Array.from(document.querySelectorAll("main h1, main h2, main h3"))
+        .map((h) => (h as HTMLElement).innerText.trim().slice(0, 50))
+        .filter(Boolean);
+      return { total: links.length, rows, headings };
+    });
+    console.log(`\nCONNECTIONS PAGE: ${list.total} /in/ links inside main`);
+    console.log(`  headings: ${JSON.stringify(list.headings)}`);
+    for (const r of list.rows) {
+      console.log(`   ${r.inLi ? "li " : "-- "} ${String(r.name).slice(0, 34).padEnd(36)} section=${r.heading} key=${r.componentkey}`);
+    }
+
+    for (const [label, url] of [["FIRST-DEGREE", first], ["SECOND-DEGREE", second]] as const) {
+      if (!url) continue;
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(6000);
+      const degree = await page.evaluate(() => {
+        const topcard = document.querySelector('[componentkey$="Topcard"]') as HTMLElement | null;
+        const text = (topcard?.innerText ?? "").slice(0, 200).replace(/\s+/g, " ");
+        return {
+          topcardText: text,
+          oldSelector: document.querySelectorAll("span.dist-value, .distance-badge .dist-value").length,
+          // The degree as the page writes it today, next to the name.
+          degreeInText: /·\s*(1st|2nd|3rd|3rd\+)/i.exec(text)?.[1] ?? null,
+          buttons: Array.from(topcard?.querySelectorAll("button,a") ?? [])
+            .map((b) => (b as HTMLElement).innerText.trim())
+            .filter(Boolean)
+            .slice(0, 8),
+        };
+      });
+      console.log(`\n${label} ${url}\n  ${JSON.stringify(degree)}`);
+    }
+  } finally {
+    await closeSession(session).catch(() => {});
+  }
+}
+
+/**
  * Takes it down again.
  *
  * A post left standing on a real profile is the worst outcome of this check, so
@@ -824,6 +910,8 @@ async function main(): Promise<void> {
   if (mode === "inspect") return inspect(accountId, process.argv.slice(4).filter(Boolean));
   if (mode === "carousel-probe") return carouselProbe(accountId);
   if (mode === "dm-probe") return dmProbe(accountId, process.argv[4] ?? "");
+  if (mode === "network-probe")
+    return networkProbe(accountId, process.argv[4] ?? "", process.argv[5] ?? "");
   if (mode === "schedule-carousel") {
     const at = Number(process.argv[4]);
     if (!Number.isFinite(at)) throw new Error("Give the slot as epoch seconds");
