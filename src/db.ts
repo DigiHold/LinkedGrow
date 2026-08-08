@@ -3,6 +3,7 @@ import { requireEnv } from "./config.ts";
 import type { AgentContext, Config } from "./config.ts";
 import { DEFAULTS } from "./config.ts";
 import { timezoneForCountry } from "./browser/fingerprint.ts";
+import { minimumScore } from "./linkedin/competitor.ts";
 
 /**
  * The worker's view of the database.
@@ -343,16 +344,32 @@ export async function claimLead(ctx: AgentContext, lead: FoundLead): Promise<boo
   return result.rowsAffected > 0;
 }
 
-/** Leads waiting to enter the sequence, highest score first. */
+/**
+ * Leads waiting to enter the sequence, highest score first and above the floor.
+ *
+ * The floor is the part that was missing. This ordered by score and filtered by
+ * nothing, so a lead judged 0 sat at the bottom of the list and was written to
+ * anyway the moment the queue above it ran out, which on a young agent is most
+ * days. That is how a competitor scored 0 still received a message.
+ *
+ * An unscored lead is held back rather than contacted, because a score arriving
+ * one pass later is a delay and a message going to the wrong person is not
+ * recoverable. The exception is an agent with no ICP written down at all: it
+ * never scores anybody, so waiting for a score would mean waiting for ever.
+ */
 export async function leadsAtStep(ctx: AgentContext, step: string, limit: number) {
+  const floor = minimumScore(ctx.matchLevel);
+  const scoring = Boolean(ctx.cfg.leads.icp);
   const { rows } = await db().execute({
     sql: `SELECT id, profile_id, profile_url, full_name, headline, job_title, company,
                  match_score, match_reason, signal_text, signal_url, step_at
           FROM agent_leads
           WHERE workspace_id = ? AND agent_id = ? AND step = ?
+            AND ${scoring ? "match_score IS NOT NULL" : "1 = 1"}
+            AND (match_score IS NULL OR match_score >= ?)
           ORDER BY COALESCE(match_score, 0) DESC, found_at ASC
           LIMIT ?`,
-    args: [ctx.workspaceId, ctx.agentId, step, limit],
+    args: [ctx.workspaceId, ctx.agentId, step, floor, limit],
   });
   return rows;
 }

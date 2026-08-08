@@ -16,6 +16,7 @@ import { learn, miningOrder, recordPass, scoreSources } from "./learn.ts";
 import { asPrompt, readMemory, reviseMemory } from "./memory.ts";
 import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
 import { ensureTargeting } from "./derive.ts";
+import { competesWith, rivalryReason } from "./competitor.ts";
 import { book, roomToRead, tierOf, MIN_VISIT_READ, type Pace } from "../safety/reading.ts";
 
 /**
@@ -693,11 +694,33 @@ async function scorePass(ctx: AgentContext): Promise<void> {
   // and it is the same for all twenty of them.
   const memory = asPrompt(await readMemory(ctx));
 
+  // What the customer sells, read once. It is what the rival check compares a
+  // headline against, and the scorer needs it for the same reason.
+  const sells = ctx.cfg.business.description ?? "";
+
   let done = 0;
+  let rivals = 0;
   for (const row of waiting) {
     const name = String(row.full_name ?? "");
     const headline = String(row.headline ?? "");
     if (!name) continue;
+
+    /**
+     * Somebody who sells what the customer sells, caught before the model call.
+     *
+     * The scorer is told the rule too, and the rule in the prompt is the main
+     * defence. This is the deterministic half: it costs nothing, it cannot have
+     * an off day, and it holds the two headlines that were really messaged on
+     * 2026-08-08 as tests. It fires only when the person both owns a product
+     * and shares a category phrase with ours.
+     */
+    const rivalry = competesWith(headline, sells);
+    if (rivalry.competes) {
+      await setLeadScore(ctx, String(row.id), 0, rivalryReason(rivalry.overlap));
+      rivals += 1;
+      continue;
+    }
+
     try {
       const { score, reason } = await scoreLead(
         ctx,
@@ -722,7 +745,7 @@ async function scorePass(ctx: AgentContext): Promise<void> {
       });
     }
   }
-  if (done > 0) log("leads scored", { count: done });
+  if (done > 0 || rivals > 0) log("leads scored", { count: done, competitors: rivals });
 }
 
 /**

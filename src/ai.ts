@@ -330,9 +330,21 @@ export async function scoreLead(
    */
   memory = ""
 ): Promise<{ score: number; reason: string }> {
+  /**
+   * What the customer sells, which this prompt never used to include.
+   *
+   * Without it the scorer could not see a collision it was being asked to
+   * judge. On 2026-08-08 it scored the co-founder of a booking product as a
+   * good match for a booking product, and the founder of a cookie consent
+   * widget as a good match for a cookie consent widget, and both were messaged.
+   * Neither was a mistake of judgement: the fact that decides it was not in the
+   * prompt.
+   */
+  const sells = (ctx.cfg.business.description ?? "").trim().slice(0, 700);
+
   const answer = await generate(
     ctx,
-    `Ideal customer: ${icp}
+    `${sells ? `What our customer sells: ${sells}\n\n` : ""}Ideal customer: ${icp}
 ${memory ? `\n${memory}\n` : ""}
 
 Prospect:
@@ -342,7 +354,7 @@ Company: ${profile.company ?? "unknown"}
 ${profile.signal ? `How they were found: ${profile.signal}` : ""}
 ${profile.about ? `About: ${profile.about.slice(0, 600)}` : ""}
 
-Score from 0 to 100. What they were doing when they were found counts as much as their title: somebody engaging with a competitor or asking about the problem is a stronger match than the same headline found in a search. Reply with the score and a one-sentence reason.`,
+Score from 0 to 100. What they were doing when they were found is real evidence about their interest, so somebody asking about the problem beats the same headline found in a search. Reply with the score and a one-sentence reason.`,
     {
       model: MODELS.fast,
       purpose: "score",
@@ -352,6 +364,16 @@ Score from 0 to 100. What they were doing when they were found counts as much as
         // before answering, which is what broke the parsing. Showing a filled
         // example instead of a template gives it nothing to echo.
         "You score how well a prospect matches an ideal customer profile. Be strict: 80 and above means they clearly are one.\n\n" +
+        /**
+         * The rule that was missing, and the line it replaces.
+         *
+         * The old prompt ended by saying that somebody engaging with a
+         * competitor was a STRONGER match, which is true of a buyer comparing
+         * options and exactly wrong for the person who runs the rival product
+         * and is watching their own market. Under a competitor's post those two
+         * sit in the same list of names.
+         */
+        "If the prospect builds, sells, co-founds or leads a product that does the same job as what our customer sells, they are a competitor and the score is 0, whatever they were doing when they were found and however well their title reads. A rival founder engaging with a competitor is watching their market, not shopping. Somebody who merely works in the same industry, or uses tools like this, is not a competitor and is often the right person.\n\n" +
         "When the agent's own learning is given, it outranks the written profile: it is what happened rather than what somebody hoped would happen. Somebody matching a shape that has been contacted and ignored scores low however good the title reads.\n\n" +
         "Reply with one line and nothing else, a number then a pipe then the reason, like this: 72|Founder at a small SaaS, buys their own tools.",
     }
