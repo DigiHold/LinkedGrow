@@ -394,6 +394,42 @@ async function carouselProbe(accountId: string): Promise<void> {
      * message it recorded was the composer showing nothing but the author name,
      * so the interesting question is what the page looks like after Done.
      */
+    /**
+     * Everything on the document screen, unfiltered.
+     *
+     * Done is disabled while the PDF has plainly uploaded and its two pages
+     * render, so something on this screen is still asking to be filled in. The
+     * named list hides it, because an input with a placeholder and no aria
+     * label has no accessible name and was filtered out of every dump so far.
+     */
+    const fields = await page.evaluate(() => {
+      const open = document.querySelector("dialog[open]");
+      if (!open) return { inputs: [], progress: [] };
+      const inputs = Array.from(open.querySelectorAll("input,textarea,[contenteditable='true']")).map(
+        (el) => ({
+          tag: el.tagName.toLowerCase(),
+          type: el.getAttribute("type"),
+          id: el.getAttribute("id"),
+          name: el.getAttribute("name"),
+          label: el.getAttribute("aria-label"),
+          placeholder: el.getAttribute("placeholder"),
+          required: el.hasAttribute("required") || el.getAttribute("aria-required") === "true",
+          value: (el as HTMLInputElement).value ?? (el as HTMLElement).innerText ?? "",
+        })
+      );
+      const progress = Array.from(document.querySelectorAll('[role="progressbar"]')).map((el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          label: el.getAttribute("aria-label"),
+          inDialog: Boolean(el.closest("dialog[open]")),
+          visible: r.width > 0 && r.height > 0,
+        };
+      });
+      return { inputs, progress };
+    });
+    console.log("    FIELDS: " + JSON.stringify(fields.inputs));
+    console.log("    PROGRESS BARS: " + JSON.stringify(fields.progress));
+
     const done = page.locator('dialog[open] button').filter({ hasText: /^done$/i }).first();
     const visibleDone = await done.isVisible().catch(() => false);
     const disabledDone = visibleDone ? await done.isDisabled().catch(() => true) : true;
