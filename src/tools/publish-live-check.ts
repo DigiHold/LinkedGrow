@@ -291,19 +291,39 @@ async function carouselProbe(accountId: string): Promise<void> {
   );
   const page = session.page;
   let step = 0;
-  const shot = async (what: string) => {
+
+  /** Everything the composer offers, by the name a selector would have to use. */
+  const dump = async (what: string) => {
     step += 1;
     const path = `/tmp/carousel-${String(step).padStart(2, "0")}-${what}.png`;
     await page.screenshot({ path }).catch(() => {});
-    const buttons = await page
-      .evaluate(() =>
-        Array.from(document.querySelectorAll('[role="dialog"] button, [role="dialog"] [role="button"]'))
-          .map((b) => (b.getAttribute("aria-label") || (b as HTMLElement).innerText || "").trim())
-          .filter(Boolean)
-          .slice(0, 30)
-      )
-      .catch(() => [] as string[]);
-    console.log(`\n[${step}] ${what}\n     ${path}\n     buttons: ${JSON.stringify(buttons)}`);
+    const state = await page
+      .evaluate(() => {
+        const open = document.querySelector("dialog[open]");
+        const roled = document.querySelectorAll('div[role="dialog"]').length;
+        const label = (el: Element) =>
+          (el.getAttribute("aria-label") || (el as HTMLElement).innerText || "")
+            .trim()
+            .replace(/\s+/g, " ")
+            .slice(0, 40);
+        const inside = open
+          ? Array.from(open.querySelectorAll("button,[role='button'],input"))
+              .map((el) => `${el.tagName.toLowerCase()}:${label(el) || "(unnamed)"}`)
+              .filter((s) => !s.endsWith("(unnamed)"))
+              .slice(0, 40)
+          : [];
+        return {
+          nativeDialog: Boolean(open),
+          divRoleDialogs: roled,
+          editors: document.querySelectorAll('div[role="textbox"][contenteditable="true"]').length,
+          fileInputs: document.querySelectorAll('input[type="file"]').length,
+          progressBars: document.querySelectorAll('[role="progressbar"]').length,
+          controls: inside,
+        };
+      })
+      .catch(() => null);
+    console.log(`\n[${step}] ${what}  ->  ${path}`);
+    console.log("    " + JSON.stringify(state));
   };
 
   try {
@@ -315,47 +335,58 @@ async function carouselProbe(accountId: string): Promise<void> {
     if (!(await start.isVisible().catch(() => false))) throw new Error("no Start a post control");
     await start.click();
     await page.waitForTimeout(4000);
-    await shot("composer-open");
+    await dump("composer-open");
 
-    // Everything but Photo hides behind this on the current composer.
     const expand = page.locator('[aria-label*="Expand content types" i]').first();
-    console.log(`     expand control visible: ${await expand.isVisible().catch(() => false)}`);
     if (await expand.isVisible().catch(() => false)) {
       await expand.click();
       await page.waitForTimeout(2500);
-      await shot("content-types-expanded");
+      await dump("expanded");
     }
 
-    const doc = page
-      .getByRole("button", { name: /add a document|document|ajouter un document/i })
-      .first();
-    console.log(`     document entry visible: ${await doc.isVisible().catch(() => false)}`);
-    if (await doc.isVisible().catch(() => false)) {
+    // Scoped to the open dialog, never the page: the feed behind the composer
+    // holds a document carousel of its own whose paging buttons are called
+    // "Go to next page of document", and an unscoped name match takes those.
+    const doc = page.locator('dialog[open] [aria-label="Document" i]').first();
+    const visible = await doc.isVisible().catch(() => false);
+    console.log(`    document entry inside the dialog: ${visible}`);
+    if (visible) {
       await doc.click();
-      await page.waitForTimeout(3000);
-      await shot("document-screen");
+      await page.waitForTimeout(3500);
+      await dump("document-screen");
     }
 
-    const inputs = await page.locator('input[type="file"]').count();
-    console.log(`     file inputs on the page: ${inputs}`);
-    if (inputs > 0) {
-      const { writeFileSync, mkdtempSync } = await import("node:fs");
-      const { tmpdir } = await import("node:os");
-      const { join } = await import("node:path");
-      const res = await fetch(
-        "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/checks/carousel-check.pdf"
-      );
-      const file = join(mkdtempSync(join(tmpdir(), "probe-")), "carousel-check.pdf");
-      writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+    const chooser = page.locator('dialog[open] [aria-label*="Choose file" i], dialog[open] button:has-text("Choose file")').first();
+    if (await chooser.isVisible().catch(() => false)) {
+      console.log("    a Choose file control is present, so the input arrives on click");
+    }
+
+    const { writeFileSync, mkdtempSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const res = await fetch(
+      "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/checks/carousel-check.pdf"
+    );
+    const file = join(mkdtempSync(join(tmpdir(), "probe-")), "carousel-check.pdf");
+    writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+
+    if ((await page.locator('input[type="file"]').count()) > 0) {
       await page.locator('input[type="file"]').first().setInputFiles(file);
-      console.log("     PDF handed to the file input");
-      await page.waitForTimeout(8000);
-      await shot("after-upload");
-      await page.waitForTimeout(8000);
-      await shot("after-upload-plus-8s");
+    } else if (await chooser.isVisible().catch(() => false)) {
+      const [picker] = await Promise.all([page.waitForEvent("filechooser"), chooser.click()]);
+      await picker.setFiles(file);
+    } else {
+      console.log("    NO WAY IN: neither a file input nor a Choose file control");
+      return;
+    }
+    console.log("    PDF handed over");
+
+    for (const wait of [6000, 8000, 10000]) {
+      await page.waitForTimeout(wait);
+      await dump(`after-upload-${wait}ms`);
     }
   } finally {
-    await shot("final").catch(() => {});
+    await dump("final").catch(() => {});
     await closeSession(session).catch(() => {});
   }
 }
