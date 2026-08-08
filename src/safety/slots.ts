@@ -35,8 +35,8 @@ function capacity(): number {
   return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : DEFAULT_SLOTS;
 }
 
-/** Which LinkedIn account currently holds each occupied slot. */
-const held = new Map<string, number>();
+/** The LinkedIn accounts that currently have a browser open. */
+const held = new Set<string>();
 let inUse = 0;
 
 export interface SlotLease {
@@ -44,8 +44,8 @@ export interface SlotLease {
 }
 
 export class NoSlotError extends Error {
-  constructor() {
-    super("Every session slot on this box is busy");
+  constructor(reason = "Every session slot on this box is busy") {
+    super(reason);
     this.name = "NoSlotError";
   }
 }
@@ -58,15 +58,24 @@ export class NoSlotError extends Error {
  * now simply goes in the next pass, which is invisible to a customer whose
  * agent acts a few times an hour.
  *
- * Re-entrant per account on purpose. Several agents can drive one LinkedIn
- * account, and they share its one browser and its one address, so the second
- * agent joins the lease rather than taking a second slot.
+ * One holder per account, and the refusal is the point.
+ *
+ * This used to join an existing lease, on the theory that several agents on one
+ * account share its browser. They do, but the agent pass groups them by account
+ * and takes the slot once for the whole group, so nothing ever joined a lease
+ * from inside a pass. What joined it was the other loops. Publishing runs every
+ * minute against an account whose agent session can last ten, so a re-entrant
+ * lease let it open a second Chrome on the same profile directory, whose own
+ * SingletonLock the driver had just deleted as stale. Two browsers on one
+ * profile corrupts it, and two sessions from one address in one moment is the
+ * thing the address exists to avoid.
+ *
+ * Every caller already treats a refusal as "next pass", which for publishing is
+ * a minute away and for an agent is minutes.
  */
 export function takeSlot(linkedinAccountId: string): SlotLease {
-  const existing = held.get(linkedinAccountId);
-  if (existing !== undefined) {
-    held.set(linkedinAccountId, existing + 1);
-    return { release: () => drop(linkedinAccountId) };
+  if (held.has(linkedinAccountId)) {
+    throw new NoSlotError("This account already has a session open");
   }
 
   if (inUse >= capacity()) {
@@ -74,18 +83,12 @@ export function takeSlot(linkedinAccountId: string): SlotLease {
   }
 
   inUse += 1;
-  held.set(linkedinAccountId, 1);
+  held.add(linkedinAccountId);
   return { release: () => drop(linkedinAccountId) };
 }
 
 function drop(linkedinAccountId: string): void {
-  const depth = held.get(linkedinAccountId);
-  if (depth === undefined) return;
-  if (depth > 1) {
-    held.set(linkedinAccountId, depth - 1);
-    return;
-  }
-  held.delete(linkedinAccountId);
+  if (!held.delete(linkedinAccountId)) return;
   inUse = Math.max(0, inUse - 1);
 }
 

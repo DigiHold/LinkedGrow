@@ -32,16 +32,27 @@ test("a slot is exclusive to one account", () => {
   assert.equal(slotsInUse(), 0);
 });
 
-test("several agents on one account share its slot", () => {
+/**
+ * The one that was missing, and the one that matters most.
+ *
+ * The publish loop runs every minute and the agent loop every few, against the
+ * same accounts. While the slot joined an existing lease, the second loop was
+ * handed one and opened a second Chrome on a profile directory the first was
+ * still writing.
+ */
+test("one account cannot hold two sessions at once", () => {
   drain();
-  const a = takeSlot("same-account");
-  const b = takeSlot("same-account");
-  const c = takeSlot("same-account");
-  assert.equal(slotsInUse(), 1, "three agents on one account must cost one slot");
-  a.release();
-  assert.equal(slotsInUse(), 1, "the slot is still held while an agent runs");
-  b.release();
-  c.release();
+  const agentPass = takeSlot("same-account");
+  assert.throws(
+    () => takeSlot("same-account"),
+    NoSlotError,
+    "a second loop must be refused, not given a second browser"
+  );
+  assert.equal(slotsInUse(), 1, "the refusal must not consume capacity");
+  agentPass.release();
+  assert.equal(slotsInUse(), 0);
+  // And it is available again the moment the first session closes.
+  takeSlot("same-account").release();
   assert.equal(slotsInUse(), 0);
 });
 
