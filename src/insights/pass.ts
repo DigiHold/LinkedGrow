@@ -4,6 +4,7 @@ import type { Session } from "../browser/driver.ts";
 import { allocationFor, isProduction } from "../proxy/allocation.ts";
 import { NoSlotError, takeSlot } from "../safety/slots.ts";
 import { withWatchdog } from "../safety/watchdog.ts";
+import { currentVisit } from "../safety/rhythm.ts";
 import { currentRun } from "../safety/run-context.ts";
 import { withAddress, groupKey } from "../safety/ip-lock.ts";
 import { dwell, randInt, sleep } from "../browser/human.ts";
@@ -212,6 +213,22 @@ export async function insightsPass(): Promise<void> {
 
   await Promise.all(
     [...byAccount.values()].map(async ({ account, posts }) => {
+      /**
+       * Only while the account is on LinkedIn anyway.
+       *
+       * This loop was left out of the rhythm fix and it showed: on 2026-08-08,
+       * the first day the new pacing ran, this opened a session at 13:58, then
+       * 14:58, then 16:59, then 17:59, none of them inside a planned visit. A
+       * browser opening on the hour, every hour, is a smaller version of the
+       * exact pattern that got a customer's account restricted, and no proxy
+       * hides it either.
+       *
+       * Nothing here is urgent. How a post did three hours ago is the same
+       * number it will be at the next visit, and the numbers move slowly by
+       * their nature. So it waits, and it costs the customer nothing.
+       */
+      if (!currentVisit(account.id, account.timezone)) return;
+
       let lease;
       try {
         lease = takeSlot(account.id);
