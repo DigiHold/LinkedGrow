@@ -21,7 +21,8 @@ import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { connectPass } from "./linkedin/connect-pass.ts";
 import { publishPass } from "./publish/pass.ts";
 import { insightsPass, copyLeadFaces } from "./insights/pass.ts";
-import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.ts";
+import { isWithinBusinessHours } from "./safety/envelope.ts";
+import { currentVisit } from "./safety/rhythm.ts";
 import { runSequence } from "./linkedin/sequence.ts";
 import { sourcePass } from "./linkedin/sourcing.ts";
 import { browserActions } from "./linkedin/actions.ts";
@@ -79,15 +80,27 @@ const INSIGHTS_INTERVAL_MS = 30 * 60 * 1000;
 const CONNECT_INTERVAL_MS = 8 * 1000;
 
 async function runAgent(ctx: AgentContext): Promise<void> {
-  // Two windows, because the two halves carry different risk. Reading runs on
-  // an extended day so a customer who signs up in the evening sees their first
-  // leads the same evening; writing stays inside the account's own business
-  // hours, because a connection request at 3am is what gets accounts flagged.
-  const canSource = isWithinSourcingHours(ctx.cfg);
+  /**
+   * Is this account on LinkedIn right now?
+   *
+   * It used to be two clock windows: reading from 07:00 to 23:00 and writing
+   * inside business hours. The reading one is what got a customer's account
+   * restricted on 2026-08-08, because sixteen hours of availability plus a
+   * five-minute loop is 189 passes a day at metronomic intervals, and no
+   * dedicated address hides a shape like that. rhythm.ts replaces both with a
+   * handful of irregular visits, and outside them nothing opens a browser at
+   * all: not to read, and not to check whether there is anything to write.
+   * Checking whether there was anything to write was half of those passes.
+   */
+  const visit = currentVisit(ctx.linkedinAccountId, ctx.timezone, {
+    firstRun: ctx.lastRunAt === null,
+  });
+  if (!visit) return;
+
+  // Reading happens on every visit. Writing still waits for the account's own
+  // business hours, because an invitation at 21:40 is a different signal from
+  // reading a comment section at 21:40.
   const canWrite = isWithinBusinessHours(ctx.cfg);
-  if (!canSource && !canWrite) {
-    return;
-  }
 
   await assertCanSend(ctx);
 
@@ -147,26 +160,30 @@ async function runAgent(ctx: AgentContext): Promise<void> {
     // A brand-new agent has never run, so its first pass is the one the
     // customer is watching. It goes wider and it says so in the event feed.
     const neverRan = ctx.lastRunAt === null;
-    if (canSource) {
-      try {
-        await sourcePass(ctx, session.page, { firstRun: neverRan });
-        // The faces of the people just found, into our own bucket, on the
-        // session that found them.
-        //
-        // It used to be left to the insights pass, which returns early unless
-        // some published post needs its numbers re-read. An account that does
-        // outreach and never posts therefore copied no pictures at all, and
-        // LinkedIn's own image URLs expire within days, so every lead ended up
-        // faceless. Doing it here means the picture is stored in the same
-        // minute the lead is found, and it needs no second session.
-        await copyLeadFaces(session).catch((error: unknown) => {
-          logError("could not copy the lead pictures", error, { agentId: ctx.agentId });
-        });
-      } catch (error) {
+    try {
+      // The visit's place in the day is what stops the first one spending the
+      // whole day's reading in its first pass and leaving the other three
+      // nothing to do.
+      await sourcePass(ctx, session.page, {
+        firstRun: neverRan,
+        pace: { index: visit.index, count: visit.count },
+      });
+      // The faces of the people just found, into our own bucket, on the
+      // session that found them.
+      //
+      // It used to be left to the insights pass, which returns early unless
+      // some published post needs its numbers re-read. An account that does
+      // outreach and never posts therefore copied no pictures at all, and
+      // LinkedIn's own image URLs expire within days, so every lead ended up
+      // faceless. Doing it here means the picture is stored in the same
+      // minute the lead is found, and it needs no second session.
+      await copyLeadFaces(session).catch((error: unknown) => {
+        logError("could not copy the lead pictures", error, { agentId: ctx.agentId });
+      });
+    } catch (error) {
       // Sourcing failing must never stop the sequence: there may already be
       // people in the queue who are owed a reply.
-        logError("sourcing pass failed", error, { agentId: ctx.agentId });
-      }
+      logError("sourcing pass failed", error, { agentId: ctx.agentId });
     }
 
     if (!canWrite) {

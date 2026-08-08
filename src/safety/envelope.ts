@@ -23,25 +23,20 @@ export function isWithinBusinessHours(cfg: Config, at: Date = new Date()): boole
 }
 
 /**
- * The wider window sourcing is allowed to run in.
+ * There is deliberately no sourcing window here any more.
  *
- * Plan section 6: sourcing and scoring are mostly reading, so they run on a
- * wider window than outreach, which writes and must stay inside a human
- * schedule. Wider is not unlimited: an account that reads LinkedIn at 3am when
- * it never otherwise does is its own signal, so this is an extended day rather
- * than the clock.
+ * There used to be one, reading 07:00 to 23:00, on the reasoning that sourcing
+ * is mostly reading and reading is the safe half. The reasoning was right and
+ * the conclusion was wrong: sixteen hours of availability multiplied by a
+ * five-minute loop is 189 passes a day at five and six minute intervals, and on
+ * 2026-08-08 LinkedIn restricted a customer's account for exactly that. The
+ * account had sent fifteen invitations in its life.
  *
- * It matters most on the first evening. A customer who finishes the wizard at
- * 9pm should see their agent finding people within minutes, not the following
- * morning, and reading is the half that can honestly deliver that.
+ * A window says when an account MAY act. What it never said is how often, and
+ * that is the number LinkedIn reads. safety/rhythm.ts answers both at once by
+ * planning a handful of irregular visits a day, so the replacement for this is
+ * currentVisit, not a wider or narrower pair of hours.
  */
-const SOURCING_START_HOUR = 7;
-const SOURCING_END_HOUR = 23;
-
-export function isWithinSourcingHours(cfg: Config, at: Date = new Date()): boolean {
-  const { hour } = tzClock(cfg.account.timezone, at);
-  return hour >= SOURCING_START_HOUR && hour < SOURCING_END_HOUR;
-}
 
 /** 0-based warm-up week since the first enabled run. */
 export function warmupWeekIndex(startedAt: Date, now: Date = new Date()): number {

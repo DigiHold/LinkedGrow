@@ -16,7 +16,7 @@ import { learn, miningOrder, recordPass, scoreSources } from "./learn.ts";
 import { asPrompt, readMemory, reviseMemory } from "./memory.ts";
 import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
 import { ensureTargeting } from "./derive.ts";
-import { book, roomToRead, tierOf } from "../safety/reading.ts";
+import { book, roomToRead, tierOf, MIN_VISIT_READ, type Pace } from "../safety/reading.ts";
 
 /**
  * Finding the people, which is the half the product is actually bought for.
@@ -53,6 +53,57 @@ const SOURCES_PER_PASS = 2;
 
 /** How many to read on the very first pass, when time to the first lead is the whole game. */
 const FIRST_RUN_SOURCES = 6;
+
+/**
+ * Below this a source is not worth opening: the page load buys almost nobody.
+ * The same number bounds a visit, and it lives in reading.ts so the two agree.
+ */
+const MIN_PROFILES_PER_SOURCE = MIN_VISIT_READ;
+
+/**
+ * What a source costs against the commercial use limit.
+ *
+ * The limit counts searches and out-of-network profile views, and nothing else.
+ * Opening a competitor's page by its URL, opening one of its posts and reading
+ * who reacted underneath costs zero: no search is run and no profile is
+ * visited. A keyword source runs two searches, one over posts and one over
+ * people, and a buying-event source runs the same pair.
+ *
+ * Charging all of them one search flat, which is what this did, both
+ * over-charged the cheap sources and under-charged the expensive ones by half.
+ * It matters because searches are the scarce pool: on a free account there are
+ * eight a day against eighty people to read.
+ */
+export function searchCost(type: string): number {
+  switch (type) {
+    case "keyword":
+    case "market":
+    case "linkedin_search":
+    case "buying_event":
+      return 2;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * How deep to read one source, given what the visit is allowed to spend.
+ *
+ * Both numbers move, which is the fix. Holding posts at four and squeezing only
+ * the people per post is what made the arithmetic lie: four posts at the floor
+ * of five is twenty people whatever the allowance said, so a visit with ten to
+ * spend quietly read twice that and the budget it was checked against was
+ * fiction.
+ */
+export function readingShape(
+  perSource: number,
+  base: { perPost: number; posts: number }
+): { perPost: number; posts: number } {
+  const room = Math.max(MIN_PROFILES_PER_SOURCE, perSource);
+  const posts = Math.max(1, Math.min(base.posts, Math.ceil(room / 8)));
+  const perPost = Math.max(5, Math.min(base.perPost, Math.floor(room / posts)));
+  return { perPost, posts };
+}
 
 /**
  * Reading allowance by how long the account has existed. A first pass finds
@@ -271,7 +322,7 @@ export function splitHeadline(headline: string | null): {
 export async function sourcePass(
   ctx: AgentContext,
   page: Page,
-  opts: { firstRun?: boolean } = {}
+  opts: { firstRun?: boolean; pace?: Pace } = {}
 ): Promise<number> {
   const all = await loadSources(ctx);
 
@@ -353,13 +404,11 @@ export async function sourcePass(
   const ageDays = Math.floor(
     (Date.now() - (ctx.warmupStartedAt?.getTime() ?? Date.now())) / 86_400_000
   );
-  const room = await roomToRead(ctx.linkedinAccountId, tier, ctx.timezone, ageDays);
+  const room = await roomToRead(ctx.linkedinAccountId, tier, ctx.timezone, ageDays, opts.pace);
   if (!room.ok) {
-    await recordEvent(
-      ctx,
-      "sourcing",
-      `Today's reading allowance is used up, so the search pauses until tomorrow. Nothing is wrong with the account.`
-    ).catch(() => {});
+    // Not an error and not worth an event every five minutes: the account has
+    // read its share for this visit and the next one is hours away. The
+    // sequence still runs after this returns, so the pass is not wasted.
     log(`sourcing paused: ${room.reason}`, { accountId: ctx.linkedinAccountId, tier });
     return 0;
   }
@@ -367,9 +416,36 @@ export async function sourcePass(
   const wanted = opts.firstRun
     ? Math.min(FIRST_RUN_SOURCES, sources.length)
     : SOURCES_PER_PASS;
-  // One search per source, so the number of sources is capped by the searches left.
-  const take = Math.max(1, Math.min(wanted, Math.max(1, Math.floor(room.actions / 12))));
-  const chosen = sources.slice(0, take);
+
+  /**
+   * Sources are picked to fit both pools, not just the first two in the order.
+   *
+   * A source that needs a search is skipped once the search pool is empty, and
+   * the ones that cost nothing keep going. That is the whole point of counting
+   * the two separately: an account out of searches can still read every
+   * comment section its competitors have, which is the better source anyway.
+   */
+  const maxSources = Math.max(
+    1,
+    Math.min(wanted, Math.floor(room.profiles / MIN_PROFILES_PER_SOURCE))
+  );
+  const chosen: typeof sources = [];
+  let searchesLeft = room.searches;
+  for (const source of sources) {
+    if (chosen.length >= maxSources) break;
+    const cost = searchCost(source.type);
+    if (cost > searchesLeft) continue;
+    searchesLeft -= cost;
+    chosen.push(source);
+  }
+
+  if (chosen.length === 0) {
+    log("every source left needs a search and there are none left today", {
+      accountId: ctx.linkedinAccountId,
+      tier,
+    });
+    return 0;
+  }
 
   await recordEvent(
     ctx,
@@ -379,10 +455,11 @@ export async function sourcePass(
       : `Checking ${chosen.map((s) => s.label).join(" and ")} for new people`
   ).catch(() => {});
 
-  // Spread what is left across the sources this pass will open, so one source
-  // cannot eat the day. Never below five, or a pass brings back nothing useful.
-  const perSourceProfiles = Math.max(5, Math.floor((room.actions - chosen.length) / chosen.length));
-  budget.perPost = Math.max(5, Math.min(budget.perPost, Math.floor(perSourceProfiles / budget.posts)));
+  // Spread what the visit has across the sources it is about to open, so one
+  // source cannot eat the visit.
+  const shape = readingShape(Math.floor(room.profiles / chosen.length), budget);
+  budget.posts = shape.posts;
+  budget.perPost = shape.perPost;
 
   let total = 0;
 
@@ -394,7 +471,7 @@ export async function sourcePass(
        that dies halfway has still been seen by LinkedIn, and a counter that
        only credits finished work lets a crash loop read all day for free. */
     await book(ctx.linkedinAccountId, ctx.timezone, {
-      searches: 1,
+      searches: searchCost(source.type),
       profiles: budget.posts * budget.perPost,
     }).catch(() => {});
 
@@ -572,7 +649,9 @@ export async function sourcePass(
   // It fires when the customer never gave the agent anything to search for, or when everything
   // they did give came back empty this pass. An agent that goes quiet because its one competitor is
   // exhausted is the failure the toggle exists to prevent, and it looks broken from the outside.
-  if (ctx.smartLeadFinder && (!hasOwnQueries || total === 0)) {
+  // Widening the search is itself a search, so it waits when the pool is out
+  // rather than quietly running one more on top of the day's allowance.
+  if (ctx.smartLeadFinder && (!hasOwnQueries || total === 0) && searchesLeft >= 1) {
     total += await fallbackPass(ctx, page, budget, hasOwnQueries);
   }
 
@@ -674,6 +753,10 @@ async function fallbackPass(
 
   let found: Engager[] = [];
   await announce(ctx, "widening the search to", undefined, queries.join(", "));
+  await book(ctx.linkedinAccountId, ctx.timezone, {
+    searches: 1,
+    profiles: queries.length * budget.perPost,
+  }).catch(() => {});
   const alive = setInterval(() => {
     void keepAlive(ctx);
   }, 30_000);
