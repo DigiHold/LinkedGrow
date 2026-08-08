@@ -75,6 +75,26 @@ const SEL = {
 // The profile's own Message button. Two lookalikes have to be excluded: the global nav "Messaging",
 // and "Message with Premium", an upsell LinkedIn shows on profiles you cannot message for free.
 // Clicking the upsell opens a sales page, which is how a send once ended up in the wrong thread.
+/**
+ * Can this person be written to right now, read off their top card?
+ *
+ * Pure, and exported, so the judgement can be held by tests against the exact
+ * two cards it was built from. Both were read off the live site on 2026-08-08:
+ *
+ *   "Shibam B. He/Him · 1st Co-founder, RazorBooking.com ..."
+ *   "Jerin Mariam · 2nd Product Architect ... Message Pending More"
+ *
+ * A pending invitation is refused even when the degree cannot be read, and an
+ * unreadable card is refused rather than guessed at: waiting a pass costs
+ * nothing, and a message that cannot be delivered costs the sequence its place.
+ */
+export function canMessageFromCard(topcardText: string): boolean {
+  const card = (topcardText ?? "").replace(/\s+/g, " ").trim();
+  if (!card) return false;
+  if (/\bpending\b/i.test(card)) return false;
+  return /·\s*1st\b/i.test(card);
+}
+
 const MESSAGE_BTN =
   'main button[aria-label^="Message"]:not([aria-label*="Messaging"]):not([aria-label*="Premium"]), ' +
   'main a[aria-label^="Message"]:not([aria-label*="Messaging"]):not([aria-label*="Premium"])';
@@ -438,11 +458,41 @@ export function browserActions(page: Page): LinkedInActions {
     },
 
     async canMessageNow(p) {
-      // The profile's own Message button is the whole test: LinkedIn only renders it when this
-      // account is actually allowed to message the person, whether that is because they are already
-      // connected or because they turned on Open Profile. No button means the invite has to land first.
+      /**
+       * The Message button is necessary and nowhere near sufficient.
+       *
+       * The premise here used to be that "LinkedIn only renders it when this
+       * account is actually allowed to message the person". It does not. Read
+       * off Jerin Mariam's live top card on 2026-08-08, second degree with an
+       * invitation still pending: `Message`, `Pending`, `More`. The button is
+       * there for everybody, and pressing it on a free account opens a Premium
+       * upsell headed "grow your network smarter with Premium" instead of a
+       * composer.
+       *
+       * So this returned true for prospects who had only just been invited,
+       * the sequence sent them straight to connected without waiting for the
+       * acceptance, and every hello afterwards failed with "could not open a
+       * conversation". Three of them on 2026-08-07, and the account looked
+       * broken for two days.
+       *
+       * The degree is the real test and the top card states it in words:
+       * "Shibam B. He/Him · 1st" against "Jerin Mariam · 2nd ... Pending". No
+       * selector changes here, only a second question asked of a card this
+       * codebase already reads for the compose link.
+       *
+       * A genuine Open Profile at second degree is turned away by this, which
+       * costs the wait for an acceptance that was going to happen anyway. That
+       * is the cheap side of being wrong.
+       */
       await goToProfile(p);
-      return (await page.locator(MESSAGE_BTN).count()) > 0;
+      if ((await page.locator(MESSAGE_BTN).count()) === 0) return false;
+
+      const card = await page
+        .locator('[componentkey$="Topcard"]')
+        .first()
+        .innerText()
+        .catch(() => "");
+      return canMessageFromCard(card);
     },
 
     async recentConnections() {

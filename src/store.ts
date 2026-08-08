@@ -153,6 +153,23 @@ export async function setProspectStatus(
   });
 }
 
+/**
+ * Puts a prospect back a step without restarting the clock on it.
+ *
+ * setProspectStatus stamps updated_at and step_at, which is right when the
+ * relationship actually moves and wrong when it is being corrected. An invite
+ * that is put back to waiting must keep the date it was sent, or the stale
+ * check reads it as fresh every time and the invitation is never withdrawn: the
+ * prospect would sit there for ever being retried.
+ */
+export async function revertProspectStatus(ctx: DB, id: number, status: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE agent_leads SET sequence_status = ?, step = ?
+           WHERE id = ? AND workspace_id = ?`,
+    args: [status, FUNNEL[status] ?? "queued", uuidFor(id), ctx.workspaceId],
+  });
+}
+
 /** The audit trail of what was written, whether or not it went out. */
 export async function recordMessage(
   ctx: DB,

@@ -553,3 +553,68 @@ test("a message that cannot be generated skips the prospect instead of sending",
   assert.equal(dmCalls, 0);
   drop();
 });
+
+/**
+ * The hello that could not be delivered, 2026-08-08.
+ *
+ * Three prospects sat at connected and every hello to them failed. Their
+ * profiles read "2nd" with a Pending invitation: they had never accepted. A
+ * free account writing to a second-degree connection is answered by LinkedIn
+ * with a Premium upsell rather than a composer, which is what the log line
+ * "could not open a conversation" was actually reporting.
+ */
+test("a hello that cannot be delivered puts the prospect back to waiting on the invite", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.connected, daysAgo(1));
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(fakeActions({ sendDm: async () => false }))
+  );
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(
+    String(rows[0]?.sequence_status),
+    STATUS.connectSent,
+    "believing they accepted a second time costs a profile visit on every pass, for ever"
+  );
+  drop();
+});
+
+test("rewinding does not restart the clock, or the invite is never withdrawn", async () => {
+  const db = await freshDb();
+  // Invited long enough ago that the stale check should be able to fire.
+  const id = await seed(db, STATUS.connected, daysAgo(30));
+  const before = await sharedDb().execute({
+    sql: `SELECT updated_at FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  await runSequence(baseCfg(), db, deps(fakeActions({ sendDm: async () => false })));
+  const after = await sharedDb().execute({
+    sql: `SELECT updated_at, sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(String(after.rows[0]?.sequence_status), STATUS.connectSent);
+  assert.equal(
+    Number(after.rows[0]?.updated_at),
+    Number(before.rows[0]?.updated_at),
+    "a rewind that stamps updated_at makes every stale invite look fresh for ever"
+  );
+  drop();
+});
+
+test("a failure after the hello does not rewind anybody", async () => {
+  // The intro follows a message that was delivered, so a failure there is a
+  // different problem and must not rewind somebody who is plainly connected.
+  const db = await freshDb();
+  const id = await seed(db, STATUS.helloSent, daysAgo(5));
+  await runSequence(baseCfg(), db, deps(fakeActions({ sendDm: async () => false })));
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(String(rows[0]?.sequence_status), STATUS.helloSent);
+  drop();
+});

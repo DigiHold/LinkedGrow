@@ -15,6 +15,7 @@ import {
   type ProspectRow,
   getProspects,
   setProspectStatus,
+  revertProspectStatus,
   recordMessage,
   recordInbound,
   getThread,
@@ -421,6 +422,30 @@ async function sendStep(
   const sent = await deps.actions.sendDm(p, message.body);
   if (!sent) {
     log(`${step} to ${label(p)} was not sent (action returned false).`);
+    /**
+     * A hello that cannot be delivered means they never accepted.
+     *
+     * On 2026-08-08 three prospects sat at connected and every hello to them
+     * failed. Their profiles say "2nd" with a Pending invitation, and a free
+     * account writing to a second-degree connection is answered by LinkedIn
+     * with a Premium upsell rather than a composer, which is what "could not
+     * open a conversation" was really reporting.
+     *
+     * Whatever put them there, believing it a second time costs a profile
+     * visit and a compose attempt on every pass, for ever. So the belief is
+     * dropped and they go back to waiting on the invitation, where the sweep
+     * will promote them again the moment they genuinely appear in the
+     * connections list, and the stale check will withdraw the invite if they
+     * never do.
+     *
+     * Only the hello. Every later step follows a message that was delivered,
+     * so a failure there is a different problem and must not be papered over
+     * by rewinding somebody who is plainly connected.
+     */
+    if (step === RELATIONSHIP_STEPS.hello) {
+      await revertProspectStatus(db, p.id, STATUS.connectSent);
+      log(`${label(p)} goes back to waiting on the invitation: no conversation could be opened.`);
+    }
     return false;
   }
   await recordMessage(db, p.id, step, message.body, message.angle, true);
