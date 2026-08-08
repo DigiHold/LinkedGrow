@@ -135,7 +135,24 @@ const SEL = {
     '[role="button"]:has-text("Créer un post"), [role="button"]:has-text("Beitrag beginnen"), ' +
     '[role="button"]:has-text("Empezar una publicación"), [role="button"]:has-text("Crea un post"), ' +
     '[role="button"]:has-text("Começar publicação"), [role="button"]:has-text("Bericht schrijven")',
-  dialog: 'div[role="dialog"].share-creation-state, div.share-box, div[role="dialog"]',
+  /**
+   * The composer, and why a native `<dialog>` had to go in front.
+   *
+   * This listed only `div[role="dialog"]` shapes, so on the current composer it
+   * matched nothing that held the editor and every lookup fell back to `body`.
+   * Scoping to the whole page is what broke the carousel on 2026-08-08: the
+   * upload wait treats a visible progress bar ANYWHERE in its scope as an
+   * upload still running, and a probe on the live account found one sitting
+   * outside the composer, visible, permanently. The loop could never end, and
+   * it reported "the attachment did not finish uploading" on a document whose
+   * two pages were rendered on screen behind it.
+   *
+   * It also explains why an image published fine ten minutes earlier and a
+   * document did not: the stray bar belongs to the feed, so whether a post goes
+   * out depended on what the feed happened to be rendering.
+   */
+  dialog:
+    'dialog[open], div[role="dialog"].share-creation-state, div.share-box, div[role="dialog"]',
   editor: '.ql-editor[contenteditable="true"], div[role="textbox"][contenteditable="true"]',
   // ":text-is" is exact: "Post" the button, never "Post to anyone" the audience row.
   postButton: 'button.share-actions__primary-action, button:text-is("Post")',
@@ -307,6 +324,15 @@ async function waitForUpload(
   postText = ""
 ): Promise<void> {
   const deadline = Date.now() + uploadTimeoutFor(mimeType);
+  /**
+   * The composer itself, never the page.
+   *
+   * `dialog` is whatever publishPost resolved, and it is deliberately allowed
+   * to be `body` so that an older layout with no dialog at all still works.
+   * That is safe for finding a button and unsafe for deciding whether an upload
+   * is running, so the progress check below uses the narrowest scope available.
+   */
+  const composer = (await firstVisible(page.locator("dialog[open]"))) ?? dialog;
 
   while (Date.now() < deadline) {
     await sleep(1500);
@@ -322,7 +348,7 @@ async function waitForUpload(
      * whatever moment the field appears at.
      */
     if (mimeType === "application/pdf") {
-      await fillDocumentTitle(page, dialog, postText).catch(() => {});
+      await fillDocumentTitle(page, composer, postText).catch(() => {});
       /**
        * And then leave the document screen.
        *
@@ -332,7 +358,11 @@ async function waitForUpload(
        * could never end: it timed out on a document that had uploaded fine and
        * was sitting there asking to be confirmed.
        */
-      const done = await firstVisible(namedButton(page, BUTTON_NAME.next));
+      // The composer first: a second dialog is mounted on this page and it has
+      // a button called Done of its own, which an unscoped lookup can take.
+      const done =
+        (await firstVisible(namedButton(composer, BUTTON_NAME.next))) ??
+        (await firstVisible(namedButton(page, BUTTON_NAME.next)));
       if (done && !(await done.isDisabled().catch(() => true))) {
         await clickHumanLocator(page, done);
         await dwell(1500, 2800);
@@ -365,14 +395,17 @@ async function waitForUpload(
       }
     }
 
-    // Visible, not merely present.
-    //
-    // This counted every [role="progressbar"] in the page, and the scope is
-    // the whole page now that the composer is not a dialog. One hidden bar
-    // parked in the DOM was therefore enough to say "still uploading" for
-    // ever: a carousel that had finished, rendered its two pages and shown an
-    // enabled Post button still timed out here, six times.
-    if (await firstVisible(dialog.locator(SEL.uploadProgress))) continue;
+    /**
+     * Visible, inside the composer, and not merely present anywhere.
+     *
+     * Requiring visibility was the first half of this fix and it was not
+     * enough. The scope was the second half: `dialog` fell back to `body` on
+     * the current composer, and a probe on the live account on 2026-08-08 found
+     * a progress bar OUTSIDE the composer, visible, that never goes away. Every
+     * pass round this loop saw it and continued, for the full two minutes, on a
+     * document that had finished uploading and was showing both its pages.
+     */
+    if (await firstVisible(composer.locator(SEL.uploadProgress))) continue;
 
     const post =
       (await firstVisible(namedButton(dialog, BUTTON_NAME.post))) ??

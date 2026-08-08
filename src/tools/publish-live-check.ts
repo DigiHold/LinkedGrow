@@ -168,6 +168,32 @@ async function queueWithImage(accountId: string): Promise<void> {
   await watch(id, 10, "published");
 }
 
+/** A carousel published now, so the document flow can be checked in minutes. */
+async function queueCarousel(accountId: string): Promise<void> {
+  const acct = await account(accountId);
+  const id = `livecheck-carousel-now-${Date.now()}`;
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  await db().execute({
+    sql: `INSERT INTO posts (id, user_id, content, post_type, status, scheduled_at,
+                             linkedin_account_id, publish_attempts, created_at, updated_at)
+          VALUES (?, ?, ?, 'carousel', 'queued', ?, ?, 0, ?, ?)`,
+    args: [id, acct.workspaceId, CAROUSEL_TEXT, nowSec, accountId, nowSec, nowSec],
+  });
+  await db().execute({
+    sql: `INSERT INTO media (id, user_id, post_id, storage_key, storage_url,
+                             file_name, mime_type, file_size, sort_order, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'application/pdf', 896, 0, 'ready', ?)`,
+    args: [
+      `${id}-pdf`, acct.workspaceId, id, "checks/carousel-check.pdf",
+      "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/checks/carousel-check.pdf",
+      "carousel-check.pdf", nowSec,
+    ],
+  });
+  console.log(`queued ${id} as a carousel, waiting for the worker to publish it`);
+  await watch(id, 10, "published");
+}
+
 /** The row the app writes when somebody presses Publish, written by hand. */
 async function queueAndWatch(accountId: string): Promise<void> {
   const acct = await account(accountId);
@@ -605,6 +631,7 @@ async function main(): Promise<void> {
   if (!accountId) throw new Error("Which account?");
   if (mode === "queue") return queueAndWatch(accountId);
   if (mode === "queue-image") return queueWithImage(accountId);
+  if (mode === "queue-carousel") return queueCarousel(accountId);
   if (mode === "inspect") return inspect(accountId, process.argv.slice(4).filter(Boolean));
   if (mode === "carousel-probe") return carouselProbe(accountId);
   if (mode === "schedule-carousel") {
