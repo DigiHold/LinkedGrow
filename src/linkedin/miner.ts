@@ -4,7 +4,7 @@ import { log } from "../logger.ts";
 import { openSession, hasSessionCookie } from "../browser/driver.ts";
 import { dwell, scrollHuman, clickHumanLocator, sleep, randInt } from "../browser/human.ts";
 import { actionDelayMs } from "../safety/envelope.ts";
-import type { DB } from "../store.ts";
+import { getMeta, setMeta, type DB } from "../store.ts";
 import { claimLead } from "../db.ts";
 import { judgeAsking } from "../messages/generate.ts";
 import { resolveCompetitorUrls } from "./resolve.ts";
@@ -48,6 +48,16 @@ export interface MineOptions {
 const DEFAULTS = { maxPerPost: 25, maxPostsPerTarget: 2 };
 
 /**
+ * How far back down a feed a pass will walk before returning to the top.
+ *
+ * Twenty-four posts is a couple of months for a company that posts twice a
+ * week, which is deep enough that the recent posts have fresh engagement by the
+ * time the walk comes round again, and shallow enough that reaching the bottom
+ * costs a handful of scrolls rather than a minute of them.
+ */
+const MAX_MINE_DEPTH = 24;
+
+/**
  * Mines engagement leads from competitor content. This is browser activity on the account, so it
  * moves at a human pace and reads only: it opens a post, opens its reactions and comments, and
  * extracts the people, never liking, commenting, connecting or messaging.
@@ -75,8 +85,35 @@ export async function mine(ctx: DB, page: Page, cfg: Config, opts: MineOptions):
     }
     if (targets.length === 0) log("No mining targets (pass targets or competitorNames).");
     for (const target of targets) {
-      const found = await mineTarget(cfg, page, target, maxPerPost, maxPostsPerTarget);
+      /**
+       * How far down this company's feed to start, and why it moves.
+       *
+       * mineTarget opened the page, scrolled a little and read the first few
+       * posts. Every pass, for ever. The people under those posts are claimed
+       * on the first pass and every pass after it returns the same names, which
+       * the deduplication then throws away, so the pass reports nothing found.
+       *
+       * That is not a theory. On the real agent between 2026-08-01 and
+       * 2026-08-08, 54 of 65 sourcing passes found NOBODY, and the 11 that
+       * found somebody were almost all on the first day. A competitor's feed
+       * holds months of posts and the miner was reading the same four.
+       *
+       * So each pass starts where the last one stopped and walks back through
+       * the feed, then returns to the top once it has gone deep enough, by
+       * which time the recent posts carry engagement it has never seen.
+       */
+      const key = `mine_depth:${companyLabel(target)}`;
+      const stored = Number(await getMeta(db, key));
+      const skip = Number.isFinite(stored) && stored > 0 ? stored : 0;
+
+      const found = await mineTarget(cfg, page, target, maxPerPost, maxPostsPerTarget, skip);
       engagers.push(...found);
+
+      // Nothing at this depth means the feed is shorter than we thought, so the
+      // next pass starts again at the top rather than walking further into
+      // empty space.
+      const next = found.length === 0 && skip > 0 ? 0 : skip + maxPostsPerTarget;
+      await setMeta(db, key, String(next >= MAX_MINE_DEPTH ? 0 : next));
       await sleep(actionDelayMs(cfg));
     }
   } finally {
@@ -485,12 +522,22 @@ export function matchesIcp(
 }
 
 /** Opens a target's recent posts and extracts engagers from each. */
-async function mineTarget(cfg: Config, page: Page, target: string, maxPerPost: number, maxPosts: number): Promise<Engager[]> {
+async function mineTarget(
+  cfg: Config,
+  page: Page,
+  target: string,
+  maxPerPost: number,
+  maxPosts: number,
+  /** Posts to walk past before reading, so a later pass sees older posts. */
+  skip = 0
+): Promise<Engager[]> {
   const url = normalizeTarget(target);
-  log(`Opening ${url}`);
+  log(`Opening ${url}${skip > 0 ? ` from post ${skip + 1}` : ""}`);
   await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
   await waitForFeed(page);
-  await scrollHuman(page, randInt(2, 4));
+  // Deeper posts need more of the feed loaded before they exist in the page at
+  // all. Roughly three posts arrive per scroll, so the depth buys its own.
+  await scrollHuman(page, randInt(2, 4) + Math.ceil(skip / 3));
   await dwell(1500, 3500);
 
   const label = companyLabel(target);
@@ -498,16 +545,16 @@ async function mineTarget(cfg: Config, page: Page, target: string, maxPerPost: n
 
   // Commenters first: they carry more intent than reactors (they wrote about the topic), and
   // expanding comments in place is lighter than opening the reactions modal repeatedly.
-  const commenters = await extractCommenters(cfg, page, label, maxPosts, maxPerPost);
+  const commenters = await extractCommenters(cfg, page, label, maxPosts, maxPerPost, skip);
   engagers.push(...commenters);
   log(`  ${commenters.length} commenters on ${label}.`);
 
-  const reactionButtons = await postReactionButtons(page, maxPosts);
-  if (reactionButtons === 0 && commenters.length === 0) {
+  const range = await postReactionRange(page, maxPosts, skip);
+  if (range.length === 0 && commenters.length === 0) {
     log(`No reactions or comments visible on ${url}. The page may need a slug that has recent posts.`);
     return engagers;
   }
-  for (let i = 0; i < reactionButtons; i++) {
+  for (const i of range) {
     const opened = await openReactionsModal(page, i);
     if (!opened) continue;
     const reactors = await extractFromDialog(page, `reaction:${label}`, maxPerPost, !cfg.skipConnected);
@@ -523,13 +570,20 @@ async function mineTarget(cfg: Config, page: Page, target: string, maxPerPost: n
  * structured differently from a reactor: the visible name and the headline live in dedicated
  * meta elements, and the comment body must be excluded from the headline. Selectors verified live.
  */
-async function extractCommenters(cfg: Config, page: Page, label: string, maxPosts: number, maxPerPost: number): Promise<Engager[]> {
+async function extractCommenters(
+  cfg: Config,
+  page: Page,
+  label: string,
+  maxPosts: number,
+  maxPerPost: number,
+  skip = 0
+): Promise<Engager[]> {
   // The "N comments on X's post" count button loads the thread in place. The plain "Comment" button
   // only opens the composer, so we match the count button by its accessible name, not a class.
   const buttons = page.getByRole("button", { name: /comments? on /i });
-  const count = Math.min(await buttons.count(), maxPosts);
+  const range = reactionRange(await buttons.count(), maxPosts, skip);
   const engagers: Engager[] = [];
-  for (let i = 0; i < count; i++) {
+  for (const i of range) {
     const button = buttons.nth(i);
     try {
       await dwell(500, 1400);
@@ -598,7 +652,7 @@ async function extractCommenters(cfg: Config, page: Page, label: string, maxPost
     for (const r of raw) {
       const engager = toCommenter(r, `comment:${label}`, !cfg.skipConnected);
       if (engager) engagers.push(engager);
-      if (engagers.length >= maxPerPost * count) break;
+      if (engagers.length >= maxPerPost * range.length) break;
     }
     await sleep(actionDelayMs(cfg));
   }
@@ -641,9 +695,26 @@ async function waitForFeed(page: Page): Promise<void> {
  * Counts (and thereby validates the presence of) the reaction summary buttons for the first posts.
  * Returns how many are available up to the cap.
  */
-async function postReactionButtons(page: Page, cap: number): Promise<number> {
-  const count = await page.evaluate((sel) => document.querySelectorAll(sel).length, REACTION_BUTTON_SELECTOR);
-  return Math.min(count, cap);
+/**
+ * Which reaction summaries to open, as indexes into the loaded feed.
+ *
+ * A range rather than a count, because a pass that starts at post 13 has to
+ * click the 13th button and not the first one again.
+ */
+export function reactionRange(available: number, cap: number, skip: number): number[] {
+  const start = Math.max(0, Math.min(skip, Math.max(0, available - 1)));
+  const end = Math.min(available, start + Math.max(0, cap));
+  const out: number[] = [];
+  for (let i = start; i < end; i += 1) out.push(i);
+  return out;
+}
+
+async function postReactionRange(page: Page, cap: number, skip: number): Promise<number[]> {
+  const count = await page.evaluate(
+    (sel) => document.querySelectorAll(sel).length,
+    REACTION_BUTTON_SELECTOR
+  );
+  return reactionRange(count, cap, skip);
 }
 
 /** Clicks the nth reaction summary and waits for the reactors dialog. */
