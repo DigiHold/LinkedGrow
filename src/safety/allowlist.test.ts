@@ -50,7 +50,11 @@ test("a named profile is contacted normally, by url or by slug", async () => {
   assert.deepEqual(calls, ["sendDm", "sendDm"]);
 });
 
-test("reading is never restricted, because reading harms nobody", async () => {
+/* The allowlist governs who may be contacted, so it lets our own inbox and our
+   own threads be read. That is all this says. Reading LinkedIn at volume is a
+   different question with a different answer, and it lives in reading.ts: an
+   account was restricted on 2026-08-08 for exactly that. */
+test("the contact allowlist does not block reading our own inbox", async () => {
   const { actions } = spy();
   const guarded = onlyContact(actions, ["maria-lecocq"]);
   assert.deepEqual(await guarded.inboxRepliers(), []);

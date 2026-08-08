@@ -49,6 +49,10 @@ export interface AgentContext {
   linkedinAccountId: string;
   /** Country of the address this account is pinned to. Never the address itself. */
   country: string;
+  /** free, premium or sales_navigator. Decides how much the account may read. */
+  tier: string;
+  /** The account's own timezone, so a daily reading budget resets where it lives. */
+  timezone: string;
   /** The ceiling belongs to the account, and its agents divide it. Section 5c. */
   accountDailyInviteCap: number;
   /** How many agents send from this account, so the split can be computed. */

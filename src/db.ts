@@ -2,6 +2,7 @@ import { createClient, type Client } from "@libsql/client";
 import { requireEnv } from "./config.ts";
 import type { AgentContext, Config } from "./config.ts";
 import { DEFAULTS } from "./config.ts";
+import { timezoneForCountry } from "./browser/fingerprint.ts";
 
 /**
  * The worker's view of the database.
@@ -117,6 +118,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.last_run_at       AS last_run_at,
       l.full_name         AS account_full_name,
       l.country           AS country,
+      l.tier              AS tier,
       l.daily_invite_cap  AS account_cap,
       l.warmup_started_at AS warmup_started_at,
       l.status            AS account_status,
@@ -203,6 +205,8 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       workspaceId: String(r.workspace_id),
       linkedinAccountId: String(r.account_id),
       country: String(r.country ?? ""),
+      tier: String(r.tier ?? "free"),
+      timezone: timezoneForCountry(String(r.country ?? "")),
       accountDailyInviteCap: Number(r.account_cap ?? 8),
       agentsOnAccount: Math.max(1, Number(r.agents_on_account ?? 1)),
       lastRunAt: r.last_run_at ? new Date(Number(r.last_run_at) * 1000) : null,

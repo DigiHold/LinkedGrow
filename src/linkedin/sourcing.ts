@@ -16,6 +16,7 @@ import { learn, miningOrder, recordPass, scoreSources } from "./learn.ts";
 import { asPrompt, readMemory, reviseMemory } from "./memory.ts";
 import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
 import { ensureTargeting } from "./derive.ts";
+import { book, roomToRead, tierOf } from "../safety/reading.ts";
 
 /**
  * Finding the people, which is the half the product is actually bought for.
@@ -303,7 +304,7 @@ export async function sourcePass(
     }
   }
 
-  const budget = readingBudget(ctx);
+  const budget = { ...readingBudget(ctx) };
   // The oldest-mined first, which loadSources already orders by, so attention
   // spreads rather than always landing on the same competitor.
   /**
@@ -316,9 +317,32 @@ export async function sourcePass(
    * product does not work. Reading is the safe half of what an agent does, so
    * a wider first pass costs nothing on the account.
    */
-  const take = opts.firstRun
+  /**
+   * What the account is still allowed to read today.
+   *
+   * Sourcing is reading, and reading was the one thing nothing counted. An
+   * account restricted on 2026-08-08 for "an unusually high volume of profile
+   * data" had sent fifteen invitations in its life and opened on the order of a
+   * hundred searches a day. The pass now fits inside the day's allowance rather
+   * than running as often as the loop happens to come round.
+   */
+  const tier = tierOf(ctx.tier);
+  const room = await roomToRead(ctx.linkedinAccountId, tier, ctx.timezone);
+  if (!room.ok) {
+    await recordEvent(
+      ctx,
+      "sourcing",
+      `Today's reading allowance is used up, so the search pauses until tomorrow. Nothing is wrong with the account.`
+    ).catch(() => {});
+    log(`sourcing paused: ${room.reason}`, { accountId: ctx.linkedinAccountId, tier });
+    return 0;
+  }
+
+  const wanted = opts.firstRun
     ? Math.min(FIRST_RUN_SOURCES, sources.length)
     : SOURCES_PER_PASS;
+  // One search per source, so the number of sources is capped by the searches left.
+  const take = Math.max(1, Math.min(wanted, room.searches));
   const chosen = sources.slice(0, take);
 
   await recordEvent(
@@ -329,11 +353,24 @@ export async function sourcePass(
       : `Checking ${chosen.map((s) => s.label).join(" and ")} for new people`
   ).catch(() => {});
 
+  // Spread what is left across the sources this pass will open, so one source
+  // cannot eat the day. Never below five, or a pass brings back nothing useful.
+  const perSourceProfiles = Math.max(5, Math.floor(room.profiles / chosen.length));
+  budget.perPost = Math.max(5, Math.min(budget.perPost, Math.floor(perSourceProfiles / budget.posts)));
+
   let total = 0;
 
   for (const source of chosen) {
     const config = parseConfig(source.config);
     let found: Engager[] = [];
+
+    /* Booked before the pages are opened, not after they are counted. A pass
+       that dies halfway has still been seen by LinkedIn, and a counter that
+       only credits finished work lets a crash loop read all day for free. */
+    await book(ctx.linkedinAccountId, ctx.timezone, {
+      searches: 1,
+      profiles: budget.posts * budget.perPost,
+    }).catch(() => {});
 
     // Mining one source takes minutes, so this is the line the dashboard shows
     // for most of a working day. It says which source, in the present.
