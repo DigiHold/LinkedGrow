@@ -516,26 +516,23 @@ async function dmProbe(accountId: string, profileUrl: string): Promise<void> {
     acct.allocation
   );
   const page = session.page;
+
   const look = async (what: string) => {
     const path = `/tmp/dm-${what}.png`;
     await page.screenshot({ path }).catch(() => {});
     const state = await page
       .evaluate(() => ({
-        oldComposer: document.querySelectorAll(".msg-form__contenteditable").length,
-        oldBubble: document.querySelectorAll(".msg-overlay-conversation-bubble").length,
-        oldSend: document.querySelectorAll("button.msg-form__send-button").length,
-        oldListItem: document.querySelectorAll(".msg-s-event-listitem").length,
-        anyMsgClass: Array.from(document.querySelectorAll("[class]"))
-          .flatMap((el) => Array.from(el.classList))
-          .filter((c) => c.startsWith("msg-"))
-          .filter((c, i, all) => all.indexOf(c) === i)
-          .slice(0, 12),
-        textboxes: document.querySelectorAll('[contenteditable="true"]').length,
-        nativeDialogs: document.querySelectorAll("dialog[open]").length,
-        messageLinks: Array.from(document.querySelectorAll('a[href*="/messaging/"]'))
-          .map((a) => ((a as HTMLElement).innerText || a.getAttribute("aria-label") || "").trim())
-          .filter(Boolean)
-          .slice(0, 6),
+        url: location.pathname,
+        composer: document.querySelectorAll(".msg-form__contenteditable").length,
+        bubble: document.querySelectorAll(".msg-overlay-conversation-bubble").length,
+        send: document.querySelectorAll("button.msg-form__send-button").length,
+        sendDisabled: Array.from(
+          document.querySelectorAll("button.msg-form__send-button")
+        ).map((b) => (b as HTMLButtonElement).disabled),
+        listItems: document.querySelectorAll(".msg-s-event-listitem").length,
+        bubbleHeaders: Array.from(document.querySelectorAll(".msg-overlay-conversation-bubble"))
+          .map((b) => (b as HTMLElement).innerText.slice(0, 60).replace(/\s+/g, " "))
+          .slice(0, 4),
       }))
       .catch(() => null);
     console.log(`\n[${what}] ${path}\n  ${JSON.stringify(state)}`);
@@ -543,21 +540,43 @@ async function dmProbe(accountId: string, profileUrl: string): Promise<void> {
 
   try {
     if (!(await isSignedIn(session.context))) throw new Error("signed out");
+
+    // Exactly what production does, step by step, so what is measured is the
+    // path that actually failed rather than a different one. The last probe
+    // clicked a Message control, never reached a conversation, and I read the
+    // empty result as LinkedIn having removed the class. It had not.
     await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(6000);
     await look("profile");
 
-    const message = page
-      .locator('a[href*="/messaging/"], button')
-      .filter({ hasText: /^(message|envoyer un message)$/i })
-      .first();
-    if (!(await message.isVisible().catch(() => false))) {
-      console.log("  NO MESSAGE CONTROL on the top card");
+    const found = await page.evaluate(() => {
+      const topcard = document.querySelector('[componentkey$="Topcard"]');
+      const own = topcard?.querySelector('a[href*="/messaging/compose"]') as HTMLAnchorElement | null;
+      const all = Array.from(document.querySelectorAll('a[href*="/messaging/compose"]')).map((a) => ({
+        href: (a as HTMLAnchorElement).getAttribute("href"),
+        aria: a.getAttribute("aria-label"),
+        text: (a as HTMLElement).innerText.trim().slice(0, 24),
+      }));
+      return {
+        topcardFound: Boolean(topcard),
+        topcardKey: topcard?.getAttribute("componentkey") ?? null,
+        ownHref: own?.getAttribute("href") ?? null,
+        composeLinks: all.slice(0, 8),
+      };
+    });
+    console.log(`  composeHref sees: ${JSON.stringify(found, null, 1)}`);
+
+    if (!found.ownHref) {
+      console.log("  PRODUCTION WOULD STOP HERE: no compose link in the top card");
       return;
     }
-    await message.click().catch(() => {});
-    await page.waitForTimeout(7000);
-    await look("thread-open");
+
+    await page.goto(new URL(found.ownHref, "https://www.linkedin.com").toString(), {
+      waitUntil: "domcontentloaded",
+    });
+    await page.waitForSelector(".msg-form__contenteditable", { timeout: 12_000 }).catch(() => {});
+    await page.waitForTimeout(3000);
+    await look("thread");
   } finally {
     await closeSession(session).catch(() => {});
   }
