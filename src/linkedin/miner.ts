@@ -723,6 +723,20 @@ async function mineTarget(
   // Deeper posts need more of the feed loaded before they exist in the page at
   // all. Roughly three posts arrive per scroll, so the depth buys its own.
   await scrollHuman(page, randInt(2, 4) + Math.ceil(skip / 3));
+  /**
+   * Past roughly twenty posts a profile's activity feed stops loading on
+   * scroll and offers a "Show more results" button instead, read off the real
+   * page on 2026-08-10. A walk deep enough to need it would have stalled there
+   * and reported a short feed. One bounded press, only when the depth asks.
+   */
+  if (skip > 0) {
+    const more = page.getByRole("button", { name: /show more results/i }).first();
+    if (await more.isVisible().catch(() => false)) {
+      await clickHumanLocator(page, more).catch(() => {});
+      await dwell(1500, 3000);
+      await scrollHuman(page, randInt(1, 2));
+    }
+  }
   await dwell(1500, 3500);
 
   const label = companyLabel(target);
