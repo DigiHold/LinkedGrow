@@ -73,18 +73,45 @@ export interface ReadBudget {
   minProfilesPerDay: number;
 }
 
+/**
+ * ## The number, corrected a third time, and why this one is not a guess
+ *
+ * 2,400 a month came out at 77 profiles on a running day, which the sourcing
+ * shape then cut into four visits, then into sources, then into posts, and what
+ * came out the other end was **two reactions read per post**. A competitor's
+ * post carries hundreds. The agent found four leads in a day.
+ *
+ * Nicolas connected a free LinkedIn account to a competing tool and it returned
+ * more than thirty leads in a single day, sustained, with no restriction ever.
+ * That is a measurement of what a free account survives. My 2,400 was an
+ * estimate. A measurement beats an estimate, and this is the third time these
+ * numbers have been set from the wrong kind of evidence.
+ *
+ * What makes the higher figure defensible rather than reckless is what the
+ * counter actually counts. Most of it is names read out of a reactions list:
+ * one modal, opened once, scrolled. Reading a hundred names that way is a
+ * handful of requests and it is what any person scrolling a popular post does.
+ * It is not a hundred profile page loads, and the commercial use limit does not
+ * count it at all. The searches below, which LinkedIn does count and does
+ * publish a limit for, are deliberately left exactly where they were.
+ *
+ * And the thing that actually caused the restriction is untouched: the shape.
+ * safety/rhythm.ts still allows three to five visits a day at irregular hours,
+ * which is the signal no volume figure can disguise and no proxy can hide.
+ */
 const BUDGETS: Record<AccountTier, ReadBudget> = {
-  // 96 people and 9 searches on a day it runs, which is a heavy human user and
-  // no more. Across the 24 days rhythm.ts keeps, that is 2,304 of the 2,400.
-  free: { profilesPerMonth: 2_400, searchesPerMonth: 240, minProfilesPerDay: 20 },
+  // 250 names on a running day, spread over a handful of visits. The searches
+  // stay at 9 a day: that is the one ceiling LinkedIn publishes the existence
+  // of, and nothing here justifies moving it.
+  free: { profilesPerMonth: 6_250, searchesPerMonth: 240, minProfilesPerDay: 40 },
   // Premium Business and Recruiter Lite raise the commercial use allowance. By
   // how much is not published, so the search pool roughly triples rather than
   // being lifted: the profile pool is what the customer actually feels.
-  premium: { profilesPerMonth: 4_500, searchesPerMonth: 700, minProfilesPerDay: 40 },
+  premium: { profilesPerMonth: 12_500, searchesPerMonth: 700, minProfilesPerDay: 80 },
   // Sales Navigator lifts the commercial use limit off people search entirely.
   // What remains is the anti-scraping detector, which is about shape rather
   // than a number, so this stays a pace rather than becoming unlimited.
-  sales_navigator: { profilesPerMonth: 9_000, searchesPerMonth: 3_000, minProfilesPerDay: 80 },
+  sales_navigator: { profilesPerMonth: 25_000, searchesPerMonth: 3_000, minProfilesPerDay: 160 },
 };
 
 /**

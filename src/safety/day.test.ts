@@ -119,10 +119,11 @@ test("a month stays inside the monthly pools", () => {
     profiles += result.profiles;
     searches += result.searches;
   }
-  assert.ok(profiles <= 2_400, `a month read ${profiles} against a pool of 2400`);
+  const pool = 6_250;
+  assert.ok(profiles <= pool, `a month read ${profiles} against a pool of ${pool}`);
   assert.ok(searches <= 240, `a month ran ${searches} searches against a pool of 240`);
   // The other half of the bargain: the pool exists to be used, not admired.
-  assert.ok(profiles >= 1_000, `a month found only ${profiles} people, which is not a product`);
+  assert.ok(profiles >= pool / 3, `a month read only ${profiles} of ${pool}, which is not a product`);
 });
 
 test("a brand-new account starts slower and reaches full pace within three weeks", () => {

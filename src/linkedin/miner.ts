@@ -78,7 +78,7 @@ const MAX_MINE_DEPTH = 24;
  * allowance, and the allowance itself is spread over more posts, because every
  * extra post opened brings its own comment section with it.
  */
-const REACTION_SHARE = 0.35;
+const REACTION_SHARE = 0.5;
 
 /**
  * Mines engagement leads from competitor content. This is browser activity on the account, so it

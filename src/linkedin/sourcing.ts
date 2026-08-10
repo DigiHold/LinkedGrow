@@ -126,9 +126,16 @@ export function readingShape(
   base: { perPost: number; posts: number }
 ): { perPost: number; posts: number } {
   const room = Math.max(MIN_PROFILES_PER_SOURCE, perSource);
-  // Six rather than eight, so a growing allowance buys another post before it
-  // buys more people off the post it is already reading.
-  const posts = Math.max(1, Math.min(base.posts, Math.ceil(room / 6)));
+  /**
+   * Posts first up to the cap, then depth on each of them.
+   *
+   * The divisor used to be six, which spread every allowance thinly across as
+   * many posts as it could reach and left five or six people per post. One
+   * reactions modal holds hundreds and costs a single open, so once there are
+   * enough posts the cheap thing to buy is more of the list already on screen,
+   * not another page load.
+   */
+  const posts = Math.max(1, Math.min(base.posts, Math.ceil(room / 25)));
   const perPost = Math.max(5, Math.min(base.perPost, Math.floor(room / posts)));
   return { perPost, posts };
 }
@@ -150,10 +157,10 @@ function readingBudget(ctx: AgentContext): { perPost: number; posts: number } {
    * comment at 46%. Opening eight posts at twelve people each costs the
    * account the same and harvests twice as many comment sections.
    */
-  if (days < 1) return { perPost: 10, posts: 4 };
-  if (days < 7) return { perPost: 12, posts: 5 };
-  if (days < 21) return { perPost: 12, posts: 6 };
-  return { perPost: 12, posts: 8 };
+  if (days < 1) return { perPost: 25, posts: 4 };
+  if (days < 7) return { perPost: 35, posts: 5 };
+  if (days < 21) return { perPost: 45, posts: 6 };
+  return { perPost: 60, posts: 6 };
 }
 
 function parseConfig(raw: string | null): Record<string, unknown> {
