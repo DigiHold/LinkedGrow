@@ -146,7 +146,11 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
     <div className={PROG} id="prog"></div>
 
     {/*═══ NAV ═══*/}
-    <div className={NAVHOLD} id="nh">
+    {/* A header element, not a div. The nav inside it was the only landmark on
+        the page, so a crawler and a screen reader both had a list of links with
+        nothing saying it was the site header. The id and the classes are
+        untouched, so the chrome script and every style still find it. */}
+    <header className={NAVHOLD} id="nh">
       <div className={NAV}>
         <Link className={BRAND} href="/" aria-label="LinkedGrow home"><span className={onDark ? TILE_ON_DARK : TILE_LIGHT_GROUND} id="tl"><svg><use href="#mark" /></svg></span>
           <span className={onDark ? WM_ON_DARK : WM_LIGHT_GROUND} id="wm">Linked<i>Grow</i></span></Link>
@@ -182,7 +186,7 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
             )}
           </div>
       </div>
-    </div>
+    </header>
     </div>
   );
 }
