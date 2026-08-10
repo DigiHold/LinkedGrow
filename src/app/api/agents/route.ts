@@ -333,7 +333,7 @@ export async function POST(request: NextRequest) {
 
     const SOURCE_TYPES = [
       "keyword", "market", "competitor", "brand",
-      "own_posts", "group", "buying_event", "linkedin_search", "csv",
+      "own_posts", "creator", "group", "buying_event", "linkedin_search", "csv",
     ] as const;
     const sources = Array.isArray(body?.sources) ? body.sources.slice(0, 15) : [];
     const rows = sources

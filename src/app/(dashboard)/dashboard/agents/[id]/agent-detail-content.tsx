@@ -309,6 +309,7 @@ const SOURCE_KIND: Record<string, { badge: string; what: string }> = {
   buying_event: { badge: "J", what: "New role, hiring, funding or an event" },
   brand: { badge: "V", what: "People who viewed your profile" },
   own_posts: { badge: "P", what: "People who engage with your own posts" },
+  creator: { badge: "A", what: "People engaging with a creator's posts" },
   group: { badge: "G", what: "A LinkedIn group you belong to" },
   csv: { badge: "U", what: "A list you uploaded" },
 };

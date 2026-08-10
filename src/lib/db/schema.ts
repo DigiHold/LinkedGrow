@@ -1244,6 +1244,10 @@ export const agentSources = sqliteTable("agent_sources", {
       // they have, free to read, and created for every agent automatically by
       // the worker rather than left to the wizard.
       "own_posts",
+      // One person's audience: the worker mines who engages under a named
+      // creator's posts. The learner prefers these over company pages because
+      // the people under a niche founder's post are pre-sorted by the subject.
+      "creator",
       // A LinkedIn group the account has joined, read as a feed.
       "group",
       "buying_event",
