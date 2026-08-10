@@ -237,6 +237,15 @@ export async function GET(
           leadId: agentMessages.leadId,
           leadName: agentLeads.fullName,
           leadAvatar: agentLeads.avatarUrl,
+          /**
+           * Whether the agent has actually finished with this person.
+           *
+           * Without it the overview banner could only guess, and it guessed
+           * "the agent has stopped messaging them for good" about people it
+           * was about to write to again. The same mistake was fixed in the
+           * reply EMAIL on 2026-08-07 and never carried across to the screen.
+           */
+          leadStatus: agentLeads.sequenceStatus,
         })
         .from(agentMessages)
         .innerJoin(agentLeads, eq(agentLeads.id, agentMessages.leadId))

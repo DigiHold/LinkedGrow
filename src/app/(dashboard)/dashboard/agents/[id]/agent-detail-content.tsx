@@ -84,7 +84,28 @@ type Reply = {
   leadId: string;
   leadName: string;
   leadAvatar: string | null;
+  /** Where the sequence has this person, which says whether the agent is done. */
+  leadStatus: string | null;
 };
+
+/**
+ * The states where the agent has genuinely finished with somebody.
+ *
+ * Everything else means it is still working the conversation. A reply to the
+ * hello does not stop it: answering and keeping the thread alive is the point,
+ * and it only hands over at the ask or on a refusal. Kept identical to the list
+ * the reply email uses, because the two saying different things about the same
+ * person is worse than either of them being wrong alone.
+ */
+const AGENT_IS_DONE = ["handed_over", "ask_sent", "stopped", "skipped"];
+
+/** What is true about this batch of replies, in the customer's terms. */
+function replyState(replies: Reply[]): string {
+  const done = replies.filter((r) => AGENT_IS_DONE.includes(r.leadStatus ?? "")).length;
+  if (done === replies.length) return "The agent has stopped messaging them, they are yours now";
+  if (done === 0) return "The agent is still answering them. Write yourself to take over";
+  return `The agent has finished with ${done} of them and is still answering the rest`;
+}
 
 type Payload = {
   agent: Agent;
@@ -553,7 +574,11 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                     ? `${replies[0].leadName} replied ${shortAgo(replies[0].sentAt)}`
                     : `${replies.length} people replied and are waiting for you`
                 }
-                why="The agent has stopped messaging them for good"
+                /* This said "stopped messaging them for good" about everybody,
+                   including people the agent was about to write to again. A
+                   reply does not stop the sequence: answering is the point, and
+                   it hands over at the ask or on a refusal. */
+                why={replyState(replies)}
                 cta="Read them"
                 /* Replies live on their own page, where they can be answered
                    and assigned. This sent people to the Leads tab, which lists
