@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { dayPlan } from "./rhythm.ts";
 import { dayAllowance, roomFrom } from "./reading.ts";
-import { readingShape, searchCost, queriesIn } from "../linkedin/sourcing.ts";
+import { readingShape, searchCost, queriesIn, queryTurn } from "../linkedin/sourcing.ts";
 
 /**
  * The three pieces, run together as one day.
@@ -143,11 +143,32 @@ test("a brand-new account starts slower and reaches full pace within three weeks
  * that reads a third of the truth is worse than no counter, because it reports
  * a comfortable margin that is not there.
  */
-test("a source is charged for every query it actually searches", () => {
+test("a source is charged for exactly what it actually searches", () => {
   const oneQuery = searchCost("keyword", queriesIn("keyword", {}, 0));
   const fourQueries = searchCost("keyword", queriesIn("keyword", { queries: ["a", "b", "c", "d"] }, 0));
   assert.equal(oneQuery, 2, "one query is a post search and a people search");
-  assert.equal(fourQueries, 8, "four queries cost four times as much, not the same");
+  assert.equal(
+    fourQueries,
+    2,
+    "a source runs ONE of its queries per visit, so holding four costs the same as holding one"
+  );
+});
+
+/**
+ * All four queries still run. They take turns.
+ *
+ * The saving would be a lie if the other three were simply dropped. They are
+ * rotated by the source's own pass counter, so the set is covered over four
+ * visits instead of fired in one burst, which is both affordable and closer to
+ * how a person searches.
+ */
+test("the queries take turns rather than being thrown away", () => {
+  const all = ["a", "b", "c", "d"];
+  assert.deepEqual(
+    [0, 1, 2, 3, 4].map((pass) => queryTurn(all, pass)[0]),
+    ["a", "b", "c", "d", "a"]
+  );
+  assert.deepEqual(queryTurn(["only"], 7), ["only"], "one query needs no rotation");
 });
 
 test("engagement still costs nothing, which is the whole point of counting", () => {
@@ -156,11 +177,22 @@ test("engagement still costs nothing, which is the whole point of counting", () 
   assert.equal(searchCost("csv", 1), 0);
 });
 
-test("a buying-event source is charged per role and per kind", () => {
-  const both = searchCost("buying_event", queriesIn("buying_event", {}, 4));
+/**
+ * The buying-event source, which grew from two kinds to four.
+ *
+ * Charged per role and per kind, four roles across four kinds is 32 searches
+ * against a day that holds seven, so it could never have run at all. It takes
+ * one kind and one role per visit, like every other search-led source.
+ */
+test("a buying-event source costs one search pair per visit, not one per kind", () => {
+  const every = searchCost("buying_event", queriesIn("buying_event", {}, 4));
   const one = searchCost("buying_event", queriesIn("buying_event", { kind: "hiring" }, 4));
-  assert.ok(both > one, "searching for role changes AND hiring costs more than one of them");
-  assert.ok(both >= 8, `four roles across two kinds is at least eight searches, got ${both}`);
+  assert.equal(every, 2);
+  assert.equal(one, 2);
+  assert.ok(
+    every <= dayAllowance("free", "searches", 0, 365, "established"),
+    "four kinds across four roles used to be 32 searches in a day that holds 7"
+  );
 });
 
 test("what a real day of search-led sourcing costs is inside the free pool", () => {
@@ -184,7 +216,7 @@ test("what a real day of search-led sourcing costs is inside the free pool", () 
  */
 test("a real keyword source fits inside what a visit is allowed to search", () => {
   const cost = searchCost("keyword", queriesIn("keyword", { queries: ["a", "b", "c"] }, 0));
-  assert.equal(cost, 6, "three queries, searched over posts and over people");
+  assert.equal(cost, 2, "one of its three queries, over posts and over people");
 
   const room = roomFrom(
     dayAllowance("free", "profiles", 0, 365, "established"),
@@ -214,4 +246,43 @@ test("profiles are still cut into visits, because that is the shape LinkedIn rea
     first.profiles < profileDay,
     "the first visit must not be allowed to read the whole day in one burst"
   );
+});
+
+/**
+ * A whole day of sourcing, priced against what the account is actually allowed.
+ *
+ * The measurement that forced all of this, from the live account on 2026-08-10.
+ * A free established profile is allowed 7 searches and 395 profile reads in a
+ * day. It had spent all 7 searches by mid-morning, on ONE keyword source, and
+ * 50 of the 395 profile reads. The customer watched it find two people in six
+ * hours and asked what the hell was going on, which was the right question.
+ */
+test("a day of search-led sourcing now fits, where one source used to eat it", () => {
+  const searchesADay = dayAllowance("free", "searches", 0, 365, "established");
+  const perSource = searchCost("keyword", queriesIn("keyword", { queries: ["a", "b", "c"] }, 0));
+  assert.ok(
+    Math.floor(searchesADay / perSource) >= 3,
+    `only ${Math.floor(searchesADay / perSource)} search-led sources fit in a day of ${searchesADay}`
+  );
+});
+
+/**
+ * And the profiles, which were the other half of the waste.
+ *
+ * Sources per visit was hard-coded at two whatever the room, so a visit handed
+ * a share of about a hundred reads spent half of it and stopped. The count now
+ * follows the share, and the share is still the thing that bounds the account.
+ */
+test("a visit opens as many sources as its share of the day can pay for", () => {
+  const room = roomFrom(
+    dayAllowance("free", "profiles", 0, 365, "established"),
+    dayAllowance("free", "searches", 0, 365, "established"),
+    { profiles: 0, searches: 0 },
+    { index: 0, count: 4 }
+  );
+  const USEFUL_DEPTH = 25;
+  const affordable = Math.floor(room.profiles / USEFUL_DEPTH);
+  assert.ok(affordable >= 3, `a visit with ${room.profiles} reads could only open ${affordable}`);
+  // Still bounded: one visit must never sweep an agent's entire list.
+  assert.ok(Math.min(8, affordable) <= 8);
 });

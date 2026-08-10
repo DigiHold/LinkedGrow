@@ -66,8 +66,14 @@ import { maturityOf } from "../safety/maturity.ts";
  * account's warm-up rather than starting at full speed.
  */
 
-/** How many sources one pass will work through, so a pass stays bounded. */
-const SOURCES_PER_PASS = 2;
+/**
+ * The most sources one visit will work through, however much room it has.
+ *
+ * A ceiling rather than a target: the real bound is the reading budget, and
+ * this only stops a single visit from touching an agent's whole list at once,
+ * which would leave nothing for the visits after it and read like a sweep.
+ */
+const MAX_SOURCES_PER_PASS = 8;
 
 /** How many to read on the very first pass, when time to the first lead is the whole game. */
 const FIRST_RUN_SOURCES = 6;
@@ -122,14 +128,45 @@ export function searchCost(type: string, queries = 1): number {
  */
 export function queriesIn(type: string, config: Record<string, unknown>, roles: number): number {
   if (type === "buying_event") {
-    // A row with no kind predates the setting and means every kind there is,
-    // which is now four rather than two. Undercounting here is what let a pass
-    // run twelve searches against a booking of four.
-    const kinds = typeof config.kind === "string" ? 1 : BUYING_EVENT_KINDS.length;
-    return Math.max(1, Math.min(4, roles)) * kinds;
+    // One kind per pass, rotated, for the same reason a keyword source runs one
+    // query per pass. Four kinds at four roles was 32 searches against a day
+    // that holds seven.
+    void config;
+    void roles;
+    return QUERIES_PER_PASS;
   }
+  // One query per pass, rotated. See QUERIES_PER_PASS.
   const queries = config.queries;
-  return Array.isArray(queries) && queries.length > 0 ? queries.length : 1;
+  return Array.isArray(queries) && queries.length > 0 ? QUERIES_PER_PASS : 1;
+}
+
+/**
+ * How many of a source's queries one visit runs, and why it is one.
+ *
+ * A keyword source carries up to three queries and searched each of them twice,
+ * over posts and over people, so it cost six. Measured on the live account on
+ * 2026-08-10: a free established profile is allowed SEVEN searches in a day,
+ * and it had spent all seven. One source had eaten the day, every other keyword
+ * source was locked out until tomorrow, and the agent found two people.
+ *
+ * Running one query per visit costs two instead of six, so three keyword
+ * sources fit in a day where one used to. Nothing is lost: the queries rotate
+ * by the source's own pass counter, so all three still run, spread across the
+ * day rather than fired in one burst, which is also closer to how a person
+ * searches.
+ */
+const QUERIES_PER_PASS = 1;
+
+/**
+ * Which of a source's queries this pass takes, rotating by how often it has run.
+ *
+ * Deterministic rather than random, so the second query genuinely gets its turn
+ * instead of the first coming up three times by chance.
+ */
+export function queryTurn<T>(queries: T[], passes: number): T[] {
+  if (queries.length <= 1) return queries;
+  const at = ((passes % queries.length) + queries.length) % queries.length;
+  return [queries[at] as T];
 }
 
 /** Every shape of "something just changed here" the agent knows how to search for. */
@@ -439,6 +476,9 @@ export async function sourcePass(
    * cheapest information the agent can buy.
    */
   const scores = await scoreSources(ctx);
+  // How often each source has run, so its queries can take turns rather than
+  // the first one being searched on every single pass.
+  const passesOf = new Map(scores.map((s) => [s.id, s.passes]));
   const sources = miningOrder(
     all,
     scores,
@@ -524,12 +564,34 @@ export async function sourcePass(
     return 0;
   }
 
+  /**
+   * As many sources as this visit's share of the day can actually pay for.
+   *
+   * This was two, flat, and two is what made the whole engine look broken.
+   * Measured on the live account on 2026-08-10: the day allowed 395 profile
+   * reads and 50 were used, 13%, while the customer watched it find two people
+   * in six hours. The visit was handed a share of about a hundred and spent
+   * half of it, because the cap said two sources whatever the room.
+   *
+   * The safety envelope is not weakened by this. What LinkedIn reads is volume,
+   * and volume is still bounded exactly where it was: `book` charges every
+   * source against the day and the month before its pages are opened, and
+   * `roomToRead` refuses the visit once the share is gone. This only stops the
+   * agent leaving most of a budget it is allowed to use on the table.
+   *
+   * Divided by a useful depth rather than the bare floor. One reactions modal
+   * holds hundreds of names for a single page load, so a source is worth
+   * opening at about twenty-five and splitting a visit into ten slices of ten
+   * would buy breadth by throwing away every comment section.
+   */
+  const USEFUL_DEPTH = 25;
+  const affordable = Math.max(1, Math.floor(room.profiles / USEFUL_DEPTH));
   const wanted = opts.firstRun
     ? Math.min(FIRST_RUN_SOURCES, sources.length)
-    : SOURCES_PER_PASS;
+    : Math.min(MAX_SOURCES_PER_PASS, affordable);
 
   /**
-   * Sources are picked to fit both pools, not just the first two in the order.
+   * Sources are picked to fit both pools, not just the first few in the order.
    *
    * A source that needs a search is skipped once the search pool is empty, and
    * the ones that cost nothing keep going. That is the whole point of counting
@@ -638,10 +700,14 @@ export async function sourcePass(
         case "linkedin_search": {
           // A pasted search URL needs no special case: searchPostCards opens a URL as a
           // destination and searches for anything else.
-          const queries =
+          // One of them this pass, the next one next time. Running all three
+          // cost six of a free account's seven searches for the whole day.
+          const queries = queryTurn(
             Array.isArray(config.queries) && config.queries.length > 0
               ? (config.queries as string[])
-              : [source.label];
+              : [source.label],
+            passesOf.get(source.id) ?? 0
+          );
 
           /**
            * A pasted address the agent genuinely cannot work, said out loud.
@@ -706,15 +772,22 @@ export async function sourcePass(
           // One row per kind, so a customer who only wants role changes gets only those. A row
           // without a kind predates the setting and means all of them.
           const kind = typeof config.kind === "string" ? config.kind : null;
+          // One kind per pass, rotated, for the same reason as a keyword source.
+          // Four kinds against four roles was 32 searches in a day that holds 7.
           const wanted = (BUYING_EVENT_KINDS as readonly string[]).includes(kind ?? "")
             ? [kind as SignalKind]
-            : [...BUYING_EVENT_KINDS];
+            : queryTurn([...BUYING_EVENT_KINDS], passesOf.get(source.id) ?? 0);
           found = [];
           for (const k of wanted) {
             found.push(
-              ...(await mineSignal(ctx, page, ctx.cfg, k, queriesForSignal(k, roles), {
-                maxPerQuery: budget.perPost,
-              }))
+              ...(await mineSignal(
+                ctx,
+                page,
+                ctx.cfg,
+                k,
+                queryTurn(queriesForSignal(k, roles), passesOf.get(source.id) ?? 0),
+                { maxPerQuery: budget.perPost }
+              ))
             );
           }
           break;
