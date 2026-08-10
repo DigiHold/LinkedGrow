@@ -808,9 +808,27 @@ async function extractCommenters(
      * bounded number of times, in place, which costs no extra page load.
      */
     for (let more = 0; more < 2; more++) {
-      const loadMore = page
-        .getByRole("button", { name: /(load|show) (more|previous) comments/i })
-        .first();
+      /**
+       * The live DOM gives this button no words worth matching: hashed
+       * classes, a div[role="button"] rather than a button, and a label that
+       * counts ("See 3 more comments"), read off the real page on
+       * 2026-08-10. The one semantic thing on it is the wrapper's id and
+       * componentkey token, "replaceableLoadMoreComments", so that is the
+       * anchor. The accessible-name match stays as the fallback for the
+       * surfaces still worded without a count, and the name pattern allows
+       * the count either way. Which button gets pressed matters less than it
+       * looks: the extraction below reads every loaded comment on the page.
+       */
+      let loadMore = page
+        .locator(
+          '[id*="loadmorecomments" i] [role="button"], [componentkey*="loadmorecomments" i] [role="button"]'
+        )
+        .last();
+      if (!(await loadMore.isVisible().catch(() => false))) {
+        loadMore = page
+          .getByRole("button", { name: /(see|load|show|view)\b.*\b(more|previous) comments/i })
+          .last();
+      }
       if (!(await loadMore.isVisible().catch(() => false))) break;
       try {
         await clickHumanLocator(page, loadMore);
