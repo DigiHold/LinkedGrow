@@ -120,7 +120,7 @@ function baseCfg(over: Partial<Config> = {}): Config {
 function fakeActions(over: Partial<LinkedInActions> = {}): LinkedInActions {
   return {
     warmUp: async () => true,
-    sendConnect: async () => true,
+    sendConnect: async () => "sent" as const,
     canMessageNow: async () => false,
     recentConnections: async () => [],
     inboxRepliers: async () => [],
@@ -616,5 +616,66 @@ test("a failure after the hello does not rewind anybody", async () => {
     args: [id],
   });
   assert.equal(String(rows[0]?.sequence_status), STATUS.helloSent);
+  drop();
+});
+
+/**
+ * Why Today's queue showed the same names since the day the agent started.
+ *
+ * Measured on a live pass on 2026-08-10: of thirteen attempts to connect,
+ * eleven came back false. Six were profiles with no Connect control at all,
+ * which will never change, and five already had an invitation pending from an
+ * earlier pass. All eleven stayed queued and were tried again next pass, and
+ * every pass after that. Two real invitations a day were going out against an
+ * allowance of sixteen, so the queue never drained and the customer looked at
+ * the same list every morning.
+ */
+test("a profile that cannot be invited leaves the queue instead of being retried for ever", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.queued, daysAgo(1));
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(fakeActions({ sendConnect: async () => "cannot-connect" as const }))
+  );
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(String(rows[0]?.sequence_status), STATUS.skipped);
+  drop();
+});
+
+test("an invitation already out there catches the record up rather than being resent", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.queued, daysAgo(1));
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(fakeActions({ sendConnect: async () => "already-pending" as const }))
+  );
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(
+    String(rows[0]?.sequence_status),
+    STATUS.connectSent,
+    "the sweep cannot watch for an acceptance while they sit in the queue"
+  );
+  // Nothing was sent today, so nothing is charged against the day's allowance.
+  assert.equal(await countActionsSince(db, "connect", daysAgo(1)), 0);
+  drop();
+});
+
+test("a transient failure leaves them queued, to be tried again", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.queued, daysAgo(1));
+  await runSequence(baseCfg(), db, deps(fakeActions({ sendConnect: async () => "failed" as const })));
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(String(rows[0]?.sequence_status), STATUS.queued);
   drop();
 });

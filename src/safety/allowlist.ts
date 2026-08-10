@@ -56,7 +56,7 @@ export function onlyContact(actions: LinkedInActions, profiles: string[]): Linke
     ...actions,
     warmUp: async (p) => (allowed(list, p) ? actions.warmUp(p) : held("like", p)),
     sendConnect: async (p, note) =>
-      allowed(list, p) ? actions.sendConnect(p, note) : held("invitation", p),
+      allowed(list, p) ? actions.sendConnect(p, note) : (held("invitation", p), "failed"),
     sendDm: async (p, body) => (allowed(list, p) ? actions.sendDm(p, body) : held("message", p)),
   };
 }

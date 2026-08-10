@@ -15,11 +15,14 @@ import {
  * testable without a browser. The browser implementation below is the real thing; a fake one drives
  * the offline tests.
  */
+/** What an attempt to connect actually ran into. See sendConnect below. */
+export type ConnectOutcome = "sent" | "already-pending" | "cannot-connect" | "failed";
+
 export interface LinkedInActions {
   /** Warm-up touch: like a recent post from the prospect. Returns true if a like landed. */
   warmUp(p: ProspectRow): Promise<boolean>;
   /** Send a connection request with a short note. */
-  sendConnect(p: ProspectRow, note: string): Promise<boolean>;
+  sendConnect(p: ProspectRow, note: string): Promise<ConnectOutcome>;
   /**
    * True when this profile can be messaged right now without being connected. LinkedIn allows that
    * for members who turned on Open Profile, and it is the only way a first message goes out without
@@ -44,7 +47,23 @@ export interface LinkedInActions {
    * replier, so it is only ever called for the handful the inbox scan named.
    */
   readThread(p: ProspectRow): Promise<{ from: "us" | "them"; body: string }[]>;
-  /** Send a direct message. */
+  /**
+   * What happened when the agent tried to connect, rather than just whether it
+   * worked.
+   *
+   * A boolean sent three very different situations down one path. On a live
+   * account on 2026-08-10, of thirteen attempts in one pass eleven returned
+   * false: six profiles that cannot be connected with at all, and five that
+   * already had an invitation pending from a previous pass. All eleven stayed
+   * in the queue and were retried on the next pass, and the next, for ever,
+   * which is why the customer had been looking at the same names in Today's
+   * queue since the day the agent started.
+   *
+   *   sent            a new invitation went out just now
+   *   already-pending one is out there from before; the state was simply lost
+   *   cannot-connect  no Connect control at all, and there never will be
+   *   failed          something transient, worth trying again later
+   */
   sendDm(p: ProspectRow, body: string): Promise<boolean>;
   /** Withdraw a stale, still-unaccepted connection request. */
   withdrawInvite(p: ProspectRow): Promise<boolean>;
@@ -407,25 +426,26 @@ export function browserActions(page: Page): LinkedInActions {
       await goToProfile(p);
       const name = p.full_name ?? "";
       if (await invitePending(page)) {
+        // Not a failure: an invitation is out there, our record of it was lost.
         log(`sendConnect: invite to ${p.first_name} is already pending.`);
-        return false;
+        return "already-pending";
       }
       const href = await inviteHref(page, name);
       if (!href) {
         log(`sendConnect: Connect control not found for ${p.first_name} (likely follow-only).`);
-        return false;
+        return "cannot-connect";
       }
       await dwell(700, 1500);
       await page.goto(new URL(href, "https://www.linkedin.com").toString(), { waitUntil: "domcontentloaded" }).catch(() => {});
       await dwell(2000, 3200);
 
       // Some profiles send straight through with no modal at all.
-      if (await invitePending(page)) return true;
+      if (await invitePending(page)) return "sent";
 
       const modal = await inviteModal(page);
       if (!modal) {
         log(`sendConnect: no invite modal appeared for ${p.first_name}.`);
-        return false;
+        return "failed";
       }
       if (note) {
         const addNote = modal.locator(SEL.addNote).first();
@@ -446,7 +466,7 @@ export function browserActions(page: Page): LinkedInActions {
       if (!sendBtn) {
         const seen = await modal.locator("button").allInnerTexts().catch(() => []);
         log(`sendConnect: no Send button for ${p.first_name}. Modal buttons: ${seen.join(" | ")}`);
-        return false;
+        return "failed";
       }
       await clickThrough(page, sendBtn);
       await dwell(1500, 2500);
@@ -454,7 +474,7 @@ export function browserActions(page: Page): LinkedInActions {
       const stillOpen = (await inviteModal(page)) !== null;
       const sent = !stillOpen || (await invitePending(page));
       if (!sent) log(`sendConnect: clicked Send but the invite did not register for ${p.first_name}.`);
-      return sent;
+      return sent ? "sent" : "failed";
     },
 
     async canMessageNow(p) {

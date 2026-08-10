@@ -19,7 +19,7 @@ function spy() {
   const calls: string[] = [];
   const actions = {
     warmUp: async () => { calls.push("warmUp"); return true; },
-    sendConnect: async () => { calls.push("sendConnect"); return true; },
+    sendConnect: async () => { calls.push("sendConnect"); return "sent" as const; },
     sendDm: async () => { calls.push("sendDm"); return true; },
     withdrawInvite: async () => { calls.push("withdrawInvite"); return true; },
     canMessageNow: async () => true,
@@ -36,7 +36,7 @@ test("a stranger is never liked, invited or messaged", async () => {
   const stranger = row({ profile_url: "https://www.linkedin.com/in/thomas-berger-a91/" });
 
   assert.equal(await guarded.warmUp(stranger), false);
-  assert.equal(await guarded.sendConnect(stranger, ""), false);
+  assert.equal(await guarded.sendConnect(stranger, ""), "failed");
   assert.equal(await guarded.sendDm(stranger, "hello"), false);
   assert.deepEqual(calls, [], "something reached the real actions");
 });

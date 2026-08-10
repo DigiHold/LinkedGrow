@@ -495,8 +495,41 @@ async function sendNewConnects(
     await deps.actions.warmUp(p); // best-effort; a missed like does not block the connect
     await pause();
     await announce(db, "sending an invitation to", subjectOf(p));
-    const sent = await deps.actions.sendConnect(p, "");
-    if (!sent) {
+    /**
+     * Three outcomes, three different answers. This read one boolean.
+     *
+     * Measured on a live pass on 2026-08-10: of thirteen attempts, eleven came
+     * back false. Six were profiles with no Connect control at all, which will
+     * never change, and five already had an invitation pending from an earlier
+     * pass. All eleven stayed queued and were tried again on the next pass, and
+     * every pass after that, which is why the customer had been looking at the
+     * same names in Today's queue since the agent started. Two real invitations
+     * a day were going out against an allowance of sixteen.
+     */
+    const outcome = await deps.actions.sendConnect(p, "");
+
+    if (outcome === "cannot-connect") {
+      // No Connect control means no invitation, today or ever: LinkedIn only
+      // offers Follow on these. Retrying costs a profile visit a pass for
+      // nothing, so the queue lets them go and says why on the row.
+      await setProspectStatus(db, p.id, STATUS.skipped);
+      log(`${label(p)} cannot be invited: LinkedIn offers no Connect on that profile.`);
+      await pause();
+      continue;
+    }
+
+    if (outcome === "already-pending") {
+      // An invitation is out there and only our record of it was lost. Moving
+      // them on lets sweepAcceptances watch for the acceptance and the stale
+      // check withdraw it, neither of which can happen while they sit queued.
+      // No action is recorded: nothing was sent today.
+      await setProspectStatus(db, p.id, STATUS.connectSent);
+      log(`${label(p)} already had an invitation pending, so the record is caught up.`);
+      await pause();
+      continue;
+    }
+
+    if (outcome !== "sent") {
       await pause();
       continue;
     }
