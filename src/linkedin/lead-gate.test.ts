@@ -32,7 +32,9 @@ async function freshDb(): Promise<void> {
        signal_author TEXT, step TEXT NOT NULL DEFAULT 'found', step_at INTEGER,
        found_at INTEGER NOT NULL, rejected_at INTEGER, excluded_reason TEXT,
        created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
-       sequence_status TEXT NOT NULL DEFAULT 'queued', angle TEXT)`
+       sequence_status TEXT NOT NULL DEFAULT 'queued', angle TEXT,
+       reply_intent TEXT, signal_hits INTEGER NOT NULL DEFAULT 1, signal_kinds TEXT,
+       outcome TEXT, outcome_at INTEGER)`
   );
 }
 
@@ -184,5 +186,51 @@ test("an unscored lead waits for its score before being invited", async () => {
   // And an agent with no ICP never scores anybody, so it must not wait for ever.
   const free = await getProspects(ctxWith("balanced", ""), "queued", { limit: 10 });
   assert.equal(free.length, 1);
+  setDbForTests(null);
+});
+
+/**
+ * The reject button, which wrote a timestamp that nothing ever read.
+ *
+ * The column existed, the API set it, and every query in the worker ignored it,
+ * so a person the customer had thrown out came back round the queue on the next
+ * pass and was invited anyway. It is also the single clearest piece of training
+ * data the product can collect, and it was reaching neither the queue nor the
+ * ranking.
+ */
+test("somebody the customer threw out never comes back round", async () => {
+  await freshDb();
+  await seedQueued("Thrown out", 95, 1);
+  await seedQueued("Still wanted", 60, 2);
+  await sharedDb().execute(
+    `UPDATE agent_leads SET rejected_at = 123, excluded_reason = 'You rejected this person'
+      WHERE full_name = 'Thrown out'`
+  );
+  const rows = await getProspects(ctxWith("balanced"), "queued", { limit: 10 });
+  assert.deepEqual(rows.map((r) => r.full_name), ["Still wanted"]);
+  setDbForTests(null);
+});
+
+/**
+ * Who goes first, and why the order is tiers rather than a weighting.
+ *
+ * Somebody who commented under the customer's OWN post is warmer than any
+ * headline a model rated 92, because they have already read the customer's
+ * words on purpose and in public. Somebody who has turned up through two
+ * different doors is next, because repetition is a fact and a score is not.
+ */
+test("the customer's own audience goes first, then whoever turned up twice", async () => {
+  await freshDb();
+  await seedQueued("Strong headline", 92, 1);
+  await seedQueued("Commented on your post", 40, 2, "own:comment");
+  await seedQueued("Seen twice", 55, 3);
+  await sharedDb().execute(
+    `UPDATE agent_leads SET signal_hits = 2, signal_kinds = 'comment,search' WHERE full_name = 'Seen twice'`
+  );
+  const rows = await getProspects(ctxWith("balanced"), "queued", { limit: 10 });
+  assert.deepEqual(
+    rows.map((r) => r.full_name),
+    ["Commented on your post", "Seen twice", "Strong headline"]
+  );
   setDbForTests(null);
 });

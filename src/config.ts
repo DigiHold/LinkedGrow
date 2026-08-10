@@ -47,6 +47,13 @@ export interface AgentContext {
   agentId: string;
   workspaceId: string;
   linkedinAccountId: string;
+  /**
+   * The signed-in account's own LinkedIn profile address.
+   *
+   * Read once at sign-in and stored, so mining the customer's own posts costs
+   * no extra page load to find out where they are.
+   */
+  ownProfileUrl: string;
   /** Country of the address this account is pinned to. Never the address itself. */
   country: string;
   /** free, premium or sales_navigator. Decides how much the account may read. */

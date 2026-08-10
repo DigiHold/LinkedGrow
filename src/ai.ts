@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { requireEnv } from "./config.ts";
 import type { AgentContext } from "./config.ts";
-import { db } from "./db.ts";
+import { db, type ReplyIntent } from "./db.ts";
 import { log } from "./logger.ts";
 
 /**
@@ -271,11 +271,26 @@ export async function prefilter(
  * a bit of small talk and a question about their own business are all things
  * the agent answers. Wanting the product, a price, a call or a demo is not.
  */
+/**
+ * Two questions, one call, because they were being answered as if they were one.
+ *
+ * WHO ANSWERS NEXT is what this was built for. WHAT THE REPLY WAS WORTH is the
+ * question the learning pass needs, and nothing was asking it, so every reply
+ * counted the same at a weight of eight. On a live agent that meant an
+ * executive coach, an AI newsletter, a bootcamp operator and the founder of a
+ * directly competing product all registered as the strongest possible evidence
+ * that their source was working, and the source that found the competitor rose
+ * to the top of the mining queue.
+ *
+ * The two axes genuinely differ. "Not interested, thanks" hands over AND is
+ * worthless. "What does it cost?" hands over AND is the best thing that can
+ * happen. "Thanks for connecting!" does neither.
+ */
 export async function classifyReply(
   ctx: AgentContext,
   thread: { from: "us" | "them"; body: string }[],
   business: string
-): Promise<{ handOver: boolean; why: string }> {
+): Promise<{ handOver: boolean; why: string; intent: ReplyIntent }> {
   const transcript = thread
     .slice(-6)
     .map((t) => `${t.from === "us" ? "Us" : "Them"}: ${t.body.replace(/\s+/g, " ").trim()}`)
@@ -283,23 +298,38 @@ export async function classifyReply(
 
   const answer = await generate(
     ctx,
-    `Our business: ${business || "a software product"}\n\nThe conversation so far:\n${transcript}\n\nAnswer on one line: HUMAN or AGENT, then a short reason.`,
+    `Our business: ${business || "a software product"}\n\nThe conversation so far:\n${transcript}\n\nAnswer on one line: HUMAN or AGENT, then INTERESTED, NEUTRAL or REFUSED, then a short reason.`,
     {
       model: MODELS.fast,
       purpose: "classify-reply",
       maxTokens: 60,
       systemPrompt:
-        "You read one LinkedIn conversation and decide whether the last message from the other person needs a salesperson, or whether an assistant should simply write back.\n\n" +
-        "Answer HUMAN only when they are asking for something an assistant must not give: they want to see the product, want a demo, a call or a meeting, ask what it costs, want to buy, want to be introduced to someone, or make a complaint or a request that carries a commitment.\n\n" +
-        "Answer AGENT for everything else, and everything else is most replies: thanks, hello, nice to meet you, small talk, telling you about their own work, asking who you are or why you got in touch, asking a question about their own business or yours that does not commit anybody to anything, or saying they will be in touch later.\n\n" +
-        "When you are unsure, answer AGENT. An assistant writing one more friendly message costs nothing; handing a warm conversation to a busy person who then leaves it unanswered for a week costs the relationship.\n\n" +
-        "Format: one word, HUMAN or AGENT, then a dash and at most eight words of reason.",
+        "You read one LinkedIn conversation and answer two separate questions about the last message from the other person.\n\n" +
+        "FIRST, who should answer it.\n" +
+        "HUMAN only when they are asking for something an assistant must not give: they want to see the product, want a demo, a call or a meeting, ask what it costs, want to buy, want to be introduced to someone, or make a complaint or a request that carries a commitment.\n" +
+        "AGENT for everything else, and everything else is most replies: thanks, hello, nice to meet you, small talk, telling you about their own work, asking who you are or why you got in touch, asking a question about their own business or yours that does not commit anybody to anything, or saying they will be in touch later.\n" +
+        "When unsure, answer AGENT. An assistant writing one more friendly message costs nothing; handing a warm conversation to a busy person who then leaves it unanswered for a week costs the relationship.\n\n" +
+        "SECOND, what the reply is worth as a sales signal, which is a different question and often has the opposite answer.\n" +
+        "INTERESTED: they want what we sell, ask what it does or costs, describe having the problem, or ask to continue the conversation about it.\n" +
+        "REFUSED: they say no, ask to be left alone, say it is not relevant, ask whether this is automated, or pitch us THEIR product instead, which means they are a seller in this market and never a buyer.\n" +
+        "NEUTRAL: everything else, and most replies are neutral. A greeting, a thank-you, small talk, politeness, or a friendly answer that says nothing about wanting the product is NEUTRAL, not interested.\n" +
+        "Be strict. When unsure between INTERESTED and NEUTRAL, answer NEUTRAL.\n\n" +
+        "Format: HUMAN or AGENT, a slash, INTERESTED or NEUTRAL or REFUSED, a dash, then at most eight words of reason. Example: AGENT / NEUTRAL - polite thanks, nothing asked.",
     }
   );
 
-  const verdict = answer.trim().toUpperCase().startsWith("HUMAN");
-  const why = answer.replace(/^\s*(human|agent)\s*[-:—]?\s*/i, "").trim().slice(0, 120);
-  return { handOver: verdict, why: why || answer.trim().slice(0, 120) };
+  const head = answer.trim().toUpperCase();
+  const verdict = head.startsWith("HUMAN");
+  const intent: ReplyIntent = /\bREFUSED\b/.test(head)
+    ? "refused"
+    : /\bINTERESTED\b/.test(head)
+      ? "interested"
+      : "neutral";
+  const why = answer
+    .replace(/^\s*(human|agent)\s*[/,|]?\s*(interested|neutral|refused)?\s*[-:]?\s*/i, "")
+    .trim()
+    .slice(0, 120);
+  return { handOver: verdict, why: why || answer.trim().slice(0, 120), intent };
 }
 
 /** Full scoring, still on the cheap model. Sonnet here is the biggest cost mistake available. */
@@ -320,8 +350,20 @@ export async function scoreLead(
     company?: string;
     about?: string;
     signal?: string;
+    /**
+     * How many DIFFERENT ways this person has turned up, and which.
+     *
+     * Somebody who commented under one rival, then came up in a search for the
+     * role, then reacted to another rival is not the same prospect as somebody
+     * seen once, and until now the second and third sightings were discarded by
+     * the claim. It is the cheapest hard evidence the agent collects: nobody
+     * writes a headline to impress us, and nobody engages three times by
+     * accident.
+     */
+    hits?: number;
+    kinds?: string;
   }
-, 
+,
   /**
    * What this agent has learned about who actually converts.
    *
@@ -342,6 +384,20 @@ export async function scoreLead(
    */
   const sells = (ctx.cfg.business.description ?? "").trim().slice(0, 700);
 
+  /**
+   * The repetition, spelled out rather than left as a number.
+   *
+   * "3" next to a field called hits means nothing to a model reading a hundred
+   * of these. The sentence says what actually happened, and what it implies.
+   */
+  const repeats =
+    (profile.hits ?? 1) > 1
+      ? `\nSeen ${profile.hits} separate times, through ${(profile.kinds ?? "")
+          .split(",")
+          .filter(Boolean)
+          .join(", ")}. Turning up repeatedly through different routes is hard evidence of being active in this market, and it is worth more than any headline.`
+      : "";
+
   const answer = await generate(
     ctx,
     `${sells ? `What our customer sells: ${sells}\n\n` : ""}Ideal customer: ${icp}
@@ -351,7 +407,7 @@ Prospect:
 Name: ${profile.name}
 Headline: ${profile.headline}
 Company: ${profile.company ?? "unknown"}
-${profile.signal ? `How they were found: ${profile.signal}` : ""}
+${profile.signal ? `How they were found: ${profile.signal}` : ""}${repeats}
 ${profile.about ? `About: ${profile.about.slice(0, 600)}` : ""}
 
 Score from 0 to 100. What they were doing when they were found is real evidence about their interest, so somebody asking about the problem beats the same headline found in a search. Reply with the score and a one-sentence reason.`,

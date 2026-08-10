@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { toViewer, passesSignalGates, looksLikeBuyer, type SignalKind } from "./sources.ts";
+import {
+  toViewer,
+  passesSignalGates,
+  looksLikeBuyer,
+  queriesForSignal,
+  unsupportedSearch,
+  type SignalKind,
+} from "./sources.ts";
 import { parseCard } from "./miner.ts";
 import type { Config } from "../config.ts";
 import { splitHeadline } from "./sourcing.ts";
@@ -107,4 +114,92 @@ test("the connection degree never ends up inside the name", () => {
     const lead = toViewer({ href: "https://www.linkedin.com/in/x/", text });
     assert.equal(lead?.fullName, expected);
   }
+});
+
+/**
+ * Money in the bank, which is the budget signal every rival advertises and the
+ * one we had nothing for.
+ *
+ * It needs no data provider. Founders announce their own rounds, on LinkedIn,
+ * in the same breath as thanking their investors, and a post carries a name and
+ * a headline where a Crunchbase row carries neither.
+ *
+ * The gate is deliberately narrow, because the two populations that must not
+ * come through this door are the ones that talk about funding most: fundraising
+ * consultants and VC newsletters.
+ */
+test("somebody announcing their own round is a funding signal", () => {
+  assert.equal(passes("funding", "Founder at Nomi", "Thrilled to announce we raised our seed round"), true);
+  assert.equal(passes("funding", "Founder at Nomi", "We've raised $2M to build this properly"), true);
+  assert.equal(passes("funding", "Founder at Nomi", "Closed our Series A last week"), true);
+});
+
+test("talking about funding is not the same as having raised any", () => {
+  assert.equal(
+    passes("funding", "Founder at Nomi", "Great thread on how seed funding works in 2026"),
+    false
+  );
+  assert.equal(
+    passes("funding", "Founder at Nomi", "Funding is harder than ever right now"),
+    false
+  );
+});
+
+test("a funding search asks for the announcement, not just the role", () => {
+  // Searching "founder" against a funding regex returns almost nothing, so this
+  // signal carries its own words and uses the role only to narrow the field.
+  const q = queriesForSignal("funding", ["founder", "cto"]);
+  assert.ok(q.every((s) => /raised|seed/i.test(s)), q.join(" | "));
+  assert.ok(q.some((s) => s.startsWith("founder")));
+  // A job move is about the person, so the role IS the query and the regex does the rest.
+  assert.deepEqual(queriesForSignal("jobchange", ["founder", "cto"]), ["founder", "cto"]);
+});
+
+/**
+ * The event signal, which was dropped once and recorded as impossible.
+ *
+ * The note in this file said attendee lists are no longer public, and that is
+ * true and beside the point: people post that they are going. A post carries a
+ * name, a headline and something to open with, which no list ever did.
+ */
+test("somebody standing in a room full of their own market is an event signal", () => {
+  assert.equal(passes("event", "Head of Growth at Nomi", "Speaking at SaaStock next month"), true);
+  assert.equal(passes("event", "Head of Growth at Nomi", "I'll be at Web Summit, say hello"), true);
+  assert.equal(passes("event", "Head of Growth at Nomi", "We just shipped a new dashboard"), false);
+});
+
+test("a recruiter announcing a round or an event still never gets through", () => {
+  // The buyer gate runs before any of the new regexes, which is what keeps
+  // recruiters, students and job seekers out of every signal at once.
+  assert.equal(passes("funding", "Technical Recruiter at Nomi", "We raised our seed round"), false);
+  assert.equal(passes("event", "Talent Acquisition at Nomi", "Speaking at SaaStock next month"), false);
+});
+
+/**
+ * The promise the wizard made that the code could not keep.
+ *
+ * "Work through a search or a Sales Navigator list" was on the screen, and a
+ * Sales Navigator list addresses its people as /sales/lead/<urn> with no public
+ * profile anywhere on the card. The extraction found nothing, and the source
+ * reported an empty search exactly like a quiet day, so a customer could leave
+ * their best list in there for weeks and never learn it was not being read.
+ */
+test("a Sales Navigator list is refused with a reason instead of failing silently", () => {
+  const why = unsupportedSearch("https://www.linkedin.com/sales/search/people?savedSearchId=123");
+  assert.ok(why, "a list that cannot be worked must say so");
+  assert.match(String(why), /Sales Navigator/);
+  assert.match(String(why), /people search/, "and it must say what to do instead");
+});
+
+test("an ordinary people search is worked as normal", () => {
+  assert.equal(
+    unsupportedSearch("https://www.linkedin.com/search/results/people/?keywords=indie%20founder"),
+    null
+  );
+  assert.equal(unsupportedSearch("indie SaaS founder"), null);
+});
+
+test("pasting your own feed or inbox is caught too", () => {
+  assert.ok(unsupportedSearch("https://www.linkedin.com/feed/"));
+  assert.ok(unsupportedSearch("https://www.linkedin.com/messaging/"));
 });

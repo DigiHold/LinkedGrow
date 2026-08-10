@@ -2,6 +2,7 @@ import type { AgentContext } from "../config.ts";
 import { db } from "../db.ts";
 import { generate, MODELS } from "../ai.ts";
 import { log, logError } from "../logger.ts";
+import { competesWith } from "./competitor.ts";
 
 /**
  * What an agent has learned about who actually converts.
@@ -99,12 +100,40 @@ export function asPrompt(m: Memory): string {
   return lines.join("\n");
 }
 
-/** Counts and a dozen headlines. Never the table. */
+/**
+ * Counts and a dozen headlines. Never the table.
+ *
+ * ## The reply that taught an agent to hunt its customer's competitor
+ *
+ * `replied` used to be every lead at step 'replied' or 'finished', and it was
+ * handed to the model under the line "these people replied, which is the
+ * strongest evidence there is". On the live account six people had replied and
+ * four of them could never buy: a coach, a newsletter, a bootcamp and the
+ * founder of a directly competing product. Revision 3 of that agent's memory
+ * duly listed "Founder of GDPRChecker, cookie consent and privacy readiness
+ * tool" under `fits`, and that memory is injected into the scoring of every
+ * lead afterwards, where it argues against the competitor rule sitting in the
+ * same prompt.
+ *
+ * So the strongest evidence is no longer "answered" but "wanted it", and the
+ * refusals now come back as their own kind of lesson rather than being counted
+ * as wins. What the customer marked as a meeting or a customer outranks all of
+ * it, because that is the only column here that is not a proxy.
+ */
 async function evidence(ctx: AgentContext, since: number) {
-  const [good, poor, replies] = await Promise.all([
+  const [won, good, poor, refused, rejected] = await Promise.all([
+    // The only rows that are not a proxy for anything.
+    db().execute({
+      sql: `SELECT headline, job_title, company FROM agent_leads
+             WHERE agent_id = ? AND (outcome IN ('meeting','customer') OR reply_intent = 'interested')
+             ORDER BY CASE outcome WHEN 'customer' THEN 0 WHEN 'meeting' THEN 1 ELSE 2 END
+             LIMIT 8`,
+      args: [ctx.agentId],
+    }),
     db().execute({
       sql: `SELECT headline, job_title, company FROM agent_leads
              WHERE agent_id = ? AND match_score >= 70 AND created_at >= ?
+               AND rejected_at IS NULL AND COALESCE(reply_intent,'') <> 'refused'
              ORDER BY match_score DESC LIMIT 12`,
       args: [ctx.agentId, since],
     }),
@@ -117,8 +146,15 @@ async function evidence(ctx: AgentContext, since: number) {
       args: [ctx.agentId, Math.floor(Date.now() / 1000) - 14 * 86400],
     }),
     db().execute({
-      sql: `SELECT l.headline, l.job_title, l.company FROM agent_leads l
-             WHERE l.agent_id = ? AND l.step IN ('replied','finished') LIMIT 8`,
+      sql: `SELECT headline, job_title, company FROM agent_leads
+             WHERE agent_id = ? AND reply_intent = 'refused' LIMIT 8`,
+      args: [ctx.agentId],
+    }),
+    // The customer saying so in as many words. Nothing outranks this as a miss.
+    db().execute({
+      sql: `SELECT headline, job_title, company FROM agent_leads
+             WHERE agent_id = ? AND (rejected_at IS NOT NULL OR outcome = 'not_a_fit')
+             ORDER BY COALESCE(outcome_at, rejected_at) DESC LIMIT 8`,
       args: [ctx.agentId],
     }),
   ]);
@@ -131,21 +167,36 @@ async function evidence(ctx: AgentContext, since: number) {
       .filter((h) => h.length > 3)
       .slice(0, 12);
 
-  return { good: say(good.rows), ignored: say(poor.rows), replied: say(replies.rows) };
+  return {
+    won: say(won.rows),
+    good: say(good.rows),
+    ignored: say(poor.rows),
+    refused: say(refused.rows),
+    rejected: say(rejected.rows),
+  };
 }
 
-/** Has enough happened to be worth a model call? */
+/**
+ * Has enough happened to be worth a model call?
+ *
+ * A single word from the customer counts on its own. They have just told us the
+ * agent is wrong about somebody, or right about somebody, and making them wait
+ * for seven more leads before the agent takes it in would be the product
+ * ignoring the one person it works for.
+ */
 async function worthRevising(ctx: AgentContext, since: number): Promise<boolean> {
   const { rows } = await db().execute({
     sql: `SELECT
             SUM(CASE WHEN match_score >= 70 AND created_at >= ? THEN 1 ELSE 0 END) good,
-            SUM(CASE WHEN step IN ('replied','finished') AND step_at >= ? THEN 1 ELSE 0 END) replies
+            SUM(CASE WHEN reply_intent = 'interested' AND updated_at >= ? THEN 1 ELSE 0 END) wanted,
+            SUM(CASE WHEN rejected_at >= ? OR outcome_at >= ? THEN 1 ELSE 0 END) judged
           FROM agent_leads WHERE agent_id = ?`,
-    args: [since, since, ctx.agentId],
+    args: [since, since, since, since, ctx.agentId],
   });
   const good = Number(rows[0]?.good ?? 0);
-  const replies = Number(rows[0]?.replies ?? 0);
-  return good >= ENOUGH.good || replies >= ENOUGH.replies;
+  const wanted = Number(rows[0]?.wanted ?? 0);
+  const judged = Number(rows[0]?.judged ?? 0);
+  return judged >= 1 || wanted >= ENOUGH.replies || good >= ENOUGH.good;
 }
 
 /**
@@ -168,7 +219,9 @@ export async function reviseMemory(ctx: AgentContext): Promise<Memory | null> {
   if (!(await worthRevising(ctx, since))) return null;
 
   const seen = await evidence(ctx, since);
-  if (seen.good.length < 3 && seen.replied.length < 1) return null;
+  if (seen.good.length < 3 && seen.won.length < 1 && seen.rejected.length < 1) return null;
+
+  const sells = ctx.cfg.business.description ?? "";
 
   let answer: string;
   try {
@@ -176,9 +229,12 @@ export async function reviseMemory(ctx: AgentContext): Promise<Memory | null> {
       ctx,
       [
         `We sell to: ${ctx.cfg.leads.icp}`,
+        sells ? `What we sell: ${sells.slice(0, 400)}` : "",
         current.rev > 0 ? `\nWhat this agent believed until now:\n${asPrompt(current)}` : "",
-        seen.replied.length ? `\nThese people replied, which is the strongest evidence there is:\n${seen.replied.map((h) => `- ${h}`).join("\n")}` : "",
-        seen.good.length ? `\nThese scored well recently:\n${seen.good.map((h) => `- ${h}`).join("\n")}` : "",
+        seen.won.length ? `\nThese wanted it. A meeting, a purchase, or asking what it costs. This is the only evidence here that is not a guess:\n${seen.won.map((h) => `- ${h}`).join("\n")}` : "",
+        seen.rejected.length ? `\nOUR CUSTOMER THREW THESE OUT BY HAND. They were wrong and our customer said so:\n${seen.rejected.map((h) => `- ${h}`).join("\n")}` : "",
+        seen.refused.length ? `\nThese answered and said no, or tried to sell us their own product:\n${seen.refused.map((h) => `- ${h}`).join("\n")}` : "",
+        seen.good.length ? `\nThese scored well recently, which is only a model's opinion of a headline:\n${seen.good.map((h) => `- ${h}`).join("\n")}` : "",
         seen.ignored.length ? `\nThese scored well and then ignored the invitation for two weeks:\n${seen.ignored.map((h) => `- ${h}`).join("\n")}` : "",
         "",
         "Return JSON only:",
@@ -193,6 +249,8 @@ export async function reviseMemory(ctx: AgentContext): Promise<Memory | null> {
         systemPrompt:
           "You keep one short note about who is worth contacting for a business, and you rewrite it from scratch every time rather than adding to it.\n\n" +
           "Replace the previous note. Keep what the new evidence still supports, drop what it contradicts, and add what it teaches. The note must never grow: it is a few short lines and it stays that way however many revisions it has been through.\n\n" +
+          "The evidence is ranked and you must respect the ranking. Somebody our customer threw out, or who said no, is settled and belongs in misses however good their title looks. Somebody who wanted it outranks any number of high scores, because a score is a guess about a headline and wanting it is a fact.\n\n" +
+          "NEVER put somebody who sells what our customer sells in fits. A rival founder replying politely is not a prospect, they are a rival, and they belong in misses. This has happened and it poisoned an entire agent.\n\n" +
           "fits: who turned out to be worth writing to, described the way they describe themselves.\n" +
           "misses: who looked right and was not. Somebody who ignored an invitation for two weeks is a miss, not a maybe.\n" +
           "words: phrases these people actually put in their own headlines, useful as search terms.\n\n" +
@@ -214,10 +272,34 @@ export async function reviseMemory(ctx: AgentContext): Promise<Memory | null> {
     return null;
   }
 
+  /**
+   * The prompt asks. This guarantees.
+   *
+   * A rule in a system prompt is a request to a cheap model, and this one was
+   * ignored in production: revision 3 of a live agent's memory listed the
+   * founder of a directly competing product under fits, from where it argued
+   * against the competitor rule in the scoring prompt on every lead afterwards.
+   *
+   * `competesWith` is the same deterministic check the scorer uses to zero a
+   * rival, run here on the description the model wrote. Anything it catches
+   * moves to misses rather than being deleted, because "we tried this kind of
+   * person and they sell what we sell" is a real lesson and losing it means
+   * relearning it.
+   */
+  const proposedFits = trim(parsed.fits, CAP.fits);
+  const sellsWhatWeSell = proposedFits.filter((f) => competesWith(f, sells).competes);
+  const cleanFits = proposedFits.filter((f) => !sellsWhatWeSell.includes(f));
+  if (sellsWhatWeSell.length) {
+    log("kept a rival out of the memory", {
+      agentId: ctx.agentId,
+      dropped: sellsWhatWeSell,
+    });
+  }
+
   const next: Memory = {
     rev: current.rev + 1,
-    fits: trim(parsed.fits, CAP.fits),
-    misses: trim(parsed.misses, CAP.misses),
+    fits: cleanFits,
+    misses: trim([...sellsWhatWeSell, ...(Array.isArray(parsed.misses) ? parsed.misses : [])], CAP.misses),
     words: trim(parsed.words, CAP.words),
   };
   if (!next.fits.length && !next.misses.length) return null;

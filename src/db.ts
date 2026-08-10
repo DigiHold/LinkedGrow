@@ -119,6 +119,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.status            AS status,
       a.last_run_at       AS last_run_at,
       l.full_name         AS account_full_name,
+      l.profile_url       AS account_profile_url,
       l.country           AS country,
       l.tier              AS tier,
       l.maturity          AS maturity,
@@ -207,6 +208,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       agentId: String(r.agent_id),
       workspaceId: String(r.workspace_id),
       linkedinAccountId: String(r.account_id),
+      ownProfileUrl: String(r.account_profile_url ?? ""),
       country: String(r.country ?? ""),
       tier: String(r.tier ?? "free"),
       maturity: String(r.maturity ?? "new"),
@@ -315,13 +317,42 @@ export interface FoundLead {
 }
 
 /**
- * Claims a lead for this workspace.
+ * The signal family a signal_type belongs to: "comment:lovable-dev" is a comment.
+ *
+ * Kept here rather than in the miner because both the claim and the repetition
+ * count need the same answer, and two definitions of "the same kind of signal"
+ * would drift apart within a week.
+ */
+export function signalKind(signalType: string | null | undefined): string {
+  const raw = (signalType ?? "").trim();
+  if (!raw) return "unknown";
+  return (raw.split(":")[0] ?? raw).toLowerCase();
+}
+
+/**
+ * Claims a lead for this workspace, or records that we have seen them again.
  *
  * Section 9c: the unique index on (workspace_id, profile_id) IS the claim. Two
  * agents mining overlapping markets will both find the same person, and the
  * winner is decided by the database rather than by a read-then-write that
  * races. A rejected insert means someone else already has them, which is the
  * correct outcome and not an error.
+ *
+ * ## The second sighting, which used to be thrown away
+ *
+ * `INSERT OR IGNORE` treated "we found this person again" as nothing at all,
+ * and it is the opposite of nothing. Somebody who commented under two different
+ * competitors and then came up in a search is not the same prospect as somebody
+ * seen once: they are in the market, visibly, repeatedly, and every signal tool
+ * worth the name ranks them higher for it. On the live account most passes
+ * reported "0 new people" while quietly discarding exactly this evidence.
+ *
+ * So a failed insert is now followed by `recordRepeatSignal`, which bumps
+ * `signal_hits` only when the KIND of signal is one this person has not
+ * produced before: reading the same reactions list twice must not look like
+ * growing interest. It is a separate statement rather than an upsert clause on
+ * purpose, because an upsert reports the same rowsAffected either way and this
+ * function's whole contract is telling a new lead apart from a repeat.
  *
  * Returns true when this call is the one that claimed them.
  */
@@ -332,8 +363,8 @@ export async function claimLead(ctx: AgentContext, lead: FoundLead): Promise<boo
             (id, workspace_id, agent_id, source_id, profile_id, profile_url, full_name,
              first_name, headline, job_title, company, location, avatar_url, match_score,
              match_reason, signal_type, signal_text, signal_url, signal_author, step, step_at,
-             found_at, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'found', ?, ?, ?, ?)`,
+             found_at, created_at, updated_at, signal_hits, signal_kinds)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'found', ?, ?, ?, ?, 1, ?)`,
     args: [
       crypto.randomUUID(), ctx.workspaceId, ctx.agentId, lead.sourceId ?? null,
       lead.profileId, lead.profileUrl, lead.fullName,
@@ -355,10 +386,49 @@ export async function claimLead(ctx: AgentContext, lead: FoundLead): Promise<boo
       lead.location ?? null, lead.avatarUrl ?? null, lead.matchScore ?? null,
       lead.matchReason ?? null, lead.signalType ?? null, lead.signalText ?? null,
       lead.signalUrl ?? null, lead.signalAuthor ?? null,
-      now, now, now, now,
+      now, now, now, now, signalKind(lead.signalType),
     ],
   });
-  return result.rowsAffected > 0;
+  if (result.rowsAffected > 0) return true;
+  await recordRepeatSignal(ctx, lead);
+  return false;
+}
+
+/**
+ * A person we already had, showing up through a different door.
+ *
+ * The strongest cheap signal in the product and the one it was throwing on the
+ * floor. Trigify sells "repeat interaction with competitor accounts" as its own
+ * trigger, and it is right to: somebody who commented under Lovable, then came
+ * up in a search for indie founders, then reacted to Cal.com is telling you
+ * something a single sighting cannot.
+ *
+ * Only a NEW kind counts. The miner walks a competitor's feed and the same
+ * person turns up under three of their posts in one pass, which is one interest,
+ * not three, and counting it three times would put the loudest commenter on
+ * LinkedIn at the top of every customer's queue.
+ *
+ * The score is cleared so the next scoring pass judges them again with the
+ * repetition in front of it. Only while they are still at `found`: a lead
+ * already in the sequence keeps the score the sequence let it in on, because
+ * pulling it back below the floor mid-conversation would strand it.
+ */
+export async function recordRepeatSignal(ctx: AgentContext, lead: FoundLead): Promise<void> {
+  const kind = signalKind(lead.signalType);
+  await db().execute({
+    sql: `UPDATE agent_leads
+             SET signal_hits = signal_hits + 1,
+                 signal_kinds = COALESCE(signal_kinds || ',', '') || ?,
+                 match_score = CASE WHEN step = 'found' THEN NULL ELSE match_score END,
+                 match_reason = CASE WHEN step = 'found' THEN NULL ELSE match_reason END,
+                 updated_at = ?
+           WHERE workspace_id = ? AND profile_id = ? AND agent_id = ?
+             AND instr(',' || COALESCE(signal_kinds, '') || ',', ',' || ? || ',') = 0`,
+    args: [
+      kind, Math.floor(Date.now() / 1000),
+      ctx.workspaceId, lead.profileId, ctx.agentId, kind,
+    ],
+  });
 }
 
 /**
@@ -379,17 +449,57 @@ export async function leadsAtStep(ctx: AgentContext, step: string, limit: number
   const scoring = Boolean(ctx.cfg.leads.icp);
   const { rows } = await db().execute({
     sql: `SELECT id, profile_id, profile_url, full_name, headline, job_title, company,
-                 match_score, match_reason, signal_text, signal_url, step_at
+                 match_score, match_reason, signal_text, signal_url, step_at,
+                 signal_hits, signal_kinds
           FROM agent_leads
           WHERE workspace_id = ? AND agent_id = ? AND step = ?
             AND ${scoring ? "match_score IS NOT NULL" : "1 = 1"}
             AND (match_score IS NULL OR match_score >= ?)
-          ORDER BY COALESCE(match_score, 0) DESC, found_at ASC
+            /* Somebody the customer has thrown out is never handed back to the
+               sequence, whatever their score says. */
+            AND rejected_at IS NULL
+          ORDER BY ${HOT_FIRST}, COALESCE(match_score, 0) DESC, found_at ASC
           LIMIT ?`,
     args: [ctx.workspaceId, ctx.agentId, step, floor, limit],
   });
   return rows;
 }
+
+/**
+ * The order the warmest people come out in, shared by both queues.
+ *
+ * Three tiers, and they are tiers rather than a weighting because a score is an
+ * opinion and these three are facts about what the person did.
+ *
+ * 0. They engaged with the CUSTOMER'S OWN post, or asked about the problem out
+ *    loud. Nothing beats somebody who has already interacted with you.
+ * 1. They turned up through more than one kind of signal. A person who
+ *    commented under a rival and then came up in a search is in the market.
+ * 2. Everybody else, best match first.
+ */
+export const HOT_FIRST = `CASE
+  WHEN signal_type LIKE 'own:%' OR signal_type LIKE 'question:%' OR signal_type LIKE 'intent:%' THEN 0
+  WHEN COALESCE(signal_hits, 1) > 1 THEN 1
+  ELSE 2 END`;
+
+/**
+ * What the customer told us about a lead, once the conversation ended.
+ *
+ * Written from the dashboard, never by the agent, and read by the learning
+ * pass above everything else it knows. Until this column is filled the agent
+ * learns from proxies, and the proxies are what taught one live agent that a
+ * competitor who answered politely was a good prospect.
+ */
+export type LeadOutcome = "meeting" | "customer" | "not_a_fit";
+
+/**
+ * What the last reply from this person actually meant.
+ *
+ * Separate from the hand-over decision, which answers a different question.
+ * "Thanks for connecting" and "not interested" both end with the agent quiet,
+ * and treating them as the same evidence is the root of the same bug.
+ */
+export type ReplyIntent = "interested" | "neutral" | "refused";
 
 /**
  * Leads nobody has scored yet, oldest first.
@@ -401,10 +511,13 @@ export async function leadsAtStep(ctx: AgentContext, step: string, limit: number
  */
 export async function unscoredLeads(ctx: AgentContext, limit: number) {
   const { rows } = await db().execute({
-    sql: `SELECT id, full_name, headline, company, signal_text
+    sql: `SELECT id, full_name, headline, company, signal_text, signal_hits, signal_kinds
           FROM agent_leads
           WHERE workspace_id = ? AND agent_id = ? AND match_score IS NULL
-          ORDER BY found_at ASC
+            /* Rejected by the customer, so there is nothing left to judge and
+               spending a model call on it would be paying to be told twice. */
+            AND rejected_at IS NULL
+          ORDER BY COALESCE(signal_hits, 1) DESC, found_at ASC
           LIMIT ?`,
     args: [ctx.workspaceId, ctx.agentId, limit],
   });

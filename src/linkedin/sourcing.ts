@@ -12,9 +12,25 @@ import { BudgetExceededError, scoreLead } from "../ai.ts";
 import { announce, keepAlive } from "../store.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, type Engager } from "./miner.ts";
-import { learn, miningOrder, recordPass, refreshSourceCounters, scoreSources } from "./learn.ts";
+import {
+  disableSource,
+  learn,
+  miningOrder,
+  recordPass,
+  refreshSourceCounters,
+  scoreSources,
+} from "./learn.ts";
 import { asPrompt, readMemory, reviseMemory } from "./memory.ts";
-import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
+import {
+  mineProfileViewers,
+  mineSignal,
+  minePeople,
+  mineOwnPosts,
+  mineGroup,
+  queriesForSignal,
+  unsupportedSearch,
+  type SignalKind,
+} from "./sources.ts";
 import { ensureTargeting } from "./derive.ts";
 import { competesWith, rivalryReason } from "./competitor.ts";
 import { book, roomToRead, tierOf, MIN_VISIT_READ, type Pace } from "../safety/reading.ts";
@@ -90,8 +106,9 @@ export function searchCost(type: string, queries = 1): number {
       // One search per role, for each of the two kinds of buying event.
       return 2 * n;
     default:
-      // A company page and its posts, or the profile-views page. Opening a URL
-      // is not a search, and the commercial use limit does not count it.
+      // A company page and its posts, the profile-views page, a group, or the
+      // customer's own activity feed. Opening a URL is not a search, and the
+      // commercial use limit does not count it.
       return 0;
   }
 }
@@ -105,12 +122,18 @@ export function searchCost(type: string, queries = 1): number {
  */
 export function queriesIn(type: string, config: Record<string, unknown>, roles: number): number {
   if (type === "buying_event") {
-    const kinds = typeof config.kind === "string" ? 1 : 2;
+    // A row with no kind predates the setting and means every kind there is,
+    // which is now four rather than two. Undercounting here is what let a pass
+    // run twelve searches against a booking of four.
+    const kinds = typeof config.kind === "string" ? 1 : BUYING_EVENT_KINDS.length;
     return Math.max(1, Math.min(4, roles)) * kinds;
   }
   const queries = config.queries;
   return Array.isArray(queries) && queries.length > 0 ? queries.length : 1;
 }
+
+/** Every shape of "something just changed here" the agent knows how to search for. */
+export const BUYING_EVENT_KINDS = ["jobchange", "hiring", "funding", "event"] as const;
 
 /**
  * How deep to read one source, given what the visit is allowed to spend.
@@ -363,11 +386,48 @@ export function splitHeadline(headline: string | null): {
   return { jobTitle: first.slice(0, 120) || null, company: null };
 }
 
+/**
+ * The sources every agent should have whether or not anybody thought to add them.
+ *
+ * Both are free: they open a URL, they run no search, and they read the two
+ * audiences the customer already owns. Leaving them to the wizard meant an
+ * agent created before they existed would never get them, and an agent created
+ * after would only get them if somebody ticked a box, which is the wrong way
+ * round for the warmest signal on the platform.
+ *
+ * Created disabled-safe: an account with no profile address stored yet simply
+ * skips the source at mining time and picks it up once sign-in has read one.
+ */
+async function ensureCoreSources(ctx: AgentContext): Promise<void> {
+  const wanted: Array<{ type: string; label: string }> = [
+    { type: "own_posts", label: "People who engage with your posts" },
+    { type: "brand", label: "People who viewed your profile" },
+  ];
+  const { rows } = await db().execute({
+    sql: `SELECT type FROM agent_sources WHERE agent_id = ? AND workspace_id = ?`,
+    args: [ctx.agentId, ctx.workspaceId],
+  });
+  const have = new Set(rows.map((r) => String(r.type)));
+
+  for (const source of wanted) {
+    if (have.has(source.type)) continue;
+    const now = Math.floor(Date.now() / 1000);
+    await db().execute({
+      sql: `INSERT INTO agent_sources
+              (id, workspace_id, agent_id, type, label, enabled, origin, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, 1, 'built-in', ?, ?)`,
+      args: [crypto.randomUUID(), ctx.workspaceId, ctx.agentId, source.type, source.label, now, now],
+    });
+    log("added a built-in source", { agentId: ctx.agentId, type: source.type });
+  }
+}
+
 export async function sourcePass(
   ctx: AgentContext,
   page: Page,
   opts: { firstRun?: boolean; pace?: Pace } = {}
 ): Promise<number> {
+  await ensureCoreSources(ctx).catch(() => {});
   const all = await loadSources(ctx);
 
   /**
@@ -584,6 +644,25 @@ export async function sourcePass(
               : [source.label];
 
           /**
+           * A pasted address the agent genuinely cannot work, said out loud.
+           *
+           * A Sales Navigator list used to load, match nothing, and report an
+           * empty search like any quiet day, so a customer could leave their
+           * best list in there for weeks. The source is turned off with the
+           * reason on the row, which the dashboard shows, rather than being
+           * mined for ever against a selector that can never match.
+           */
+          const blocked = queries.map(unsupportedSearch).find(Boolean);
+          if (blocked) {
+            await disableSource(source.id, ctx.agentId, blocked);
+            await recordEvent(ctx, "sourcing", `${source.label} was turned off. ${blocked}`).catch(
+              () => {}
+            );
+            log("source cannot be worked", { source: source.label, reason: blocked });
+            continue;
+          }
+
+          /**
            * Both doors, not one.
            *
            * A keyword source used to mean "find posts about this", and only
@@ -616,22 +695,27 @@ export async function sourcePass(
           break;
         }
         case "buying_event": {
-          // Two shapes of the same idea: somebody just took the seat, or somebody is hiring for
-          // the work. Both are searched by ROLE, which is why this source asks the customer for
-          // nothing extra: the roles and industries they already gave are the query. It used to
-          // search for the label of the button they clicked, so it looked for people announcing a
-          // new job as a "High-intent signals".
+          // Four shapes of the same idea: somebody just took the seat, somebody is hiring for the
+          // work, somebody just put money in the bank, or somebody is standing in a room full of
+          // their own market. All searched from what the customer already gave us, which is why
+          // this source asks them for nothing extra. It used to search for the label of the button
+          // they clicked, so it looked for people announcing a new job as a "High-intent signals".
           const roles = ctx.cfg.leads.icpKeywords.length
             ? ctx.cfg.leads.icpKeywords.slice(0, 4)
             : [source.label];
           // One row per kind, so a customer who only wants role changes gets only those. A row
-          // without a kind predates the setting and means both.
+          // without a kind predates the setting and means all of them.
           const kind = typeof config.kind === "string" ? config.kind : null;
-          const wanted: Array<"jobchange" | "hiring"> =
-            kind === "jobchange" || kind === "hiring" ? [kind] : ["jobchange", "hiring"];
+          const wanted = (BUYING_EVENT_KINDS as readonly string[]).includes(kind ?? "")
+            ? [kind as SignalKind]
+            : [...BUYING_EVENT_KINDS];
           found = [];
           for (const k of wanted) {
-            found.push(...(await mineSignal(ctx, page, ctx.cfg, k, roles, { maxPerQuery: budget.perPost })));
+            found.push(
+              ...(await mineSignal(ctx, page, ctx.cfg, k, queriesForSignal(k, roles), {
+                maxPerQuery: budget.perPost,
+              }))
+            );
           }
           break;
         }
@@ -640,8 +724,43 @@ export async function sourcePass(
           found = await mineProfileViewers(ctx, page, ctx.cfg);
           break;
         }
+        case "own_posts": {
+          /**
+           * The audience of the customer's own content, which is the warmest
+           * room they have and the one the agent had never walked into.
+           *
+           * LinkedGrow publishes these posts. Somebody who stops to comment
+           * under one has read the customer's words, in public, on purpose, and
+           * they cost the account nothing to find. Every rival signal product
+           * sells this and we were the only one not reading it.
+           */
+          if (!ctx.ownProfileUrl) {
+            log("the account has no profile address stored yet, so its own posts are skipped", {
+              agentId: ctx.agentId,
+            });
+            continue;
+          }
+          found = await mineOwnPosts(ctx, page, ctx.cfg, ctx.ownProfileUrl, {
+            maxPerPost: budget.perPost,
+            maxPosts: budget.posts,
+            dryRun: true,
+          });
+          break;
+        }
+        case "group": {
+          // A room the customer already joined, gathered around one subject.
+          const url = typeof config.url === "string" ? config.url : source.label;
+          found = await mineGroup(ctx, page, ctx.cfg, url, {
+            maxPerPost: budget.perPost,
+            maxPosts: budget.posts,
+            dryRun: true,
+          });
+          break;
+        }
         case "csv":
-          // Uploaded rather than mined; nothing to read on LinkedIn.
+          // Uploaded rather than mined. The rows are inserted straight into
+          // agent_leads by the import endpoint, so there is nothing on LinkedIn
+          // to read and reaching this source is not a failure.
           continue;
         default:
           log("unknown source type, skipped", { type: source.type });
@@ -787,6 +906,10 @@ async function scorePass(ctx: AgentContext): Promise<void> {
           headline,
           company: row.company ? String(row.company) : undefined,
           signal: row.signal_text ? String(row.signal_text) : undefined,
+          // How many different doors this person has come through. The claim
+          // used to throw the second and third away entirely.
+          hits: Number(row.signal_hits ?? 1),
+          kinds: row.signal_kinds ? String(row.signal_kinds) : undefined,
         },
         memory
       );

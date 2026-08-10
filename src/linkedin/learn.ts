@@ -32,18 +32,42 @@ import { log, logError } from "../logger.ts";
  */
 
 /**
- * A reply is ground truth about fit. A match score is an opinion about it.
+ * What a source is worth, and the three times this was wrong.
  *
- * The weights always said that, three times and eight times over. The two
- * columns they multiplied were never written by anything: on a live agent
- * running since July, accepted and replied were 0 on every source while four
- * people had actually replied. So the strongest evidence the product collects,
- * a human answering, reached the ranking at a weight of eight times zero, and
- * the agent was left learning from a cheap model's opinion of a headline.
+ * First the columns were never written, so accepted and replied were 0
+ * everywhere and the whole ranking ran on a cheap model's opinion of a
+ * headline. Then they were derived from agent_leads and started counting, and
+ * the count was worse than the zero, because ANY reply scored eight.
  *
- * Both are derived from agent_leads now, the same way good is.
+ * On the live account on 2026-08-10, six people had replied. Their match scores
+ * were 75, 25, 15, 0, 0 and 0. Four of the six can never buy anything: an
+ * executive coach, the head of an AI newsletter, a bootcamp operator, and the
+ * founder of a directly competing product. The source that found the competitor
+ * carried a yield of 12, tied for first, and was mined first every pass. The
+ * agent was being taught, correctly given its inputs, to look for competitors.
+ *
+ * So the weights now grade what the reply actually was, and two of them are
+ * negative. A source that produces refusals is worse than a source that
+ * produces nothing: silence costs an invitation, a refusal costs the account's
+ * standing. And a lead the customer threw out is the clearest statement of
+ * error the product can receive.
+ *
+ * Above all of it sits the outcome, which is the only thing that is not a
+ * proxy. A meeting or a customer outranks every other signal combined, on
+ * purpose: the whole promise of the product is that after two months the agent
+ * is finding people who buy, and it cannot learn that from people who type.
  */
-const WEIGHT = { good: 1, accepted: 3, replied: 8 };
+const WEIGHT = {
+  good: 1,
+  accepted: 2,
+  neutralReply: 1,
+  interestedReply: 10,
+  refusedReply: -6,
+  rejectedByCustomer: -8,
+  meeting: 25,
+  customer: 60,
+  notAFit: -12,
+};
 
 /**
  * What a prospect's state says about the source that found them.
@@ -61,7 +85,6 @@ const ACCEPTED_STATES = [
   "ask_sent",
   "handed_over",
 ];
-const REPLIED_STATES = ["hello_answered", "conversing", "ask_sent", "handed_over"];
 
 /** Turns a list of states into a SQL placeholder list, for the counts below. */
 function placeholders(list: readonly string[]): string {
@@ -88,11 +111,86 @@ export interface SourceScore {
   leads: number;
   good: number;
   accepted: number;
-  replied: number;
+  /** Replies that said something worth having. */
+  interested: number;
+  /** Replies that said hello and nothing else. */
+  neutral: number;
+  /** Replies that said no, or that pitched us their own product. */
+  refused: number;
+  /** Leads the customer threw out by hand. The clearest error signal there is. */
+  rejected: number;
+  /** Meetings booked and customers won, as recorded by the customer. */
+  meetings: number;
+  customers: number;
+  notAFit: number;
   /** Worth per pass. The number attention is allocated by. */
   yield: number;
   /** Never mined, so it has earned a try rather than a ranking. */
   untried: boolean;
+}
+
+/**
+ * How many times this source has really been worked, at the lowest honest bound.
+ *
+ * `passes` was never incremented before the counter was fixed, so every source
+ * that predates it reports 0 and divides by 1. That is not neutral, it is a
+ * free ride: on the live account a source with 15 points of worth and an honest
+ * count of 2 passes ranked at 7.5, below a source with 12 points and a stale 0
+ * that ranked at 12. Correct accounting was being punished.
+ *
+ * A source that has been opened at least once cannot have been worked zero
+ * times, so a recorded mining date is worth a pass on its own. It is a floor
+ * rather than a guess, and it disappears by itself as every source gets mined
+ * again under the working counter.
+ */
+export function effortOf(passes: number, lastMinedAt: unknown): number {
+  return Math.max(1, passes, lastMinedAt ? 1 : 0);
+}
+
+/**
+ * The most a source can ever be worth on guesses alone.
+ *
+ * Without this the ranking is a volume contest. A source that finds forty
+ * people a cheap model likes the look of, and books nothing, accumulates
+ * without limit and outranks a source that produced one real meeting, which is
+ * the exact failure the whole rewrite exists to stop. The twentieth well-scored
+ * headline says almost nothing new about a source; the first meeting says
+ * everything.
+ *
+ * So the proxies saturate and the facts do not. A source that wants to keep
+ * climbing has to produce somebody who actually wanted the thing.
+ */
+const PROXY_CAP = 15;
+
+/**
+ * The arithmetic of a source's worth, kept out of the SQL so it can be tested.
+ *
+ * Two halves that behave differently on purpose. Scores and acceptances are
+ * guesses and near-guesses, so they are summed and then capped. Replies,
+ * refusals, hand rejections and outcomes are things a human did, so they count
+ * in full, in both directions, for ever.
+ */
+export function worthOf(s: {
+  good: number;
+  accepted: number;
+  interested: number;
+  neutral: number;
+  refused: number;
+  rejected: number;
+  meetings: number;
+  customers: number;
+  notAFit: number;
+}): number {
+  const guessed =
+    s.good * WEIGHT.good + s.accepted * WEIGHT.accepted + s.neutral * WEIGHT.neutralReply;
+  const happened =
+    s.interested * WEIGHT.interestedReply +
+    s.refused * WEIGHT.refusedReply +
+    s.rejected * WEIGHT.rejectedByCustomer +
+    s.meetings * WEIGHT.meeting +
+    s.customers * WEIGHT.customer +
+    s.notAFit * WEIGHT.notAFit;
+  return Math.min(guessed, PROXY_CAP) + happened;
 }
 
 /**
@@ -128,38 +226,49 @@ export async function scoreSources(ctx: AgentContext): Promise<SourceScore[]> {
                  COUNT(l.id) AS leads_found,
                  SUM(CASE WHEN l.match_score >= ? THEN 1 ELSE 0 END) AS good_leads,
                  SUM(CASE WHEN l.sequence_status IN (${placeholders(ACCEPTED_STATES)}) THEN 1 ELSE 0 END) AS accepted,
-                 SUM(CASE WHEN l.sequence_status IN (${placeholders(REPLIED_STATES)}) THEN 1 ELSE 0 END) AS replied
+                 SUM(CASE WHEN l.reply_intent = 'interested' THEN 1 ELSE 0 END) AS interested,
+                 SUM(CASE WHEN l.reply_intent = 'neutral' THEN 1 ELSE 0 END) AS neutral,
+                 SUM(CASE WHEN l.reply_intent = 'refused' THEN 1 ELSE 0 END) AS refused,
+                 SUM(CASE WHEN l.rejected_at IS NOT NULL THEN 1 ELSE 0 END) AS rejected,
+                 SUM(CASE WHEN l.outcome = 'meeting' THEN 1 ELSE 0 END) AS meetings,
+                 SUM(CASE WHEN l.outcome = 'customer' THEN 1 ELSE 0 END) AS customers,
+                 SUM(CASE WHEN l.outcome = 'not_a_fit' THEN 1 ELSE 0 END) AS not_a_fit
             FROM agent_sources s
             LEFT JOIN agent_leads l
               ON l.source_id = s.id AND l.workspace_id = s.workspace_id
            WHERE s.agent_id = ? AND s.workspace_id = ? AND s.enabled = 1
            GROUP BY s.id`,
-    args: [GOOD_SCORE, ...ACCEPTED_STATES, ...REPLIED_STATES, ctx.agentId, ctx.workspaceId],
+    args: [GOOD_SCORE, ...ACCEPTED_STATES, ctx.agentId, ctx.workspaceId],
   });
 
   return rows.map((r) => {
     const passes = Number(r.passes ?? 0);
-    const good = Number(r.good_leads ?? 0);
-    const accepted = Number(r.accepted ?? 0);
-    const replied = Number(r.replied ?? 0);
-    const worth = good * WEIGHT.good + accepted * WEIGHT.accepted + replied * WEIGHT.replied;
+    const counts = {
+      good: Number(r.good_leads ?? 0),
+      accepted: Number(r.accepted ?? 0),
+      interested: Number(r.interested ?? 0),
+      neutral: Number(r.neutral ?? 0),
+      refused: Number(r.refused ?? 0),
+      rejected: Number(r.rejected ?? 0),
+      meetings: Number(r.meetings ?? 0),
+      customers: Number(r.customers ?? 0),
+      notAFit: Number(r.not_a_fit ?? 0),
+    };
     return {
       id: String(r.id),
       label: String(r.label),
       type: String(r.type),
       passes,
       leads: Number(r.leads_found ?? 0),
-      good,
-      accepted,
-      replied,
+      ...counts,
       /**
-       * Per pass where we know how many there were, otherwise the plain total.
+       * Worth per unit of attention actually spent.
        *
-       * passes was never incremented on the rows that predate the fix, so
-       * dividing by it threw away every source's whole history. A source with
-       * ten good leads and no recorded passes is not worth zero.
+       * The denominator is a floor rather than the raw counter, because the
+       * counter was broken for months and a stale zero used to buy a source a
+       * free ride straight to the top of the queue.
        */
-      yield: worth / Math.max(1, passes),
+      yield: worthOf(counts) / effortOf(passes, r.last_mined_at),
       /**
        * Never opened, rather than never counted.
        *
@@ -227,13 +336,38 @@ export async function refreshSourceCounters(ctx: AgentContext): Promise<void> {
                     WHERE l.source_id = agent_sources.id AND l.workspace_id = agent_sources.workspace_id
                       AND l.sequence_status IN (${placeholders(ACCEPTED_STATES)})
                  ),
+                 /* Only the replies that were worth having. The column is shown
+                    to the customer next to the source, and counting a refusal
+                    as a reply told them a source was working when it was
+                    burning the account's standing. */
                  replied = (
                    SELECT COUNT(*) FROM agent_leads l
                     WHERE l.source_id = agent_sources.id AND l.workspace_id = agent_sources.workspace_id
-                      AND l.sequence_status IN (${placeholders(REPLIED_STATES)})
+                      AND l.reply_intent = 'interested'
                  )
            WHERE agent_id = ? AND workspace_id = ?`,
-    args: [GOOD_SCORE, ...ACCEPTED_STATES, ...REPLIED_STATES, ctx.agentId, ctx.workspaceId],
+    args: [GOOD_SCORE, ...ACCEPTED_STATES, ctx.agentId, ctx.workspaceId],
+  });
+}
+
+/**
+ * Turns a source off and says why, for a reason that is not about its results.
+ *
+ * Separate from retireDeadSources, which is a judgement about performance. This
+ * is a statement of fact: the address cannot be worked at all, and mining it
+ * again would produce the same nothing with the same silence.
+ */
+export async function disableSource(
+  sourceId: string,
+  agentId: string,
+  reason: string
+): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  await db().execute({
+    sql: `UPDATE agent_sources
+             SET enabled = 0, retired_at = ?, retired_reason = ?, updated_at = ?
+           WHERE id = ? AND agent_id = ?`,
+    args: [now, reason.slice(0, 300), now, sourceId, agentId],
   });
 }
 
@@ -259,10 +393,22 @@ export async function recordPass(sourceId: string, found: number, good: number):
  * show it greyed with its reason, and they can turn it back on.
  *
  * A source the customer added today is safe: retirement needs PATIENCE passes
- * of evidence, which is roughly a week of running.
+ * of evidence, which is roughly a week of running. A source that is actively
+ * doing harm does not get that long: three refusals or rejections and nothing
+ * good to show for them is already an answer, and every further pass spends
+ * invitations on people who will say no.
  */
+export function isDead(s: SourceScore): boolean {
+  if (s.untried) return false;
+  const won = s.good + s.interested + s.meetings + s.customers;
+  const harm = s.refused + s.rejected + s.notAFit;
+  if (won > 0) return false;
+  if (harm >= 3) return true;
+  return s.passes >= PATIENCE;
+}
+
 export async function retireDeadSources(ctx: AgentContext, scores: SourceScore[]): Promise<number> {
-  const dead = scores.filter((s) => !s.untried && s.passes >= PATIENCE && s.good === 0 && s.replied === 0);
+  const dead = scores.filter(isDead);
   if (dead.length === 0) return 0;
 
   // Never retire the last thing an agent has to look at. An agent with no
@@ -278,7 +424,9 @@ export async function retireDeadSources(ctx: AgentContext, scores: SourceScore[]
              WHERE id = ? AND agent_id = ?`,
       args: [
         Math.floor(Date.now() / 1000),
-        `Nothing worth writing to after ${s.passes} passes and ${s.leads} people read.`,
+        s.refused + s.rejected + s.notAFit >= 3
+          ? `${s.refused + s.rejected + s.notAFit} of the people it found said no or were thrown out, and none of them were worth writing to.`
+          : `Nothing worth writing to after ${s.passes} passes and ${s.leads} people read.`,
         Math.floor(Date.now() / 1000),
         s.id,
         ctx.agentId,
@@ -327,13 +475,33 @@ export function parseGrown(
     .slice(0, Math.max(0, room));
 }
 
-/** The people a source actually found and scored well, in their own words. */
+/**
+ * The people a source found who turned out to be worth having, in their own words.
+ *
+ * Ordered by how real the evidence is rather than by score, because a score is
+ * a model's opinion of a headline and a customer is a fact. A source that has
+ * produced one customer should spawn variants shaped like that customer, not
+ * like the eleven strangers a model happened to rate highly.
+ *
+ * Anyone the customer threw out, anyone who refused, and anyone marked as not a
+ * fit is excluded outright. Feeding those back in is exactly how one live agent
+ * ended up with a direct competitor written into its own memory as a target.
+ */
 async function winningHeadlines(sourceId: string): Promise<string[]> {
   const { rows } = await db().execute({
     sql: `SELECT headline, job_title, company
             FROM agent_leads
-           WHERE source_id = ? AND match_score >= ?
-           ORDER BY match_score DESC
+           WHERE source_id = ?
+             AND rejected_at IS NULL
+             AND COALESCE(reply_intent, '') <> 'refused'
+             AND COALESCE(outcome, '') <> 'not_a_fit'
+             AND (match_score >= ? OR outcome IN ('meeting', 'customer') OR reply_intent = 'interested')
+           ORDER BY CASE outcome
+                      WHEN 'customer' THEN 0
+                      WHEN 'meeting' THEN 1
+                      ELSE 2 END,
+                    CASE WHEN reply_intent = 'interested' THEN 0 ELSE 1 END,
+                    match_score DESC
            LIMIT 12`,
     args: [sourceId, GOOD_SCORE],
   });
@@ -488,12 +656,38 @@ export async function learn(ctx: AgentContext): Promise<{
      * single variant in its life. Leads found is the same guarantee against a
      * one-off fluke and it is a number that actually exists: three good ones
      * out of at least five means the source is producing, not lucky.
+     *
+     * A source that somebody actually wanted to talk to skips the volume test
+     * entirely. One interested reply, one meeting or one customer is stronger
+     * evidence than any number of headlines a model liked, and requiring five
+     * leads first would ignore the best thing that has ever happened to the
+     * agent because it happened early.
      */
-    .filter((s) => s.good >= 3 && s.leads >= 5)
+    .filter((s) => (s.good >= 3 && s.leads >= 5) || s.interested + s.meetings + s.customers >= 1)
     .sort((a, b) => b.yield - a.yield);
 
+  /**
+   * Down the list until one of them has room, rather than the first and stop.
+   *
+   * This called growFrom(candidates[0]) once. A source may spawn MAX_CHILDREN
+   * variants in its life, so the moment the best source used its third, growFrom
+   * returned 0 and the runners-up were never asked. On the live account that
+   * happened on 2026-08-10, eleven days in: `indie SaaS founder` took its third
+   * child and the agent would have stopped inventing anything for good unless
+   * some other source overtook it on yield.
+   *
+   * One variant per pass still, so the cost stays one model call and the agent
+   * cannot fill its allowance with guesses in an afternoon.
+   */
   let learned = 0;
-  if (candidates[0]) learned = await growFrom(ctx, candidates[0]);
+  let best: string | null = null;
+  for (const candidate of candidates) {
+    learned = await growFrom(ctx, candidate);
+    if (learned > 0) {
+      best = candidate.label;
+      break;
+    }
+  }
 
-  return { retired, learned, best: candidates[0]?.label ?? null };
+  return { retired, learned, best: best ?? candidates[0]?.label ?? null };
 }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { miningOrder, parseGrown, type SourceScore } from "./learn.ts";
+import { effortOf, isDead, miningOrder, parseGrown, worthOf, type SourceScore } from "./learn.ts";
 
 /**
  * The agent was supposed to follow what works. It never could.
@@ -24,9 +24,17 @@ import { miningOrder, parseGrown, type SourceScore } from "./learn.ts";
  */
 
 function score(over: Partial<SourceScore>): SourceScore {
-  const good = over.good ?? 0;
-  const accepted = over.accepted ?? 0;
-  const replied = over.replied ?? 0;
+  const counts = {
+    good: over.good ?? 0,
+    accepted: over.accepted ?? 0,
+    interested: over.interested ?? 0,
+    neutral: over.neutral ?? 0,
+    refused: over.refused ?? 0,
+    rejected: over.rejected ?? 0,
+    meetings: over.meetings ?? 0,
+    customers: over.customers ?? 0,
+    notAFit: over.notAFit ?? 0,
+  };
   const passes = over.passes ?? 0;
   return {
     id: over.id ?? "s",
@@ -34,10 +42,8 @@ function score(over: Partial<SourceScore>): SourceScore {
     type: over.type ?? "keyword",
     passes,
     leads: over.leads ?? 0,
-    good,
-    accepted,
-    replied,
-    yield: (good * 1 + accepted * 3 + replied * 8) / Math.max(1, passes),
+    ...counts,
+    yield: worthOf(counts) / effortOf(passes, over.untried ? null : 1),
     untried: over.untried ?? false,
     ...over,
   } as SourceScore;
@@ -95,9 +101,9 @@ test("equal yields fall back to whoever has waited longest", () => {
  * of a headline. The whole promise of an agent that learns rests on the
  * opposite: that what humans really did outranks what a model guessed.
  */
-test("a source whose people replied outranks one that only scored well", () => {
+test("a source whose people wanted it outranks one that only scored well", () => {
   const guessedWell = score({ id: "guess", leads: 20, good: 9, passes: 3 });
-  const actuallyWorked = score({ id: "real", leads: 6, good: 2, accepted: 4, replied: 2, passes: 3 });
+  const actuallyWorked = score({ id: "real", leads: 6, good: 2, accepted: 4, interested: 2, passes: 3 });
   const order = miningOrder(
     [{ id: "guess" }, { id: "real" }],
     [guessedWell, actuallyWorked],
@@ -106,14 +112,75 @@ test("a source whose people replied outranks one that only scored well", () => {
   assert.equal(
     order[0]?.id,
     "real",
-    "two replies and four acceptances beat nine headlines a model liked"
+    "two people who wanted it beat nine headlines a model liked"
   );
 });
 
-test("acceptance counts, and a reply counts for more", () => {
+test("acceptance counts, and somebody wanting it counts for far more", () => {
   const quiet = score({ id: "q", good: 2, accepted: 2, passes: 2 });
-  const answering = score({ id: "a", good: 2, accepted: 2, replied: 1, passes: 2 });
-  assert.ok(answering.yield > quiet.yield, "somebody writing back is the strongest evidence there is");
+  const answering = score({ id: "a", good: 2, accepted: 2, interested: 1, passes: 2 });
+  assert.ok(answering.yield > quiet.yield, "somebody asking for it is the strongest evidence there is");
+});
+
+/**
+ * The reply that is worth nothing, and the one that is worth less than nothing.
+ *
+ * Read off the live account on 2026-08-10. Six people had replied and their
+ * match scores were 75, 25, 15, 0, 0 and 0: an AI automation builder, a
+ * solution architect, the head of an AI newsletter, an executive coach, a
+ * bootcamp operator, and the founder of a directly competing product. Every one
+ * of them counted as a reply at a weight of eight, which is the heaviest number
+ * in the ranking, so the source that found the competitor tied for first place
+ * and was mined before anything else on every pass.
+ */
+test("a polite hello is not the same evidence as somebody asking what it costs", () => {
+  const chatty = score({ id: "chatty", leads: 10, good: 1, neutral: 4, passes: 2 });
+  const buying = score({ id: "buying", leads: 10, good: 1, interested: 1, passes: 2 });
+  assert.ok(
+    buying.yield > chatty.yield,
+    "four people saying hi must not outrank one person asking for the product"
+  );
+});
+
+test("a source that produces refusals ranks below one that produces silence", () => {
+  const silent = score({ id: "silent", leads: 10, good: 1, passes: 2 });
+  const refused = score({ id: "refused", leads: 10, good: 1, refused: 3, passes: 2 });
+  assert.ok(refused.yield < silent.yield);
+  assert.ok(refused.yield < 0, "three people saying no is worse than nothing at all");
+});
+
+test("what the customer threw out weighs more than what a model liked", () => {
+  const s = score({ leads: 12, good: 6, rejected: 2 });
+  assert.ok(worthOf(s) < 0, "six headlines a model liked cannot outvote two hand rejections");
+});
+
+test("a booked meeting outranks everything else a source can show", () => {
+  const busy = score({ id: "busy", leads: 40, good: 20, accepted: 10, passes: 4 });
+  const oneMeeting = score({ id: "meeting", leads: 3, good: 1, meetings: 1, passes: 4 });
+  assert.ok(oneMeeting.yield > busy.yield);
+});
+
+/**
+ * The free ride a broken counter used to buy.
+ *
+ * `passes` was never incremented before the fix, so every older source reported
+ * 0 and divided by 1. On the live account `AI search visibility` had more worth
+ * than `indie SaaS founder`, 15 against 12, and ranked at half its yield purely
+ * because it was the one being counted honestly.
+ */
+test("a source that has been mined cannot claim it never was", () => {
+  assert.equal(effortOf(0, 1_754_000_000), 1);
+  assert.equal(effortOf(0, null), 1);
+  assert.equal(effortOf(5, 1_754_000_000), 5);
+});
+
+test("three refusals retire a source without waiting out the patience", () => {
+  assert.equal(isDead(score({ leads: 9, good: 0, refused: 3, passes: 2 })), true);
+  assert.equal(isDead(score({ leads: 9, good: 0, rejected: 2, notAFit: 1, passes: 2 })), true);
+  // Something that is producing is never retired for a couple of noes.
+  assert.equal(isDead(score({ leads: 9, good: 4, refused: 3, passes: 2 })), false);
+  // And nothing untried is ever judged.
+  assert.equal(isDead(score({ untried: true, refused: 5 })), false);
 });
 
 /**

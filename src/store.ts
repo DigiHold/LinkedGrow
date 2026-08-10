@@ -1,4 +1,4 @@
-import { db } from "./db.ts";
+import { db, HOT_FIRST, type ReplyIntent } from "./db.ts";
 import type { AgentContext } from "./config.ts";
 
 /**
@@ -141,6 +141,9 @@ export async function getProspects(
     args.push(opts.minScore);
   }
   if (opts.requireScored) clauses.push("match_score IS NOT NULL");
+  // A person the customer threw out never comes back round, at any status. The
+  // reject button existed, wrote a timestamp, and nothing in the worker read it.
+  clauses.push("rejected_at IS NULL");
   args.push(opts.limit ?? 1000);
 
   /**
@@ -153,17 +156,38 @@ export async function getProspects(
    * the customer looks at was showing the same name for days because it was
    * faithfully mirroring that order.
    *
-   * The question tier stays in front: somebody who asked about the problem out
-   * loud is hotter than any headline. Inside a tier the better match goes
-   * first, and equal matches oldest first so nobody starves.
+   * The hot tiers stay in front, and HOT_FIRST is shared with leadsAtStep so
+   * the invitation queue and the message queue cannot disagree about who is
+   * warmest. Inside a tier the better match goes first, and equal matches
+   * oldest first so nobody starves.
    */
-  const priority = `CASE WHEN signal_type LIKE 'question:%' OR signal_type LIKE 'intent:%' THEN 0 ELSE 1 END`;
   const { rows } = await db().execute({
     sql: `SELECT * FROM agent_leads WHERE ${clauses.join(" AND ")}
-          ORDER BY ${priority}, COALESCE(match_score, 0) DESC, updated_at ASC LIMIT ?`,
+          ORDER BY ${HOT_FIRST}, COALESCE(match_score, 0) DESC, updated_at ASC LIMIT ?`,
     args,
   });
   return rows.map((r) => toRow(r as unknown as Record<string, unknown>));
+}
+
+/**
+ * What their reply meant, stored so the learning pass can tell them apart.
+ *
+ * Every reply used to count the same. On a live agent six people had written
+ * back and four of them were an executive coach, a newsletter, a bootcamp and a
+ * direct competitor, all weighted at eight, which is the heaviest number in the
+ * ranking. The source that found the competitor went to the top of the mining
+ * queue for it.
+ */
+export async function setProspectReplyIntent(
+  ctx: DB,
+  id: number,
+  intent: ReplyIntent
+): Promise<void> {
+  await db().execute({
+    sql: `UPDATE agent_leads SET reply_intent = ?, updated_at = ?
+           WHERE id = ? AND workspace_id = ?`,
+    args: [intent, Math.floor(Date.now() / 1000), uuidFor(id), ctx.workspaceId],
+  });
 }
 
 export async function setProspectStatus(

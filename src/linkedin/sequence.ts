@@ -15,6 +15,7 @@ import {
   type ProspectRow,
   getProspects,
   setProspectStatus,
+  setProspectReplyIntent,
   revertProspectStatus,
   recordMessage,
   recordInbound,
@@ -35,6 +36,7 @@ import {
 } from "../safety/envelope.ts";
 import { dayAgoIso, weekAgoIso, epochIso } from "../time.ts";
 import { minimumScore } from "./competitor.ts";
+import type { ReplyIntent } from "../db.ts";
 
 /**
  * The prospect lifecycle.
@@ -121,7 +123,7 @@ export interface SequenceDeps {
    */
   readReply?: (
     thread: Turn[]
-  ) => Promise<{ handOver: boolean; why: string }>;
+  ) => Promise<{ handOver: boolean; why: string; intent: ReplyIntent }>;
   /** Pause between actions. Defaults to the human envelope delay; tests pass 0. */
   pauseMs?: (cfg: Config) => number;
 }
@@ -252,11 +254,22 @@ async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<vo
        */
       let handOver = shouldHandOver(step, thread);
       let why = handOver ? "the words in the reply" : "";
+      /**
+       * What the reply was worth, which is a different question from who
+       * answers it and was never being asked.
+       *
+       * A refusal caught by the words alone is already known to be worthless,
+       * so it is recorded as such without a model call. Everything else is
+       * read, and the default stays neutral: a reply is not evidence of
+       * interest until something in it says so.
+       */
+      let intent: ReplyIntent = handOver ? "refused" : "neutral";
       if (!handOver && deps.readReply) {
         try {
           const read = await deps.readReply(thread);
           handOver = read.handOver;
           why = read.why;
+          intent = read.intent;
         } catch (error) {
           // Keep talking. An extra friendly message costs nothing; a thread
           // parked on a busy person because a model call timed out costs the
@@ -264,6 +277,9 @@ async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<vo
           logError("could not read the reply, the agent carries on", error, { prospect: label(p) });
         }
       }
+      // Recorded whatever happens next, because this is the ground truth the
+      // source ranking and the memory both feed on.
+      await setProspectReplyIntent(db, p.id, intent).catch(() => {});
 
       if (handOver) {
         await setProspectStatus(db, p.id, STATUS.handedOver);
@@ -560,8 +576,28 @@ async function sendNewConnects(
     const outcome = await deps.actions.sendConnect(p, "");
 
     if (outcome === "cannot-connect") {
-      // No Connect control means no invitation, today or ever: LinkedIn only
-      // offers Follow on these. Retrying costs a profile visit a pass for
+      /**
+       * No Connect control means one of two opposite things, and this treated
+       * them as the same one.
+       *
+       * Follow-only profiles have no Connect and never will, so letting them go
+       * is right. But somebody who is ALREADY a first-degree connection has no
+       * Connect either, for the best possible reason, and they were being
+       * marked skipped and never spoken to again. That is the warmest lead the
+       * product can find: they engaged with the customer's own post and the two
+       * are already connected, so there is nothing to wait for at all.
+       *
+       * canMessageNow reads the degree off the topcard, which is the same check
+       * that decides whether a DM may be sent, so the two can never disagree.
+       */
+      const reachable = await deps.actions.canMessageNow(p).catch(() => false);
+      if (reachable) {
+        await setProspectStatus(db, p.id, STATUS.connected);
+        log(`${label(p)} is already connected, so the agent skips the invitation and writes to them.`);
+        await pause();
+        continue;
+      }
+      // Retrying a follow-only profile costs a profile visit a pass for
       // nothing, so the queue lets them go and says why on the row.
       await setProspectStatus(db, p.id, STATUS.skipped);
       log(`${label(p)} cannot be invited: LinkedIn offers no Connect on that profile.`);

@@ -7,7 +7,7 @@ import { actionDelayMs } from "../safety/envelope.ts";
 import type { DB } from "../store.ts";
 import { judgeAsking, judgeIcpFit } from "../messages/generate.ts";
 import { AGENT } from "./agent-meta.ts";
-import { type Engager, matchesIcp, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile } from "./miner.ts";
+import { mine, type Engager, matchesIcp, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile } from "./miner.ts";
 
 /**
  * Lead sources beyond competitor engagement. Each one reads a different intent signal, all through
@@ -18,6 +18,74 @@ import { type Engager, matchesIcp, parseCard, cardToEngager, searchPostCards, qu
  * job listings expose no contactable person (the hiring team block is absent), and event attendee
  * lists are no longer public. People *posting* that they are hiring cover the first case instead.
  */
+
+/**
+ * The people who commented on and reacted to the customer's OWN posts.
+ *
+ * The warmest signal on LinkedIn and the one this product had no excuse for
+ * missing: LinkedGrow publishes those posts, so the agent is reading the
+ * audience of content the customer already paid to create. It costs the
+ * account nothing against the commercial use limit, because a profile's
+ * activity feed is opened by URL and no search is run.
+ *
+ * Two things are deliberately different from mining a competitor.
+ *
+ * Connected people are KEPT. Everywhere else an existing first-degree
+ * connection is noise, because the product's job is to meet new people. Here it
+ * is the best outcome available: they already know the customer, they just
+ * engaged with them in public, and there is no invitation to wait for. The
+ * sequence writes to them directly.
+ *
+ * And the account owner is dropped, because a customer replying under their own
+ * post is not a lead and would otherwise be claimed as one every single pass.
+ */
+export async function mineOwnPosts(
+  ctx: DB,
+  page: Page,
+  cfg: Config,
+  ownProfileUrl: string,
+  opts: { maxPerPost?: number; maxPosts?: number; dryRun?: boolean } = {}
+): Promise<Engager[]> {
+  const base = ownProfileUrl.trim().replace(/\/+$/, "");
+  if (!/\/in\/[^/]+$/.test(base)) {
+    log("no profile URL on the account, so its own posts cannot be read", { url: ownProfileUrl });
+    return [];
+  }
+  const ownId = base.match(/\/in\/([^/?#]+)/)?.[1] ?? "";
+
+  const engaged = await mine(
+    ctx,
+    page,
+    // Their own audience, so somebody already connected is the point rather
+    // than a duplicate. Everything else about the read is identical.
+    { ...cfg, skipConnected: false },
+    {
+      targets: [`${base}/recent-activity/all/`],
+      maxPerPost: opts.maxPerPost ?? 40,
+      maxPostsPerTarget: opts.maxPosts ?? 5,
+      dryRun: true,
+    }
+  );
+
+  /**
+   * Relabelled to `own:`, which is what puts them at the top of the queue.
+   *
+   * The miner names a signal after the page it was read from, so these would
+   * arrive as `comment:maria-lecocq` and rank like any other commenter. The
+   * ordering in HOT_FIRST looks for the `own:` prefix, and the sentence the
+   * customer reads on the row is built from the same string.
+   */
+  const leads = engaged
+    .filter((e) => e.profileId && e.profileId !== ownId)
+    .map((e) => ({
+      ...e,
+      source: e.source.startsWith("comment:") ? "own:comment" : "own:reaction",
+    }));
+
+  log(`Own posts: ${engaged.length} engaged, ${leads.length} worth keeping.`);
+  if (!opts.dryRun) log(`Queued ${await queueLeads(ctx, leads)} new leads from your own posts.`);
+  return leads;
+}
 
 /** Everyone who viewed the account's profile recently. The warmest signal available: they came to us. */
 export async function mineProfileViewers(ctx: DB, page: Page, cfg: Config, opts: { dryRun?: boolean } = {}): Promise<Engager[]> {
@@ -108,6 +176,30 @@ export function toViewer(row: { href: string; text: string }): Engager | null {
  * It reads only. Nothing is liked, invited or messaged while searching, and
  * the ICP filter still applies afterwards, so a wide door is not a loose one.
  */
+/**
+ * Why a pasted address cannot be worked, in a sentence, or null when it can.
+ *
+ * A Sales Navigator list addresses its people as `/sales/lead/<urn>` and never
+ * gives the public `/in/` slug the rest of the product runs on, so there is no
+ * profile to visit, invite or message. The wizard offered it anyway, the
+ * extraction found nothing, and the source reported an empty search exactly
+ * like a quiet day. Silence is the bug: a customer who pasted their best list
+ * had no way to know it was never going to work.
+ *
+ * A regular people search does everything a saved list does here, including
+ * every filter a Premium or Sales Navigator subscription unlocks, so the answer
+ * is to say so rather than to fail quietly.
+ */
+export function unsupportedSearch(query: string): string | null {
+  if (/linkedin\.com\/sales\//i.test(query)) {
+    return "A Sales Navigator list hides the public profile addresses, so the agent cannot open, invite or message anybody on it. Paste a normal LinkedIn people search instead: the filters you set in Sales Navigator all exist there, and the agent can work it.";
+  }
+  if (/linkedin\.com\/(feed|messaging|notifications|jobs)\b/i.test(query)) {
+    return "That is one of your own LinkedIn pages rather than a search, so there is nobody on it to find.";
+  }
+  return null;
+}
+
 export async function minePeople(
   ctx: DB,
   page: Page,
@@ -139,8 +231,18 @@ export async function minePeople(
     const rows = await page.evaluate(() => {
       const out: Array<{ href: string; text: string; photo: string }> = [];
       const seen = new Set<string>();
+      /**
+       * Both shapes of person link, because there are two.
+       *
+       * The wizard offers "work through a search or a Sales Navigator list" and
+       * this selector only ever matched `/in/`. Sales Navigator addresses its
+       * people as `/sales/lead/<urn>`, so a customer who pasted their saved
+       * list got zero leads, no error and no explanation: the page loaded, the
+       * query found nothing, and the source reported an empty search like any
+       * other quiet day.
+       */
       for (const a of Array.from(
-        document.querySelectorAll('main a[href*="/in/"]')
+        document.querySelectorAll('main a[href*="/in/"], main a[href*="/sales/lead/"]')
       ) as HTMLAnchorElement[]) {
         const href = a.href.split("?")[0] ?? a.href;
         if (seen.has(href)) continue;
@@ -199,7 +301,47 @@ export async function minePeople(
   return unique;
 }
 
-export type SignalKind = "hashtag" | "jobchange" | "hiring";
+/**
+ * A LinkedIn group the customer belongs to, read as a feed.
+ *
+ * The last free room on LinkedIn where a self-selected audience gathers around
+ * one subject, and one of the two signals Gojiberry lists that we had nothing
+ * for. It costs no search, because the group is opened by its own URL, and the
+ * membership requirement is a feature rather than an obstacle: the account has
+ * to have joined, which is exactly what a person doing this by hand would do.
+ *
+ * Read like any other feed. The people are in the comments under the posts, and
+ * the same asking gate applies, because being in a group about a subject says
+ * far less than posting a question about it.
+ */
+export async function mineGroup(
+  ctx: DB,
+  page: Page,
+  cfg: Config,
+  groupUrl: string,
+  opts: { maxPerPost?: number; maxPosts?: number; dryRun?: boolean } = {}
+): Promise<Engager[]> {
+  const url = groupUrl.trim();
+  if (!/linkedin\.com\/groups\/\d+/.test(url)) {
+    log("that does not look like a LinkedIn group address", { url });
+    return [];
+  }
+
+  const engaged = await mine(ctx, page, cfg, {
+    targets: [url.replace(/\/+$/, "")],
+    maxPerPost: opts.maxPerPost ?? 30,
+    maxPostsPerTarget: opts.maxPosts ?? 5,
+    dryRun: true,
+  });
+
+  const groupId = url.match(/groups\/(\d+)/)?.[1] ?? "group";
+  const leads = engaged.map((e) => ({ ...e, source: `group:${groupId}` }));
+  log(`Group ${groupId}: ${leads.length} people on the ICP.`);
+  if (!opts.dryRun) log(`Queued ${await queueLeads(ctx, leads)} new leads from the group.`);
+  return leads;
+}
+
+export type SignalKind = "hashtag" | "jobchange" | "hiring" | "funding" | "event";
 
 /**
  * Search-backed sources. They all read the same content-search surface, and differ only in what they
@@ -209,6 +351,12 @@ export type SignalKind = "hashtag" | "jobchange" | "hiring";
  * - jobchange: someone who just moved into a new seat. The move itself is the signal, and it decays
  *   fast, so no asking gate; the ICP filter keeps it to roles that buy what we sell.
  * - hiring: someone posting that they are hiring for work in our space, which means a live project.
+ * - funding: someone announcing money in the bank. The clearest budget signal that exists, and the
+ *   one competitors advertise most loudly. It needs no external data provider: founders announce it
+ *   themselves, on LinkedIn, in the same breath as thanking their investors.
+ * - event: someone attending or speaking at something in our space. Attendee LISTS stopped being
+ *   readable, which is why this was dropped once, but the posts about attending never went anywhere
+ *   and they carry the same signal with a name attached.
  */
 export async function mineSignal(
   ctx: DB,
@@ -262,9 +410,34 @@ export function passesSignalGates(cfg: Config, kind: SignalKind, parsed: ParsedC
   if (kind !== "hashtag" && !looksLikeBuyer(parsed.headline)) return false;
   if (kind === "jobchange" && !JUST_MOVED.test(parsed.body)) return false;
   if (kind === "hiring" && !IS_HIRING.test(parsed.body)) return false;
+  if (kind === "funding" && !JUST_RAISED.test(parsed.body)) return false;
+  if (kind === "event" && !AT_AN_EVENT.test(parsed.body)) return false;
   // A tag says what a post is about, never that its author needs help, so the asking gate applies.
   if (kind === "hashtag" && !isAsking(parsed.body)) return false;
   return true;
+}
+
+/**
+ * The queries each buying event is searched with, built from the customer's own roles.
+ *
+ * A job move or a hire is about the person, so the role is the query and the
+ * regex does the rest. Money and events are about the company, and searching
+ * "founder" against a funding regex returns almost nothing, so those two carry
+ * their own words and use the role only to narrow the field.
+ */
+export function queriesForSignal(kind: SignalKind, roles: string[]): string[] {
+  const some = roles.slice(0, 4);
+  if (kind === "funding") {
+    return some.length
+      ? some.slice(0, 2).flatMap((r) => [`${r} raised funding`, `${r} seed round`])
+      : ["raised funding", "seed round"];
+  }
+  if (kind === "event") {
+    return some.length
+      ? some.slice(0, 2).flatMap((r) => [`${r} speaking at`, `${r} attending conference`])
+      : ["speaking at conference", "attending conference"];
+  }
+  return some;
 }
 
 /** Applies every gate to one card, ending with the model judgement its signal calls for. */
@@ -301,3 +474,23 @@ export function looksLikeBuyer(headline: string): boolean {
 const JUST_MOVED = /\b(started a new (position|role|chapter)|excited to (share|announce) that i (have |'ve )?join|thrilled to join|joining .{2,40} as|new role at|day one at|first day at)\b/i;
 // Someone announcing a project they need people for, which means budget and a live build.
 const IS_HIRING = /\b(we('| a)re hiring|i(')?m hiring|hiring an?|looking to hire|looking for an? (freelance|contract)?\s*(developer|designer|dev\b)|need a (developer|dev|designer)|open (role|position)|join our team)\b/i;
+/**
+ * Money that has just landed, which is the budget signal every rival advertises.
+ *
+ * Deliberately narrow. "Funding" and "investment" on their own match every
+ * fundraising consultant and VC newsletter on the platform, and those are the
+ * two populations that must not come through this door. What is matched here is
+ * somebody saying it happened to THEM, in the shapes founders actually write.
+ */
+const JUST_RAISED =
+  /\b(we(')?ve raised|we raised|i(')?ve raised|just raised|closed our (pre-?seed|seed|series [a-d]|round|funding)|announcing our (pre-?seed|seed|series [a-d])|our (pre-?seed|seed|series [a-d]) (round|funding) (is|has|closed)|newly backed by)\b/i;
+/**
+ * Somebody standing in a room full of their own market.
+ *
+ * The attendee lists themselves stopped being public, which is why this signal
+ * was dropped once and recorded as impossible. It is not: people post that they
+ * are going, and a post carries a name, a headline and a reason to write to
+ * them that no list ever did.
+ */
+const AT_AN_EVENT =
+  /\b(speaking at|i(')?ll be at|we(')?ll be at|see you at|excited to (attend|speak|join)|attending|joining us at|booth \d+|our talk at|presenting at|panel at)\b/i;

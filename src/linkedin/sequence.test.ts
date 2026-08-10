@@ -32,7 +32,9 @@ async function freshDb(): Promise<DB> {
        signal_author TEXT, step TEXT NOT NULL DEFAULT 'found', step_at INTEGER,
        found_at INTEGER NOT NULL, rejected_at INTEGER, excluded_reason TEXT,
        created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
-       sequence_status TEXT NOT NULL DEFAULT 'queued', angle TEXT)`,
+       sequence_status TEXT NOT NULL DEFAULT 'queued', angle TEXT,
+       reply_intent TEXT, signal_hits INTEGER NOT NULL DEFAULT 1, signal_kinds TEXT,
+       outcome TEXT, outcome_at INTEGER)`,
     `CREATE UNIQUE INDEX uq_leads ON agent_leads(workspace_id, profile_id)`,
     `CREATE TABLE agent_messages (
        id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, agent_id TEXT NOT NULL,
@@ -332,7 +334,7 @@ test("a buying signal is handed over, and the reason travels with it", async () 
   await runSequence(
     baseCfg(),
     db,
-    deps(actions, (m) => alerts.push(m), async () => ({ handOver: true, why: "asked what it costs" }))
+    deps(actions, (m) => alerts.push(m), async () => ({ handOver: true, why: "asked what it costs", intent: "interested" as const }))
   );
   assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
   assert.equal(await countProspectsByStatus(db, STATUS.conversing), 0);
@@ -355,7 +357,7 @@ test("small talk is answered by the agent, not handed over", async () => {
   await runSequence(
     baseCfg(),
     db,
-    deps(actions, (m) => alerts.push(m), async () => ({ handOver: false, why: "a question about us" }))
+    deps(actions, (m) => alerts.push(m), async () => ({ handOver: false, why: "a question about us", intent: "neutral" as const }))
   );
   assert.equal(await countProspectsByStatus(db, STATUS.conversing), 1);
   assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 0);
@@ -420,7 +422,7 @@ test("once the ask has gone out the agent hands over whatever comes back", async
   await runSequence(
     baseCfg(),
     db,
-    deps(actions, () => {}, async () => ({ handOver: false, why: "" }))
+    deps(actions, () => {}, async () => ({ handOver: false, why: "", intent: "neutral" as const }))
   );
   assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
   drop();
@@ -745,5 +747,106 @@ test("an agent with no ICP writes to everybody, because it never scores anybody"
   let sent = 0;
   await runSequence(baseCfg(), db, deps(fakeActions({ sendDm: async () => { sent += 1; return true; } })));
   assert.equal(sent, 1, "gating on a score that never arrives would silence the agent");
+  drop();
+});
+
+/**
+ * No Connect button means two opposite things, and this treated them as one.
+ *
+ * A follow-only profile has no Connect and never will, so letting it go is
+ * right. Somebody who is ALREADY a first-degree connection has no Connect
+ * either, for the best possible reason, and they were marked skipped and never
+ * spoken to again. That is the warmest lead the product can produce: it is
+ * exactly the person who commented under the customer's own post and is already
+ * in their network, with nothing at all to wait for.
+ */
+test("somebody already connected is written to instead of being thrown away", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.queued, daysAgo(0));
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(
+      fakeActions({
+        sendConnect: async () => "cannot-connect" as const,
+        canMessageNow: async () => true,
+      })
+    )
+  );
+  assert.equal(await countProspectsByStatus(db, STATUS.connected), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.skipped), 0);
+  drop();
+});
+
+test("a follow-only profile is still let go, because there is no way to reach them", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.queued, daysAgo(0));
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(
+      fakeActions({
+        sendConnect: async () => "cannot-connect" as const,
+        canMessageNow: async () => false,
+      })
+    )
+  );
+  assert.equal(await countProspectsByStatus(db, STATUS.skipped), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.connected), 0);
+  drop();
+});
+
+/**
+ * What the reply was worth, recorded separately from who answers it.
+ *
+ * The two questions have opposite answers all the time. "Not interested" hands
+ * over and is worthless; "what does it cost" hands over and is the best thing
+ * that can happen; "thanks for connecting" does neither. Counting all three the
+ * same at a weight of eight is what taught one live agent that a competitor was
+ * a good prospect.
+ */
+test("the reply is graded, and a polite hello is not recorded as interest", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.helloSent, daysAgo(1));
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(
+      fakeActions({
+        inboxRepliers: async () => ["Jane Doe"],
+        readThread: async () => [{ from: "them" as const, body: "Thanks for connecting!" }],
+      }),
+      () => {},
+      async () => ({ handOver: false, why: "polite thanks", intent: "neutral" as const })
+    )
+  );
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT reply_intent FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(String(rows[0]?.reply_intent), "neutral");
+  drop();
+});
+
+test("a refusal caught by the words alone is recorded as one without a model call", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.helloSent, daysAgo(1));
+  await runSequence(
+    baseCfg(),
+    db,
+    // No readReply at all: the words have to settle it and still record it.
+    deps(
+      fakeActions({
+        inboxRepliers: async () => ["Jane Doe"],
+        readThread: async () => [{ from: "them" as const, body: "Not interested, thanks" }],
+      })
+    )
+  );
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT reply_intent, sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(String(rows[0]?.reply_intent), "refused");
+  assert.equal(String(rows[0]?.sequence_status), STATUS.handedOver);
   drop();
 });

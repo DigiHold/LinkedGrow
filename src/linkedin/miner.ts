@@ -78,7 +78,7 @@ const MAX_MINE_DEPTH = 24;
  * allowance, and the allowance itself is spread over more posts, because every
  * extra post opened brings its own comment section with it.
  */
-const REACTION_SHARE = 0.5;
+const REACTION_SHARE = 0.3;
 
 /**
  * Mines engagement leads from competitor content. This is browser activity on the account, so it
@@ -939,9 +939,13 @@ function normalizeTarget(target: string): string {
   return `https://www.linkedin.com/company/${target}/posts/`;
 }
 
-function companyLabel(target: string): string {
+export function companyLabel(target: string): string {
   const m = target.match(/company\/([^/?#]+)/);
   if (m?.[1]) return m[1];
+  // A person's activity feed is a mining target too, and reading the host out
+  // of it labelled every lead from the customer's own posts "www.linkedin.com".
+  const person = target.match(/\/in\/([^/?#]+)/);
+  if (person?.[1]) return person[1];
   return target.replace(/^https?:\/\//, "").split("/")[0] ?? target;
 }
 
