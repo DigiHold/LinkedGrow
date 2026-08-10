@@ -39,6 +39,14 @@ export interface ProspectRow {
   source: string | null;
   angle: string | null;
   context: string | null;
+  /**
+   * What the scorer made of them, carried on the row so the sequence can see it.
+   *
+   * It was not here, so every step read a person with no idea what the agent
+   * thought of them, and a lead judged 0 travelled the whole funnel exactly
+   * like one judged 90.
+   */
+  match_score: number | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -95,6 +103,7 @@ function toRow(r: Record<string, unknown>): ProspectRow {
     source: (r.signal_type as string) ?? null,
     angle: (r.angle as string) ?? null,
     context: (r.signal_text as string) ?? null,
+    match_score: r.match_score === null || r.match_score === undefined ? null : Number(r.match_score),
     status: String(r.sequence_status ?? "queued"),
     created_at: new Date(Number(r.found_at ?? 0) * 1000).toISOString(),
     updated_at: new Date(Number(r.updated_at ?? 0) * 1000).toISOString(),

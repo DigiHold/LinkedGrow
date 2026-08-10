@@ -348,7 +348,7 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
     const turns = await countOutboundStep(db, p.id, RELATIONSHIP_STEPS.converse);
     if (turns >= PACING.maxConverseTurns) continue; // the ask picks them up below
 
-    if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.converse, STATUS.conversing)) budget--;
+    if (await sendStep(cfg, db, deps, p, RELATIONSHIP_STEPS.converse, STATUS.conversing)) budget--;
     await pause();
   }
 
@@ -357,7 +357,7 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
   for (const p of await getProspects(db, STATUS.connected)) {
     if (budget <= 0) break;
     if (!isDue(p, PACING.acceptToHelloHours)) continue;
-    if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.hello, STATUS.helloSent)) budget--;
+    if (await sendStep(cfg, db, deps, p, RELATIONSHIP_STEPS.hello, STATUS.helloSent)) budget--;
     await pause();
   }
 
@@ -375,7 +375,7 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
   );
   for (const p of [...answered, ...quiet]) {
     if (budget <= 0) break;
-    if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.intro, STATUS.introSent)) budget--;
+    if (await sendStep(cfg, db, deps, p, RELATIONSHIP_STEPS.intro, STATUS.introSent)) budget--;
     await pause();
   }
 
@@ -390,7 +390,7 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
   );
   for (const p of [...talked, ...silent]) {
     if (budget <= 0) break;
-    if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.ask, STATUS.askSent)) budget--;
+    if (await sendStep(cfg, db, deps, p, RELATIONSHIP_STEPS.ask, STATUS.askSent)) budget--;
     await pause();
   }
 
@@ -402,13 +402,64 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
 }
 
 /** Writes, validates and sends one message step; records it and advances the status. */
+/**
+ * The one gate every outbound message passes, at every step.
+ *
+ * A floor was added to leadsAtStep on 2026-08-08 and reported as the fix for
+ * writing to competitors. leadsAtStep is called by nothing: the sequence reads
+ * its people through getProspects at all seven steps, so the floor filtered
+ * exactly nothing and the competitors kept moving down the funnel.
+ *
+ * ZHANYA QIN is the proof. "Founder at GDPRChecker | Cookie Consent & Privacy
+ * Readiness", scored 0 with the reason "Founder of a compliance/privacy tool",
+ * against a customer whose product includes a cookie consent banner. The scorer
+ * caught her perfectly. She still received a hello, answered it, and was
+ * sitting at hello_answered waiting for the next message.
+ *
+ * So it goes here, in sendStep, which is the single funnel every hello, intro,
+ * conversation turn and ask goes through. One place, and it cannot be
+ * forgotten at the eighth step somebody adds later.
+ *
+ * Somebody who has already written back is handed to the customer rather than
+ * dropped: a human took the trouble to answer and deserves a human reading it,
+ * even when they can never buy. Everybody else is simply skipped.
+ */
+function tooWeakToWriteTo(cfg: Config, db: DB, p: ProspectRow): boolean {
+  /**
+   * The config comes in as an argument rather than off db.cfg.
+   *
+   * runSequence is handed both, and the sequence tests build a DB whose cfg is
+   * a stub. Reading the ICP off db.cfg made the whole gate silently inert
+   * there, which is the same shape of mistake as guarding leadsAtStep: a check
+   * that looks right and is wired to nothing.
+   */
+  // An agent with no ICP never scores anybody, and gating on a score that will
+  // never arrive would silence it completely.
+  if (!cfg.leads?.icp) return false;
+  const score = p.match_score;
+  if (score === null || score === undefined) return true;
+  return score < minimumScore(db.matchLevel);
+}
+
 async function sendStep(
+  cfg: Config,
   db: DB,
   deps: SequenceDeps,
   p: ProspectRow,
   step: RelationshipStep,
   nextStatus: string
 ): Promise<boolean> {
+  if (tooWeakToWriteTo(cfg, db, p)) {
+    const answered = p.status === STATUS.helloAnswered || p.status === STATUS.conversing;
+    await setProspectStatus(db, p.id, answered ? STATUS.handedOver : STATUS.skipped);
+    log(
+      answered
+        ? `${label(p)} scored ${p.match_score} and has written back, so it goes to you rather than to the agent.`
+        : `${label(p)} scored ${p.match_score}, below the line, so nothing is sent.`
+    );
+    return false;
+  }
+
   const thread = await getThread(db, p.id);
   let message: GeneratedMessage;
   await announce(db, WRITING[step] ?? "writing to", subjectOf(p));

@@ -85,7 +85,7 @@ async function seed(
   db: DB,
   status: string,
   updatedAt: string,
-  over: { headline?: string; source?: string } = {},
+  over: { headline?: string; source?: string; score?: number | null } = {},
 ): Promise<string> {
   const pid = `p-${++counter}`;
   const id = crypto.randomUUID();
@@ -93,14 +93,16 @@ async function seed(
   await sharedDb().execute({
     sql: `INSERT INTO agent_leads
             (id, workspace_id, agent_id, profile_id, profile_url, full_name, first_name,
-             headline, signal_type, sequence_status, step, found_at, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, 'Jane Doe', 'Jane', ?, ?, ?, 'queued', ?, ?, ?)`,
+             headline, signal_type, sequence_status, step, match_score, found_at, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, 'Jane Doe', 'Jane', ?, ?, ?, 'queued', ?, ?, ?, ?)`,
     args: [
       id, db.workspaceId, db.agentId, pid,
       `https://www.linkedin.com/in/${pid}/`,
       over.headline ?? "Head of Security",
       over.source ?? "reaction:snyk",
-      status, at, at, at,
+      status,
+      over.score === undefined ? 80 : over.score,
+      at, at, at,
     ],
   });
   return id;
@@ -677,5 +679,71 @@ test("a transient failure leaves them queued, to be tried again", async () => {
     args: [id],
   });
   assert.equal(String(rows[0]?.sequence_status), STATUS.queued);
+  drop();
+});
+
+/**
+ * ZHANYA QIN, and the floor that was guarding nothing.
+ *
+ * "Founder at GDPRChecker | Cookie Consent & Privacy Readiness", scored 0 with
+ * the reason "Founder of a compliance/privacy tool", against a customer whose
+ * product includes a cookie consent banner. The scorer read her perfectly.
+ *
+ * A score floor had been added to leadsAtStep two days earlier and reported as
+ * the fix. leadsAtStep is called by nothing: the sequence reads its people
+ * through getProspects at all seven steps. So she received a hello, answered
+ * it, and sat at hello_answered waiting for the next message to go out.
+ */
+function scoringCfg(): Config {
+  return baseCfg({ leads: { icp: "Founders who ship their own product" } } as Partial<Config>);
+}
+
+test("a lead below the floor is never written to, at any step", async () => {
+  for (const status of [STATUS.connected, STATUS.helloSent, STATUS.introSent]) {
+    const db = await freshDb();
+    const id = await seed(db, status, daysAgo(9), { score: 0 });
+    let sent = 0;
+    await runSequence(scoringCfg(), db, deps(fakeActions({ sendDm: async () => { sent += 1; return true; } })));
+    assert.equal(sent, 0, `a 0 was written to from ${status}`);
+    const { rows } = await sharedDb().execute({
+      sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+      args: [id],
+    });
+    assert.equal(String(rows[0]?.sequence_status), STATUS.skipped);
+    drop();
+  }
+});
+
+test("somebody who wrote back goes to the customer, not into the bin", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.helloAnswered, daysAgo(9), { score: 0 });
+  await runSequence(scoringCfg(), db, deps(fakeActions()));
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(
+    String(rows[0]?.sequence_status),
+    STATUS.handedOver,
+    "a human took the trouble to answer, even one who can never buy"
+  );
+  drop();
+});
+
+test("a good lead is unaffected by the floor", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.connected, daysAgo(9), { score: 85 });
+  let sent = 0;
+  await runSequence(scoringCfg(), db, deps(fakeActions({ sendDm: async () => { sent += 1; return true; } })));
+  assert.equal(sent, 1);
+  drop();
+});
+
+test("an agent with no ICP writes to everybody, because it never scores anybody", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.connected, daysAgo(9), { score: null });
+  let sent = 0;
+  await runSequence(baseCfg(), db, deps(fakeActions({ sendDm: async () => { sent += 1; return true; } })));
+  assert.equal(sent, 1, "gating on a score that never arrives would silence the agent");
   drop();
 });
