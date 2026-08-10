@@ -119,7 +119,7 @@ test("a month stays inside the monthly pools", () => {
     profiles += result.profiles;
     searches += result.searches;
   }
-  const pool = 6_250;
+  const pool = 12_500;
   assert.ok(profiles <= pool, `a month read ${profiles} against a pool of ${pool}`);
   assert.ok(searches <= 240, `a month ran ${searches} searches against a pool of 240`);
   // The other half of the bargain: the pool exists to be used, not admired.

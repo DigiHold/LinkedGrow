@@ -34,8 +34,32 @@ test("a free account reads enough to actually find people", () => {
    * and the commercial use limit does not count it at all.
    */
   const mature = dayAllowance("free", "profiles", 0, 365, "established");
-  assert.ok(mature >= 200, `a free account reads ${mature} a day, which cannot produce 30 leads`);
-  assert.ok(mature <= 400, `a free account reads ${mature} a day, which is past anything observed`);
+  assert.ok(mature >= 400, `a free account reads ${mature} a day, which cannot produce 30 leads`);
+  assert.ok(mature <= 800, `a free account reads ${mature} a day, which is past anything observed`);
+});
+
+test("what is counted is names in a list, never profile views", () => {
+  /**
+   * LinkedIn's own page, "Data security limits on profile views": the limit is
+   * "calculated based on your profile viewing activity on a daily basis" and
+   * hitting it makes you "temporarily unable to view profiles of members who
+   * are not your connections".
+   *
+   * The discovery path opens a company's posts page, a post, a search results
+   * page and the profile-views analytics page, and not one member profile.
+   * Profiles are opened only by warmUp, sendConnect and canMessageNow, all
+   * outreach, all already bounded by the invitation allowance at sixteen a day.
+   *
+   * So the pool below is far larger than any published profile-view figure, on
+   * purpose, and the guard against the documented limit is the invitation cap
+   * rather than this number.
+   */
+  const namesADay = dayAllowance("free", "profiles", 0, 365, "established");
+  const mostQuotedProfileViewCap = 80;
+  assert.ok(
+    namesADay > mostQuotedProfileViewCap * 3,
+    "capping list reads at a profile-view figure is what held this at four leads a day"
+  );
 });
 
 test("searches stay tight, because that is the limit LinkedIn admits exists", () => {

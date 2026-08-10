@@ -65,7 +65,15 @@ export type AccountTier = "free" | "premium" | "sales_navigator";
 export type ReadKind = "profiles" | "searches";
 
 export interface ReadBudget {
-  /** Every name and headline read, from a reactions list as much as from a profile. */
+  /**
+   * Names and headlines read out of a list: a reactions modal, a comment
+   * thread, a page of search results.
+   *
+   * Deliberately NOT profile views. Nothing on the discovery path opens a
+   * member profile, and LinkedIn's documented daily ceiling is specifically
+   * about viewing profiles of people you are not connected to. Confusing the
+   * two is what held this at a twentieth of what the product needs.
+   */
   profilesPerMonth: number;
   /** Searches run. This is the commercial use limit, and it is the tight one. */
   searchesPerMonth: number;
@@ -74,6 +82,31 @@ export interface ReadBudget {
 }
 
 /**
+ * ## The number, corrected a fourth time, and this time from LinkedIn's own page
+ *
+ * LinkedIn documents one daily ceiling and it is not the one this file has been
+ * modelling. Its help page "Data security limits on profile views" says the
+ * limit is "calculated based on your profile viewing activity on a daily
+ * basis", that "we're not able to display the exact number of views you have
+ * left", and that hitting it makes you "temporarily unable to view profiles of
+ * members who are not your connections". It throttles viewing. It does not ban.
+ *
+ * The word that matters is VIEWING PROFILES. Checked against our own code on
+ * 2026-08-10: the discovery path opens a company's posts page, a post, a search
+ * results page and the profile-views analytics page, and **not one member
+ * profile**. Names and headlines come out of a reactions list and a comment
+ * thread, which are not profile views by any reading of that page.
+ *
+ * The only place a profile is opened is actions.ts, from warmUp, sendConnect
+ * and canMessageNow, all of them outreach. Those are already bounded by the
+ * invitation allowance at sixteen a day, an order of magnitude under any figure
+ * anybody publishes for that limit.
+ *
+ * So this counter has been capping the thing LinkedIn does not count, using a
+ * number borrowed from a limit that applies to something else. That is the
+ * whole reason an agent found four leads in a day while a competing tool found
+ * thirty on the same kind of account.
+ *
  * ## The number, corrected a third time, and why this one is not a guess
  *
  * 2,400 a month came out at 77 profiles on a running day, which the sourcing
@@ -100,18 +133,18 @@ export interface ReadBudget {
  * which is the signal no volume figure can disguise and no proxy can hide.
  */
 const BUDGETS: Record<AccountTier, ReadBudget> = {
-  // 250 names on a running day, spread over a handful of visits. The searches
-  // stay at 9 a day: that is the one ceiling LinkedIn publishes the existence
-  // of, and nothing here justifies moving it.
-  free: { profilesPerMonth: 6_250, searchesPerMonth: 240, minProfilesPerDay: 40 },
+  // 500 names on a running day, read out of lists rather than off profiles.
+  // The searches stay at 9 a day: that is the one ceiling LinkedIn publishes
+  // the existence of, and nothing found justifies moving it.
+  free: { profilesPerMonth: 12_500, searchesPerMonth: 240, minProfilesPerDay: 60 },
   // Premium Business and Recruiter Lite raise the commercial use allowance. By
   // how much is not published, so the search pool roughly triples rather than
   // being lifted: the profile pool is what the customer actually feels.
-  premium: { profilesPerMonth: 12_500, searchesPerMonth: 700, minProfilesPerDay: 80 },
+  premium: { profilesPerMonth: 20_000, searchesPerMonth: 700, minProfilesPerDay: 100 },
   // Sales Navigator lifts the commercial use limit off people search entirely.
   // What remains is the anti-scraping detector, which is about shape rather
   // than a number, so this stays a pace rather than becoming unlimited.
-  sales_navigator: { profilesPerMonth: 25_000, searchesPerMonth: 3_000, minProfilesPerDay: 160 },
+  sales_navigator: { profilesPerMonth: 37_500, searchesPerMonth: 3_000, minProfilesPerDay: 200 },
 };
 
 /**

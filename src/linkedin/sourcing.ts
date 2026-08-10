@@ -157,10 +157,10 @@ function readingBudget(ctx: AgentContext): { perPost: number; posts: number } {
    * comment at 46%. Opening eight posts at twelve people each costs the
    * account the same and harvests twice as many comment sections.
    */
-  if (days < 1) return { perPost: 25, posts: 4 };
-  if (days < 7) return { perPost: 35, posts: 5 };
-  if (days < 21) return { perPost: 45, posts: 6 };
-  return { perPost: 60, posts: 6 };
+  if (days < 1) return { perPost: 40, posts: 4 };
+  if (days < 7) return { perPost: 60, posts: 5 };
+  if (days < 21) return { perPost: 80, posts: 6 };
+  return { perPost: 100, posts: 6 };
 }
 
 function parseConfig(raw: string | null): Record<string, unknown> {
