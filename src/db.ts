@@ -3,6 +3,7 @@ import { requireEnv } from "./config.ts";
 import type { AgentContext, Config } from "./config.ts";
 import { DEFAULTS } from "./config.ts";
 import { timezoneForCountry } from "./browser/fingerprint.ts";
+import { firstNameOf } from "./names.ts";
 import { minimumScore } from "./linkedin/competitor.ts";
 
 /**
@@ -329,13 +330,27 @@ export async function claimLead(ctx: AgentContext, lead: FoundLead): Promise<boo
   const result = await db().execute({
     sql: `INSERT OR IGNORE INTO agent_leads
             (id, workspace_id, agent_id, source_id, profile_id, profile_url, full_name,
-             headline, job_title, company, location, avatar_url, match_score, match_reason,
-             signal_type, signal_text, signal_url, signal_author, step, step_at, found_at,
-             created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'found', ?, ?, ?, ?)`,
+             first_name, headline, job_title, company, location, avatar_url, match_score,
+             match_reason, signal_type, signal_text, signal_url, signal_author, step, step_at,
+             found_at, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'found', ?, ?, ?, ?)`,
     args: [
       crypto.randomUUID(), ctx.workspaceId, ctx.agentId, lead.sourceId ?? null,
       lead.profileId, lead.profileUrl, lead.fullName,
+      /**
+       * The first name, which this insert never wrote.
+       *
+       * Every one of the 92 leads on the account had an empty first_name, so
+       * every log line about a prospect read "hello to null was not sent",
+       * "warmUp: null has no likeable recent post", "invite to null is already
+       * pending". Three real failures were diagnosed through that fog on
+       * 2026-08-08 and it cost hours.
+       *
+       * The messages themselves were never affected: the writer falls back to
+       * firstNameOf(full_name) already. This is the same derivation, written
+       * once at the source so the column and the logs stop lying.
+       */
+      firstNameOf(lead.fullName),
       lead.headline ?? null, lead.jobTitle ?? null, lead.company ?? null,
       lead.location ?? null, lead.avatarUrl ?? null, lead.matchScore ?? null,
       lead.matchReason ?? null, lead.signalType ?? null, lead.signalText ?? null,
