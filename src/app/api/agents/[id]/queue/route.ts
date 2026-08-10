@@ -33,6 +33,19 @@ const MAX_BODY = 1200;
  */
 const WORKER_PRIORITY = sql`CASE WHEN ${agentLeads.signalType} LIKE 'question:%' OR ${agentLeads.signalType} LIKE 'intent:%' THEN 0 ELSE 1 END`;
 
+/**
+ * The second half of the worker's ordering, which was missing here and there.
+ *
+ * Neither side looked at the score, so the day's invitations went to whoever
+ * had waited longest whatever the agent thought of them. On a live account a
+ * lead scored 15 sat above one scored 92 for days, and the customer saw the
+ * same name at the top of this tab every morning and reasonably asked whether
+ * it was working. The worker orders by score inside each tier now, and this
+ * copies it, because a tab that names people the agent is not about to contact
+ * is worse than no tab.
+ */
+const WORKER_SCORE = sql`COALESCE(${agentLeads.matchScore}, 0) DESC`;
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -137,7 +150,7 @@ export async function GET(
           eq(agentLeads.sequenceStatus, "queued")
         )
       )
-      .orderBy(WORKER_PRIORITY, asc(agentLeads.updatedAt))
+      .orderBy(WORKER_PRIORITY, WORKER_SCORE, asc(agentLeads.updatedAt))
       .limit(Math.max(1, Math.min(50, pace)));
 
     // How many more are behind today's, so the tab can say so instead of

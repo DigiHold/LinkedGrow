@@ -555,7 +555,11 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                 }
                 why="The agent has stopped messaging them for good"
                 cta="Read them"
-                onClick={() => setTab("Leads")}
+                /* Replies live on their own page, where they can be answered
+                   and assigned. This sent people to the Leads tab, which lists
+                   everybody the agent has ever found and buries the four who
+                   are actually waiting. */
+                onClick={() => router.push("/dashboard/replies")}
               />
             )}
             {queuedToday > 0 && on && (
