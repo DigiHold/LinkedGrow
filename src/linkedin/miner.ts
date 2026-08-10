@@ -817,6 +817,11 @@ async function extractCommenters(
       } catch {
         break;
       }
+      // Said out loud on purpose: a selector that stops matching looks exactly
+      // like a post with three comments, and that silence is how the reactions
+      // list stayed broken for days. No click line in the log on a post that
+      // plainly has more comments means this regex needs the real button name.
+      log(`  pressed load more comments on ${label}.`);
       await dwell(1500, 3000);
     }
     const raw = await page.evaluate((sel) => {
