@@ -112,6 +112,43 @@ const REACTION_SHARE = 0.3;
 const DIALOG = 'dialog[open], div[role="dialog"]';
 
 /**
+ * Names and headlines actually pulled off a page since the process started.
+ *
+ * `book` charges a source's planned shape before its pages open, and on
+ * 2026-08-10 the plan and the reality were a factor of four apart: 290 names
+ * booked, about 70 read, day declared spent at lunchtime. The sourcing loop
+ * snapshots this counter around each source and refunds the difference, so
+ * the only thing this needs to be is honest: every extractor below adds the
+ * rows it lifted out of the DOM, before any filter throws them away, because
+ * the filter is ours and the exposure was LinkedIn's. One process mines one
+ * account at a time, so a plain module counter is enough.
+ */
+export const readMeter = { names: 0 };
+
+/**
+ * How many reactors one list may give, once the comments have taken their share.
+ *
+ * The split is fixed before a post is opened: comments get the larger half
+ * because a comment qualifies at 46% against 11% for a like. But comments are
+ * supply-limited and the fixed split threw the unused half away: a post with 3
+ * comments against an allowance of 17 left 14 names unread while the reactions
+ * list, hundreds deep and already costing a modal open, was cut off at 7. The
+ * unclaimed comment allowance moves onto the reaction lists instead, split
+ * evenly across them, and the post's total allowance is unchanged.
+ */
+export function reactionAllowance(
+  maxPerPost: number,
+  lists: number,
+  commentersFound: number
+): number {
+  const reactionCap = Math.max(2, Math.floor(maxPerPost * REACTION_SHARE));
+  if (lists <= 0) return reactionCap;
+  const commentCap = Math.max(3, maxPerPost - reactionCap);
+  const unused = Math.max(0, commentCap * lists - Math.max(0, commentersFound));
+  return Math.min(maxPerPost, reactionCap + Math.ceil(unused / lists));
+}
+
+/**
  * Cuts text to a length without ever cutting a character in half.
  *
  * `slice` counts UTF-16 code units and an emoji is two of them, so a cut landing
@@ -435,7 +472,7 @@ export async function searchPostCards(
   await scrollHuman(page, randInt(2, 3));
   // Scrolling loads more of them, and they arrive after the scroll settles.
   await dwell(1500, 2500);
-  return page.evaluate((sel) => {
+  const cards = await page.evaluate((sel) => {
     const out: Array<{ href: string; text: string; photo: string }> = [];
     for (const c of Array.from(document.querySelectorAll(sel))) {
       const a = c.querySelector('a[href*="/in/"]') as HTMLAnchorElement | null;
@@ -454,6 +491,8 @@ export async function searchPostCards(
     }
     return out;
   }, POST_CARD_SELECTOR);
+  readMeter.names += cards.length;
+  return cards;
 }
 
 /** Inserts leads and reports how many were new. Shared by every source. */
@@ -706,12 +745,14 @@ async function mineTarget(
     log(`No reactions or comments visible on ${url}. The page may need a slug that has recent posts.`);
     return engagers;
   }
+  // Whatever the comment sections did not supply, the reaction lists may.
+  const perList = reactionAllowance(maxPerPost, range.length, commenters.length);
   let opened = 0;
   let reacted = 0;
   for (const i of range) {
     if (!(await openReactionsModal(page, i))) continue;
     opened += 1;
-    const reactors = await extractFromDialog(page, `reaction:${label}`, reactionCap, !cfg.skipConnected);
+    const reactors = await extractFromDialog(page, `reaction:${label}`, perList, !cfg.skipConnected);
     reacted += reactors.length;
     engagers.push(...reactors);
     await closeDialog(page);
@@ -760,6 +801,24 @@ async function extractCommenters(
     }
     await dwell(1200, 2600);
     await scrollHuman(page, randInt(1, 2));
+    /**
+     * The thread opens on its first few comments and the rest sit behind a
+     * button a person would press. Nobody pressed it: a 50-comment post gave
+     * up the three visible ones and the pass called it a thin day. Pressed a
+     * bounded number of times, in place, which costs no extra page load.
+     */
+    for (let more = 0; more < 2; more++) {
+      const loadMore = page
+        .getByRole("button", { name: /(load|show) (more|previous) comments/i })
+        .first();
+      if (!(await loadMore.isVisible().catch(() => false))) break;
+      try {
+        await clickHumanLocator(page, loadMore);
+      } catch {
+        break;
+      }
+      await dwell(1500, 3000);
+    }
     const raw = await page.evaluate((sel) => {
       const items = Array.from(document.querySelectorAll(sel));
       const seen = new Set<string>();
@@ -816,6 +875,7 @@ async function extractCommenters(
       return rows;
     }, COMMENT_ITEM_SELECTOR);
 
+    readMeter.names += raw.length;
     for (const r of raw) {
       const engager = toCommenter(r, `comment:${label}`, !cfg.skipConnected);
       if (engager) engagers.push(engager);
@@ -964,6 +1024,7 @@ async function extractFromDialog(page: Page, source: string, maxPerPost: number,
     return rows;
   }, DIALOG);
 
+  readMeter.names += raw.length;
   const engagers: Engager[] = [];
   for (const r of raw) {
     const engager = toEngager(r, source, keepConnected);

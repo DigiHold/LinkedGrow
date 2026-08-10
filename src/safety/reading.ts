@@ -296,6 +296,36 @@ export async function book(
   });
 }
 
+/**
+ * Gives back the part of a booking that was never read.
+ *
+ * `book` charges a source's full shape before its pages open, which is right:
+ * a pass that dies halfway was still seen. But the shape is a ceiling, not a
+ * measurement, and on 2026-08-10 the gap between them was the product: 290
+ * names booked, about 70 actually read, and the day declared itself spent at
+ * lunchtime. A source that finished cleanly reports what it really read and
+ * the difference comes back, so the allowance measures exposure instead of
+ * intentions. A source that crashed refunds nothing, which keeps the
+ * crash-loop defence exactly as it was.
+ */
+export async function refund(
+  accountId: string,
+  timeZone: string,
+  cost: Partial<Spent>
+): Promise<void> {
+  const profiles = Math.max(0, Math.floor(cost.profiles ?? 0));
+  const searches = Math.max(0, Math.floor(cost.searches ?? 0));
+  if (profiles === 0 && searches === 0) return;
+  await db().execute({
+    sql: `UPDATE account_reading
+             SET profiles = MAX(0, profiles - ?),
+                 searches = MAX(0, searches - ?),
+                 updated_at = ?
+           WHERE linkedin_account_id = ? AND day = ?`,
+    args: [profiles, searches, Math.floor(Date.now() / 1000), accountId, today(timeZone)],
+  });
+}
+
 /** Both pools, for this calendar month, which is the window LinkedIn counts in. */
 export async function spentThisMonth(accountId: string, timeZone: string): Promise<Spent> {
   const month = today(timeZone).slice(0, 7);

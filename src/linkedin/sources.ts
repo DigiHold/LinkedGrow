@@ -4,10 +4,11 @@ import { log } from "../logger.ts";
 import { openSession, hasSessionCookie } from "../browser/driver.ts";
 import { dwell, scrollHuman, sleep, randInt } from "../browser/human.ts";
 import { actionDelayMs } from "../safety/envelope.ts";
+import { book } from "../safety/reading.ts";
 import type { DB } from "../store.ts";
 import { judgeAsking, judgeIcpFit } from "../messages/generate.ts";
 import { AGENT } from "./agent-meta.ts";
-import { mine, type Engager, matchesIcp, matchesLocation, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile } from "./miner.ts";
+import { mine, type Engager, matchesIcp, matchesLocation, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile, readMeter } from "./miner.ts";
 
 /**
  * Lead sources beyond competitor engagement. Each one reads a different intent signal, all through
@@ -116,6 +117,7 @@ export async function mineProfileViewers(ctx: DB, page: Page, cfg: Config, opts:
       return out;
     });
 
+    readMeter.names += rows.length;
     const leads: Engager[] = [];
     for (const r of rows) {
       const lead = toViewer(r);
@@ -123,7 +125,7 @@ export async function mineProfileViewers(ctx: DB, page: Page, cfg: Config, opts:
     }
     // A free account names only a handful of the viewers it counts, so a small number here is normal.
     log(`Profile viewers: ${rows.length} named, ${leads.length} match the ICP.`);
-    if (!opts.dryRun) log(`Queued ${queueLeads(db, leads)} new viewer leads.`);
+    if (!opts.dryRun) log(`Queued ${await queueLeads(db, leads)} new viewer leads.`);
     return leads;
   } finally {
   }
@@ -209,6 +211,20 @@ export function unsupportedSearch(query: string): string | null {
   return null;
 }
 
+/**
+ * Whether a people search should turn the page.
+ *
+ * One page holds about ten cards, and one page was all it ever read: the most
+ * productive source type on the live agent got eight names per query and gave
+ * the rest of the results back to nobody. Page 2 of a query that just proved
+ * itself beats page 1 of a weaker one, so the pass pays one more search for it,
+ * booked before the page opens. A page that came back thin says the query is
+ * exhausted, and a second page of nothing is a search wasted.
+ */
+export function wantsNextPage(kept: number, rowsOnPage: number, still: number): boolean {
+  return still > 0 && kept >= 2 && rowsOnPage >= 5;
+}
+
 export async function minePeople(
   ctx: DB,
   page: Page,
@@ -225,7 +241,18 @@ export async function minePeople(
       ? query.trim()
       : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}`;
     log(`Searching people: "${query}"`);
-    await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
+    let kept = 0;
+    let offIcp = 0;
+    let offPlace = 0;
+    for (let pageNo = 1; pageNo <= 2; pageNo++) {
+      if (pageNo > 1) {
+        // The next page of results is another search against the commercial
+        // pool, so it is paid for before it opens, like the first one was.
+        await book(ctx.linkedinAccountId, ctx.timezone, { searches: 1 }).catch(() => {});
+      }
+      const pageUrl =
+        pageNo === 1 ? url : `${url}${url.includes("?") ? "&" : "?"}page=${pageNo}`;
+      await page.goto(pageUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
     await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
     // Wait for the results themselves. `main` arrives long before they do and
     // reading at that moment reports an empty search, which is the same bug
@@ -287,9 +314,7 @@ export async function minePeople(
       return out;
     });
 
-    let kept = 0;
-    let offIcp = 0;
-    let offPlace = 0;
+    readMeter.names += rows.length;
     for (const row of rows) {
       const lead = toViewer(row);
       if (!lead) continue;
@@ -306,7 +331,10 @@ export async function minePeople(
       found.push({ ...lead, source: `search:${query}`, avatarUrl: row.photo || undefined });
       if (++kept >= maxPerQuery) break;
     }
-    log(`  ${kept} kept for "${query}" (${rows.length} people, ${offIcp} off-ICP, ${offPlace} off-location).`);
+    log(`  ${kept} kept for "${query}" so far (page ${pageNo}: ${rows.length} people, ${offIcp} off-ICP, ${offPlace} off-location).`);
+    if (!wantsNextPage(kept, rows.length, maxPerQuery - kept)) break;
+    await sleep(actionDelayMs(cfg));
+    }
     await sleep(actionDelayMs(cfg));
   }
 
@@ -409,7 +437,7 @@ export async function mineSignal(
     }
   } finally {
   }
-  if (!opts.dryRun) log(`Queued ${queueLeads(db, found)} new ${kind} leads.`);
+  if (!opts.dryRun) log(`Queued ${await queueLeads(db, found)} new ${kind} leads.`);
   return found;
 }
 

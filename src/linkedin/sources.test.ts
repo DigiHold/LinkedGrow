@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   toViewer,
+  wantsNextPage,
   passesSignalGates,
   looksLikeBuyer,
   queriesForSignal,
@@ -289,4 +290,26 @@ test("a card with no place on it still passes", () => {
 
 test("a one-letter place never matches everything by accident", () => {
   assert.equal(matchesLocation(["F"], "Bengaluru, Karnataka, India"), false);
+});
+
+/**
+ * One page was all the people search ever read: about ten cards, then done,
+ * on the most productive source type the live agent has. Page 2 of a query
+ * that just proved itself beats page 1 of a weaker one, and it costs one
+ * booked search, so it has to be earned.
+ */
+test("a page that kept people and still wants more turns the page", () => {
+  assert.equal(wantsNextPage(3, 9, 7), true);
+});
+
+test("a page that kept almost nobody does not pay for another", () => {
+  assert.equal(wantsNextPage(1, 9, 9), false, "one keep in ten is an exhausted query");
+});
+
+test("a thin results page says the query is done", () => {
+  assert.equal(wantsNextPage(3, 4, 7), false, "LinkedIn itself is running out");
+});
+
+test("a filled quota never buys another page", () => {
+  assert.equal(wantsNextPage(10, 10, 0), false);
 });

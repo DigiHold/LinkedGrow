@@ -284,13 +284,26 @@ export async function scoreSources(ctx: AgentContext): Promise<SourceScore[]> {
 }
 
 /**
+ * How many never-opened sources may cut the line in one pass.
+ *
+ * Untried-first with no cap handed a whole pass to novelty: on 2026-08-10 the
+ * learner minted three new sources in the morning, two built-ins arrived the
+ * same afternoon, and the five of them plus three zero-yield competitors
+ * filled the eight slots while the best source the agent has ever had, 23
+ * leads and 9 good ones, sat unmined for two days. Two slots buy the same
+ * information without ever costing the proven producers their run.
+ */
+const UNTRIED_PER_PASS = 2;
+
+/**
  * The order to mine in: mostly what works, always something unproven.
  *
  * Straight exploitation would lock the agent onto whatever happened to work
  * first and it would never discover anything else, which is the same mistake as
- * oldest-first with the sign flipped. So the untried go first, they are the
- * cheapest information available, then the proven, then the rest by how long
- * since they last ran so nothing starves entirely.
+ * oldest-first with the sign flipped. So a couple of untried go first, they are
+ * the cheapest information available, then the proven by yield, then the rest,
+ * including the remaining untried, by how long since they last ran so nothing
+ * starves entirely.
  */
 export function miningOrder<T extends { id: string }>(
   sources: T[],
@@ -298,7 +311,7 @@ export function miningOrder<T extends { id: string }>(
   lastMined: Map<string, number>
 ): T[] {
   const by = new Map(scores.map((s) => [s.id, s]));
-  return [...sources].sort((a, b) => {
+  const sorted = [...sources].sort((a, b) => {
     const sa = by.get(a.id);
     const sb = by.get(b.id);
     if (!sa || !sb) return 0;
@@ -306,6 +319,13 @@ export function miningOrder<T extends { id: string }>(
     if (sb.yield !== sa.yield) return sb.yield - sa.yield;
     return (lastMined.get(a.id) ?? 0) - (lastMined.get(b.id) ?? 0);
   });
+  const untried = sorted.filter((s) => by.get(s.id)?.untried);
+  if (untried.length <= UNTRIED_PER_PASS) return sorted;
+  const scouts = untried.slice(0, UNTRIED_PER_PASS);
+  const benched = new Set(untried.slice(UNTRIED_PER_PASS).map((s) => s.id));
+  const proven = sorted.filter((s) => !by.get(s.id)?.untried && !benched.has(s.id));
+  const rest = sorted.filter((s) => benched.has(s.id));
+  return [...scouts, ...proven, ...rest];
 }
 
 /**
@@ -357,6 +377,22 @@ export async function refreshSourceCounters(ctx: AgentContext): Promise<void> {
  * is a statement of fact: the address cannot be worked at all, and mining it
  * again would produce the same nothing with the same silence.
  */
+/**
+ * Writes a resolved address onto a source's row, so the search that found it
+ * is never run again. A learned source arrives as a bare name; the first pass
+ * resolves it and the URL is the part worth keeping.
+ */
+export async function saveSourceConfig(
+  sourceId: string,
+  agentId: string,
+  config: Record<string, unknown>
+): Promise<void> {
+  await db().execute({
+    sql: `UPDATE agent_sources SET config = ?, updated_at = ? WHERE id = ? AND agent_id = ?`,
+    args: [JSON.stringify(config), Math.floor(Date.now() / 1000), sourceId, agentId],
+  });
+}
+
 export async function disableSource(
   sourceId: string,
   agentId: string,
@@ -452,16 +488,22 @@ export function parseGrown(
   answer: string,
   room: number,
   taken: Set<string>
-): Array<{ type: "competitor" | "keyword"; label: string }> {
+): Array<{ type: "competitor" | "keyword" | "creator"; label: string }> {
   const seen = new Set(taken);
-  const out: Array<{ type: "competitor" | "keyword"; label: string }> = [];
+  const out: Array<{ type: "competitor" | "keyword" | "creator"; label: string }> = [];
 
   for (const raw of answer.split("\n")) {
     const line = raw.replace(/^[\s\-*\d.)"']+/, "").replace(/["']+$/, "").trim();
     if (!line) continue;
 
-    const match = /^(company|search)\s*[:\-]\s*(.+)$/i.exec(line);
-    const type = match && match[1]?.toLowerCase() === "company" ? "competitor" : "keyword";
+    const match = /^(company|creator|person|search)\s*[:\-]\s*(.+)$/i.exec(line);
+    const kind = match?.[1]?.toLowerCase();
+    const type =
+      kind === "company"
+        ? "competitor"
+        : kind === "creator" || kind === "person"
+          ? "creator"
+          : "keyword";
     const label = (match ? match[2] ?? "" : line).replace(/["']+$/, "").trim();
 
     if (label.length < 3 || label.length > 60) continue;
@@ -470,9 +512,14 @@ export function parseGrown(
     out.push({ type, label });
   }
 
-  // Companies first, order otherwise preserved, then cut to what there is room for.
-  return [...out.filter((i) => i.type === "competitor"), ...out.filter((i) => i.type === "keyword")]
-    .slice(0, Math.max(0, room));
+  // People first: the audience under one creator's posts is pre-sorted by the
+  // subject in a way a company page's never is. Then companies, then searches,
+  // order otherwise preserved, cut to what there is room for.
+  return [
+    ...out.filter((i) => i.type === "creator"),
+    ...out.filter((i) => i.type === "competitor"),
+    ...out.filter((i) => i.type === "keyword"),
+  ].slice(0, Math.max(0, room));
 }
 
 /**
@@ -572,10 +619,13 @@ export async function growFrom(
         ...headlines.map((h) => `- ${h}`),
         "",
         `Give up to ${room} new places to look for more people like them.`,
-        "One per line. A company or creator whose posts this audience gathers under is written",
-        "as `company: Name`. A LinkedIn people-search query is written as `search: the words`.",
-        "Prefer companies: reading who engages with a post costs the account nothing, while a",
-        "search is rationed. Nothing else on the line, no numbering, no quotes, no explanation.",
+        "One per line. A PERSON who posts on LinkedIn and whose posts this audience gathers",
+        "under is written as `creator: Full Name`. A company page is written as `company: Name`.",
+        "A LinkedIn people-search query is written as `search: the words`.",
+        "Prefer creators: the people commenting under a niche founder's posts are pre-sorted",
+        "by the subject, while a big company's audience is everybody. Only name a creator who",
+        "is genuinely active on LinkedIn. Nothing else on the line, no numbering, no quotes,",
+        "no explanation.",
       ].join("\n"),
       {
         purpose: "grow-source",
@@ -583,7 +633,8 @@ export async function growFrom(
         model: MODELS.fast,
         systemPrompt:
           "You turn a set of real LinkedIn headlines into new places to find more people like them.\n\n" +
-          "A company is a real business or creator on LinkedIn whose posts this audience reads and comments under: a tool they use, a rival to it, or somebody well known who writes for them. Give the name as LinkedIn shows it, nothing else. Never name the customer's own company.\n\n" +
+          "A creator is a real PERSON active on LinkedIn whose posts this audience reads and comments under: a founder who writes about the niche, a well-known operator, an investor they follow. Give their full name as LinkedIn shows it. Never invent someone, and never name a person who is famous elsewhere but quiet on LinkedIn.\n\n" +
+          "A company is a real business on LinkedIn whose page posts this audience engages with: a tool they use or a rival to it. Give the name as LinkedIn shows it, nothing else. Never name the customer's own company.\n\n" +
           "A query is two to four words, the kind of thing a person types into LinkedIn's search box: a role, a way of describing themselves, or a role and a niche together.\n\n" +
           "Write what the audience calls itself, not what a marketer calls them. Never repeat what you were given, and never write two that would obviously return the same people.\n\n" +
           "Write fewer than asked rather than padding with something weak.",

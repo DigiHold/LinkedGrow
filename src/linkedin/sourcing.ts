@@ -11,15 +11,17 @@ import {
 import { BudgetExceededError, scoreLead } from "../ai.ts";
 import { announce, keepAlive } from "../store.ts";
 import { log } from "../logger.ts";
-import { mine, mineIntent, type Engager } from "./miner.ts";
+import { mine, mineIntent, readMeter, type Engager } from "./miner.ts";
 import {
   disableSource,
   learn,
   miningOrder,
   recordPass,
   refreshSourceCounters,
+  saveSourceConfig,
   scoreSources,
 } from "./learn.ts";
+import { resolveCompetitorUrls, resolveCreatorUrl } from "./resolve.ts";
 import { asPrompt, readMemory, reviseMemory } from "./memory.ts";
 import {
   mineProfileViewers,
@@ -33,7 +35,7 @@ import {
 } from "./sources.ts";
 import { ensureTargeting } from "./derive.ts";
 import { competesWith, rivalryReason } from "./competitor.ts";
-import { book, roomToRead, tierOf, MIN_VISIT_READ, type Pace } from "../safety/reading.ts";
+import { book, refund, roomToRead, tierOf, MIN_VISIT_READ, type Pace } from "../safety/reading.ts";
 import { maturityOf } from "../safety/maturity.ts";
 
 /**
@@ -649,17 +651,25 @@ export async function sourcePass(
 
     /* Booked before the pages are opened, not after they are counted. A pass
        that dies halfway has still been seen by LinkedIn, and a counter that
-       only credits finished work lets a crash loop read all day for free. */
+       only credits finished work lets a crash loop read all day for free.
+       A source that FINISHES reports what it really read through readMeter
+       and the unread remainder is refunded below, because on 2026-08-10 the
+       gap was the product: 290 names booked, about 70 read, and the day
+       declared itself spent at lunchtime. */
+    const bookedProfiles = budget.posts * budget.perPost;
+    const bookedSearches = costOf(source);
     await book(ctx.linkedinAccountId, ctx.timezone, {
-      searches: costOf(source),
-      profiles: budget.posts * budget.perPost,
+      searches: bookedSearches,
+      profiles: bookedProfiles,
     }).catch(() => {});
+    const readBefore = readMeter.names;
+    let minedCleanly = false;
 
     // Mining one source takes minutes, so this is the line the dashboard shows
     // for most of a working day. It says which source, in the present.
     await announce(
       ctx,
-      source.type === "competitor"
+      source.type === "competitor" || source.type === "creator"
         ? "reading who engaged with"
         : source.type === "brand"
           ? "reading who viewed the profile:"
@@ -678,7 +688,38 @@ export async function sourcePass(
     try {
       switch (source.type) {
         case "competitor": {
-          const url = typeof config.url === "string" ? config.url : null;
+          let url = typeof config.url === "string" ? config.url : null;
+          if (!url) {
+            /**
+             * A learned source arrives as a bare name. Resolving it costs one
+             * companies search, the URL is kept on the row so the search never
+             * runs again, and a name that resolves to nothing is retired with
+             * the reason on it. It used to stay: "Paul Graham" and "Indie
+             * Hackers" were minted with no config on 2026-08-10, mined zero on
+             * every pass, and booked a full source's budget each time.
+             */
+            await book(ctx.linkedinAccountId, ctx.timezone, { searches: 1 }).catch(() => {});
+            const resolved = await resolveCompetitorUrls(page, [source.label], ctx);
+            url = resolved[0] ?? null;
+            if (!url) {
+              await disableSource(
+                source.id,
+                ctx.agentId,
+                `No LinkedIn company page was found under "${source.label}".`
+              );
+              await recordEvent(
+                ctx,
+                "sourcing",
+                `${source.label} was turned off: no LinkedIn company page under that name.`
+              ).catch(() => {});
+              await refund(ctx.linkedinAccountId, ctx.timezone, {
+                profiles: bookedProfiles,
+                searches: bookedSearches,
+              }).catch(() => {});
+              continue;
+            }
+            await saveSourceConfig(source.id, ctx.agentId, { ...config, url }).catch(() => {});
+          }
           /**
            * dryRun, so claimAll below does the insert.
            *
@@ -691,7 +732,46 @@ export async function sourcePass(
            * were converted months ago and this one was missed.
            */
           found = await mine(ctx, page, ctx.cfg, {
-            ...(url ? { targets: [url] } : { competitorNames: [source.label] }),
+            targets: [url],
+            maxPerPost: budget.perPost,
+            maxPostsPerTarget: budget.posts,
+            dryRun: true,
+          });
+          break;
+        }
+        case "creator": {
+          /**
+           * One person's audience, which is the densest room on LinkedIn:
+           * everybody under a niche founder's post chose to read about the
+           * subject. Same read as the customer's own posts, pointed at
+           * somebody else's activity feed, and it costs no search once the
+           * profile address is on the row.
+           */
+          let url = typeof config.url === "string" ? config.url : null;
+          if (!url) {
+            await book(ctx.linkedinAccountId, ctx.timezone, { searches: 1 }).catch(() => {});
+            url = await resolveCreatorUrl(page, source.label, ctx);
+            if (!url) {
+              await disableSource(
+                source.id,
+                ctx.agentId,
+                `Nobody named "${source.label}" was found on LinkedIn.`
+              );
+              await recordEvent(
+                ctx,
+                "sourcing",
+                `${source.label} was turned off: nobody by that name was found on LinkedIn.`
+              ).catch(() => {});
+              await refund(ctx.linkedinAccountId, ctx.timezone, {
+                profiles: bookedProfiles,
+                searches: bookedSearches,
+              }).catch(() => {});
+              continue;
+            }
+            await saveSourceConfig(source.id, ctx.agentId, { ...config, url }).catch(() => {});
+          }
+          found = await mine(ctx, page, ctx.cfg, {
+            targets: [`${url.replace(/\/+$/, "")}/recent-activity/all/`],
             maxPerPost: budget.perPost,
             maxPostsPerTarget: budget.posts,
             dryRun: true,
@@ -728,6 +808,11 @@ export async function sourcePass(
               () => {}
             );
             log("source cannot be worked", { source: source.label, reason: blocked });
+            // Turned off before anything was opened, so the booking comes back.
+            await refund(ctx.linkedinAccountId, ctx.timezone, {
+              profiles: bookedProfiles,
+              searches: bookedSearches,
+            }).catch(() => {});
             continue;
           }
 
@@ -814,6 +899,10 @@ export async function sourcePass(
             log("the account has no profile address stored yet, so its own posts are skipped", {
               agentId: ctx.agentId,
             });
+            await refund(ctx.linkedinAccountId, ctx.timezone, {
+              profiles: bookedProfiles,
+              searches: bookedSearches,
+            }).catch(() => {});
             continue;
           }
           found = await mineOwnPosts(ctx, page, ctx.cfg, ctx.ownProfileUrl, {
@@ -836,15 +925,28 @@ export async function sourcePass(
         case "csv":
           // Uploaded rather than mined. The rows are inserted straight into
           // agent_leads by the import endpoint, so there is nothing on LinkedIn
-          // to read and reaching this source is not a failure.
+          // to read and reaching this source is not a failure. Nothing was
+          // read, so the whole booking comes back.
+          await refund(ctx.linkedinAccountId, ctx.timezone, {
+            profiles: bookedProfiles,
+            searches: bookedSearches,
+          }).catch(() => {});
           continue;
         default:
           log("unknown source type, skipped", { type: source.type });
+          await refund(ctx.linkedinAccountId, ctx.timezone, {
+            profiles: bookedProfiles,
+            searches: bookedSearches,
+          }).catch(() => {});
           continue;
       }
+      minedCleanly = true;
     } catch (error) {
       // One broken source must not stop the others. A competitor page that
-      // moved, or a search that returned nothing, is ordinary.
+      // moved, or a search that returned nothing, is ordinary. No refund on
+      // this path: the pages a crashed source opened were still seen, and a
+      // crash loop that reads all day for free is the thing `book` exists
+      // to prevent.
       log("a source could not be read", {
         source: source.label,
         reason: error instanceof Error ? error.message : String(error),
@@ -855,6 +957,16 @@ export async function sourcePass(
       // Runs on every way out of the block, including the two `continue`s and
       // the error path, so no pulse is ever left beating on a finished source.
       clearInterval(alive);
+    }
+
+    // The booking was the plan; the meter is what happened. A finished source
+    // gives back the names it never read, so the day's allowance measures
+    // exposure rather than intentions.
+    if (minedCleanly) {
+      const read = readMeter.names - readBefore;
+      await refund(ctx.linkedinAccountId, ctx.timezone, {
+        profiles: Math.max(0, bookedProfiles - read),
+      }).catch(() => {});
     }
 
     /**

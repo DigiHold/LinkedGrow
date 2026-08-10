@@ -244,3 +244,52 @@ test("bullets, numbering and stray quotes are stripped", () => {
 test("junk and empty lines produce nothing rather than a broken source", () => {
   assert.deepEqual(parseGrown("\n\n  \nab\n", 5, new Set()), []);
 });
+
+/**
+ * Novelty is capped, because on 2026-08-10 it ate the whole pass.
+ *
+ * The learner minted three sources in the morning, two built-ins arrived the
+ * same afternoon, and untried-first put all of them ahead of the best source
+ * the agent has ever had, which then sat unmined for two days.
+ */
+test("no more than two untried sources cut the line in one pass", () => {
+  const u1 = score({ id: "u1", untried: true });
+  const u2 = score({ id: "u2", untried: true });
+  const u3 = score({ id: "u3", untried: true });
+  const u4 = score({ id: "u4", untried: true });
+  const order = miningOrder(
+    [{ id: "u1" }, { id: "u2" }, { id: "u3" }, { id: "u4" }, { id: "indie" }],
+    [u1, u2, u3, u4, INDIE],
+    new Map()
+  );
+  const ids = order.map((s) => s.id);
+  assert.equal(ids[2], "indie", "the proven producer keeps the third slot");
+  assert.equal(ids.filter((id) => id.startsWith("u")).length, 4, "nothing is dropped, only re-ordered");
+});
+
+test("two or fewer untried keep the old order exactly", () => {
+  const order = miningOrder(
+    [{ id: "new" }, { id: "indie" }, { id: "lovable" }],
+    [FRESH, INDIE, LOVABLE],
+    new Map()
+  );
+  assert.deepEqual(order.map((s) => s.id), ["new", "indie", "lovable"]);
+});
+
+test("a creator line becomes a creator source, and people go first", () => {
+  const grown = parseGrown(
+    ["company: Lovable", "creator: Jane Founder", "search: solo saas"].join("\n"),
+    5,
+    new Set()
+  );
+  assert.deepEqual(grown[0], { type: "creator", label: "Jane Founder" });
+  assert.deepEqual(
+    grown.map((g) => g.type),
+    ["creator", "competitor", "keyword"]
+  );
+});
+
+test("person: is read as a creator too, because models write both", () => {
+  const grown = parseGrown("person: Sam Operator", 2, new Set());
+  assert.deepEqual(grown, [{ type: "creator", label: "Sam Operator" }]);
+});

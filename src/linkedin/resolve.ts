@@ -43,12 +43,48 @@ export async function resolveCompetitorUrls(page: Page, names: string[], db: DB)
     }
     await sleep(randInt(4000, 9000)); // human pace between searches
   }
-  await writeCache(db, cache);
+  await writeCache(db, CACHE_KEY, cache);
   return out;
 }
 
-async function readCache(db: DB): Promise<Record<string, string>> {
-  const raw = await getMeta(db, CACHE_KEY);
+const CREATOR_CACHE_KEY = "creator_urls";
+
+/**
+ * Resolves a person's name to their profile URL via the people search.
+ *
+ * A creator source mines the audience under one person's posts, which is the
+ * densest room there is: people who stop to comment under a niche founder are
+ * pre-sorted by the subject. The learner used to emit people as `company:`
+ * lines, the companies search found nothing, and the source mined zero for
+ * ever. Null when the search finds nobody, and the caller retires the source
+ * with the reason instead of letting it book budget for nothing.
+ */
+export async function resolveCreatorUrl(page: Page, name: string, db: DB): Promise<string | null> {
+  const cache = await readCache(db, CREATOR_CACHE_KEY);
+  const key = name.toLowerCase();
+  if (cache[key]) return cache[key];
+  const url = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(name)}`;
+  await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
+  await page.waitForSelector("main", { timeout: 15_000 }).catch(() => {});
+  await dwell(1500, 3000);
+  const href = await page.evaluate(() => {
+    const a = document.querySelector('main a[href*="/in/"]') as HTMLAnchorElement | null;
+    return a?.href ?? null;
+  });
+  const slug = href?.match(/\/in\/([^/?#]+)/)?.[1];
+  if (!slug) {
+    log(`Could not resolve creator "${name}" to a LinkedIn profile.`);
+    return null;
+  }
+  const resolved = `https://www.linkedin.com/in/${slug}`;
+  cache[key] = resolved;
+  await writeCache(db, CREATOR_CACHE_KEY, cache);
+  log(`Resolved creator "${name}" -> ${resolved}`);
+  return resolved;
+}
+
+async function readCache(db: DB, key: string = CACHE_KEY): Promise<Record<string, string>> {
+  const raw = await getMeta(db, key);
   if (!raw) return {};
   try {
     return JSON.parse(raw) as Record<string, string>;
@@ -57,6 +93,6 @@ async function readCache(db: DB): Promise<Record<string, string>> {
   }
 }
 
-function writeCache(db: DB, cache: Record<string, string>): void {
-  setMeta(db, CACHE_KEY, JSON.stringify(cache));
+function writeCache(db: DB, key: string, cache: Record<string, string>): void {
+  setMeta(db, key, JSON.stringify(cache));
 }

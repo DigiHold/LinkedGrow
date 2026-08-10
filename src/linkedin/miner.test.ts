@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { toEngager, toCommenter, matchesIcp, toIntentLead, onTopic, isAsking, worksAtCompany } from "./miner.ts";
+import { toEngager, toCommenter, matchesIcp, toIntentLead, onTopic, isAsking, worksAtCompany, reactionAllowance } from "./miner.ts";
 
 // Fixtures mirror the real reactor-row shape captured from the LinkedIn reactors modal
 // (name line, "View <name>'s profile" link, connection-degree noise, then the headline),
@@ -170,4 +170,30 @@ test("isAsking rejects consultants broadcasting expertise", () => {
   assert.equal(isAsking("Your cookie banner is hiding the most important part of your homepage. The part that sells."), false);
   assert.equal(isAsking("WordPress powers millions of websites, but how many are running without IT even knowing?"), false);
   assert.equal(isAsking("Here's how we help our clients pass a privacy audit. Book a call to learn more."), false);
+});
+
+/**
+ * The unused comment allowance moves onto the reaction lists.
+ *
+ * Measured on 2026-08-10: 2 posts, an allowance of 24 each, 3 commenters
+ * found in total, and the reaction lists were still cut off at 7 names while
+ * carrying hundreds. The unclaimed comment share belongs to the list that
+ * actually has people on it.
+ */
+test("a thin comment section hands its allowance to the reactions", () => {
+  // reactionCap floor(24 * 0.3) = 7, commentCap 17. Two lists, 3 commenters:
+  // 31 names unclaimed, so each list may take 7 + 16 = 23, capped at 24.
+  assert.equal(reactionAllowance(24, 2, 3), 23);
+});
+
+test("a busy comment section leaves the reaction share alone", () => {
+  assert.equal(reactionAllowance(24, 2, 34), 7, "comments took their whole half");
+});
+
+test("the backfill never exceeds the post's own allowance", () => {
+  assert.equal(reactionAllowance(24, 1, 0), 24);
+});
+
+test("no reaction lists means the base share, for the caller that logs it", () => {
+  assert.equal(reactionAllowance(24, 0, 5), 7);
 });
