@@ -34,6 +34,7 @@ import {
   actionDelayMs,
 } from "../safety/envelope.ts";
 import { dayAgoIso, weekAgoIso, epochIso } from "../time.ts";
+import { minimumScore } from "./competitor.ts";
 
 /**
  * The prospect lifecycle.
@@ -470,7 +471,26 @@ async function sendNewConnects(
   const budget = Math.max(0, Math.min(target - sentToday, cfg.limits.connectPerWeekMax - sentWeek));
   if (budget <= 0) return;
 
-  for (const p of await getProspects(db, STATUS.queued, { limit: budget })) {
+  /**
+   * An invitation is spent on somebody worth writing to, or not spent.
+   *
+   * The score floor was added to leadsAtStep and this path never had one, so a
+   * prospect the scorer had judged 0, including one it had flagged as a
+   * competitor who can never buy, still received an invitation. Sixteen a day
+   * is the scarcest thing the account has.
+   *
+   * Unscored leads wait for their score rather than being invited blind, except
+   * on an agent with no ICP written down, which never scores anybody and would
+   * otherwise never invite anybody either.
+   */
+  const scoring = Boolean(cfg.leads?.icp);
+  const waiting = await getProspects(db, STATUS.queued, {
+    limit: budget,
+    minScore: minimumScore(db.matchLevel),
+    requireScored: scoring,
+  });
+
+  for (const p of waiting) {
     await announce(db, "liking a post by", subjectOf(p));
     await deps.actions.warmUp(p); // best-effort; a missed like does not block the connect
     await pause();

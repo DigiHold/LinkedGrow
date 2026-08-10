@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createClient } from "@libsql/client";
 import type { AgentContext, Config } from "../config.ts";
 import { leadsAtStep, setDbForTests, db as sharedDb } from "../db.ts";
+import { getProspects } from "../store.ts";
 
 /**
  * The line between a lead being found and a lead being written to.
@@ -55,6 +56,23 @@ async function seed(name: string, score: number | null): Promise<void> {
              match_score, step, found_at, created_at, updated_at)
           VALUES (?, 'ws-test', 'agent-test', ?, ?, ?, ?, 'found', 1, 1, 1)`,
     args: [id, id, `https://www.linkedin.com/in/${id}/`, name, score],
+  });
+}
+
+/** A lead sitting in the invitation queue, with a score and an age. */
+async function seedQueued(
+  name: string,
+  score: number | null,
+  ageRank: number,
+  signalType = "reaction:someone"
+): Promise<void> {
+  const id = `q-${++counter}`;
+  await sharedDb().execute({
+    sql: `INSERT INTO agent_leads
+            (id, workspace_id, agent_id, profile_id, profile_url, full_name, match_score,
+             signal_type, sequence_status, step, found_at, created_at, updated_at)
+          VALUES (?, 'ws-test', 'agent-test', ?, ?, ?, ?, ?, 'queued', 'found', ?, ?, ?)`,
+    args: [id, id, `https://www.linkedin.com/in/${id}/`, name, score, signalType, ageRank, ageRank, ageRank],
   });
 }
 
@@ -113,5 +131,58 @@ test("the best match is still handed over first", async () => {
   await seed("Second", 60);
   await seed("First", 95);
   assert.deepEqual(await names(ctxWith("balanced")), ["First", "Second"]);
+  setDbForTests(null);
+});
+
+/**
+ * The invitation queue, which had no floor and no sense of what is good.
+ *
+ * getProspects ordered by how long somebody had waited and nothing else, so the
+ * day's sixteen invitations went to whoever had been sitting in the list
+ * longest whatever the agent thought of them. On a live account on 2026-08-10
+ * a lead scored 15 sat ahead of one scored 92, every day, and the customer's
+ * queue showed the same name for days because it faithfully mirrored that.
+ *
+ * And nothing stopped an invitation going to a lead scored 0, including one the
+ * scorer had flagged as a competitor who can never buy.
+ */
+test("the best match is invited first, not the one who waited longest", async () => {
+  await freshDb();
+  await seedQueued("Waited longest, poor match", 15, 1);
+  await seedQueued("Arrived today, strong match", 92, 9);
+  const rows = await getProspects(ctxWith("balanced"), "queued", { limit: 10 });
+  assert.deepEqual(
+    rows.map((r) => r.full_name),
+    ["Arrived today, strong match", "Waited longest, poor match"]
+  );
+  setDbForTests(null);
+});
+
+test("somebody who asked about the problem still goes first, whatever their score", async () => {
+  await freshDb();
+  await seedQueued("Strong headline", 92, 1);
+  await seedQueued("Asked out loud", 55, 2, "question:cookie consent");
+  const rows = await getProspects(ctxWith("balanced"), "queued", { limit: 10 });
+  assert.equal(rows[0]?.full_name, "Asked out loud", "a question beats any headline");
+  setDbForTests(null);
+});
+
+test("an invitation is never spent on a lead below the floor", async () => {
+  await freshDb();
+  await seedQueued("Rival, scored zero", 0, 1);
+  await seedQueued("Real prospect", 70, 2);
+  const rows = await getProspects(ctxWith("balanced"), "queued", { limit: 10, minScore: 45 });
+  assert.deepEqual(rows.map((r) => r.full_name), ["Real prospect"]);
+  setDbForTests(null);
+});
+
+test("an unscored lead waits for its score before being invited", async () => {
+  await freshDb();
+  await seedQueued("Not judged yet", null, 1);
+  const held = await getProspects(ctxWith("balanced"), "queued", { limit: 10, requireScored: true });
+  assert.equal(held.length, 0);
+  // And an agent with no ICP never scores anybody, so it must not wait for ever.
+  const free = await getProspects(ctxWith("balanced", ""), "queued", { limit: 10 });
+  assert.equal(free.length, 1);
   setDbForTests(null);
 });

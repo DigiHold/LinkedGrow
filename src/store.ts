@@ -112,7 +112,14 @@ function toRow(r: Record<string, unknown>): ProspectRow {
 export async function getProspects(
   ctx: DB,
   status: string,
-  opts: { olderThan?: string; limit?: number } = {}
+  opts: {
+    olderThan?: string;
+    limit?: number;
+    /** Leads below this are not worth an invitation, so they are left alone. */
+    minScore?: number;
+    /** Hold a lead back until it has been judged at all. */
+    requireScored?: boolean;
+  } = {}
 ): Promise<ProspectRow[]> {
   const clauses = ["workspace_id = ?", "agent_id = ?", "sequence_status = ?"];
   const args: (string | number)[] = [ctx.workspaceId, ctx.agentId, status];
@@ -120,12 +127,31 @@ export async function getProspects(
     clauses.push("updated_at <= ?");
     args.push(Math.floor(new Date(opts.olderThan).getTime() / 1000));
   }
+  if (typeof opts.minScore === "number") {
+    clauses.push("(match_score IS NULL OR match_score >= ?)");
+    args.push(opts.minScore);
+  }
+  if (opts.requireScored) clauses.push("match_score IS NOT NULL");
   args.push(opts.limit ?? 1000);
 
+  /**
+   * Best first, not oldest first.
+   *
+   * This ordered by how long somebody had waited and nothing else, so the day's
+   * sixteen invitations went to whoever had been sitting in the list longest
+   * whatever the agent thought of them. On a live account on 2026-08-10 that
+   * meant a lead scored 15 was ahead of one scored 92, every day, and the queue
+   * the customer looks at was showing the same name for days because it was
+   * faithfully mirroring that order.
+   *
+   * The question tier stays in front: somebody who asked about the problem out
+   * loud is hotter than any headline. Inside a tier the better match goes
+   * first, and equal matches oldest first so nobody starves.
+   */
   const priority = `CASE WHEN signal_type LIKE 'question:%' OR signal_type LIKE 'intent:%' THEN 0 ELSE 1 END`;
   const { rows } = await db().execute({
     sql: `SELECT * FROM agent_leads WHERE ${clauses.join(" AND ")}
-          ORDER BY ${priority}, updated_at ASC LIMIT ?`,
+          ORDER BY ${priority}, COALESCE(match_score, 0) DESC, updated_at ASC LIMIT ?`,
     args,
   });
   return rows.map((r) => toRow(r as unknown as Record<string, unknown>));
