@@ -158,7 +158,11 @@ function prompt(ctx: AgentContext, site: string): string {
     "",
     ctx.cfg.leads.icp ? `Who they sell to, in their own words: ${ctx.cfg.leads.icp}` : "",
     ctx.sender.companyInfo ? `What they do, in their own words: ${ctx.sender.companyInfo}` : "",
-    ctx.cfg.leads.icpKeywords.length ? `Roles and industries they named: ${ctx.cfg.leads.icpKeywords.join(", ")}` : "",
+    // Both, because the derivation is about the audience as a whole. Only the
+    // roles are ever matched against a headline; see matchesIcp.
+    ctx.cfg.leads.icpKeywords.length || ctx.cfg.leads.industries?.length
+      ? `Roles and industries they named: ${[...ctx.cfg.leads.icpKeywords, ...(ctx.cfg.leads.industries ?? [])].join(", ")}`
+      : "",
     ctx.website ? `Their website: ${ctx.website}` : "",
     site ? `\nTheir homepage text, truncated:\n"""\n${site}\n"""` : "",
     "",

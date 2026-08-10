@@ -575,6 +575,49 @@ function escapeRegex(s: string): string {
  * headline and post are both about selling the same service. The model gets the
  * final say on that afterwards.
  */
+/**
+ * Does this headline contain the keyword as a WORD, rather than as letters.
+ *
+ * `includes` was the whole test, and on 2026-08-10 it produced this on a live
+ * account: "Director of Sales & Partnerships EMEA" passed the filter as a CTO,
+ * because "Dire(cto)r" contains those three letters. Every Director of Sales,
+ * Marketing Director, Art Director and Creative Director on LinkedIn was
+ * qualifying as a chief technology officer.
+ *
+ * A boundary is anything that is not a letter or a digit, so hyphens, pipes,
+ * slashes and the @ that headlines are full of all still count as edges. The
+ * keyword itself is escaped, because a customer is allowed to type "C++" or
+ * "node.js" into their own audience.
+ */
+export function saysWord(hay: string, keyword: string): boolean {
+  const word = keyword.trim().toLowerCase();
+  if (!word) return false;
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // \b does not fire next to +, #, . or a non-Latin letter, so the edges are
+  // written out rather than assumed.
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}($|[^\\p{L}\\p{N}])`, "iu").test(hay);
+}
+
+/**
+ * Is this person plausibly the audience, judged on what they call themselves.
+ *
+ * Two things changed here after reading five real leads from 2026-08-10, four
+ * of which the scorer then threw out at 15 and 22.
+ *
+ * The match is on WORDS now. See saysWord: "Director" was passing as "CTO".
+ *
+ * And the INDUSTRY on its own no longer qualifies anybody. The wizard collects
+ * roles and industries separately and they were concatenated into one flat list
+ * matched with `some`, so an industry could only ever widen the net. An
+ * enterprise sales rep whose headline read "Scaling CDN, Cloud, SaaS, GPU-aaS"
+ * came through on the word SaaS, which describes the market she sells into and
+ * says nothing at all about her being a founder. An industry is a property of a
+ * company; a role is a property of a person, and only the person is here.
+ *
+ * The industries the customer chose are still used, for the search queries and
+ * in the scoring prompt where they belong. They are simply no longer a way to
+ * qualify a person, so they are not in this list at all any more.
+ */
 export function matchesIcp(
   icpKeywords: string[],
   headline: string,
@@ -582,7 +625,7 @@ export function matchesIcp(
 ): boolean {
   if (!icpKeywords.length) return true;
   const hay = `${headline || ""}\n${context || ""}`.toLowerCase();
-  return icpKeywords.some((k) => hay.includes(k.toLowerCase()));
+  return icpKeywords.some((k) => saysWord(hay, k));
 }
 
 /** Opens a target's recent posts and extracts engagers from each. */

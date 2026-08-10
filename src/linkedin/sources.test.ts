@@ -8,7 +8,7 @@ import {
   unsupportedSearch,
   type SignalKind,
 } from "./sources.ts";
-import { parseCard } from "./miner.ts";
+import { matchesIcp, parseCard, saysWord } from "./miner.ts";
 import type { Config } from "../config.ts";
 import { splitHeadline } from "./sourcing.ts";
 
@@ -202,4 +202,56 @@ test("an ordinary people search is worked as normal", () => {
 test("pasting your own feed or inbox is caught too", () => {
   assert.ok(unsupportedSearch("https://www.linkedin.com/feed/"));
   assert.ok(unsupportedSearch("https://www.linkedin.com/messaging/"));
+});
+
+/**
+ * The five real leads of 2026-08-10, and why four of them should never have
+ * been claimed.
+ *
+ * The scorer threw them out at 15, 15, 15 and 22, which means the agent had
+ * already spent a page load, a model call and a row in the customer's Leads tab
+ * on each of them. The customer counted five leads, looked at them, and found
+ * one worth writing to.
+ *
+ * Every one of the four got through the same way: `matchesIcp` tested with
+ * `includes`, on a flat list of roles AND industries joined by `some`.
+ */
+test("Director no longer qualifies as a CTO, which is three letters of it", () => {
+  const roles = ["Founder", "Co-founder", "CTO", "Indie hacker", "SaaS founder"];
+  const kostov =
+    "Director of Sales & Partnerships EMEA @Sirma AI | Helping enterprises turn AI investment into production results";
+  assert.equal(
+    matchesIcp(roles, kostov),
+    false,
+    "Dire(cto)r contains cto, and every sales director on LinkedIn was passing as a chief technology officer"
+  );
+  // The real thing still matches, in every shape a headline writes it.
+  assert.equal(matchesIcp(roles, "CTO at Recepto"), true);
+  assert.equal(matchesIcp(roles, "Co-Founder & CTO | building in public"), true);
+  assert.equal(matchesIcp(roles, "cto, ex-Stripe"), true);
+});
+
+test("an industry in a headline is not a person's role", () => {
+  // Roles only now. SaaS is a market she sells into, not a thing she is.
+  const roles = ["Founder", "Co-founder", "CTO", "Indie hacker"];
+  const olga =
+    "Enterprise Sales, Account Management, Stratigic Partnerships | 15+ Years Scaling CDN, Cloud, SaaS, GPU-aaS & AI Infrastructure Globally";
+  assert.equal(matchesIcp(roles, olga), false);
+});
+
+test("the founders still come through untouched", () => {
+  const roles = ["Founder", "Co-founder", "CTO", "Indie hacker", "engineer"];
+  assert.equal(matchesIcp(roles, "Founding Engineer @ Recepto.ai | ex JLR"), true);
+  assert.equal(matchesIcp(roles, "Co-Founder & Chief Technology Officer at Elite Infotec"), true);
+  assert.equal(matchesIcp(roles, "Indie Hacker | SaaS | Chatbot Builder"), true);
+});
+
+test("word matching survives the punctuation headlines are made of", () => {
+  assert.equal(saysWord("co-founder @acme | building things", "founder"), true);
+  assert.equal(saysWord("Founder/CEO", "ceo"), true);
+  assert.equal(saysWord("Head of Growth·SaaS", "saas"), true);
+  // And still refuses the letters-inside-a-word case that started this.
+  assert.equal(saysWord("Director of Marketing", "cto"), false);
+  assert.equal(saysWord("Filmmaker and editor", "maker"), false);
+  assert.equal(saysWord("Reengineering the funnel", "engineer"), false);
 });

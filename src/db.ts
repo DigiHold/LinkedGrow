@@ -188,10 +188,21 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
         competitors: splitLines(r.competitor_labels),
         hashtags: [],
         icp: String(r.icp_summary ?? ""),
-        icpKeywords: [
-          ...parseList(r.job_roles),
-          ...parseList(r.industries),
-        ],
+        /**
+         * Roles only. Industries qualified people, and they must not.
+         *
+         * The wizard collects the two separately and this concatenated them
+         * into one list matched with `some`, so an industry could only ever
+         * widen the net. On 2026-08-10 an enterprise sales rep was claimed as a
+         * lead for a founder audience because her headline said "Scaling CDN,
+         * Cloud, SaaS, GPU-aaS". SaaS is the market she sells into. It says
+         * nothing whatever about her being a founder.
+         *
+         * A role is a property of a person. An industry is a property of a
+         * company, and only the person is in front of us.
+         */
+        icpKeywords: parseList(r.job_roles),
+        industries: parseList(r.industries),
         intentQueries: [],
       },
       product: {

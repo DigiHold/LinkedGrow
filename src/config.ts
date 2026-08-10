@@ -31,7 +31,16 @@ export interface Config {
     competitors: string[];
     hashtags: string[];
     icp: string;
+    /**
+     * What this audience calls ITSELF, matched against a headline as words.
+     *
+     * Roles only. Industries live below and never qualify a person on their
+     * own, because an industry describes the company and a headline describes
+     * the person.
+     */
     icpKeywords: string[];
+    /** The markets the customer sells into. Context for scoring, never a filter. */
+    industries: string[];
     intentQueries: string[];
     jobChangeQueries?: string[];
     hiringQueries?: string[];
