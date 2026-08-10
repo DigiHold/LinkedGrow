@@ -104,6 +104,24 @@ const REACTION_SHARE = 0.3;
 const DIALOG = 'dialog[open], div[role="dialog"]';
 
 /**
+ * Cuts text to a length without ever cutting a character in half.
+ *
+ * `slice` counts UTF-16 code units and an emoji is two of them, so a cut landing
+ * inside one leaves a lone surrogate. That is not valid UTF-8, and it is exactly
+ * what killed 36 sourcing passes between 2026-08-06 and today: the same comment
+ * under the same Calendly post, cut at the same place, rejected by the database
+ * with a 400 that named nothing, taking the scoring and the learning down with
+ * it every time.
+ */
+export function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const last = cut.charCodeAt(cut.length - 1);
+  // A high surrogate at the end has lost its pair, so drop it.
+  return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut;
+}
+
+/**
  * Mines engagement leads from competitor content. This is browser activity on the account, so it
  * moves at a human pace and reads only: it opens a post, opens its reactions and comments, and
  * extracts the people, never liking, commenting, connecting or messaging.
@@ -356,7 +374,7 @@ export function cardToEngager(
     firstName: parsed.fullName.split(/\s+/)[0] ?? parsed.fullName,
     headline: parsed.headline,
     source,
-    context: parsed.body.slice(0, 400) || undefined,
+    context: clip(parsed.body, 400) || undefined,
     avatarUrl: parsed.photo || undefined,
   };
 }
@@ -746,7 +764,7 @@ export function toCommenter(
     firstName,
     headline,
     source,
-    context: row.body?.slice(0, 400) || undefined,
+    context: clip(row.body ?? "", 400) || undefined,
     avatarUrl: row.photo || undefined,
   };
 }

@@ -854,13 +854,35 @@ export async function sourcePass(
       clearInterval(alive);
     }
 
+    /**
+     * Claiming is inside the guard too, and that is the whole point.
+     *
+     * It used to sit outside, so a database error while storing one person
+     * escaped the loop and killed the entire pass. Everything that runs
+     * afterwards runs afterwards for a reason: the scoring, the source ranking
+     * and the memory all read what the pass just found. Losing the pass loses
+     * all three.
+     *
+     * That is not hypothetical. A single comment with an emoji cut in half by a
+     * 400-character slice was rejected by the database with an unnamed 400, on
+     * every pass that reached it, 36 times in five days. Every lead found in
+     * those passes stayed unscored and the customer saw an empty Match column.
+     */
     const startedAt = Math.floor(Date.now() / 1000) - 1;
-    const claimed = await claimAll(ctx, source.id, source.label, found);
-    const good = claimed > 0 ? await goodAmong(source.id, startedAt) : 0;
-    await recordPass(source.id, claimed, good);
+    let claimed = 0;
+    try {
+      claimed = await claimAll(ctx, source.id, source.label, found);
+      const good = claimed > 0 ? await goodAmong(source.id, startedAt) : 0;
+      await recordPass(source.id, claimed, good);
+      log("source mined", { source: source.label, seen: found.length, claimed, good });
+    } catch (error) {
+      log("a source could not be stored", {
+        source: source.label,
+        reason: error instanceof Error ? error.message : String(error),
+      });
+      await recordPass(source.id, claimed, 0).catch(() => {});
+    }
     total += claimed;
-
-    log("source mined", { source: source.label, seen: found.length, claimed, good });
   }
 
   /**
@@ -908,7 +930,23 @@ export async function sourcePass(
       : "No new people this time. The sources will be checked again on the next run"
   ).catch(() => {});
 
-  await scorePass(ctx);
+  /**
+   * Scoring runs whatever happened above.
+   *
+   * An unscored lead is invisible: the Match column is blank, the invitation
+   * queue holds it back because it refuses to write to somebody nobody has
+   * judged, and the source that found it counts for nothing in the ranking. One
+   * source failing must never cost the whole pass its scoring.
+   */
+  try {
+    await scorePass(ctx);
+  } catch (error) {
+    if (error instanceof BudgetExceededError) throw error;
+    log("the scoring pass did not complete", {
+      agentId: ctx.agentId,
+      reason: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   // Now that the leads carry scores, put the source counters back in step with
   // them. Before this the column said zero next to a source with seven good

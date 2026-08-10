@@ -317,6 +317,36 @@ export interface FoundLead {
 }
 
 /**
+ * Text that will survive the trip to the database, with half-emoji removed.
+ *
+ * ## The 400 that killed 36 sourcing passes in five days
+ *
+ * A comment body is cut to 400 characters with `slice`, and `slice` counts
+ * UTF-16 code units. An emoji is two of them, so a cut landing inside one
+ * leaves a lone surrogate: a half-character that is not valid UTF-8. libsql
+ * puts arguments into a JSON body and POSTs it, Turso refuses to parse it, and
+ * the whole request comes back as `SERVER_ERROR: Server returned HTTP status
+ * 400`, which names neither the column nor the statement.
+ *
+ * It was not intermittent, which is what made it look like a server having a
+ * bad day. It was the SAME comment under the SAME Calendly post failing on
+ * every pass that reached it: 17 times on 2026-08-06, 16 the next day, and
+ * every one of them took the rest of the pass down with it. Nothing found in
+ * those passes was ever scored, no source was ever ranked, and the memory was
+ * never revised, because all three run after the claim.
+ *
+ * Applied at the boundary rather than at each call site, so a field added later
+ * cannot reintroduce it.
+ */
+export function safeText<T extends string | null | undefined>(value: T): T {
+  if (typeof value !== "string") return value;
+  // Any surrogate not paired with its other half, at either end or in the
+  // middle. Replaced rather than dropped so an index into the text still means
+  // roughly the same thing.
+  return value.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "") as T;
+}
+
+/**
  * The signal family a signal_type belongs to: "comment:lovable-dev" is a comment.
  *
  * Kept here rather than in the miner because both the claim and the repetition
@@ -367,7 +397,7 @@ export async function claimLead(ctx: AgentContext, lead: FoundLead): Promise<boo
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'found', ?, ?, ?, ?, 1, ?)`,
     args: [
       crypto.randomUUID(), ctx.workspaceId, ctx.agentId, lead.sourceId ?? null,
-      lead.profileId, lead.profileUrl, lead.fullName,
+      lead.profileId, lead.profileUrl, safeText(lead.fullName),
       /**
        * The first name, which this insert never wrote.
        *
@@ -381,11 +411,11 @@ export async function claimLead(ctx: AgentContext, lead: FoundLead): Promise<boo
        * firstNameOf(full_name) already. This is the same derivation, written
        * once at the source so the column and the logs stop lying.
        */
-      firstNameOf(lead.fullName),
-      lead.headline ?? null, lead.jobTitle ?? null, lead.company ?? null,
-      lead.location ?? null, lead.avatarUrl ?? null, lead.matchScore ?? null,
-      lead.matchReason ?? null, lead.signalType ?? null, lead.signalText ?? null,
-      lead.signalUrl ?? null, lead.signalAuthor ?? null,
+      safeText(firstNameOf(lead.fullName)),
+      safeText(lead.headline ?? null), safeText(lead.jobTitle ?? null), safeText(lead.company ?? null),
+      safeText(lead.location ?? null), lead.avatarUrl ?? null, lead.matchScore ?? null,
+      safeText(lead.matchReason ?? null), lead.signalType ?? null, safeText(lead.signalText ?? null),
+      lead.signalUrl ?? null, safeText(lead.signalAuthor ?? null),
       now, now, now, now, signalKind(lead.signalType),
     ],
   });
@@ -534,7 +564,7 @@ export async function setLeadScore(
   await db().execute({
     sql: `UPDATE agent_leads SET match_score = ?, match_reason = ?, updated_at = ?
           WHERE id = ? AND workspace_id = ?`,
-    args: [score, reason.slice(0, 300), now, leadId, ctx.workspaceId],
+    args: [score, safeText(reason).slice(0, 300), now, leadId, ctx.workspaceId],
   });
 }
 

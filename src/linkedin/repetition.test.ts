@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createClient } from "@libsql/client";
 import type { AgentContext } from "../config.ts";
-import { claimLead, setDbForTests, signalKind, db as sharedDb, unscoredLeads } from "../db.ts";
+import { claimLead, safeText, setDbForTests, signalKind, db as sharedDb, unscoredLeads } from "../db.ts";
+import { clip } from "./miner.ts";
 
 /**
  * The second sighting, which the claim used to throw on the floor.
@@ -141,4 +142,40 @@ test("a rejected lead is never scored again, because there is nothing left to ju
   await sharedDb().execute(`UPDATE agent_leads SET rejected_at = 123`);
   assert.equal((await unscoredLeads(ctx, 10)).length, 0);
   setDbForTests(null);
+});
+
+/**
+ * The half-emoji that killed 36 sourcing passes in five days.
+ *
+ * A comment body is cut to 400 characters with `slice`, which counts UTF-16
+ * code units. An emoji is two of them, so a cut landing inside one leaves a
+ * lone surrogate: not valid UTF-8, rejected by Turso when libsql puts it in a
+ * JSON body, and reported as `SERVER_ERROR: Server returned HTTP status 400`
+ * with no column and no statement named.
+ *
+ * It looked intermittent and it was not. It was the same comment under the same
+ * Calendly post failing every single pass that reached it, and each failure
+ * took the scoring, the source ranking and the memory revision down with it,
+ * because all three run after the claim.
+ */
+test("a comment cut mid-emoji never reaches the database in halves", () => {
+  const body = "x".repeat(399) + "🚀 and the rest of what they wrote";
+  const cut = clip(body, 400);
+  assert.equal(cut.length, 399, "the half emoji is dropped rather than kept");
+  assert.ok(!/[\uD800-\uDFFF]/.test(cut), "no lone surrogate survives the cut");
+  // The plain case still behaves exactly like slice.
+  assert.equal(clip("short", 400), "short");
+  assert.equal(clip("x".repeat(500), 400).length, 400);
+  // A whole emoji sitting inside the range is untouched.
+  assert.equal(clip("hi 🚀 there", 400), "hi 🚀 there");
+});
+
+test("anything half a character is stripped at the database boundary", () => {
+  // Belt and braces: clip fixes the known cut, safeText covers every field and
+  // every future call site, including text LinkedIn itself served broken.
+  assert.equal(safeText("ok \uD83D"), "ok ");
+  assert.equal(safeText("\uDE00 ok"), " ok");
+  assert.equal(safeText("keeps 🚀 whole"), "keeps 🚀 whole");
+  assert.equal(safeText(null), null);
+  assert.equal(safeText(undefined), undefined);
 });
