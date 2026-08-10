@@ -70,11 +70,35 @@ export interface SourceScore {
  * marked untried and the allocator owes it a turn.
  */
 export async function scoreSources(ctx: AgentContext): Promise<SourceScore[]> {
+  /**
+   * Quality is counted off the leads themselves, not off the counter.
+   *
+   * good_leads was 0 on every source of a live agent while one of them had
+   * produced 23 leads and 10 that cleared the bar. The counter was written by
+   * recordPass at the end of the mining loop, and the scoring that decides what
+   * is good runs fifty lines later, at the end of the whole pass. So the
+   * quality of a batch was always measured before it existed, and every source
+   * reported zero for ever.
+   *
+   * Everything downstream fed on that zero. The yield was zero, so miningOrder
+   * had nothing to prefer and fell back to oldest-first, and growFrom had no
+   * best source to make a variant of, which is why an agent that is supposed to
+   * follow what works had not made a single one.
+   *
+   * Reading agent_leads instead cannot drift: it is the same table the customer
+   * sees, and it makes the whole history count rather than only what happened
+   * after the counter was fixed.
+   */
   const { rows } = await db().execute({
-    sql: `SELECT id, label, type, passes, leads_found, good_leads, accepted, replied
-            FROM agent_sources
-           WHERE agent_id = ? AND workspace_id = ? AND enabled = 1`,
-    args: [ctx.agentId, ctx.workspaceId],
+    sql: `SELECT s.id, s.label, s.type, s.passes, s.accepted, s.replied, s.last_mined_at,
+                 COUNT(l.id) AS leads_found,
+                 SUM(CASE WHEN l.match_score >= ? THEN 1 ELSE 0 END) AS good_leads
+            FROM agent_sources s
+            LEFT JOIN agent_leads l
+              ON l.source_id = s.id AND l.workspace_id = s.workspace_id
+           WHERE s.agent_id = ? AND s.workspace_id = ? AND s.enabled = 1
+           GROUP BY s.id`,
+    args: [GOOD_SCORE, ctx.agentId, ctx.workspaceId],
   });
 
   return rows.map((r) => {
@@ -92,8 +116,24 @@ export async function scoreSources(ctx: AgentContext): Promise<SourceScore[]> {
       good,
       accepted,
       replied,
-      yield: passes > 0 ? worth / passes : 0,
-      untried: passes === 0,
+      /**
+       * Per pass where we know how many there were, otherwise the plain total.
+       *
+       * passes was never incremented on the rows that predate the fix, so
+       * dividing by it threw away every source's whole history. A source with
+       * ten good leads and no recorded passes is not worth zero.
+       */
+      yield: worth / Math.max(1, passes),
+      /**
+       * Never opened, rather than never counted.
+       *
+       * This read passes === 0, and passes was never incremented on any row
+       * that predates the counter being fixed. So two competitors that had
+       * been mined and had produced nobody were called untried and jumped the
+       * queue on every single pass, ahead of the source with seven good leads.
+       * Whether a page has ever been opened is a date, and the date is right.
+       */
+      untried: Number(r.leads_found ?? 0) === 0 && !r.last_mined_at,
     };
   });
 }
@@ -120,6 +160,34 @@ export function miningOrder<T extends { id: string }>(
     if (sa.untried !== sb.untried) return sa.untried ? -1 : 1;
     if (sb.yield !== sa.yield) return sb.yield - sa.yield;
     return (lastMined.get(a.id) ?? 0) - (lastMined.get(b.id) ?? 0);
+  });
+}
+
+/**
+ * Puts the stored counters back in step with the leads themselves.
+ *
+ * recordPass counts the good ones at the end of the mining loop, and the
+ * scoring that decides what is good runs at the end of the whole pass, so the
+ * column was always one step behind and in practice always zero. The ranking no
+ * longer reads it, but the row is shown to the customer and a column that says
+ * zero next to a source with seven good leads is a lie on a screen.
+ *
+ * One statement, derived from agent_leads, so it cannot drift again.
+ */
+export async function refreshSourceCounters(ctx: AgentContext): Promise<void> {
+  await db().execute({
+    sql: `UPDATE agent_sources
+             SET leads_found = (
+                   SELECT COUNT(*) FROM agent_leads l
+                    WHERE l.source_id = agent_sources.id AND l.workspace_id = agent_sources.workspace_id
+                 ),
+                 good_leads = (
+                   SELECT COUNT(*) FROM agent_leads l
+                    WHERE l.source_id = agent_sources.id AND l.workspace_id = agent_sources.workspace_id
+                      AND l.match_score >= ?
+                 )
+           WHERE agent_id = ? AND workspace_id = ?`,
+    args: [GOOD_SCORE, ctx.agentId, ctx.workspaceId],
   });
 }
 
@@ -302,7 +370,16 @@ export async function learn(ctx: AgentContext): Promise<{
   // is not enough: a single lucky reply on one pass would score higher than a
   // source that has produced steadily, so it has to have found real people too.
   const candidates = scores
-    .filter((s) => s.good >= 3 && s.passes >= 2)
+    /**
+     * Proven by what it produced, not by a counter that was never written.
+     *
+     * This asked for passes >= 2, and passes is 0 on every source that predates
+     * the fix, so the guard could never pass and the agent had not written a
+     * single variant in its life. Leads found is the same guarantee against a
+     * one-off fluke and it is a number that actually exists: three good ones
+     * out of at least five means the source is producing, not lucky.
+     */
+    .filter((s) => s.good >= 3 && s.leads >= 5)
     .sort((a, b) => b.yield - a.yield);
 
   let learned = 0;

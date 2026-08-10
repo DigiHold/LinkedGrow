@@ -12,7 +12,7 @@ import { BudgetExceededError, scoreLead } from "../ai.ts";
 import { announce, keepAlive } from "../store.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, type Engager } from "./miner.ts";
-import { learn, miningOrder, recordPass, scoreSources } from "./learn.ts";
+import { learn, miningOrder, recordPass, refreshSourceCounters, scoreSources } from "./learn.ts";
 import { asPrompt, readMemory, reviseMemory } from "./memory.ts";
 import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
 import { ensureTargeting } from "./derive.ts";
@@ -710,6 +710,11 @@ export async function sourcePass(
   ).catch(() => {});
 
   await scorePass(ctx);
+
+  // Now that the leads carry scores, put the source counters back in step with
+  // them. Before this the column said zero next to a source with seven good
+  // leads, because it was written before the scoring that produces the number.
+  await refreshSourceCounters(ctx).catch(() => {});
 
   return total;
 }

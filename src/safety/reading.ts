@@ -310,10 +310,23 @@ export function roomFrom(
   const dayLeft = Math.max(0, profileDay - spentToday.profiles);
   const share = Math.max(0, visitCeiling(profileDay, pace) - spentToday.profiles);
   const profiles = Math.min(dayLeft, share > 0 ? Math.max(share, MIN_VISIT_READ) : 0);
-  const searches = Math.min(
-    Math.max(0, searchDay - spentToday.searches),
-    Math.max(0, visitCeiling(searchDay, pace) - spentToday.searches)
-  );
+
+  /**
+   * Searches are paced by the day, not by the visit, and that is deliberate.
+   *
+   * Profiles are cut into visit-sized shares because volume inside one burst is
+   * what the anti-scraping detector reads. Searches are not that: LinkedIn
+   * pools them by the MONTH, and a person researching a market runs several in
+   * one sitting rather than two an hour.
+   *
+   * Slicing them per visit had a cost nobody had measured. A keyword source
+   * holds three queries and searches each twice, so it costs six, while a
+   * quarter of a free account's nine-a-day is two. The best source on a live
+   * agent, 23 leads and 10 of them good, could not fit into a single visit and
+   * silently stopped running. The day and the month still bound this; only the
+   * arbitrary intra-day slice is gone.
+   */
+  const searches = Math.max(0, searchDay - spentToday.searches);
 
   if (profileDay <= 0) {
     return { ok: false, profiles: 0, searches: 0, reason: "this month's reading allowance is spent" };

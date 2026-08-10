@@ -171,3 +171,46 @@ test("what a real day of search-led sourcing costs is inside the free pool", () 
     `one source costs ${perSource} searches and a day allows ${perDay}, so nothing would ever run`
   );
 });
+
+/**
+ * The regression that locked the best source out, 2026-08-10.
+ *
+ * A keyword source carries three queries and searches each of them twice, once
+ * over posts and once over people, so it costs six. Slicing the day's nine
+ * searches into visit-sized shares left two or three per visit, and the source
+ * that had produced 23 leads and 10 good ones on a live agent could not fit
+ * into any of them. It stopped running and nothing said so.
+ */
+test("a real keyword source fits inside what a visit is allowed to search", () => {
+  const cost = searchCost("keyword", queriesIn("keyword", { queries: ["a", "b", "c"] }, 0));
+  assert.equal(cost, 6, "three queries, searched over posts and over people");
+
+  const room = roomFrom(
+    dayAllowance("free", "profiles", 0, 365, "established"),
+    dayAllowance("free", "searches", 0, 365, "established"),
+    { profiles: 0, searches: 0 },
+    { index: 0, count: 4 }
+  );
+  assert.ok(
+    room.searches >= cost,
+    `the first visit of the day allows ${room.searches} searches and the source costs ${cost}`
+  );
+});
+
+test("the day still bounds searches, and so does what has already been spent", () => {
+  const searchDay = dayAllowance("free", "searches", 0, 365, "established");
+  const room = roomFrom(400, searchDay, { profiles: 0, searches: searchDay - 1 }, { index: 0, count: 4 });
+  assert.equal(room.searches, 1, "the day is the ceiling, the visit is not");
+
+  const spent = roomFrom(400, searchDay, { profiles: 0, searches: searchDay }, { index: 3, count: 4 });
+  assert.equal(spent.searches, 0, "a day's searches once spent stay spent");
+});
+
+test("profiles are still cut into visits, because that is the shape LinkedIn reads", () => {
+  const profileDay = dayAllowance("free", "profiles", 0, 365, "established");
+  const first = roomFrom(profileDay, 9, { profiles: 0, searches: 0 }, { index: 0, count: 4 });
+  assert.ok(
+    first.profiles < profileDay,
+    "the first visit must not be allowed to read the whole day in one burst"
+  );
+});
