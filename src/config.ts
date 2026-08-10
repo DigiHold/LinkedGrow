@@ -41,6 +41,14 @@ export interface Config {
     icpKeywords: string[];
     /** The markets the customer sells into. Context for scoring, never a filter. */
     industries: string[];
+    /**
+     * Where the customer wants their buyers. Empty means anywhere.
+     *
+     * Matched against what LinkedIn prints on a card, which is a place name and
+     * not a country code, so the check is deliberately loose: a card saying
+     * "Lyon, Auvergne-Rhone-Alpes, France" matches "France".
+     */
+    locations: string[];
     intentQueries: string[];
     jobChangeQueries?: string[];
     hiringQueries?: string[];

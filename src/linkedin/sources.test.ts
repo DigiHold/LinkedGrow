@@ -8,7 +8,7 @@ import {
   unsupportedSearch,
   type SignalKind,
 } from "./sources.ts";
-import { matchesIcp, parseCard, saysWord } from "./miner.ts";
+import { matchesIcp, matchesLocation, parseCard, saysWord } from "./miner.ts";
 import type { Config } from "../config.ts";
 import { splitHeadline } from "./sourcing.ts";
 
@@ -254,4 +254,39 @@ test("word matching survives the punctuation headlines are made of", () => {
   assert.equal(saysWord("Director of Marketing", "cto"), false);
   assert.equal(saysWord("Filmmaker and editor", "maker"), false);
   assert.equal(saysWord("Reengineering the funnel", "engineer"), false);
+});
+
+/**
+ * The locations the wizard asks for, which filtered nobody.
+ *
+ * `a.locations` was read in exactly one place: to write "You are Maria, based
+ * in Montreux" into the message prompts. That is the SENDER's location. No
+ * prospect was ever dropped for being on the wrong continent, so an agent aimed
+ * at France claimed founders in Bangalore and Sofia, and the customer read that
+ * as bad targeting because it is.
+ */
+test("somebody outside the chosen places is dropped", () => {
+  const france = ["France", "Paris"];
+  assert.equal(matchesLocation(france, "Lyon, Auvergne-Rhone-Alpes, France"), true);
+  assert.equal(matchesLocation(france, "Greater Paris Metropolitan Region"), true);
+  assert.equal(matchesLocation(france, "Bengaluru, Karnataka, India"), false);
+  assert.equal(matchesLocation(france, "Sofia, Sofia City, Bulgaria"), false);
+});
+
+test("naming no place means anywhere, which is the default", () => {
+  assert.equal(matchesLocation([], "Bengaluru, Karnataka, India"), true);
+  assert.equal(matchesLocation([], null), true);
+});
+
+test("a card with no place on it still passes", () => {
+  // Reaction and comment rows carry no location at all. Dropping everybody
+  // LinkedIn happened not to label would throw away most of the pipeline to
+  // enforce a preference.
+  assert.equal(matchesLocation(["France"], null), true);
+  assert.equal(matchesLocation(["France"], ""), true);
+  assert.equal(matchesLocation(["France"], "   "), true);
+});
+
+test("a one-letter place never matches everything by accident", () => {
+  assert.equal(matchesLocation(["F"], "Bengaluru, Karnataka, India"), false);
 });

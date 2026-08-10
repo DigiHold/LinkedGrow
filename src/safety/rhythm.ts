@@ -143,7 +143,20 @@ export function localClock(
  * on purpose: a profile that has never missed a single day in a year is a
  * profile that nobody is sitting behind.
  */
-function visitCount(rnd: () => number, weekday: number): number {
+function visitCount(rnd: () => number, weekday: number, chosen = false): number {
+  /**
+   * A day the customer ticked is a working day, whatever our model thinks.
+   *
+   * The weekend rules below are a guess about what a normal account looks like,
+   * and a guess must not override somebody who has told us. Once they have
+   * picked their days, every one of them gets a full day's rhythm, including
+   * Saturday and Sunday.
+   */
+  if (chosen) {
+    if (rnd() < 0.07) return 0; // roughly one working day a month, off entirely
+    return 3 + Math.floor(rnd() * 3);
+  }
+
   // Sunday off, always. Nicolas's call on 2026-08-08, and it is what a business
   // account looks like anyway: silent on a Sunday is the normal shape, not a
   // suspicious one.
@@ -177,32 +190,102 @@ function shuffled(rnd: () => number, n: number): number[] {
  * is a plan nobody can check, and this one has to be checkable: it is the
  * difference between an account that survives and the account that did not.
  */
-export function dayPlan(accountId: string, day: string, weekday: number): Visit[] {
+export function dayPlan(
+  accountId: string,
+  day: string,
+  weekday: number,
+  /**
+   * The window the customer chose, in ISO weekdays and minutes from midnight.
+   *
+   * Omitted means the built-in shape, which is what every caller passed before
+   * this existed and what the tests below still use. Given, it wins: the days
+   * they ticked are the days the agent works, and the hours they set are the
+   * hours it reads in.
+   */
+  window?: Window
+): Visit[] {
   const rnd = rng(seedOf(`${accountId}:${day}`));
-  const count = visitCount(rnd, weekday);
+
+  /**
+   * Their days, not ours.
+   *
+   * The bands and the weekday rule below are a model of when a person opens
+   * LinkedIn, and it was applied to everybody. A customer who ticked Monday and
+   * Tuesday still had an agent browsing on the other five, and one who ticked
+   * Sunday got nothing at all, because the model said Sunday is silent. Both
+   * are settings on their screen, so both decide.
+   */
+  if (window?.days?.length && !window.days.includes(weekday)) return [];
+
+  const bands = bandsWithin(window);
+  if (bands.length === 0) return [];
+
+  const count = Math.min(visitCount(rnd, weekday, Boolean(window?.days?.length)), bands.length * 2);
   if (count === 0) return [];
 
   // More visits than bands means one band is used twice, which is what a busy
   // day looks like anyway. The gap rule below keeps the pair apart.
-  const order = shuffled(rnd, BANDS.length);
+  const order = shuffled(rnd, bands.length);
   const drawn: Visit[] = [];
   for (let i = 0; i < count; i += 1) {
-    const band = BANDS[order[i % order.length] as number] as Visit;
+    const band = bands[order[i % order.length] as number] as Visit;
+    const room = band.endMin - band.startMin;
     const start = between(rnd, band.startMin, band.endMin);
-    drawn.push({ startMin: start, endMin: start + between(rnd, MIN_LENGTH, MAX_LENGTH + 1) });
+    // A narrow window still gets a visit, a short one, rather than nothing. A
+    // customer who opened a single hour asked for an hour of work, not silence.
+    const longest = Math.max(1, Math.min(MAX_LENGTH, room));
+    const shortest = Math.min(MIN_LENGTH, longest);
+    drawn.push({ startMin: start, endMin: start + between(rnd, shortest, longest + 1) });
   }
   drawn.sort((a, b) => a.startMin - b.startMin);
+
+  // Nothing may run past the customer's own closing time, and nothing may run
+  // past the absolute backstop whatever they set. An account reading at 1am is
+  // its own signal, and no setting should be able to ask for that.
+  const ceiling = Math.min(LAST_MINUTE, window?.endMin ?? LAST_MINUTE);
 
   const plan: Visit[] = [];
   let previousEnd = -Infinity;
   for (const visit of drawn) {
     const start = Math.max(visit.startMin, previousEnd + MIN_GAP);
     const end = start + (visit.endMin - visit.startMin);
-    if (end > LAST_MINUTE) break; // Pushed past the evening, so it simply does not happen.
+    if (end > ceiling) break; // Pushed past closing, so it simply does not happen.
     plan.push({ startMin: start, endMin: end });
     previousEnd = end;
   }
   return plan;
+}
+
+/** The window a customer set, in ISO weekdays and minutes from local midnight. */
+export interface Window {
+  days?: number[];
+  startMin?: number;
+  endMin?: number;
+}
+
+/**
+ * The bands, cut down to the hours the customer actually opened.
+ *
+ * A band that falls entirely outside the window disappears. One that straddles
+ * an edge keeps the part inside it, so somebody working 09:00 to 12:00 gets the
+ * morning band shortened rather than dropped, and never a visit at 08:10.
+ *
+ * A window narrower than every band still yields one band covering it, because
+ * the alternative is an agent that silently never runs for a customer who set a
+ * two-hour day.
+ */
+export function bandsWithin(window?: Window): Visit[] {
+  const from = window?.startMin ?? 0;
+  const to = Math.min(window?.endMin ?? LAST_MINUTE, LAST_MINUTE);
+  if (to <= from) return [];
+  if (!window?.startMin && !window?.endMin) return [...BANDS];
+
+  const cut = BANDS.map((b) => ({
+    startMin: Math.max(b.startMin, from),
+    endMin: Math.min(b.endMin, to),
+  })).filter((b) => b.endMin - b.startMin >= 10);
+
+  return cut.length > 0 ? cut : [{ startMin: from, endMin: to }];
 }
 
 /**
@@ -215,7 +298,7 @@ export function dayPlan(accountId: string, day: string, weekday: number): Visit[
 export function currentVisit(
   accountId: string,
   tz: string,
-  opts: { firstRun?: boolean } = {},
+  opts: { firstRun?: boolean; window?: Window } = {},
   at: Date = new Date()
 ): CurrentVisit | null {
   const clock = localClock(tz, at);
@@ -238,16 +321,22 @@ export function currentVisit(
     };
   }
 
-  const plan = dayPlan(accountId, clock.day, clock.weekday);
+  const plan = dayPlan(accountId, clock.day, clock.weekday, opts.window);
   const index = plan.findIndex((v) => clock.minutes >= v.startMin && clock.minutes < v.endMin);
   if (index < 0) return null;
   return { ...(plan[index] as Visit), index, count: plan.length };
 }
 
 /** When the account next opens LinkedIn, for the log and for the dashboard. */
-export function nextVisit(accountId: string, tz: string, at: Date = new Date()): Visit | null {
+export function nextVisit(
+  accountId: string,
+  tz: string,
+  at: Date = new Date(),
+  window?: Window
+): Visit | null {
   const clock = localClock(tz, at);
-  const today = dayPlan(accountId, clock.day, clock.weekday).find(
+  // The same window, or this reports a time the agent will never turn up at.
+  const today = dayPlan(accountId, clock.day, clock.weekday, window).find(
     (v) => v.startMin > clock.minutes
   );
   return today ?? null;

@@ -53,16 +53,31 @@ function splitLines(value: unknown): string[] {
  * otherwise. An empty or broken value falls back to the default rather than to no days at all,
  * because an agent that never runs is the worst reading of a bad input.
  */
+/**
+ * Sunday is 0 when the customer ticks it and 7 everywhere it is read.
+ *
+ * The wizard maps DAY_NAMES starting at "Sun", so the index it stores is the
+ * JavaScript convention: Sunday 0, Saturday 6. Both clocks in the worker return
+ * the ISO one: Monday 1, Sunday 7. Monday to Saturday happen to agree, so
+ * nothing ever looked wrong, and Sunday could never match anything: a customer
+ * who ticked it got an agent that stayed silent all day and never said why.
+ *
+ * Normalised here, once, so every consumer downstream can assume ISO.
+ */
 function parseDays(value: unknown): number[] {
+  const toIso = (n: number): number => (n === 0 ? 7 : n);
   const parsed = parseList(value)
     .map(Number)
-    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 7)
+    .map(toIso);
   if (parsed.length) return [...new Set(parsed)].sort();
   if (typeof value === "string") {
     try {
       const raw = JSON.parse(value) as unknown;
       if (Array.isArray(raw)) {
-        const nums = raw.filter((n): n is number => Number.isInteger(n) && n >= 0 && n <= 6);
+        const nums = raw
+          .filter((n): n is number => Number.isInteger(n) && n >= 0 && n <= 7)
+          .map((n) => (n === 0 ? 7 : n));
         if (nums.length) return [...new Set(nums)].sort();
       }
     } catch {
@@ -203,6 +218,17 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
          */
         icpKeywords: parseList(r.job_roles),
         industries: parseList(r.industries),
+        /**
+         * Where the customer wants their buyers, which filtered nobody.
+         *
+         * `a.locations` was selected, and used in exactly one place: to write
+         * "You are Maria, based in Montreux" into the message prompts. It is
+         * the SENDER's location. No prospect was ever dropped for being on the
+         * wrong continent, so an agent aimed at France was claiming people in
+         * Bangalore and Sofia, and the customer read that as bad targeting
+         * because it is.
+         */
+        locations: parseList(r.locations),
         intentQueries: [],
       },
       product: {
@@ -223,7 +249,20 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       country: String(r.country ?? ""),
       tier: String(r.tier ?? "free"),
       maturity: String(r.maturity ?? "new"),
-      timezone: timezoneForCountry(String(r.country ?? "")),
+      /**
+       * The timezone the customer chose, not the one their passport implies.
+       *
+       * This read timezoneForCountry(country), which maps a whole country to
+       * one zone: every US account got America/New_York. An agent set up in Los
+       * Angeles therefore woke, worked and closed three hours early, and its
+       * daily reading budget reset in the middle of its own afternoon. The
+       * browser fingerprint already used the agent's own setting, so the two
+       * halves of the same account disagreed about what time it was.
+       *
+       * The country stays the fallback, for a row saved before the field
+       * existed.
+       */
+      timezone: String(r.timezone ?? "").trim() || timezoneForCountry(String(r.country ?? "")),
       accountDailyInviteCap: Number(r.account_cap ?? 8),
       agentsOnAccount: Math.max(1, Number(r.agents_on_account ?? 1)),
       lastRunAt: r.last_run_at ? new Date(Number(r.last_run_at) * 1000) : null,

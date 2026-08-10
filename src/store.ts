@@ -170,6 +170,37 @@ export async function getProspects(
 }
 
 /**
+ * Parks a written message for the customer to approve, instead of sending it.
+ *
+ * Review mode existed as a column, a tick box and a Queue tab, and nothing ever
+ * filled the table behind them: `enqueue()` was the only writer of agent_queue
+ * and nobody called it. So the tab was permanently empty and every message went
+ * out unread by the person who had asked to read them all.
+ *
+ * `pending` is the state the dashboard's Approve button clears. Anything the
+ * customer never approves simply stays there, which is the right failure: an
+ * unapproved message is one that was never meant to go.
+ */
+export async function holdForApproval(
+  ctx: DB,
+  p: ProspectRow,
+  step: string,
+  body: string
+): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  await db().execute({
+    sql: `INSERT INTO agent_queue
+            (id, workspace_id, agent_id, lead_id, action, scheduled_at, message_body,
+             state, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+    args: [
+      crypto.randomUUID(), ctx.workspaceId, ctx.agentId, uuidFor(p.id),
+      step, now, body, now, now,
+    ],
+  });
+}
+
+/**
  * What their reply meant, stored so the learning pass can tell them apart.
  *
  * Every reply used to count the same. On a live agent six people had written

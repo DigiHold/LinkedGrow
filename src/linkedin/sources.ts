@@ -7,7 +7,7 @@ import { actionDelayMs } from "../safety/envelope.ts";
 import type { DB } from "../store.ts";
 import { judgeAsking, judgeIcpFit } from "../messages/generate.ts";
 import { AGENT } from "./agent-meta.ts";
-import { mine, type Engager, matchesIcp, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile } from "./miner.ts";
+import { mine, type Engager, matchesIcp, matchesLocation, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile } from "./miner.ts";
 
 /**
  * Lead sources beyond competitor engagement. Each one reads a different intent signal, all through
@@ -155,6 +155,15 @@ export function toViewer(row: { href: string; text: string }): Engager | null {
     fullName,
     firstName: fullName.split(/\s+/)[0] ?? fullName,
     headline: lines[1] ?? "",
+    /**
+     * The third line of a people-search row, which is the place.
+     *
+     * "Lyon, Auvergne-Rhone-Alpes, France", "Greater Paris Metropolitan
+     * Region", "Zurich, Switzerland". Profile-viewer rows do not carry one and
+     * neither do reaction rows, so this is often absent, and matchesLocation
+     * treats absent as passing rather than throwing the person away.
+     */
+    location: lines[2] ?? undefined,
     source: "viewer",
   };
 }
@@ -280,6 +289,7 @@ export async function minePeople(
 
     let kept = 0;
     let offIcp = 0;
+    let offPlace = 0;
     for (const row of rows) {
       const lead = toViewer(row);
       if (!lead) continue;
@@ -287,10 +297,16 @@ export async function minePeople(
         offIcp++;
         continue;
       }
+      // Where the customer said their buyers are. A people-search row is the one
+      // card that carries a place, and it is also the widest door the agent has.
+      if (!matchesLocation(cfg.leads.locations ?? [], lead.location)) {
+        offPlace++;
+        continue;
+      }
       found.push({ ...lead, source: `search:${query}`, avatarUrl: row.photo || undefined });
       if (++kept >= maxPerQuery) break;
     }
-    log(`  ${kept} kept for "${query}" (${rows.length} people, ${offIcp} off-ICP).`);
+    log(`  ${kept} kept for "${query}" (${rows.length} people, ${offIcp} off-ICP, ${offPlace} off-location).`);
     await sleep(actionDelayMs(cfg));
   }
 

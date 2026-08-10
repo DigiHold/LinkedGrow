@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { clockLabel, currentVisit, dayPlan, localClock, nextVisit } from "./rhythm.ts";
+import { bandsWithin, clockLabel, currentVisit, dayPlan, localClock, nextVisit } from "./rhythm.ts";
 
 /**
  * The day that got an account restricted, written down as tests.
@@ -167,4 +167,84 @@ test("the next visit is readable by a person", () => {
   const at = new Date("2026-06-10T04:00:00Z");
   const next = nextVisit(ACCOUNT, "Europe/Paris", at);
   if (next) assert.match(clockLabel(next.startMin), /^\d{2}:\d{2}$/);
+});
+
+/**
+ * The days and hours on the customer's own screen, which the plan ignored.
+ *
+ * currentVisit received the account id, the timezone and nothing else, so the
+ * bands and the weekend rule below were a model of when a person opens LinkedIn
+ * applied to every customer alike. Somebody who ticked two days had an agent
+ * browsing seven of them, somebody who set 09:00 to 17:00 had it reading at
+ * 08:10 and at 21:00, and somebody who ticked Sunday got silence with no
+ * explanation. All three are settings the wizard asks for and the dashboard
+ * prints back at them.
+ */
+test("a day the customer did not tick has no visits at all", () => {
+  const mondayOnly = { days: [1], startMin: 9 * 60, endMin: 18 * 60 };
+  assert.equal(dayPlan("acct", "2026-08-10", 1, mondayOnly).length > 0, true, "Monday works");
+  for (const weekday of [2, 3, 4, 5, 6, 7]) {
+    assert.deepEqual(dayPlan("acct", "2026-08-11", weekday, mondayOnly), [], `weekday ${weekday}`);
+  }
+});
+
+test("Sunday works when they ask for it, which it never could before", () => {
+  // Two separate causes made this impossible: the wizard stores Sunday as 0
+  // while both clocks return 7, and visitCount returned 0 for Sunday outright.
+  const sundays = { days: [7], startMin: 9 * 60, endMin: 18 * 60 };
+  assert.ok(dayPlan("acct", "2026-08-09", 7, sundays).length > 0);
+});
+
+test("Saturday is a full day when it is ticked, not a lighter one", () => {
+  const everyDay = { days: [1, 2, 3, 4, 5, 6, 7], startMin: 8 * 60, endMin: 22 * 60 };
+  const plan = dayPlan("acct", "2026-08-15", 6, everyDay);
+  assert.ok(plan.length >= 3, `a chosen Saturday got ${plan.length} visits`);
+});
+
+test("no visit starts before opening or runs past closing", () => {
+  const nineToFive = { days: [1, 2, 3, 4, 5], startMin: 9 * 60, endMin: 17 * 60 };
+  for (const day of ["2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13"]) {
+    for (const visit of dayPlan("acct", day, 1, nineToFive)) {
+      assert.ok(visit.startMin >= 9 * 60, `${day} started at ${visit.startMin}`);
+      assert.ok(visit.endMin <= 17 * 60, `${day} ran to ${visit.endMin}`);
+    }
+  }
+});
+
+test("a two-hour day still gets worked, rather than silently never running", () => {
+  // Every band falls outside a window this narrow, and dropping them all would
+  // leave an agent that never runs for somebody who asked for two hours.
+  const narrow = { days: [1], startMin: 13 * 60, endMin: 15 * 60 };
+  const plan = dayPlan("acct", "2026-08-10", 1, narrow);
+  assert.ok(plan.length > 0, "a narrow window produced no visits at all");
+  for (const visit of plan) {
+    assert.ok(visit.startMin >= 13 * 60 && visit.endMin <= 15 * 60);
+  }
+});
+
+test("the absolute backstop still wins over any setting", () => {
+  // Nothing a customer can type should put their account on LinkedIn at 1am.
+  const allNight = { days: [1], startMin: 0, endMin: 24 * 60 };
+  for (const visit of dayPlan("acct", "2026-08-10", 1, allNight)) {
+    assert.ok(visit.endMin <= 22 * 60 + 30, `a visit ran to ${visit.endMin}`);
+  }
+});
+
+test("no window at all keeps the built-in shape", () => {
+  // Every caller passed nothing before this existed, and an agent with no hours
+  // saved must keep working exactly as it did.
+  assert.deepEqual(dayPlan("acct", "2026-08-09", 7), [], "Sunday is still off by default");
+  assert.ok(dayPlan("acct", "2026-08-10", 1).length > 0);
+});
+
+test("the bands are cut to the window rather than dropped", () => {
+  const morning = bandsWithin({ startMin: 9 * 60, endMin: 12 * 60 });
+  assert.ok(morning.length >= 1);
+  for (const band of morning) {
+    assert.ok(band.startMin >= 9 * 60 && band.endMin <= 12 * 60);
+  }
+  // A closing time later than the backstop is clamped to the backstop.
+  for (const band of bandsWithin({ startMin: 0, endMin: 24 * 60 })) {
+    assert.ok(band.endMin <= 22 * 60 + 30);
+  }
 });

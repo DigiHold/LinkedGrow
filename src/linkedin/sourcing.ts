@@ -331,6 +331,9 @@ async function claimAll(
       // afterwards, because these URLs expire and a lead should not lose its
       // face a week after it was found.
       avatarUrl: person.avatarUrl ?? null,
+      // Kept on the row so the customer sees where somebody is, and so the
+      // location filter has something to read on a later pass.
+      location: person.location ?? null,
       signalType: person.source ?? null,
       // The question they posted when there is one, because their own words
       // beat any sentence of ours. Otherwise the sentence built from the shape

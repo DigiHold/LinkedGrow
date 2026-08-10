@@ -22,6 +22,14 @@ export interface Engager {
   /** For intent leads, the question they posted, used to personalise the first message. */
   context?: string;
   /**
+   * Where LinkedIn says they are, when the card says at all.
+   *
+   * People-search rows carry it, reaction and comment rows do not, so this is
+   * present for the widest and loosest door and absent for the others. That is
+   * exactly where a location filter earns its keep.
+   */
+  location?: string;
+  /**
    * The face on the card, as LinkedIn served it.
    *
    * Stored as their URL first and copied into our own bucket afterwards, by the
@@ -618,6 +626,37 @@ export function saysWord(hay: string, keyword: string): boolean {
  * in the scoring prompt where they belong. They are simply no longer a way to
  * qualify a person, so they are not in this list at all any more.
  */
+/**
+ * Is this person where the customer said their buyers are.
+ *
+ * The wizard asks for locations and the answer filtered nobody: `a.locations`
+ * was read once, to write "You are Maria, based in Montreux" into the message
+ * prompts, which is the SENDER's location. An agent aimed at France was
+ * therefore claiming founders in Bangalore and Sofia, and the customer read
+ * that as bad targeting because it is.
+ *
+ * Loose on purpose. LinkedIn prints a place, not a country code: "Lyon,
+ * Auvergne-Rhone-Alpes, France", "Greater Paris Metropolitan Region", "Zurich,
+ * Switzerland". A substring is the honest match for that, and a word-boundary
+ * check would fail on the accented and hyphenated forms.
+ *
+ * Empty means anywhere, which is the default and must stay permissive: a
+ * customer who named no place has not asked to be filtered.
+ *
+ * A card with NO place on it passes. Most reaction rows carry no location at
+ * all, and dropping everybody LinkedIn happened not to label would throw away
+ * most of the pipeline to enforce a preference.
+ */
+export function matchesLocation(wanted: string[], place: string | null | undefined): boolean {
+  if (!wanted.length) return true;
+  const where = (place ?? "").trim().toLowerCase();
+  if (!where) return true;
+  return wanted.some((w) => {
+    const want = w.trim().toLowerCase();
+    return want.length > 1 && where.includes(want);
+  });
+}
+
 export function matchesIcp(
   icpKeywords: string[],
   headline: string,

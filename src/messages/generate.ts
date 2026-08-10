@@ -63,6 +63,16 @@ export async function judgeIcpFit(
     `We sell to: ${ctx.cfg.leads.icp}`,
     memory,
     ctx.companySizes.length ? `Company sizes worth having: ${ctx.companySizes.join(", ")}` : "",
+    // The markets and the places the customer named. Both were collected by the
+    // wizard and reached no judgement at all: industries were being matched
+    // against headlines as if they were job titles, and locations were used
+    // only to tell the writer where the SENDER lives.
+    ctx.cfg.leads.industries?.length
+      ? `Industries worth having: ${ctx.cfg.leads.industries.join(", ")}`
+      : "",
+    ctx.cfg.leads.locations?.length
+      ? `Where the buyers should be: ${ctx.cfg.leads.locations.join(", ")}. Somebody clearly outside this is a weaker match however good their title reads.`
+      : "",
     "",
     `Person's headline: ${headline}`,
     context ? `What they posted: ${context.slice(0, 500)}` : "",

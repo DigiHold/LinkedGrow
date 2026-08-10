@@ -18,6 +18,7 @@ import {
   setProspectReplyIntent,
   revertProspectStatus,
   recordMessage,
+  holdForApproval,
   recordInbound,
   getThread,
   countOutboundStep,
@@ -486,6 +487,32 @@ async function sendStep(
     log(`Skipping ${label(p)}: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
+  /**
+   * Review mode, which was a tick box wired to nothing.
+   *
+   * It was read in exactly one place, `enqueue()`, and `enqueue()` is called by
+   * nobody, so `agent_queue` was never written and a customer who asked to read
+   * every message before it went out had every message go out unread. On their
+   * own LinkedIn account, under their own name. It is the worst kind of dead
+   * setting: not a feature that quietly does nothing, a promise of control that
+   * is quietly broken.
+   *
+   * The message is written first and held second, on purpose. What they are
+   * approving is the real text, generated exactly as it would have been, so
+   * approving it sends that and nothing is written twice.
+   */
+  if (db.reviewMode) {
+    await holdForApproval(db, p, step, message.body);
+    /* Not recorded on the thread: recordMessage drops anything unsent, and a
+       held draft is exactly that. It lives in the queue until somebody says so. */
+    await setProspectStatus(db, p.id, nextStatus, message.angle);
+    await deps.notify(
+      `${label(p)}: a ${step} is written and waiting for you to approve it.`
+    );
+    log(`${step} to ${label(p)} is held for review rather than sent.`);
+    return true;
+  }
+
   await announce(db, "sending a message to", subjectOf(p));
   const sent = await deps.actions.sendDm(p, message.body);
   if (!sent) {

@@ -95,8 +95,22 @@ async function runAgent(ctx: AgentContext): Promise<void> {
    * all: not to read, and not to check whether there is anything to write.
    * Checking whether there was anything to write was half of those passes.
    */
+  /**
+   * The rhythm, inside the days and hours the customer actually chose.
+   *
+   * This passed nothing but the account id, so the plan came from a built-in
+   * model of when a person opens LinkedIn and every customer got the same one.
+   * Somebody who ticked two days had an agent browsing seven, somebody who set
+   * 09:00 to 17:00 had it reading at 08:10 and 21:00, and somebody who ticked
+   * Sunday got silence. All three are settings on their screen.
+   */
   const visit = currentVisit(ctx.linkedinAccountId, ctx.timezone, {
     firstRun: ctx.lastRunAt === null,
+    window: {
+      days: ctx.cfg.businessHours.days,
+      startMin: ctx.cfg.businessHours.startHour * 60,
+      endMin: ctx.cfg.businessHours.endHour * 60,
+    },
   });
   if (!visit) return;
 
