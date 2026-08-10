@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseScore } from "./ai.ts";
+import { cleanReason, parseScore } from "./ai.ts";
 
 /**
  * The shapes the scorer actually answered in.
@@ -51,4 +51,53 @@ test("nothing readable throws, so the lead is scored again rather than stored as
 
 test("a score above 100 is clamped rather than trusted", () => {
   assert.equal(parseScore("640|Very strong fit").score, 100);
+});
+
+/**
+ * The reason a customer reads, with the echoed template cut off.
+ *
+ * Ten leads on a live account show this in the queue under "Why this person":
+ *
+ *   reason
+ *
+ *   15|CSO role at established newsletter and CMO title indicate...
+ *
+ * They were written by a version of the parser that split on the FIRST pipe, so
+ * parseInt("SCORE") was NaN and the whole tail became the reason. The parser
+ * does not produce that any more; these are the guard in front of the screen,
+ * because the next model quirk should cost a log line rather than a column of
+ * nonsense in front of a paying customer.
+ */
+test("an echoed template never reaches the customer", () => {
+  assert.equal(
+    cleanReason("reason\n\n15|CSO role at an established newsletter."),
+    "CSO role at an established newsletter."
+  );
+});
+
+test("a bare SCORE opener is cut even with no number to anchor on", () => {
+  assert.equal(cleanReason("SCORE| Founder at a small SaaS."), "Founder at a small SaaS.");
+  assert.equal(cleanReason("reason: Founder at a small SaaS."), "Founder at a small SaaS.");
+});
+
+test("a clean reason is returned untouched", () => {
+  const clean = "Founder at a small SaaS who buys their own tools.";
+  assert.equal(cleanReason(clean), clean);
+});
+
+test("a pipe inside a real sentence survives, because it is not an echo", () => {
+  const withPipe = "Runs Acme | Payments for salons, so a buyer rather than a rival.";
+  assert.equal(cleanReason(withPipe), withPipe);
+});
+
+test("an empty reason says so rather than showing nothing", () => {
+  assert.equal(cleanReason(""), "No reason given");
+  assert.equal(cleanReason("   \n  "), "No reason given");
+  assert.equal(cleanReason("SCORE|"), "No reason given");
+});
+
+test("the parser and the guard agree on a real answer", () => {
+  const parsed = parseScore("SCORE|reason\n\n78|Co-founder with product architecture background.");
+  assert.equal(parsed.score, 78);
+  assert.equal(parsed.reason, "Co-founder with product architecture background.");
 });

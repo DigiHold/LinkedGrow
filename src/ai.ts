@@ -402,7 +402,7 @@ export function parseScore(answer: string): { score: number; reason: string } {
   const best = matches[matches.length - 1];
   if (best) {
     const score = Math.max(0, Math.min(100, Number(best[1])));
-    return { score, reason: (best[2] ?? "").trim() || "No reason given" };
+    return { score, reason: cleanReason(best[2] ?? "") };
   }
   // No pipe anywhere. A bare number is still an answer; anything else is not,
   // and a lead left unscored is picked up again rather than stored as a zero.
@@ -411,6 +411,32 @@ export function parseScore(answer: string): { score: number; reason: string } {
     return { score: Math.max(0, Math.min(100, Number(bare[1]))), reason: "No reason given" };
   }
   throw new Error(`The scorer answered in a shape nothing could read: ${answer.slice(0, 120)}`);
+}
+
+/**
+ * The reason as a person should read it, with any echoed template cut off.
+ *
+ * A version of the parser above split on the FIRST pipe, so when the model
+ * repeated its instructions before answering, parseInt("SCORE") was NaN and the
+ * whole tail became the reason. Ten leads on a live account still show
+ * "reason\n\n15|CSO role at established newsletter..." in the customer's
+ * queue under "Why this person", and one of them is a person who has since
+ * replied.
+ *
+ * The parser no longer produces that. This is the guard in front of the screen:
+ * whatever shape an answer arrives in, anything before the last "number pipe"
+ * is scaffolding and never the reason. Cheap, and it means a future model quirk
+ * costs a log line rather than a column of nonsense in front of a customer.
+ */
+export function cleanReason(raw: string): string {
+  let reason = (raw ?? "").trim();
+  // An echoed template ends where the real answer begins, at the last pipe that
+  // has a number in front of it.
+  const echo = /^[\s\S]*?(?:^|\n)\s*\d{1,3}\s*\|\s*/.exec(reason);
+  if (echo) reason = reason.slice(echo[0].length).trim();
+  // A bare "SCORE|" or "reason|" opener, with no number to anchor on.
+  reason = reason.replace(/^(score|reason|answer|r(?:é|e)ponse)\s*[:|]\s*/i, "").trim();
+  return reason || "No reason given";
 }
 
 /** Logged rather than thrown, because a metering failure must not stop the run twice. */
