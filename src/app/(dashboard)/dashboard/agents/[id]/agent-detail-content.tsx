@@ -306,8 +306,10 @@ const SOURCE_KIND: Record<string, { badge: string; what: string }> = {
   keyword: { badge: "K", what: "People posting about a subject" },
   market: { badge: "M", what: "People posting about a subject" },
   linkedin_search: { badge: "S", what: "A LinkedIn search you saved" },
-  buying_event: { badge: "J", what: "New role or hiring, under 90 days" },
+  buying_event: { badge: "J", what: "New role, hiring, funding or an event" },
   brand: { badge: "V", what: "People who viewed your profile" },
+  own_posts: { badge: "P", what: "People who engage with your own posts" },
+  group: { badge: "G", what: "A LinkedIn group you belong to" },
   csv: { badge: "U", what: "A list you uploaded" },
 };
 
@@ -922,6 +924,7 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                 })}
               </ul>
             )}
+            <ImportList agentId={agentId} onDone={load} />
           </div>
         </div>
       )}
@@ -1146,6 +1149,95 @@ function ActivityChart({ days }: { days: ChartDay[] }) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Uploading a list the customer already has.
+ *
+ * `csv` has been a source type since the agents shipped: it is in the schema,
+ * in the create-agent allowlist, and the badge above it reads "A list you
+ * uploaded". There has never been anywhere to upload one. The worker reaches
+ * that source type and skips it, correctly, because nothing on LinkedIn needs
+ * reading; the rows are the data.
+ *
+ * The file is read in the browser and posted as text rather than as a
+ * multipart upload, because it is a few hundred kilobytes of addresses and a
+ * second endpoint shape for that is not worth having.
+ *
+ * The result is always spelled out. "Imported 40 of your 300" with no
+ * explanation is how somebody concludes the product is broken, when in fact the
+ * other 260 were already in the workspace.
+ */
+function ImportList({ agentId, onDone }: { agentId: string; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [said, setSaid] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    setBusy(true);
+    setSaid(null);
+    setFailed(null);
+    try {
+      const csv = await file.text();
+      const res = await fetch(`/api/agents/${agentId}/leads/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv, name: file.name.replace(/\.csv$/i, "").slice(0, 80) }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFailed(json.error ?? "That file could not be read.");
+        return;
+      }
+      const parts = [`${json.imported} added`];
+      if (json.alreadyKnown > 0) parts.push(`${json.alreadyKnown} you already had`);
+      if (json.unreadable > 0) parts.push(`${json.unreadable} rows with no LinkedIn address`);
+      setSaid(`${parts.join(", ")}. They are scored on the agent's next run.`);
+      onDone();
+    } catch {
+      setFailed("That file could not be read.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="border-t border-border px-4 py-3.5">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <b className="block text-[13px] font-semibold text-slate-900 dark:text-white">
+            Upload a list you already have
+          </b>
+          <small className="text-xs text-slate-500 dark:text-slate-400">
+            A CSV with a column of LinkedIn profile addresses. They go through the same
+            scoring and the same queue as anybody the agent finds itself.
+          </small>
+        </div>
+        <label
+          className={cn(
+            "flex-none cursor-pointer rounded-lg border border-border px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-blue-500 hover:text-blue-600 dark:text-slate-300",
+            busy && "pointer-events-none opacity-50"
+          )}
+        >
+          {busy ? "Reading" : "Choose a file"}
+          <input
+            type="file"
+            accept=".csv,text/csv,text/plain"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void upload(file);
+            }}
+          />
+        </label>
+      </div>
+      {said && (
+        <p className="mt-2.5 text-xs text-emerald-600 dark:text-emerald-400">{said}</p>
+      )}
+      {failed && <p className="mt-2.5 text-xs text-red-600 dark:text-red-400">{failed}</p>}
     </div>
   );
 }

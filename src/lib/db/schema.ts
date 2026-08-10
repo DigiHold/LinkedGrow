@@ -1240,6 +1240,12 @@ export const agentSources = sqliteTable("agent_sources", {
       "market",
       "competitor",
       "brand",
+      // The people who engage with the customer's own posts. The warmest room
+      // they have, free to read, and created for every agent automatically by
+      // the worker rather than left to the wizard.
+      "own_posts",
+      // A LinkedIn group the account has joined, read as a feed.
+      "group",
       "buying_event",
       "linkedin_search",
       "csv",
@@ -1256,8 +1262,10 @@ export const agentSources = sqliteTable("agent_sources", {
   goodLeads: integer("good_leads").notNull().default(0),
   /** How many times this source has been mined, so yield is per pass. */
   passes: integer("passes").notNull().default(0),
-  /** Typed by the customer, or written by the agent from what worked. */
-  origin: text("origin", { enum: ["customer", "learned"] }).notNull().default("customer"),
+  /** Typed by the customer, written by the agent from what worked, or always there. */
+  origin: text("origin", { enum: ["customer", "learned", "built-in"] })
+    .notNull()
+    .default("customer"),
   /** The source this one was learned from, when it was learned. */
   parentId: text("parent_id"),
   /** Set when the agent stopped mining it, with the reason on the next line. */
@@ -1339,6 +1347,37 @@ export const agentLeads = sqliteTable("agent_leads", {
     onDelete: "set null",
   }),
   assignedAt: integer("assigned_at", { mode: "timestamp" }),
+  /**
+   * What the last reply from this person actually meant.
+   *
+   * Separate from the funnel, because the funnel answers "how far along are
+   * they" and this answers "was that worth anything". They disagree constantly:
+   * "not interested" and "what does it cost" both end the sequence, and only
+   * one of them is a lead. Every reply used to count the same in the worker's
+   * source ranking, which taught one live agent to hunt its customer's rival.
+   */
+  replyIntent: text("reply_intent", {
+    enum: ["interested", "neutral", "refused"],
+  }),
+  /**
+   * How many DIFFERENT kinds of signal this person has produced, and which.
+   *
+   * Somebody who commented under a rival, came up in a search for the role, and
+   * then reacted to another rival is visibly in the market. The claim used to
+   * drop the second and third sightings entirely.
+   */
+  signalHits: integer("signal_hits").notNull().default(1),
+  signalKinds: text("signal_kinds"),
+  /**
+   * The verdict of the only judge that counts, set by the customer.
+   *
+   * A reply is not a purchase and a score is not a customer, so without this
+   * column the agent can only ever learn from proxies. It is the single input
+   * that makes "after two months the leads look like the ones who buy" a
+   * promise rather than a hope.
+   */
+  outcome: text("outcome", { enum: ["meeting", "customer", "not_a_fit"] }),
+  outcomeAt: integer("outcome_at", { mode: "timestamp" }),
   stepAt: integer("step_at", { mode: "timestamp" }),
   foundAt: integer("found_at", { mode: "timestamp" }).notNull(),
   rejectedAt: integer("rejected_at", { mode: "timestamp" }),

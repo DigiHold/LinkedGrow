@@ -28,9 +28,13 @@ import { Avatar, LinkedInGlyph, MatchBar } from "@/components/dashboard/agents/l
 
 type Message = { from: "in" | "out"; body: string; at: string };
 
+type Outcome = "meeting" | "customer" | "not_a_fit";
+
 type Thread = {
   leadId: string;
+  agentId: string;
   agentName: string;
+  outcome: Outcome | null;
   unread: boolean;
   repliedAt: string;
   lastReply: string;
@@ -119,6 +123,7 @@ export function RepliesContent() {
   const [open, setOpen] = useState<string | null>(null);
   /** The conversation the confirm modal is asking about, if any. */
   const [takingOver, setTakingOver] = useState<string | null>(null);
+  const [savingOutcome, setSavingOutcome] = useState<string | null>(null);
   const [handing, setHanding] = useState(false);
 
   const load = useCallback(() => {
@@ -188,6 +193,34 @@ export function RepliesContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ leadId, action: "assign", assignee }),
     }).catch(() => load());
+  }
+
+  /**
+   * What actually came of this conversation, in one press.
+   *
+   * The only signal in the product that is not a proxy. The agent can see a
+   * score it guessed, an invitation somebody accepted and a reply somebody
+   * typed, and none of those is a customer: on a live agent four of the six
+   * people who replied were a coach, a newsletter, a bootcamp and a direct
+   * competitor. Without this it learns to find people who answer messages,
+   * which is a different population from people who buy.
+   *
+   * The worker's source ranking weighs a customer at 60 and a meeting at 25
+   * against 1 for a headline a model liked, so one press here moves the agent's
+   * aim more than a week of mining does.
+   */
+  async function setOutcome(thread: Thread, outcome: Outcome) {
+    if (thread.outcome === outcome) return;
+    setSavingOutcome(thread.leadId);
+    setThreads((all) =>
+      (all ?? []).map((t) => (t.leadId === thread.leadId ? { ...t, outcome } : t))
+    );
+    await fetch(`/api/agents/${thread.agentId}/leads`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "outcome", leadId: thread.leadId, outcome }),
+    }).catch(() => load());
+    setSavingOutcome(null);
   }
 
   /** Opening a conversation is reading it. */
@@ -371,6 +404,11 @@ export function RepliesContent() {
                       </li>
                     ))}
                   </ol>
+                  <OutcomeRow
+                    thread={thread}
+                    busy={savingOutcome === thread.leadId}
+                    onPick={(outcome) => void setOutcome(thread, outcome)}
+                  />
                   <div className="mt-4 flex flex-wrap gap-2.5">
                     <a
                       href={thread.profileUrl}
@@ -435,5 +473,74 @@ export function RepliesContent() {
         title="Take this conversation over?"
       />
     </PageShell>
+  );
+}
+
+/**
+ * How it went, asked once, where the answer is already in front of them.
+ *
+ * Deliberately here rather than on the Leads tab. Somebody reading this thread
+ * has just seen how the conversation ended, so the question costs them nothing;
+ * asking it in a list of two hundred names would be asking them to remember.
+ *
+ * Three answers and no fourth. "Maybe" teaches the agent nothing, and an
+ * optional free-text box would be a field nobody fills. The wording is what the
+ * customer would say out loud, not the funnel's vocabulary.
+ */
+const OUTCOMES: Array<{ id: Outcome; label: string; tone: string }> = [
+  {
+    id: "meeting",
+    label: "Booked a call",
+    tone: "border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
+  },
+  {
+    id: "customer",
+    label: "Became a client",
+    tone: "border-emerald-600/50 bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200",
+  },
+  {
+    id: "not_a_fit",
+    label: "Not a fit",
+    tone: "border-slate-400/40 bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200",
+  },
+];
+
+function OutcomeRow({
+  thread,
+  busy,
+  onPick,
+}: {
+  thread: Thread;
+  busy: boolean;
+  onPick: (outcome: Outcome) => void;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-white px-3.5 py-3 dark:bg-white/5">
+      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+        {thread.outcome
+          ? "You told the agent how this one went."
+          : "How did this one go? It is how your agent learns who actually buys."}
+      </span>
+      <span className="flex-1" />
+      {OUTCOMES.map((option) => {
+        const picked = thread.outcome === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            disabled={busy}
+            onClick={() => onPick(option.id)}
+            className={cn(
+              "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50",
+              picked
+                ? option.tone
+                : "border-border text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:text-slate-300 dark:hover:border-white/20 dark:hover:bg-white/5"
+            )}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

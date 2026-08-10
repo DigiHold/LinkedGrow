@@ -69,7 +69,7 @@ const LEAD_SOURCES: {
   {
     id: "linkedin_search",
     label: "A LinkedIn search",
-    hint: "Work through a search or a Sales Navigator list.",
+    hint: "Work through a LinkedIn people search you already trust.",
     icon: Search,
   },
 ];
@@ -78,7 +78,7 @@ const LEAD_SOURCES: {
 const MIN_SIGNALS = 4;
 const MAX_SIGNALS = 15;
 
-/** The two shapes of "something just changed here", each searched differently. */
+/** The four shapes of "something just changed here", each searched differently. */
 const BUYING_EVENTS = [
   {
     id: "jobchange",
@@ -89,6 +89,16 @@ const BUYING_EVENTS = [
     id: "hiring",
     label: "Hiring for the work",
     hint: "A company posting for the role that owns your problem. They have admitted the gap in public.",
+  },
+  {
+    id: "funding",
+    label: "Just raised money",
+    hint: "Somebody announcing their own round. The clearest budget signal there is, and founders post it themselves.",
+  },
+  {
+    id: "event",
+    label: "Going to an event",
+    hint: "Somebody speaking at or attending something in your space, which is a room full of your market and a reason to write.",
   },
 ];
 
@@ -1291,7 +1301,7 @@ const SOURCE_TARGET: Record<string, { label: string; hint: string; placeholder: 
   },
   linkedin_search: {
     label: "Paste the search",
-    hint: "A LinkedIn or Sales Navigator search URL, or simply the words you would type into the search box.",
+    hint: "A LinkedIn people search URL, or simply the words you would type into the search box. A Sales Navigator list will not work: it hides the public profile addresses the agent needs, and every filter it offers exists in the ordinary search.",
     placeholder: "https://www.linkedin.com/search/results/content/?keywords=...",
   },
 };

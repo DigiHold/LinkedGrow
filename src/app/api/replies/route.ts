@@ -80,6 +80,7 @@ export async function GET() {
           // somebody the agent is about to answer and for somebody it has
           // stopped writing to for good, and those are opposite facts.
           sequenceStatus: agentLeads.sequenceStatus,
+          outcome: agentLeads.outcome,
           assignedTo: agentLeads.assignedTo,
         })
         .from(agentLeads)
@@ -122,6 +123,9 @@ export async function GET() {
       return [
         {
           leadId,
+          // Needed so the page can post the outcome back: the lead route is
+          // keyed on the agent, and ownership lives in its WHERE clause.
+          agentId: last.agentId,
           agentName: agentName.get(last.agentId) ?? "Agent",
           unread: last.readAt === null,
           repliedAt: last.sentAt,
@@ -134,6 +138,9 @@ export async function GET() {
           matchScore: who.matchScore,
           signalText: who.signalText,
           sequenceStatus: who.sequenceStatus,
+          // What the customer already told us came of this one, so the buttons
+          // show the answer rather than asking again every time.
+          outcome: who.outcome,
           assignedTo: who.assignedTo,
           messages: everyMessage
             .filter((m) => m.leadId === leadId)

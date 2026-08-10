@@ -216,7 +216,7 @@ export async function PATCH(
     const workspaceId = data.teamOwnerId ?? data.user.id;
 
     const body = await request.json();
-    if (body.action !== "reject") {
+    if (body.action !== "reject" && body.action !== "outcome") {
       return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }
     const leadId = typeof body.leadId === "string" ? body.leadId : "";
@@ -225,6 +225,47 @@ export async function PATCH(
     }
 
     const now = new Date();
+
+    /**
+     * What actually came of this person, in the customer's own words.
+     *
+     * The only column in the whole system that is not a proxy. The agent can
+     * see a score it guessed, an invitation somebody accepted and a reply
+     * somebody typed, and none of those is a customer. Without this it learns
+     * to find people who answer messages, which is a different population from
+     * people who buy: on the live account four of the six people who replied
+     * were a coach, a newsletter, a bootcamp and a direct competitor.
+     *
+     * The worker's source ranking weighs a customer at 60 and a meeting at 25,
+     * against 1 for a score it liked, so one press of this changes more than a
+     * week of mining does.
+     */
+    if (body.action === "outcome") {
+      const outcome = typeof body.outcome === "string" ? body.outcome : "";
+      if (!["meeting", "customer", "not_a_fit"].includes(outcome)) {
+        return NextResponse.json({ error: "Unknown outcome" }, { status: 400 });
+      }
+      const marked = await db
+        .update(agentLeads)
+        .set({
+          outcome: outcome as "meeting" | "customer" | "not_a_fit",
+          outcomeAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(agentLeads.id, leadId),
+            eq(agentLeads.agentId, id),
+            eq(agentLeads.workspaceId, workspaceId)
+          )
+        )
+        .returning({ id: agentLeads.id });
+
+      if (marked.length === 0) {
+        return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+      }
+      return NextResponse.json({ outcome });
+    }
     // Ownership and the agent both live in the WHERE, so a lead id from another
     // workspace matches nothing rather than being rejected on their behalf.
     const rejected = await db

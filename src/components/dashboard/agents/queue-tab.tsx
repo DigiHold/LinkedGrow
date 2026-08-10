@@ -146,8 +146,19 @@ export function QueueTab({ agentId }: { agentId: string }) {
     setBusy(null);
   }
 
-  /** Removing somebody from the queue is rejecting the lead behind the row. */
-  async function skipLead(leadId: string) {
+  /**
+   * Telling the agent it picked the wrong person, which is how it gets better.
+   *
+   * This was here, wired, and labelled "Skip", which reads as "not this one
+   * today". Nobody had ever pressed it: across the whole database there were
+   * zero rejections. Meanwhile the worker's ranking was learning from replies,
+   * and four of the six people who had replied to a live agent were a coach, a
+   * newsletter, a bootcamp and a direct competitor.
+   *
+   * It is the strongest correction the product can receive, it costs one click,
+   * and it is now named after what it means.
+   */
+  async function rejectLead(leadId: string) {
     setBusy(leadId);
     setError(null);
     const res = await fetch(`/api/agents/${agentId}/leads`, {
@@ -219,7 +230,10 @@ export function QueueTab({ agentId }: { agentId: string }) {
                 {data.laterCount} more {data.laterCount === 1 ? "is" : "are"} in line behind
                 them, for the days after.
               </>
-            )}
+            )}{" "}
+            {/* Said here because nobody had ever pressed it. The agent has no
+                other way to find out it is wrong about a whole kind of person. */}
+            Marking somebody as the wrong person is how the agent learns who to stop looking for.
           </div>
         </div>
         <div className="flex-1" />
@@ -338,6 +352,15 @@ export function QueueTab({ agentId }: { agentId: string }) {
                 >
                   Skip
                 </RowButton>
+                {/* Skip drops this one message. This says the person is wrong,
+                    which is what the agent learns from. */}
+                <RowButton
+                  onClick={() => rejectLead(item.leadId)}
+                  disabled={busy !== null}
+                  title="Removes them for good and teaches the agent to stop finding people like them"
+                >
+                  {busy === item.leadId ? "Removing" : "Wrong person"}
+                </RowButton>
               </div>
             </Cell>
           </Row>
@@ -375,10 +398,11 @@ export function QueueTab({ agentId }: { agentId: string }) {
             </Cell>
             <Cell>
               <RowButton
-                onClick={() => skipLead(lead.leadId)}
+                onClick={() => rejectLead(lead.leadId)}
                 disabled={busy !== null}
+                title="Removes them for good and teaches the agent to stop finding people like them"
               >
-                {busy === lead.leadId ? "Removing" : "Skip"}
+                {busy === lead.leadId ? "Removing" : "Wrong person"}
               </RowButton>
             </Cell>
           </Row>
@@ -429,16 +453,19 @@ function RowButton({
   children,
   onClick,
   disabled,
+  title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-blue-500 hover:text-blue-600 disabled:opacity-50 dark:text-slate-300"
     >
       {children}
