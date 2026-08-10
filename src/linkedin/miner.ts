@@ -819,15 +819,23 @@ async function extractCommenters(
        * the count either way. Which button gets pressed matters less than it
        * looks: the extraction below reads every loaded comment on the page.
        */
+      /**
+       * .first(), never .last(): measured offline on 2026-08-10 against the
+       * pasted DOM, patchright's `.last().isVisible()` answers false on this
+       * union selector when exactly one element matches, and `.first()`
+       * answers true on the same element. Which button gets pressed matters
+       * less than pressing one: the extraction reads every loaded comment on
+       * the page.
+       */
       let loadMore = page
         .locator(
           '[id*="loadmorecomments" i] [role="button"], [componentkey*="loadmorecomments" i] [role="button"]'
         )
-        .last();
+        .first();
       if (!(await loadMore.isVisible().catch(() => false))) {
         loadMore = page
           .getByRole("button", { name: /(see|load|show|view)\b.*\b(more|previous) comments/i })
-          .last();
+          .first();
       }
       if (!(await loadMore.isVisible().catch(() => false))) break;
       try {
