@@ -31,8 +31,42 @@ import { log, logError } from "../logger.ts";
  * agent learning who its customer's customer is.
  */
 
-/** A reply is ground truth about fit. A match score is an opinion about it. */
+/**
+ * A reply is ground truth about fit. A match score is an opinion about it.
+ *
+ * The weights always said that, three times and eight times over. The two
+ * columns they multiplied were never written by anything: on a live agent
+ * running since July, accepted and replied were 0 on every source while four
+ * people had actually replied. So the strongest evidence the product collects,
+ * a human answering, reached the ranking at a weight of eight times zero, and
+ * the agent was left learning from a cheap model's opinion of a headline.
+ *
+ * Both are derived from agent_leads now, the same way good is.
+ */
 const WEIGHT = { good: 1, accepted: 3, replied: 8 };
+
+/**
+ * What a prospect's state says about the source that found them.
+ *
+ * Cumulative, because a person who is conversing plainly also accepted. Read
+ * off the sequence's own STATUS values; a lead that reached any of these did so
+ * because a real human did something.
+ */
+const ACCEPTED_STATES = [
+  "connected",
+  "hello_sent",
+  "hello_answered",
+  "intro_sent",
+  "conversing",
+  "ask_sent",
+  "handed_over",
+];
+const REPLIED_STATES = ["hello_answered", "conversing", "ask_sent", "handed_over"];
+
+/** Turns a list of states into a SQL placeholder list, for the counts below. */
+function placeholders(list: readonly string[]): string {
+  return list.map(() => "?").join(", ");
+}
 
 /** Below this a lead is noise the agent will never write to. */
 const GOOD_SCORE = 70;
@@ -90,15 +124,17 @@ export async function scoreSources(ctx: AgentContext): Promise<SourceScore[]> {
    * after the counter was fixed.
    */
   const { rows } = await db().execute({
-    sql: `SELECT s.id, s.label, s.type, s.passes, s.accepted, s.replied, s.last_mined_at,
+    sql: `SELECT s.id, s.label, s.type, s.passes, s.last_mined_at,
                  COUNT(l.id) AS leads_found,
-                 SUM(CASE WHEN l.match_score >= ? THEN 1 ELSE 0 END) AS good_leads
+                 SUM(CASE WHEN l.match_score >= ? THEN 1 ELSE 0 END) AS good_leads,
+                 SUM(CASE WHEN l.sequence_status IN (${placeholders(ACCEPTED_STATES)}) THEN 1 ELSE 0 END) AS accepted,
+                 SUM(CASE WHEN l.sequence_status IN (${placeholders(REPLIED_STATES)}) THEN 1 ELSE 0 END) AS replied
             FROM agent_sources s
             LEFT JOIN agent_leads l
               ON l.source_id = s.id AND l.workspace_id = s.workspace_id
            WHERE s.agent_id = ? AND s.workspace_id = ? AND s.enabled = 1
            GROUP BY s.id`,
-    args: [GOOD_SCORE, ctx.agentId, ctx.workspaceId],
+    args: [GOOD_SCORE, ...ACCEPTED_STATES, ...REPLIED_STATES, ctx.agentId, ctx.workspaceId],
   });
 
   return rows.map((r) => {
@@ -185,9 +221,19 @@ export async function refreshSourceCounters(ctx: AgentContext): Promise<void> {
                    SELECT COUNT(*) FROM agent_leads l
                     WHERE l.source_id = agent_sources.id AND l.workspace_id = agent_sources.workspace_id
                       AND l.match_score >= ?
+                 ),
+                 accepted = (
+                   SELECT COUNT(*) FROM agent_leads l
+                    WHERE l.source_id = agent_sources.id AND l.workspace_id = agent_sources.workspace_id
+                      AND l.sequence_status IN (${placeholders(ACCEPTED_STATES)})
+                 ),
+                 replied = (
+                   SELECT COUNT(*) FROM agent_leads l
+                    WHERE l.source_id = agent_sources.id AND l.workspace_id = agent_sources.workspace_id
+                      AND l.sequence_status IN (${placeholders(REPLIED_STATES)})
                  )
            WHERE agent_id = ? AND workspace_id = ?`,
-    args: [GOOD_SCORE, ctx.agentId, ctx.workspaceId],
+    args: [GOOD_SCORE, ...ACCEPTED_STATES, ...REPLIED_STATES, ctx.agentId, ctx.workspaceId],
   });
 }
 

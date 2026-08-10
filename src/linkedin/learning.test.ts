@@ -84,3 +84,34 @@ test("equal yields fall back to whoever has waited longest", () => {
   const order = miningOrder([{ id: "a" }, { id: "b" }], [a, b], new Map([["a", 200], ["b", 100]]));
   assert.equal(order[0]?.id, "b", "nothing should starve");
 });
+
+/**
+ * A reply is ground truth. It was worth eight times zero.
+ *
+ * The weights have always said accepted counts three times and replied eight,
+ * and both columns were written by nothing at all. On a live agent running
+ * since July they were 0 on every source while four people had actually
+ * replied, so the only signal reaching the ranking was a cheap model's opinion
+ * of a headline. The whole promise of an agent that learns rests on the
+ * opposite: that what humans really did outranks what a model guessed.
+ */
+test("a source whose people replied outranks one that only scored well", () => {
+  const guessedWell = score({ id: "guess", leads: 20, good: 9, passes: 3 });
+  const actuallyWorked = score({ id: "real", leads: 6, good: 2, accepted: 4, replied: 2, passes: 3 });
+  const order = miningOrder(
+    [{ id: "guess" }, { id: "real" }],
+    [guessedWell, actuallyWorked],
+    new Map()
+  );
+  assert.equal(
+    order[0]?.id,
+    "real",
+    "two replies and four acceptances beat nine headlines a model liked"
+  );
+});
+
+test("acceptance counts, and a reply counts for more", () => {
+  const quiet = score({ id: "q", good: 2, accepted: 2, passes: 2 });
+  const answering = score({ id: "a", good: 2, accepted: 2, replied: 1, passes: 2 });
+  assert.ok(answering.yield > quiet.yield, "somebody writing back is the strongest evidence there is");
+});
