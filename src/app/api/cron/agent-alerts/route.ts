@@ -39,6 +39,12 @@ const receiver = new Receiver({
 const ALERTING = ["challenged", "error", "paused", "budget", "reply"] as const;
 
 const TOO_OLD_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * How long an agent has to stay down before its own recoverable error is worth
+ * telling somebody about. Below this it is almost always back already.
+ */
+const STILL_DOWN_MS = 45 * 60 * 1000;
 const MAX_PER_RUN = 50;
 
 /** An agent that stops on its own budget or a pause is not coming back alone. */
@@ -58,6 +64,8 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
       agentId: agentEvents.agentId,
       leadId: agentEvents.leadId,
       agentName: agents.name,
+      /** When this agent last completed a pass, which says whether it recovered. */
+      agentLastRunAt: agents.lastRunAt,
       email: users.email,
       name: users.name,
     })
@@ -72,6 +80,45 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
   let skipped = 0;
 
   for (const event of pending) {
+    /**
+     * An error the agent recovered from on its own is not worth an email.
+     *
+     * The mail this sends says so itself: "It is already trying to start itself
+     * again and usually succeeds within a minute." An alert that describes its
+     * own irrelevance in its second paragraph is not an alert, it is noise, and
+     * noise is what makes somebody stop reading the one that matters.
+     *
+     * On 2026-08-10 a worker was restarted eight times in one day to ship
+     * fixes. Every restart cut a pass mid-flight, every cut wrote one of these,
+     * and they landed in Nicolas's inbox about an account that was working
+     * perfectly the whole time.
+     *
+     * Checked BEFORE the row is marked, so an agent that is genuinely down is
+     * reconsidered on the next pass rather than being silenced for ever by a
+     * deferral. A challenge, a pause and a budget ceiling skip this entirely:
+     * nobody is coming to fix those but a person.
+     */
+    if (retriesItself(event.type)) {
+      const recovered =
+        event.agentLastRunAt !== null && event.agentLastRunAt > event.createdAt;
+      const tooFresh = Date.now() - event.createdAt.getTime() < STILL_DOWN_MS;
+      if (recovered) {
+        // It came back. Close the event so it is never reconsidered.
+        await db
+          .update(agentEvents)
+          .set({ notifiedAt: new Date() })
+          .where(eq(agentEvents.id, event.id));
+        skipped += 1;
+        continue;
+      }
+      if (tooFresh) {
+        // Left open on purpose: if it is still down in forty-five minutes, the
+        // next pass sends it.
+        skipped += 1;
+        continue;
+      }
+    }
+
     // Mark first. A send that throws after the mail left would otherwise send
     // it again on the next pass, and a duplicate alert is worse than a lost one.
     await db
@@ -83,6 +130,7 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
       skipped += 1;
       continue;
     }
+
 
     try {
       if (event.type === "challenged") {
