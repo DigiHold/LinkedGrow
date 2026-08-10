@@ -970,7 +970,7 @@ export async function sourcePass(
  */
 const SCORED_PER_PASS = 20;
 
-async function scorePass(ctx: AgentContext): Promise<void> {
+export async function scorePass(ctx: AgentContext): Promise<void> {
   const icp = ctx.cfg.leads.icp;
   if (!icp) return;
 
