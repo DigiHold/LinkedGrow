@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { miningOrder, type SourceScore } from "./learn.ts";
+import { miningOrder, parseGrown, type SourceScore } from "./learn.ts";
 
 /**
  * The agent was supposed to follow what works. It never could.
@@ -114,4 +114,66 @@ test("acceptance counts, and a reply counts for more", () => {
   const quiet = score({ id: "q", good: 2, accepted: 2, passes: 2 });
   const answering = score({ id: "a", good: 2, accepted: 2, replied: 1, passes: 2 });
   assert.ok(answering.yield > quiet.yield, "somebody writing back is the strongest evidence there is");
+});
+
+/**
+ * What a winning source is allowed to grow into.
+ *
+ * Every variant used to be a keyword search, and on this agent's own numbers
+ * that is the wrong family: a comment under a competitor's post qualifies at
+ * 46% against 31% for a search, and mining a named company by URL costs the
+ * account no searches at all while a keyword source spends six of the nine a
+ * free account gets in a day. Growing only keywords grew the expensive half and
+ * the weaker half at the same time.
+ */
+test("a company is recognised and takes the scarce slot before a search does", () => {
+  const grown = parseGrown(
+    ["search: bootstrapped saas", "company: Lovable", "search: solo founder"].join("\n"),
+    1,
+    new Set()
+  );
+  assert.deepEqual(grown, [{ type: "competitor", label: "Lovable" }]);
+});
+
+test("both kinds are kept when there is room, companies first", () => {
+  const grown = parseGrown(
+    ["search: indie hacker", "company: Cal.com", "company: Vercel"].join("\n"),
+    3,
+    new Set()
+  );
+  assert.deepEqual(
+    grown.map((g) => `${g.type}:${g.label}`),
+    ["competitor:Cal.com", "competitor:Vercel", "keyword:indie hacker"]
+  );
+});
+
+test("an unprefixed line is still a search, because that is what older answers look like", () => {
+  const grown = parseGrown("building in public", 2, new Set());
+  assert.deepEqual(grown, [{ type: "keyword", label: "building in public" }]);
+});
+
+test("nothing already on the agent is added twice", () => {
+  const grown = parseGrown(
+    ["company: Lovable", "search: indie hacker"].join("\n"),
+    5,
+    new Set(["lovable"])
+  );
+  assert.deepEqual(grown, [{ type: "keyword", label: "indie hacker" }]);
+});
+
+test("a repeat inside one answer is dropped too", () => {
+  const grown = parseGrown(["company: Lovable", "company: lovable"].join("\n"), 5, new Set());
+  assert.equal(grown.length, 1);
+});
+
+test("bullets, numbering and stray quotes are stripped", () => {
+  const grown = parseGrown(['- "company: Cal.com"', "2. search: solo founder"].join("\n"), 5, new Set());
+  assert.deepEqual(
+    grown.map((g) => `${g.type}:${g.label}`),
+    ["competitor:Cal.com", "keyword:solo founder"]
+  );
+});
+
+test("junk and empty lines produce nothing rather than a broken source", () => {
+  assert.deepEqual(parseGrown("\n\n  \nab\n", 5, new Set()), []);
 });

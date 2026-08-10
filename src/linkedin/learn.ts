@@ -289,6 +289,44 @@ export async function retireDeadSources(ctx: AgentContext, scores: SourceScore[]
   return toRetire.length;
 }
 
+/**
+ * Reads what the model proposed, and refuses anything it cannot place.
+ *
+ * A line is `company: Name` or `search: some words`. An unprefixed line is
+ * taken as a search, because that is what every answer looked like before the
+ * prompt asked for two kinds and an older model may still answer that way.
+ *
+ * Companies are sorted to the front of whatever room is left. They cost the
+ * account nothing to mine and they qualify at roughly half again what a search
+ * does, so when only one slot remains it should not go to the expensive one.
+ */
+export function parseGrown(
+  answer: string,
+  room: number,
+  taken: Set<string>
+): Array<{ type: "competitor" | "keyword"; label: string }> {
+  const seen = new Set(taken);
+  const out: Array<{ type: "competitor" | "keyword"; label: string }> = [];
+
+  for (const raw of answer.split("\n")) {
+    const line = raw.replace(/^[\s\-*\d.)"']+/, "").replace(/["']+$/, "").trim();
+    if (!line) continue;
+
+    const match = /^(company|search)\s*[:\-]\s*(.+)$/i.exec(line);
+    const type = match && match[1]?.toLowerCase() === "company" ? "competitor" : "keyword";
+    const label = (match ? match[2] ?? "" : line).replace(/["']+$/, "").trim();
+
+    if (label.length < 3 || label.length > 60) continue;
+    if (seen.has(label.toLowerCase())) continue;
+    seen.add(label.toLowerCase());
+    out.push({ type, label });
+  }
+
+  // Companies first, order otherwise preserved, then cut to what there is room for.
+  return [...out.filter((i) => i.type === "competitor"), ...out.filter((i) => i.type === "keyword")]
+    .slice(0, Math.max(0, room));
+}
+
 /** The people a source actually found and scored well, in their own words. */
 async function winningHeadlines(sourceId: string): Promise<string[]> {
   const { rows } = await db().execute({
@@ -305,14 +343,33 @@ async function winningHeadlines(sourceId: string): Promise<string[]> {
 }
 
 /**
- * Writes sibling queries for a source that is working.
+ * Writes siblings for a source that is working: companies first, then queries.
  *
  * Seeded by the headlines of the people it actually found rather than by its
  * own label, because the label is what the customer guessed and the headlines
  * are what turned out to be true. "indie SaaS founder" finding seven good
  * people whose headlines say "building in public", "solo founder" and
- * "bootstrapping" is the agent being told what to search for next, by its own
+ * "bootstrapping" is the agent being told what to look at next, by its own
  * results, in the audience's own words.
+ *
+ * ## Why companies, and why they come first
+ *
+ * Every variant used to be a keyword search, and on this agent's own numbers
+ * that is the wrong family to grow. Measured across 90 real leads:
+ *
+ *   comment under a competitor's post   46% qualified, some sources 67%
+ *   keyword search                      31% qualified
+ *
+ * And the cost runs the other way. A keyword source carries three queries and
+ * searches each twice, so it spends six of a free account's nine searches a
+ * day, while opening a named company's posts by URL and reading who engaged
+ * spends none at all. Growing only keywords therefore grew the expensive half
+ * and the weaker half at once, and with a ceiling of nine searches a day an
+ * agent could never run everything it had learned.
+ *
+ * So a winning source now spawns both, companies preferred, and the audience's
+ * own headlines are what suggests them: people who describe themselves the same
+ * way tend to gather under the same handful of posts.
  */
 export async function growFrom(
   ctx: AgentContext,
@@ -346,17 +403,21 @@ export async function growFrom(
         `Searching LinkedIn for "${source.label}" found these people, and they were the good ones:`,
         ...headlines.map((h) => `- ${h}`),
         "",
-        `Write up to ${room} more LinkedIn people-search queries that would find others like them.`,
-        "One per line, nothing else. No numbering, no quotes, no explanation.",
+        `Give up to ${room} new places to look for more people like them.`,
+        "One per line. A company or creator whose posts this audience gathers under is written",
+        "as `company: Name`. A LinkedIn people-search query is written as `search: the words`.",
+        "Prefer companies: reading who engages with a post costs the account nothing, while a",
+        "search is rationed. Nothing else on the line, no numbering, no quotes, no explanation.",
       ].join("\n"),
       {
         purpose: "grow-source",
         maxTokens: 120,
         model: MODELS.fast,
         systemPrompt:
-          "You turn a set of real LinkedIn headlines into search queries that would find more people like them.\n\n" +
+          "You turn a set of real LinkedIn headlines into new places to find more people like them.\n\n" +
+          "A company is a real business or creator on LinkedIn whose posts this audience reads and comments under: a tool they use, a rival to it, or somebody well known who writes for them. Give the name as LinkedIn shows it, nothing else. Never name the customer's own company.\n\n" +
           "A query is two to four words, the kind of thing a person types into LinkedIn's search box: a role, a way of describing themselves, or a role and a niche together.\n\n" +
-          "Write what the audience calls itself, not what a marketer calls them. Never repeat the query you were given, and never write two that would obviously return the same people.\n\n" +
+          "Write what the audience calls itself, not what a marketer calls them. Never repeat what you were given, and never write two that would obviously return the same people.\n\n" +
           "Write fewer than asked rather than padding with something weak.",
       }
     );
@@ -374,25 +435,28 @@ export async function growFrom(
     ).rows.map((r) => String(r.l))
   );
 
-  const queries = answer
-    .split("\n")
-    .map((line) => line.replace(/^[\s\-*\d.)"']+/, "").replace(/["']+$/, "").trim())
-    .filter((q) => q.length >= 3 && q.length <= 60)
-    .filter((q) => !existing.has(q.toLowerCase()))
-    .slice(0, room);
+  const learned = parseGrown(answer, room, existing);
 
-  for (const label of queries) {
+  for (const item of learned) {
     const now = Math.floor(Date.now() / 1000);
     await db().execute({
       sql: `INSERT INTO agent_sources
               (id, workspace_id, agent_id, type, label, enabled, origin, parent_id, created_at, updated_at)
-            VALUES (?, ?, ?, 'keyword', ?, 1, 'learned', ?, ?, ?)`,
-      args: [crypto.randomUUID(), ctx.workspaceId, ctx.agentId, label, source.id, now, now],
+            VALUES (?, ?, ?, ?, ?, 1, 'learned', ?, ?, ?)`,
+      args: [
+        crypto.randomUUID(), ctx.workspaceId, ctx.agentId,
+        item.type, item.label, source.id, now, now,
+      ],
     });
-    existing.add(label.toLowerCase());
-    log("source learned", { agentId: ctx.agentId, from: source.label, label });
+    existing.add(item.label.toLowerCase());
+    log("source learned", {
+      agentId: ctx.agentId,
+      from: source.label,
+      type: item.type,
+      label: item.label,
+    });
   }
-  return queries.length;
+  return learned.length;
 }
 
 /**
