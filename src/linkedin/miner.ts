@@ -81,6 +81,29 @@ const MAX_MINE_DEPTH = 24;
 const REACTION_SHARE = 0.3;
 
 /**
+ * Every shape LinkedIn serves a modal in, native one first.
+ *
+ * The reactions list has been returning NOBODY. Read off the live account on
+ * 2026-08-10: a Lovable pass logged "12 commenters on lovable-dev" and then
+ * "Mined 5 unique engagers", with not one reactor among them, and the same
+ * shape on every pass before it. The comments path uses its own mechanism and
+ * kept working, which is why the failure looked like a thin day rather than a
+ * broken selector.
+ *
+ * `div[role="dialog"]` never becomes visible on the current DOM, so
+ * openReactionsModal timed out and returned false, and the loop `continue`d
+ * without a word. A post carrying hundreds of reactions contributed zero
+ * people, every time, and the reading budget the agent was fighting over was
+ * never the thing holding it back.
+ *
+ * This is the SAME defect fixed in publish.ts on 2026-08-10 for the carousel,
+ * where the native `<dialog>` had to go in front of the same list, and it was
+ * not carried across. Both selectors are kept: nothing here says LinkedIn
+ * stopped serving the old shape, only that it also serves a new one.
+ */
+const DIALOG = 'dialog[open], div[role="dialog"]';
+
+/**
  * Mines engagement leads from competitor content. This is browser activity on the account, so it
  * moves at a human pace and reads only: it opens a post, opens its reactions and comments, and
  * extracts the people, never liking, commenting, connecting or messaging.
@@ -583,13 +606,28 @@ async function mineTarget(
     log(`No reactions or comments visible on ${url}. The page may need a slug that has recent posts.`);
     return engagers;
   }
+  let opened = 0;
+  let reacted = 0;
   for (const i of range) {
-    const opened = await openReactionsModal(page, i);
-    if (!opened) continue;
+    if (!(await openReactionsModal(page, i))) continue;
+    opened += 1;
     const reactors = await extractFromDialog(page, `reaction:${label}`, reactionCap, !cfg.skipConnected);
+    reacted += reactors.length;
     engagers.push(...reactors);
     await closeDialog(page);
     await sleep(actionDelayMs(cfg));
+  }
+  /**
+   * Said out loud, because the silence is what hid this for days.
+   *
+   * The reactions list returned nobody on every pass and the loop `continue`d
+   * without a word, so a post carrying hundreds of names looked exactly like a
+   * quiet day. A count of zero opens against a range that had buttons in it is
+   * a broken selector and nothing else.
+   */
+  log(`  ${reacted} reactors on ${label}, from ${opened} of ${range.length} reaction lists opened.`);
+  if (range.length > 0 && opened === 0) {
+    log(`the reactions list would not open on ${label}, so only its commenters were read`);
   }
   return engagers;
 }
@@ -757,9 +795,9 @@ async function openReactionsModal(page: Page, index: number): Promise<boolean> {
   } catch {
     return false;
   }
-  const dialog = page.locator('div[role="dialog"]');
+  const dialog = page.locator(DIALOG);
   try {
-    await dialog.waitFor({ state: "visible", timeout: 8000 });
+    await dialog.first().waitFor({ state: "visible", timeout: 8000 });
   } catch {
     return false;
   }
@@ -769,13 +807,22 @@ async function openReactionsModal(page: Page, index: number): Promise<boolean> {
 
 /** Scrolls the reactors list a few times, then reads structured people out of the dialog DOM. */
 async function extractFromDialog(page: Page, source: string, maxPerPost: number, keepConnected = false): Promise<Engager[]> {
-  const scrollable = page.locator('div[role="dialog"] ul').first();
-  for (let i = 0; i < 4; i++) {
+  const scrollable = page.locator(`${DIALOG} ul`).first();
+  /**
+   * Scrolled as deep as the allowance asks for, not four times whatever it is.
+   *
+   * LinkedIn loads roughly ten names per page of this list, so four scrolls
+   * capped a post at about forty people however much room the visit had. The
+   * budget is enforced by the caller and by `book`; this only stops the reader
+   * stopping early and calling it a thin post.
+   */
+  const scrolls = Math.max(4, Math.min(20, Math.ceil(maxPerPost / 10) + 2));
+  for (let i = 0; i < scrolls; i++) {
     await scrollable.evaluate((el) => el.scrollBy(0, el.clientHeight)).catch(() => {});
     await sleep(randInt(500, 1200));
   }
-  const raw = await page.evaluate(() => {
-    const dialog = document.querySelector('div[role="dialog"]');
+  const raw = await page.evaluate((sel) => {
+    const dialog = document.querySelector(sel);
     if (!dialog) return [] as Array<{ href: string; text: string; aria: string; photo: string }>;
     const anchors = Array.from(dialog.querySelectorAll('a[href*="/in/"]')) as HTMLAnchorElement[];
     const seen = new Set<string>();
@@ -815,7 +862,7 @@ async function extractFromDialog(page: Page, source: string, maxPerPost: number,
       });
     }
     return rows;
-  });
+  }, DIALOG);
 
   const engagers: Engager[] = [];
   for (const r of raw) {
@@ -827,7 +874,13 @@ async function extractFromDialog(page: Page, source: string, maxPerPost: number,
 }
 
 async function closeDialog(page: Page): Promise<void> {
-  const close = page.locator('div[role="dialog"] button[aria-label*="Dismiss"], div[role="dialog"] button[aria-label*="Close"]').first();
+  const close = page
+    .locator(
+      DIALOG.split(", ")
+        .flatMap((d) => [`${d} button[aria-label*="Dismiss"]`, `${d} button[aria-label*="Close"]`])
+        .join(", ")
+    )
+    .first();
   if ((await close.count()) > 0) {
     await clickHumanLocator(page, close).catch(async () => {
       await page.keyboard.press("Escape").catch(() => {});
