@@ -217,6 +217,27 @@ export function dayPlan(
    */
   if (window?.days?.length && !window.days.includes(weekday)) return [];
 
+  /**
+   * A customer who set their own hours gets visits spread across ALL of them.
+   *
+   * The four fixed bands were a model of a generic day, and on a wide window
+   * they clustered: an account set to 07:00-19:00 was mined 09:44 to 15:45 and
+   * then sat idle for three hours it was told to work, so a reply that landed
+   * at 16:30 waited until the next morning. The customer asked for the opposite,
+   * and they are right: the window they chose is the window the agent works.
+   *
+   * The window is cut into as many segments as the day holds visits, one visit
+   * drawn inside each, so the first lands early, the LAST lands late enough to
+   * answer a message that came in during the afternoon, and the gaps stay small
+   * enough that a reply owed within thirty minutes to three hours always meets a
+   * visit. The count follows the width, so a longer day is more visits rather
+   * than the same few stretched thinner. Every chosen day runs: the days off are
+   * the ones they left unticked, not a die we roll behind their back.
+   */
+  if (window?.startMin != null || window?.endMin != null) {
+    return windowedPlan(rnd, window);
+  }
+
   const bands = bandsWithin(window);
   if (bands.length === 0) return [];
 
@@ -261,6 +282,72 @@ export interface Window {
   days?: number[];
   startMin?: number;
   endMin?: number;
+}
+
+/**
+ * The most minutes we let pass between two visits inside a chosen window.
+ *
+ * A reply is owed within thirty minutes to three hours (relationship.ts), and
+ * the agent can only send during a visit, so the visits have to fall close
+ * enough together that the owed reply always meets one. Three hours is the top
+ * of that range, so the visits are spaced to keep every gap under it.
+ */
+const MAX_GAP_MIN = 180;
+
+/** Human wobble around each evenly-spaced anchor, so no two days line up. */
+const ANCHOR_JITTER = 15;
+
+/** A day never has fewer than this many visits, nor more, whatever the width. */
+const MIN_VISITS = 3;
+const MAX_VISITS = 6;
+
+/**
+ * A day inside the customer's own hours: visits spread across the whole window.
+ *
+ * Deterministic per account and day like the rest of the file, so a restart or
+ * a second process reads the same plan. Every chosen day runs; the days off are
+ * the ones the customer left unticked, not a die rolled behind their back.
+ *
+ * The visits sit on evenly-spaced anchors from the open to the close, each
+ * nudged by a few minutes of human wobble, so the FIRST lands near the start,
+ * the LAST lands near the end (which is what lets it answer an afternoon reply),
+ * and the gaps stay under the three-hour reply window. Independent random
+ * placement inside segments was tried first and drew a 205-minute gap, because
+ * one visit at the front of its segment and the next at the back of its own
+ * drift apart; anchors with bounded jitter cannot.
+ */
+function windowedPlan(rnd: () => number, window: Window): Visit[] {
+  const floor = Math.max(0, window.startMin ?? 0);
+  const ceiling = Math.min(LAST_MINUTE, window.endMin ?? LAST_MINUTE);
+  const width = ceiling - floor;
+  if (width < MIN_LENGTH) return [];
+
+  // Enough visits that even the widest jittered gap stays under the reply
+  // window. Fixed by the width so the reply guarantee always holds; the times,
+  // not the count, are what move from day to day.
+  const denom = Math.max(1, MAX_GAP_MIN - MIN_LENGTH - 2 * ANCHOR_JITTER);
+  const count = Math.min(MAX_VISITS, Math.max(MIN_VISITS, Math.ceil(width / denom)));
+
+  const plan: Visit[] = [];
+  let previousEnd = -Infinity;
+  for (let i = 0; i < count; i += 1) {
+    const longest = Math.max(1, Math.min(MAX_LENGTH, width));
+    const shortest = Math.min(MIN_LENGTH, longest);
+    const length = between(rnd, shortest, longest + 1);
+    // Anchor i runs from the open (i=0) to the close minus this visit's length
+    // (i=count-1), so the last visit ends right at the customer's closing time.
+    const span = Math.max(0, ceiling - length - floor);
+    const anchor = count === 1 ? floor : floor + Math.round((span * i) / (count - 1));
+    const jitter = between(rnd, -ANCHOR_JITTER, ANCHOR_JITTER + 1);
+    let start = Math.min(Math.max(anchor + jitter, floor), ceiling - length);
+    if (start < previousEnd + MIN_GAP) start = previousEnd + MIN_GAP;
+    const end = start + length;
+    // Never past the customer's close, nor the absolute 22:30 backstop.
+    if (end > ceiling) continue;
+    plan.push({ startMin: start, endMin: end });
+    previousEnd = end;
+  }
+  return plan;
 }
 
 /**

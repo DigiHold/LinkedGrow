@@ -157,8 +157,15 @@ export const PACING = {
   helloReplyToIntroHours: [2, 9] as const,
   /** How long to wait for an answer to the hello before writing anyway. */
   helloSilenceToIntroDays: [3, 5] as const,
-  /** How fast to answer once they write. Fast, but never instant. */
-  replyDelayMinutes: [12, 190] as const,
+  /**
+   * How fast to answer once they write. Fast, but never instant, and never the
+   * same twice: dueAfterHours draws a delay from this range per prospect, so one
+   * person waits 34 minutes and the next two hours ten, the way a person with a
+   * day job answers rather than a bot that fires back on a fixed timer. Thirty
+   * minutes floor because instant is the clearest tell there is; three hours
+   * ceiling so a warm reply is never left cold.
+   */
+  replyDelayMinutes: [30, 180] as const,
   /** From the last exchange to the ask, when they did reply. */
   conversationToAskDays: [2, 4] as const,
   /** From the intro to the ask, when they never replied. */
