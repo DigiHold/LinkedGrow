@@ -72,3 +72,38 @@ test("visits are in order and never overlap", () => {
     }
   }
 });
+
+test("the day never opens on the dot nor closes on the dot every time", () => {
+  // A real day starts a little after you sit down and ends a little before you
+  // leave, by a different amount each day. The last visit must not pin to the
+  // closing minute the way the first cut of this did (19:00 four days of five).
+  const opens = new Set<number>();
+  const closes = new Set<number>();
+  let endedExactlyAtClose = 0;
+  let total = 0;
+  for (let d = 1; d <= 28; d += 1) {
+    const p = plan(`2026-09-${String(d).padStart(2, "0")}`, ((d % 6) + 1));
+    if (!p.length) continue;
+    total += 1;
+    opens.add(p[0]!.startMin);
+    closes.add(p[p.length - 1]!.endMin);
+    if (p[p.length - 1]!.endMin === 19 * 60) endedExactlyAtClose += 1;
+    // never before open, never after close
+    assert.ok(p[0]!.startMin >= 7 * 60);
+    assert.ok(p[p.length - 1]!.endMin <= 19 * 60);
+  }
+  // The close times spread across many distinct minutes, not one flat value.
+  assert.ok(closes.size >= 10, `only ${closes.size} distinct close times over ${total} days`);
+  assert.ok(opens.size >= 10, `only ${opens.size} distinct open times over ${total} days`);
+  // And essentially never exactly 19:00.
+  assert.ok(endedExactlyAtClose <= 1, `${endedExactlyAtClose} days ended at 19:00 sharp`);
+});
+
+test("the last visit still lands late enough to answer an afternoon reply", () => {
+  for (let d = 1; d <= 28; d += 1) {
+    const p = plan(`2026-09-${String(d).padStart(2, "0")}`, 2);
+    if (!p.length) continue;
+    // Close margin is capped, so the last visit always ends well after 17:30.
+    assert.ok(p[p.length - 1]!.endMin >= 17 * 60 + 30, `last visit ended ${p[p.length - 1]!.endMin}`);
+  }
+});

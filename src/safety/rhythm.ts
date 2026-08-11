@@ -328,18 +328,45 @@ function windowedPlan(rnd: () => number, window: Window): Visit[] {
   const denom = Math.max(1, MAX_GAP_MIN - MIN_LENGTH - 2 * ANCHOR_JITTER);
   const count = Math.min(MAX_VISITS, Math.max(MIN_VISITS, Math.ceil(width / denom)));
 
+  /**
+   * A person does not clock in at the open or out on the close to the second.
+   *
+   * The first plan ended four days out of five at exactly 19:00, because the
+   * last visit was anchored to end right on the customer's closing minute. That
+   * is a tell of its own: a real day starts a little after you sit down and ends
+   * a little before you leave, and by a different amount each day. So the first
+   * visit opens a few minutes into the window and the last closes a few minutes
+   * short of it, both by a margin drawn fresh for the day. The margins stay
+   * small enough that the last visit is still late enough to answer an
+   * afternoon reply.
+   */
+  const openSlack = between(rnd, 2, 26);
+  const closeSlack = between(rnd, 4, 31);
+  const firstStart = floor + openSlack;
+  const lastEnd = ceiling - closeSlack;
+
   const plan: Visit[] = [];
   let previousEnd = -Infinity;
   for (let i = 0; i < count; i += 1) {
     const longest = Math.max(1, Math.min(MAX_LENGTH, width));
     const shortest = Math.min(MIN_LENGTH, longest);
     const length = between(rnd, shortest, longest + 1);
-    // Anchor i runs from the open (i=0) to the close minus this visit's length
-    // (i=count-1), so the last visit ends right at the customer's closing time.
-    const span = Math.max(0, ceiling - length - floor);
-    const anchor = count === 1 ? floor : floor + Math.round((span * i) / (count - 1));
-    const jitter = between(rnd, -ANCHOR_JITTER, ANCHOR_JITTER + 1);
-    let start = Math.min(Math.max(anchor + jitter, floor), ceiling - length);
+
+    let start: number;
+    if (i === 0) {
+      // The day opens a little after the customer sat down, never on the dot.
+      start = firstStart;
+    } else if (i === count - 1) {
+      // The day closes a little before they left, and the margin is what makes
+      // the end time move: 18:33 one day, 18:52 the next, never 19:00 flat.
+      start = lastEnd - length;
+    } else {
+      // The middle visits ride evenly-spaced anchors with a few minutes of
+      // human wobble, so no two land at the same clock time two days running.
+      const anchor = firstStart + Math.round(((lastEnd - firstStart) * i) / (count - 1));
+      start = anchor + between(rnd, -ANCHOR_JITTER, ANCHOR_JITTER + 1);
+    }
+    start = Math.min(Math.max(start, floor), ceiling - length);
     if (start < previousEnd + MIN_GAP) start = previousEnd + MIN_GAP;
     const end = start + length;
     // Never past the customer's close, nor the absolute 22:30 backstop.
