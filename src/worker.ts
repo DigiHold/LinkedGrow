@@ -324,14 +324,55 @@ function fillTemplate(
     .trim();
 }
 
+/**
+ * Consecutive failed passes per agent, so one transient never emails anybody.
+ *
+ * A single failed pass is almost always self-healing: a deploy restart that
+ * kills the browser mid-pass, a proxy 502, the Chrome profile still locked a
+ * second after a restart. On 2026-08-11 one such restart wrote an "error"
+ * event at 13:21 and the customer got a "Your agent stopped" mail about an
+ * account that was working perfectly, because the alert cron's recovery check
+ * lost a timing race against the slow next pass. The mail's own words are "it
+ * will try again shortly", so the honest bar is: only tell a human once the
+ * agent has actually failed TWICE in a row, which a transient never does.
+ *
+ * In-memory on purpose. A restart clears it, and a restart is exactly the
+ * event we never want to alert on: the fresh process starts at zero, its first
+ * transient is swallowed, and only an account that keeps failing pass after
+ * pass climbs to the threshold.
+ */
+const consecutiveFailures = new Map<string, number>();
+export const ALERT_AFTER_FAILURES = 2;
+
+/** Whether this many consecutive failed passes is worth telling a human about. */
+export function shouldAlertOnFailure(consecutive: number): boolean {
+  return consecutive >= ALERT_AFTER_FAILURES;
+}
+
+/** Records a self-recovering failure, and only surfaces it once it stops recovering. */
+async function noteTransient(ctx: AgentContext, message: string): Promise<void> {
+  const n = (consecutiveFailures.get(ctx.agentId) ?? 0) + 1;
+  consecutiveFailures.set(ctx.agentId, n);
+  if (!shouldAlertOnFailure(n)) {
+    log("transient pass failure, not alerting yet", { agentId: ctx.agentId, count: n });
+    return;
+  }
+  await recordEvent(ctx, "error", message).catch(() => {});
+}
+
 async function safely(ctx: AgentContext): Promise<void> {
   try {
     await withWatchdog(() => runAgent(ctx));
+    // A clean pass clears the streak, so a later isolated failure starts over.
+    consecutiveFailures.delete(ctx.agentId);
   } catch (error) {
     if (error instanceof RunStalled) {
       // The session's own finally still closes the browser; this only stops the pass waiting on it.
       log("agent stopped responding, cut off", { agentId: ctx.agentId, reason: error.message });
-      await recordEvent(ctx, "error", "The agent stopped responding and was restarted. It picks up on the next run.").catch(() => {});
+      await noteTransient(
+        ctx,
+        "The agent stopped responding and was restarted. It picks up on the next run."
+      );
       return;
     }
     if (error instanceof HaltedError) {
@@ -350,11 +391,12 @@ async function safely(ctx: AgentContext): Promise<void> {
       return;
     }
     logError("agent pass failed", error, { agentId: ctx.agentId });
-    await recordEvent(
-      ctx,
-      "error",
-      "Something went wrong on the last run. It will try again shortly."
-    ).catch(() => {});
+    // A pass cut short by our own shutdown is expected, never a customer alert.
+    if (shuttingDown()) {
+      log("pass failed during shutdown, not alerting", { agentId: ctx.agentId });
+      return;
+    }
+    await noteTransient(ctx, "Something went wrong on the last run. It will try again shortly.");
   }
 }
 
