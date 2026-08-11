@@ -105,14 +105,29 @@ export async function mineProfileViewers(ctx: DB, page: Page, cfg: Config, opts:
     await scrollHuman(page, randInt(2, 3));
 
     const rows = await page.evaluate(() => {
-      const out: Array<{ href: string; text: string }> = [];
+      const out: Array<{ href: string; text: string; photo: string }> = [];
       const seen = new Set<string>();
       for (const a of Array.from(document.querySelectorAll('main a[href*="/in/"]')) as HTMLAnchorElement[]) {
         const href = a.href.split("?")[0] ?? a.href;
         if (seen.has(href)) continue;
         seen.add(href);
         const row = a.closest("li") ?? a.parentElement;
-        out.push({ href, text: ((row as HTMLElement)?.innerText ?? "").trim() });
+        // The face, same picker as the people search: climb a few levels for an
+        // img whose src is a real member photo, rejecting company logos and the
+        // grey ghost. Viewer leads arrived faceless because this was never read.
+        let photo = "";
+        let hop: HTMLElement | null = row as HTMLElement | null;
+        for (let i = 0; hop && i < 5 && !photo; i++) {
+          for (const candidate of Array.from(hop.querySelectorAll("img"))) {
+            const src = (candidate as HTMLImageElement).src ?? "";
+            if (/licdn/.test(src) && !/company-logo|ghost/.test(src)) {
+              photo = src;
+              break;
+            }
+          }
+          hop = hop.parentElement;
+        }
+        out.push({ href, text: ((row as HTMLElement)?.innerText ?? "").trim(), photo });
       }
       return out;
     });
@@ -121,7 +136,9 @@ export async function mineProfileViewers(ctx: DB, page: Page, cfg: Config, opts:
     const leads: Engager[] = [];
     for (const r of rows) {
       const lead = toViewer(r);
-      if (lead && matchesIcp(cfg.leads.icpKeywords, lead.headline ?? "", lead.context ?? "")) leads.push(lead);
+      if (lead && matchesIcp(cfg.leads.icpKeywords, lead.headline ?? "", lead.context ?? "")) {
+        leads.push({ ...lead, avatarUrl: r.photo || undefined });
+      }
     }
     // A free account names only a handful of the viewers it counts, so a small number here is normal.
     log(`Profile viewers: ${rows.length} named, ${leads.length} match the ICP.`);

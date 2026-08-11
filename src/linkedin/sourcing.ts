@@ -915,7 +915,15 @@ export async function sourcePass(
         }
         case "brand": {
           // People who came to look at you without being asked.
-          found = await mineProfileViewers(ctx, page, ctx.cfg);
+          //
+          // dryRun, so claimAll below does the rich insert. Left to insert
+          // itself, this path went through insertProspects, which writes a name
+          // and a profile and nothing else: no avatar and no signal sentence,
+          // so every profile viewer arrived faceless with an empty Signal
+          // column while the claimAll that would have filled both was ignored
+          // as a duplicate. Same defect the competitor and keyword sources were
+          // fixed for; the viewer path was the one still self-inserting.
+          found = await mineProfileViewers(ctx, page, ctx.cfg, { dryRun: true });
           break;
         }
         case "own_posts": {
