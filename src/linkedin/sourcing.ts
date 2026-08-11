@@ -589,63 +589,80 @@ export async function sourcePass(
    * opening at about twenty-five and splitting a visit into ten slices of ten
    * would buy breadth by throwing away every comment section.
    */
-  const USEFUL_DEPTH = 25;
-  const affordable = Math.max(1, Math.floor(room.profiles / USEFUL_DEPTH));
-  const wanted = opts.firstRun
-    ? Math.min(FIRST_RUN_SOURCES, sources.length)
-    : Math.min(MAX_SOURCES_PER_PASS, affordable);
-
   /**
-   * Sources are picked to fit both pools, not just the first few in the order.
+   * The visit keeps drawing sources until its share is genuinely READ.
    *
-   * A source that needs a search is skipped once the search pool is empty, and
-   * the ones that cost nothing keep going. That is the whole point of counting
-   * the two separately: an account out of searches can still read every
-   * comment section its competitors have, which is the better source anyway.
+   * Selection used to happen once, sized on the upfront share, and that was
+   * right while a booking equalled a spend. The refunds changed the physics:
+   * measured on 2026-08-11, the first visit booked 84 names across three
+   * keyword sources, read 9, got 75 back, and then stopped with four
+   * engagement sources unopened, because the one-shot list was exhausted.
+   * The customer saw one lead and asked what the point was. So the pass now
+   * re-checks the room after every source and keeps drawing while there is
+   * genuine space, which is what a person with time left in a sitting does.
+   *
+   * The safety envelope is unchanged: `book` still charges before any page
+   * opens, `roomToRead` still refuses the pass once the visit's cumulative
+   * share is truly spent, and the source count per pass keeps its cap.
+   *
+   * A source that needs a search is skipped once the search pool is empty,
+   * and the ones that cost nothing keep going. An account out of searches can
+   * still read every comment section its competitors have, which is the
+   * better source anyway.
    */
-  const maxSources = Math.max(
-    1,
-    Math.min(wanted, Math.floor(room.profiles / MIN_PROFILES_PER_SOURCE))
-  );
+  const USEFUL_DEPTH = 25;
   const roles = ctx.cfg.leads.icpKeywords.length;
   const costOf = (source: (typeof sources)[number]): number =>
     searchCost(source.type, queriesIn(source.type, parseConfig(source.config), roles));
 
-  const chosen: typeof sources = [];
-  let searchesLeft = room.searches;
-  for (const source of sources) {
-    if (chosen.length >= maxSources) break;
-    const cost = costOf(source);
-    if (cost > searchesLeft) continue;
-    searchesLeft -= cost;
-    chosen.push(source);
-  }
-
-  if (chosen.length === 0) {
-    log("every source left needs a search and there are none left today", {
-      accountId: ctx.linkedinAccountId,
-      tier,
-    });
-    return 0;
-  }
+  const passCap = opts.firstRun
+    ? Math.min(FIRST_RUN_SOURCES, sources.length)
+    : Math.min(MAX_SOURCES_PER_PASS, sources.length);
 
   await recordEvent(
     ctx,
     "sourcing",
     opts.firstRun
-      ? `Looking for your first leads across ${chosen.length} ${chosen.length === 1 ? "source" : "sources"}`
-      : `Checking ${chosen.map((s) => s.label).join(" and ")} for new people`
+      ? `Looking for your first leads across ${passCap} ${passCap === 1 ? "source" : "sources"}`
+      : `Checking ${sources.slice(0, passCap).map((s) => s.label).join(" and ")} for new people`
   ).catch(() => {});
 
-  // Spread what the visit has across the sources it is about to open, so one
-  // source cannot eat the visit.
-  const shape = readingShape(Math.floor(room.profiles / chosen.length), budget);
-  budget.posts = shape.posts;
-  budget.perPost = shape.perPost;
-
   let total = 0;
+  const mined = new Set<string>();
 
-  for (const source of chosen) {
+  while (mined.size < passCap) {
+    // What is genuinely left of the visit's share, refunds included.
+    const live = await roomToRead(
+      ctx.linkedinAccountId,
+      tier,
+      ctx.timezone,
+      ageDays,
+      opts.pace,
+      maturityOf(ctx.maturity)
+    );
+    if (!live.ok) break;
+
+    const source = sources.find((s) => !mined.has(s.id) && costOf(s) <= live.searches);
+    if (!source) {
+      if (mined.size === 0) {
+        log("every source left needs a search and there are none left today", {
+          accountId: ctx.linkedinAccountId,
+          tier,
+        });
+      }
+      break;
+    }
+    mined.add(source.id);
+    /** Searches the day still holds after this source's own, for the in-source resolution gate. */
+    const searchesNow = live.searches - costOf(source);
+
+    // One source may take up to two useful posts of depth. What it does not
+    // read comes straight back, so sizing generously costs nothing real, and
+    // sizing thin is what starved every list on 2026-08-10.
+    const shape = readingShape(Math.min(live.profiles, 2 * USEFUL_DEPTH), budget);
+    budget.posts = shape.posts;
+    budget.perPost = shape.perPost;
+
     const config = parseConfig(source.config);
     let found: Engager[] = [];
 
@@ -698,6 +715,14 @@ export async function sourcePass(
              * Hackers" were minted with no config on 2026-08-10, mined zero on
              * every pass, and booked a full source's budget each time.
              */
+            if (searchesNow < 1) {
+              // No search left to resolve with. Stays untried for a pass that has one.
+              await refund(ctx.linkedinAccountId, ctx.timezone, {
+                profiles: bookedProfiles,
+                searches: bookedSearches,
+              }).catch(() => {});
+              continue;
+            }
             await book(ctx.linkedinAccountId, ctx.timezone, { searches: 1 }).catch(() => {});
             const resolved = await resolveCompetitorUrls(page, [source.label], ctx);
             url = resolved[0] ?? null;
@@ -749,6 +774,14 @@ export async function sourcePass(
            */
           let url = typeof config.url === "string" ? config.url : null;
           if (!url) {
+            if (searchesNow < 1) {
+              // No search left to resolve with. Stays untried for a pass that has one.
+              await refund(ctx.linkedinAccountId, ctx.timezone, {
+                profiles: bookedProfiles,
+                searches: bookedSearches,
+              }).catch(() => {});
+              continue;
+            }
             await book(ctx.linkedinAccountId, ctx.timezone, { searches: 1 }).catch(() => {});
             url = await resolveCreatorUrl(page, source.label, ctx);
             if (!url) {
@@ -1034,7 +1067,17 @@ export async function sourcePass(
   // they did give came back empty this pass. An agent that goes quiet because its one competitor is
   // exhausted is the failure the toggle exists to prevent, and it looks broken from the outside.
   if (ctx.smartLeadFinder && (!hasOwnQueries || total === 0)) {
-    total += await fallbackPass(ctx, page, budget, hasOwnQueries, searchesLeft);
+    // Read fresh rather than carried over: the mining loop above books and
+    // refunds as it goes, so only the counter knows what is really left.
+    const after = await roomToRead(
+      ctx.linkedinAccountId,
+      tier,
+      ctx.timezone,
+      ageDays,
+      opts.pace,
+      maturityOf(ctx.maturity)
+    );
+    total += await fallbackPass(ctx, page, budget, hasOwnQueries, after.searches);
   }
 
   await recordEvent(
