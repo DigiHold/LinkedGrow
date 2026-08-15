@@ -79,6 +79,14 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
   let sent = 0;
   let skipped = 0;
 
+  /**
+   * One stopped-agent email per agent per run, no matter how many events the
+   * backlog holds. A leaked-Chrome pileup on 2026-08-15 wrote an error event
+   * every 5 minutes for a day, and this loop faithfully turned 17 of them into
+   * 17 identical emails about a single outage.
+   */
+  const stoppedEmailed = new Set<string>();
+
   for (const event of pending) {
     /**
      * An error the agent recovered from on its own is not worth an email.
@@ -127,6 +135,12 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
       .where(eq(agentEvents.id, event.id));
 
     if (event.createdAt < cutoff || !event.email) {
+      skipped += 1;
+      continue;
+    }
+
+    const isStoppedFamily = event.type !== "challenged" && event.type !== "reply";
+    if (isStoppedFamily && stoppedEmailed.has(event.agentId)) {
       skipped += 1;
       continue;
     }
@@ -186,6 +200,19 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
           retrying: retriesItself(event.type),
           agentId: event.agentId,
         });
+        stoppedEmailed.add(event.agentId);
+        // The email covers the whole outage, so the rest of this agent's error
+        // backlog is closed with it rather than queuing up more of the same.
+        await db
+          .update(agentEvents)
+          .set({ notifiedAt: new Date() })
+          .where(
+            and(
+              eq(agentEvents.agentId, event.agentId),
+              eq(agentEvents.type, "error"),
+              isNull(agentEvents.notifiedAt)
+            )
+          );
       }
       sent += 1;
     } catch {
