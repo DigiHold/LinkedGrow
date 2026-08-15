@@ -16,6 +16,7 @@ import { groupKey, withAddress } from "./safety/ip-lock.ts";
 import { NoSlotError, reportSlots, takeSlot } from "./safety/slots.ts";
 import { currentRun } from "./safety/run-context.ts";
 import { RunStalled, withWatchdog } from "./safety/watchdog.ts";
+import { reapLeakedChromes } from "./safety/reaper.ts";
 import { allocationFor, isProduction } from "./proxy/allocation.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { connectPass } from "./linkedin/connect-pass.ts";
@@ -349,12 +350,28 @@ export function shouldAlertOnFailure(consecutive: number): boolean {
   return consecutive >= ALERT_AFTER_FAILURES;
 }
 
+/**
+ * Whether this failure is the one that writes the error event. Exactly at the
+ * threshold, never past it: a sustained outage used to write one event per
+ * failed pass, the alert cron mails one email per event, and on 2026-08-15 a
+ * pile of leaked Chrome processes turned that into 17 stopped-agent emails
+ * about one outage. One streak, one event; a clean pass resets the streak.
+ */
+export function shouldRecordFailureEvent(consecutive: number): boolean {
+  return consecutive === ALERT_AFTER_FAILURES;
+}
+
 /** Records a self-recovering failure, and only surfaces it once it stops recovering. */
 async function noteTransient(ctx: AgentContext, message: string): Promise<void> {
   const n = (consecutiveFailures.get(ctx.agentId) ?? 0) + 1;
   consecutiveFailures.set(ctx.agentId, n);
-  if (!shouldAlertOnFailure(n)) {
-    log("transient pass failure, not alerting yet", { agentId: ctx.agentId, count: n });
+  if (!shouldRecordFailureEvent(n)) {
+    log(
+      n < ALERT_AFTER_FAILURES
+        ? "transient pass failure, not alerting yet"
+        : "still failing, this outage is already recorded",
+      { agentId: ctx.agentId, count: n }
+    );
     return;
   }
   await recordEvent(ctx, "error", message).catch(() => {});
@@ -401,6 +418,7 @@ async function safely(ctx: AgentContext): Promise<void> {
 }
 
 async function pass(): Promise<void> {
+  await reapLeakedChromes();
   const agents = await loadRunnableAgents();
   if (!agents.length) {
     log("nothing to run");

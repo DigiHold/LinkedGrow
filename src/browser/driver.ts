@@ -51,7 +51,7 @@ export interface ProxyAllocation {
   expectedIp: string;
 }
 
-const PROFILE_ROOT = optionalEnv("PROFILE_ROOT") ?? "profiles";
+export const PROFILE_ROOT = optionalEnv("PROFILE_ROOT") ?? "profiles";
 
 /**
  * How big the virtual display actually is.

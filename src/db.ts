@@ -152,6 +152,11 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
     JOIN linkedin_accounts l ON l.id = a.linkedin_account_id
     JOIN users u ON u.id = a.workspace_id
     WHERE a.status IN ('active', 'warming')
+      -- Demo rows exist for the dashboard preview and nothing else. Their
+      -- account and proxy look provisioned but are fake, so demo-agent-1 ran
+      -- for real, failed its address check every 5 minutes and emailed about
+      -- an agent no customer ever started (2026-08-14).
+      AND a.id NOT LIKE 'demo-%'
       -- Signed in, and nothing else. 'pending' used to be accepted here, which
       -- meant an agent could be handed an account that had never signed in and
       -- would open a browser onto a login page every five minutes.
