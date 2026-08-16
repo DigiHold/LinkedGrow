@@ -184,7 +184,15 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
          * everything else is the agent still working.
          */
         const status = person[0]?.sequenceStatus ?? null;
-        const OVER = ["handed_over", "ask_sent", "stopped", "skipped"];
+        /**
+         * "skipped" is NOT in this list, and it was, which made the reply
+         * email say "the agent stopped writing to this person, yours now"
+         * about leads the agent was still answering: skipped only means the
+         * sales sequence will not pitch them, the conversation itself goes
+         * on. On 2026-08-15 Nicolas's inbox said "yours now" about a thread
+         * the agent answered 2 hours later.
+         */
+        const OVER = ["handed_over", "ask_sent", "stopped"];
         await sendReplyEmail({
           to: event.email,
           name: event.name,
