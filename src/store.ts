@@ -47,6 +47,8 @@ export interface ProspectRow {
    * like one judged 90.
    */
   match_score: number | null;
+  /** What their last reply was worth, written by the reply pass. The weak-lead gate reads it. */
+  reply_intent: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -104,6 +106,7 @@ function toRow(r: Record<string, unknown>): ProspectRow {
     angle: (r.angle as string) ?? null,
     context: (r.signal_text as string) ?? null,
     match_score: r.match_score === null || r.match_score === undefined ? null : Number(r.match_score),
+    reply_intent: (r.reply_intent as string) ?? null,
     status: String(r.sequence_status ?? "queued"),
     created_at: new Date(Number(r.found_at ?? 0) * 1000).toISOString(),
     updated_at: new Date(Number(r.updated_at ?? 0) * 1000).toISOString(),

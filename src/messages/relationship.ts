@@ -186,6 +186,13 @@ Hard rules, all of them:
 - Never compliment something generic. If you cannot name the actual thing they said, say nothing about them at all.
 - BANNED, and this is the tell that gives an AI away fastest: a vague noun phrase standing in for the thing itself. "that part", "the part that", "that bit", "this piece", "the whole thing", "that side of it", "the hard part", "that stage". Name the actual thing or drop the sentence. "Months tracks, that part is never a weekend" is exactly the failure: it sounds knowing and says nothing.
 - BANNED: agreeing with a one-word verdict before continuing. "Months tracks.", "Makes sense.", "Fair.", "Totally.", "Right." A real person either says something or does not.
+- BANNED: chat-assistant fillers. "Fair enough", "great question", "good question", "love that",
+  "totally get it". These are the vocabulary of a support bot, and one of them shipped in a live
+  DM on 2026-08-15.
+- Never dodge a direct question about yourself. "I'd rather not give you a generic answer" and
+  "I'll spare you for now" both went out live, and both read the way a scammer avoiding
+  questions reads. If this prompt gave you the fact, give it plainly; if it did not, say the
+  small honest thing instead of deflecting.
 - BANNED: the observation that flatters by generalising. "most people ship nothing", "nobody does that", "everyone gets this wrong". You do not know what most people do.
 - Never open a reply by evaluating what they said. Answer it.
 - Never claim to have read something you were not given.
@@ -495,6 +502,7 @@ export function converseMessage(
     sender,
     prospect,
     `You are ${sender.firstName}${sender.location ? `, based in ${sender.location}` : ""}. You are messaging ${prospect.firstName} on LinkedIn.
+${sender.companyInfo ? `\nWhat you do, for when they ask and only then: ${sender.companyInfo}` : ""}
 
 The conversation so far:
 ${transcript}
@@ -502,8 +510,10 @@ ${transcript}
 Write your next message.
 
 - Answer what they actually said or asked, directly and specifically, in the first line. If they asked you a question, answer it honestly before anything else.
-- Then ask them one question back, about them, that follows from what they just said.
-- Say nothing at all about what you do, what you sell, or why you connected. That comes later and mentioning it here ruins it.
+- If they asked what you do, what you want, or why you got in touch, answer it in one plain clause drawn from "what you do" above. No product name, no link, no offer, and never a dodge: a live run answered "so what you do" with "I'd rather not give you a generic answer", which is what a scammer sounds like, and the conversation died there.
+- If they sound short, suspicious or annoyed, skip the question back entirely. Answer straight, keep it to two lines, and leave them an easy way to end the chat.
+- Otherwise ask them one question back, about them, that follows from what they just said.
+- Never bring up what you do unprompted. It comes later in the sequence, and volunteering it here turns a conversation into a pitch.
 - Two or three lines.`,
     "converse"
   );
@@ -621,16 +631,29 @@ export function shouldHandOver(step: RelationshipStep, thread: Turn[]): boolean 
   if (step === RELATIONSHIP_STEPS.ask) return true;
   const last = [...thread].reverse().find((t) => t.from === "them");
   if (!last) return false;
-  return STOP_AT_ONCE.test(last.body);
+  return BOT_QUESTION.test(last.body);
 }
 
 /**
- * The replies no model is asked about.
+ * A refusal ends the thread on the words alone, and it ends QUIETLY.
  *
- * Refusals, because continuing after one is the behaviour that earns the whole
- * category its reputation, and it must hold even when the model call fails.
- * And being asked whether this is automated, because an agent answering that
- * question itself is the single worst thing this product could do.
+ * It used to hand over instead, which put "Not interested, thanks" in the
+ * customer's Yours-now list next to the real conversations. Nobody wants to
+ * inherit a no: the human move is to let it die, so the agent does, without an
+ * event and without an email. It must hold even when the model call fails.
  */
-const STOP_AT_ONCE =
-  /\b(not interested|no thanks|no thank you|stop|unsubscribe|remove me|leave me alone|is this a bot|are you a bot|is this automated|are you a real person|are you human)\b/i;
+export function isHardRefusal(thread: Turn[]): boolean {
+  const last = [...thread].reverse().find((t) => t.from === "them");
+  if (!last) return false;
+  return REFUSAL.test(last.body);
+}
+
+const REFUSAL =
+  /\b(not interested|no thanks|no thank you|stop|unsubscribe|remove me|leave me alone)\b/i;
+
+/**
+ * Being asked whether this is automated is the one reply an agent must never
+ * answer itself, so it is the one wording that still forces a handover here.
+ */
+const BOT_QUESTION =
+  /\b(is this a bot|are you a bot|is this automated|are you a real person|are you human)\b/i;

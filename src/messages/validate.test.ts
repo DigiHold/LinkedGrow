@@ -66,3 +66,30 @@ test("rejects too long", () => {
   const msg = `Hey Alex, ${filler} so anyway that is the idea. Best, Maria Lecocq`;
   assert.equal(validateMessage(msg, ctx).ok, false);
 });
+
+/**
+ * The chat-assistant fillers and question-dodges that shipped in live DMs on
+ * 2026-08-15: "Fair enough, wanted to see...", "I'd rather not give you a
+ * generic answer", "I'll spare you for now". A person answers the question;
+ * a support bot fills, and a scammer dodges.
+ */
+test("rejects the fair-enough filler", () => {
+  const msg = "Fair enough, wanted to see what you are building and how you split the week between the SaaS and the agents these days.";
+  const r = validateMessage(msg, ctx);
+  assert.equal(r.ok, false);
+  assert.ok(r.reasons.some((x) => x.includes("fair enough")));
+});
+
+test("rejects the generic-answer dodge", () => {
+  const msg = "Hey Alex, I'd rather not give you a generic answer, so tell me first what you are working on these days and how it is going.";
+  const r = validateMessage(msg, ctx);
+  assert.equal(r.ok, false);
+  assert.ok(r.reasons.some((x) => x.includes("rather not")));
+});
+
+test("rejects the spare-you dodge", () => {
+  const msg = "Honestly still figuring out the best way to explain it in a sentence, so I'll spare you for now. How is your own week going?";
+  const r = validateMessage(msg, ctx);
+  assert.equal(r.ok, false);
+  assert.ok(r.reasons.some((x) => x.includes("spare you")));
+});

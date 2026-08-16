@@ -300,18 +300,26 @@ export async function classifyReply(
     ctx,
     `Our business: ${business || "a software product"}\n\nThe conversation so far:\n${transcript}\n\nAnswer on one line: HUMAN or AGENT, then INTERESTED, NEUTRAL or REFUSED, then a short reason.`,
     {
-      model: MODELS.fast,
+      /**
+       * The writer model, not the fast one. A handful of replies a day makes
+       * this the cheapest call in the whole product and the single
+       * highest-stakes read: on 2026-08-15 the fast model's verdicts had
+       * filled the customer's Yours-now list with greetings while a
+       * co-founder solicitation sat there labelled as needing them.
+       */
+      model: MODELS.writer,
       purpose: "classify-reply",
       maxTokens: 60,
       systemPrompt:
         "You read one LinkedIn conversation and answer two separate questions about the last message from the other person.\n\n" +
         "FIRST, who should answer it.\n" +
-        "HUMAN only when they are asking for something an assistant must not give: they want to see the product, want a demo, a call or a meeting, ask what it costs, want to buy, want to be introduced to someone, or make a complaint or a request that carries a commitment.\n" +
-        "AGENT for everything else, and everything else is most replies: thanks, hello, nice to meet you, small talk, telling you about their own work, asking who you are or why you got in touch, asking a question about their own business or yours that does not commit anybody to anything, or saying they will be in touch later.\n" +
+        "HUMAN only when they are moving toward buying or meeting US: they want to see the product, want a demo, a call or a meeting about what we do, ask what it costs or how it works because they might use it, want to buy, or raise a complaint that needs an owner.\n" +
+        "AGENT for everything else, and everything else is most replies: thanks, hello, an emoji, small talk, telling you about their own work, asking who you are, where you are from, what you do or why you got in touch, asking a question about their own business or yours that does not commit anybody to anything, or saying they will be in touch later.\n" +
+        "Never HUMAN for somebody working their own pipeline (see REFUSED below): their meeting request is their sales motion, not ours.\n" +
         "When unsure, answer AGENT. An assistant writing one more friendly message costs nothing; handing a warm conversation to a busy person who then leaves it unanswered for a week costs the relationship.\n\n" +
         "SECOND, what the reply is worth as a sales signal, which is a different question and often has the opposite answer.\n" +
         "INTERESTED: they want what we sell, ask what it does or costs, describe having the problem, or ask to continue the conversation about it.\n" +
-        "REFUSED: they say no, ask to be left alone, say it is not relevant, ask whether this is automated, or pitch us THEIR product instead, which means they are a seller in this market and never a buyer.\n" +
+        "REFUSED: they say no, ask to be left alone, say it is not relevant, ask whether this is automated, or they are working their own pipeline instead of ours: pitching THEIR product or services, recruiting, fundraising, or asking us to be their co-founder or partner. A seller, a recruiter or a fundraiser is never a buyer, whatever they ask for.\n" +
         "NEUTRAL: everything else, and most replies are neutral. A greeting, a thank-you, small talk, politeness, or a friendly answer that says nothing about wanting the product is NEUTRAL, not interested.\n" +
         "Be strict. When unsure between INTERESTED and NEUTRAL, answer NEUTRAL.\n\n" +
         "Format: HUMAN or AGENT, a slash, INTERESTED or NEUTRAL or REFUSED, a dash, then at most eight words of reason. Example: AGENT / NEUTRAL - polite thanks, nothing asked.",

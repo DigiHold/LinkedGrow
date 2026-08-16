@@ -82,6 +82,12 @@ const BANNED_PHRASES = [
   // (Kondo, Hiration, Origami) plus the phrasings Nicolas rejected in his own outbound.
   "made me press connect", "explore synergies", "potential synergies", "mutually beneficial",
   "have you in my network", "expand my network", "hope this message finds you",
+  // Chat-assistant fillers and question-dodges, all shipped in live DMs on
+  // 2026-08-15: "Fair enough, wanted to see...", "I'd rather not give you a
+  // generic answer", "I'll spare you for now". The fillers are support-bot
+  // vocabulary; the dodges read the way a scammer avoiding a question reads.
+  "fair enough", "great question", "good question", "love that", "totally get it",
+  "i'd rather not", "i'll spare you", "rather not give you a generic",
 ];
 
 /** Banned words matched with their common inflections (foster/fostering, showcase/showcasing, seamless/seamlessly). */

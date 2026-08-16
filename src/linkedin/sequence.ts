@@ -6,6 +6,7 @@ import {
   PACING,
   RELATIONSHIP_STEPS,
   shouldHandOver,
+  isHardRefusal,
   type GeneratedMessage,
   type RelationshipStep,
   type Turn,
@@ -248,29 +249,43 @@ async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<vo
       /**
        * The words first, then the reading.
        *
-       * A refusal stops the agent whatever a model would say, and the ask being
-       * out means the agent has nothing left to send. Everything else is read:
-       * most replies are a thank-you or a question the agent can answer, and
-       * handing those over is how a warm thread goes cold in somebody's inbox.
+       * A hard no ends the thread on the spot, and it ends QUIETLY: it used to
+       * hand over instead, which put "Not interested, thanks" in the
+       * customer's Yours-now list next to the real conversations. A bot
+       * question or a reply to the ask still hands over. Everything else is
+       * read: most replies are a thank-you or a question the agent can
+       * answer, and handing those over is how a warm thread goes cold in
+       * somebody's inbox.
        */
+      if (isHardRefusal(thread)) {
+        await setProspectReplyIntent(db, p.id, "refused").catch(() => {});
+        await setProspectStatus(db, p.id, STATUS.stopped);
+        log(`${label(p)} declined, so the thread ends here without an email about it.`);
+        await pause();
+        continue;
+      }
+
       let handOver = shouldHandOver(step, thread);
-      let why = handOver ? "the words in the reply" : "";
+      let why =
+        step === RELATIONSHIP_STEPS.ask
+          ? "they answered the ask"
+          : handOver
+            ? "they asked whether this is automated"
+            : "";
       /**
-       * What the reply was worth, which is a different question from who
-       * answers it and was never being asked.
-       *
-       * A refusal caught by the words alone is already known to be worthless,
-       * so it is recorded as such without a model call. Everything else is
-       * read, and the default stays neutral: a reply is not evidence of
-       * interest until something in it says so.
+       * What the reply was worth, asked even when the handover is already
+       * settled by the step, because the learning pass feeds on the intent
+       * and a reply to the ask is exactly where interest shows up.
        */
-      let intent: ReplyIntent = handOver ? "refused" : "neutral";
-      if (!handOver && deps.readReply) {
+      let intent: ReplyIntent = "neutral";
+      if (deps.readReply) {
         try {
           const read = await deps.readReply(thread);
-          handOver = read.handOver;
-          why = read.why;
           intent = read.intent;
+          if (!handOver) {
+            handOver = read.handOver;
+            why = read.why;
+          }
         } catch (error) {
           // Keep talking. An extra friendly message costs nothing; a thread
           // parked on a busy person because a model call timed out costs the
@@ -281,6 +296,21 @@ async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<vo
       // Recorded whatever happens next, because this is the ground truth the
       // source ranking and the memory both feed on.
       await setProspectReplyIntent(db, p.id, intent).catch(() => {});
+
+      /**
+       * Somebody selling TO us, read by the model rather than the words: a
+       * pitch for their product or services, a recruiter, a fundraiser, a
+       * co-founder ask. On 2026-08-14 one of those was handed over as if it
+       * were a buyer. A human neither keeps chatting with them nor forwards
+       * them to a busy founder; the thread just ends, whatever else the model
+       * said about who should answer.
+       */
+      if (intent === "refused") {
+        await setProspectStatus(db, p.id, STATUS.stopped);
+        log(`${label(p)} is selling or recruiting rather than buying, so the agent lets the thread end.`);
+        await pause();
+        continue;
+      }
 
       if (handOver) {
         await setProspectStatus(db, p.id, STATUS.handedOver);
@@ -468,13 +498,29 @@ async function sendStep(
 ): Promise<boolean> {
   if (tooWeakToWriteTo(cfg, db, p)) {
     const answered = p.status === STATUS.helloAnswered || p.status === STATUS.conversing;
-    await setProspectStatus(db, p.id, answered ? STATUS.handedOver : STATUS.skipped);
-    log(
-      answered
-        ? `${label(p)} scored ${p.match_score} and has written back, so it goes to you rather than to the agent.`
-        : `${label(p)} scored ${p.match_score}, below the line, so nothing is sent.`
-    );
-    return false;
+    /**
+     * Who a weak lead goes to changed on 2026-08-15. Everybody below the line
+     * who had written back was handed over, so Yours-now filled with "Hi" and
+     * a thumbs-up from people who can never buy, and the one thing every row
+     * had in common was that none of them were interested. A reply earns the
+     * customer's attention when it shows interest; small talk from a mismatch
+     * is answered by the agent like any small talk, and the thread fades out
+     * at the ask instead of pitching someone the product was never for.
+     */
+    if (answered && p.reply_intent === "interested") {
+      await setProspectStatus(db, p.id, STATUS.handedOver);
+      await deps.notify(
+        `${label(p)} scores below your match line but wrote back interested. Over to you: ${p.profile_url}`
+      );
+      return false;
+    }
+    if (!(answered && step === RELATIONSHIP_STEPS.converse)) {
+      await setProspectStatus(db, p.id, STATUS.skipped);
+      log(`${label(p)} scored ${p.match_score}, below the line, so nothing more is sent.`);
+      return false;
+    }
+    // Fall through: answering their small talk costs one message and keeps
+    // the account looking like the person it belongs to.
   }
 
   const thread = await getThread(db, p.id);

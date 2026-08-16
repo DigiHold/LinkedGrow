@@ -372,10 +372,12 @@ test("a refusal stops the agent with no model involved at all", async () => {
     inboxRepliers: async () => ["Jane Doe"],
     readThread: async () => [{ from: "them", body: "Not interested, please remove me." }],
   });
-  // No readReply: the words alone have to settle this one.
+  // No readReply: the words alone have to settle this one. And a no ends the
+  // thread quietly (stopped, no alert): nobody wants to inherit a refusal.
   await runSequence(baseCfg(), db, deps(actions, (m) => alerts.push(m)));
-  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
-  assert.equal(alerts.length, 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.stopped), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 0);
+  assert.equal(alerts.length, 0);
   drop();
 });
 
@@ -716,7 +718,15 @@ test("a lead below the floor is never written to, at any step", async () => {
   }
 });
 
-test("somebody who wrote back goes to the customer, not into the bin", async () => {
+/**
+ * Who inherits a weak lead's reply, decided by what the reply was worth.
+ *
+ * The old rule handed over anybody below the line who had written back, and
+ * on 2026-08-15 the customer's Yours-now list was 7 conversations of "Hi" and
+ * a thumbs-up, none of them interested. Interest goes to the customer;
+ * small talk fades out with the agent.
+ */
+test("small talk from a weak lead fades out instead of landing on the customer", async () => {
   const db = await freshDb();
   const id = await seed(db, STATUS.helloAnswered, daysAgo(9), { score: 0 });
   await runSequence(scoringCfg(), db, deps(fakeActions()));
@@ -726,9 +736,28 @@ test("somebody who wrote back goes to the customer, not into the bin", async () 
   });
   assert.equal(
     String(rows[0]?.sequence_status),
-    STATUS.handedOver,
-    "a human took the trouble to answer, even one who can never buy"
+    STATUS.skipped,
+    "nobody inherits a greeting from a mismatch"
   );
+  drop();
+});
+
+test("a weak lead who wrote back interested still goes to the customer, with an alert", async () => {
+  const db = await freshDb();
+  const alerts: string[] = [];
+  const id = await seed(db, STATUS.helloAnswered, daysAgo(9), { score: 0 });
+  await sharedDb().execute({
+    sql: `UPDATE agent_leads SET reply_intent = 'interested' WHERE id = ?`,
+    args: [id],
+  });
+  await runSequence(scoringCfg(), db, deps(fakeActions(), (m) => alerts.push(m)));
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(String(rows[0]?.sequence_status), STATUS.handedOver);
+  assert.equal(alerts.length, 1);
+  assert.match(alerts[0] ?? "", /interested/);
   drop();
 });
 
@@ -828,8 +857,9 @@ test("the reply is graded, and a polite hello is not recorded as interest", asyn
   drop();
 });
 
-test("a refusal caught by the words alone is recorded as one without a model call", async () => {
+test("a refusal caught by the words alone ends the thread quietly, without a model call", async () => {
   const db = await freshDb();
+  const alerts: string[] = [];
   const id = await seed(db, STATUS.helloSent, daysAgo(1));
   await runSequence(
     baseCfg(),
@@ -839,7 +869,8 @@ test("a refusal caught by the words alone is recorded as one without a model cal
       fakeActions({
         inboxRepliers: async () => ["Jane Doe"],
         readThread: async () => [{ from: "them" as const, body: "Not interested, thanks" }],
-      })
+      }),
+      (m) => alerts.push(m)
     )
   );
   const { rows } = await sharedDb().execute({
@@ -847,6 +878,30 @@ test("a refusal caught by the words alone is recorded as one without a model cal
     args: [id],
   });
   assert.equal(String(rows[0]?.reply_intent), "refused");
-  assert.equal(String(rows[0]?.sequence_status), STATUS.handedOver);
+  // Stopped, not handed over: nobody wants to inherit a no, and no email goes out about one.
+  assert.equal(String(rows[0]?.sequence_status), STATUS.stopped);
+  assert.equal(alerts.length, 0);
+  drop();
+});
+
+test("a seller pitching us is wound down quietly, never handed over", async () => {
+  const db = await freshDb();
+  const alerts: string[] = [];
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [
+      { from: "them" as const, body: "I am actually looking for a co founder from abroad to be my partner" },
+    ],
+  });
+  await runSequence(
+    baseCfg(),
+    db,
+    // Even a model calling it HUMAN cannot forward a solicitation: refused wins.
+    deps(actions, (m) => alerts.push(m), async () => ({ handOver: true, why: "asks to partner", intent: "refused" as const }))
+  );
+  assert.equal(await countProspectsByStatus(db, STATUS.stopped), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 0);
+  assert.equal(alerts.length, 0);
   drop();
 });
