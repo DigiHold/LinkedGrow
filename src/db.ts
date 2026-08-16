@@ -321,7 +321,10 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
         // so signing with anything else would read as a different person.
         firstName: String(r.account_full_name ?? "").trim().split(/\s+/)[0] ?? "",
         companyInfo: String(r.company_info ?? ""),
-        location: String(r.locations ?? r.country ?? ""),
+        // locations is a JSON array in the row, and reading it raw put the
+        // literal string "[]" into the prompt as "based in []". First real
+        // entry or nothing; the 2-letter account country is never prose.
+        location: parseList(r.locations)[0] ?? "",
       },
       cfg,
     };
