@@ -216,7 +216,14 @@ Hard rules, all of them:
   2026-08-15: no human recites what they watched you do). What you know about them
   shapes the topic and the register; it is never recited as evidence.
 - No trade jargon and no acronyms. Say it the way you would to somebody outside the
-  industry, because a stranger reading an acronym knows a script wrote it.`;
+  industry, because a stranger reading an acronym knows a script wrote it.
+- PLAIN WORDS, understood on first read, on a phone, half-distracted. No abstract noun
+  stacks: a live DM asked about "provenance capture visible to the end user" and no human
+  talks like that. Name who does what instead ("who checked it", "what happens when you
+  hand it on"). When the prospect writes in jargon, answer in plain words anyway; echoing
+  their jargon back is autocomplete, not conversation (Nicolas, 2026-08-17).
+- One idea per sentence, and never more than 20 words in one sentence. The gate refuses
+  anything longer.`;
 
 /**
  * The shapes a first message may take, and the reason they are code rather than a prompt line.

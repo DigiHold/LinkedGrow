@@ -188,6 +188,9 @@ function stripSignoff(text: string, senderName: string): string {
   return text.slice(0, cut);
 }
 
+/** Nobody follows more words than this in one sentence on a phone. */
+const MAX_SENTENCE_WORDS = 22;
+
 /** Sentences excluding the greeting line and everything from the sign-off onward. */
 function bodySentences(text: string, senderName: string): string[] {
   const body = stripSignoff(text, senderName);
@@ -229,6 +232,19 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   }
   // A colon or semicolon inside a message is a formal/AI tell; a human DM never uses them.
   if (/[:;]/.test(text)) reasons.push("colon or semicolon (not human)");
+  /**
+   * Clarity is a hard gate, not a style preference. A live DM on 2026-08-15
+   * opened with a 29-word sentence about "provenance capture" and read like a
+   * seminar. Nobody follows a long sentence on a phone, and the cap is the one
+   * programmatic proxy for "a person outside the industry understands this on
+   * first read" (Nicolas, 2026-08-17: DMs must always be clear).
+   */
+  for (const s of bodySentences(text, ctx.senderName)) {
+    const n = words(s).length;
+    if (n > MAX_SENTENCE_WORDS) {
+      reasons.push(`sentence too long to follow on a phone: ${n} words (max ${MAX_SENTENCE_WORDS})`);
+    }
+  }
   if (/[“”‘’]/.test(text)) reasons.push("curly quotes");
   reasons.push(...bannedWordReasons(text));
   for (const p of BANNED_PHRASES) {

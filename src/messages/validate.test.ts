@@ -111,3 +111,21 @@ test("rejects a semicolon for the same reason", () => {
   assert.equal(r.ok, false);
   assert.ok(r.reasons.some((x) => x.includes("semicolon") || x.includes("colon")));
 });
+
+/**
+ * The seminar DM, verbatim from a live thread on 2026-08-15. Grammatical,
+ * polite, and unreadable: a 29-word opening sentence and jargon mirrored from
+ * the prospect. Clarity is a hard gate (Nicolas, 2026-08-17).
+ */
+test("rejects the provenance-capture seminar DM on sentence length", () => {
+  const msg = "What's tripped me up before is the handoff moment, when one person verifies something but someone else later relies on it without knowing what was actually checked versus assumed.\n\nAre you designing provenance capture to be visible to the end user, or is it mostly internal record keeping for now?";
+  const r = validateMessage(msg, ctx);
+  assert.equal(r.ok, false);
+  assert.ok(r.reasons.some((x) => x.includes("too long to follow")));
+});
+
+test("a plain-words version of the same idea passes", () => {
+  const msg = "Hey Alex, the handover always caught me out. Someone checks a document, someone else trusts it later without knowing what was checked. Who gets to see that history in your tool, the team or the client too?";
+  const r = validateMessage(msg, ctx);
+  assert.equal(r.ok, true, r.reasons.join("; "));
+});
