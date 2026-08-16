@@ -93,3 +93,21 @@ test("rejects the spare-you dodge", () => {
   assert.equal(r.ok, false);
   assert.ok(r.reasons.some((x) => x.includes("spare you")));
 });
+
+/**
+ * Colons and semicolons are the same family of tell as the em dash (Nicolas,
+ * 2026-08-15). A person typing a DM on a phone uses a comma or a new sentence.
+ */
+test("rejects a colon, which no human types in a DM", () => {
+  const msg = "Hey Alex, quick thought on your rollout: the checker I built catches exactly the AI-search gap you posted about last week.";
+  const r = validateMessage(msg, ctx);
+  assert.equal(r.ok, false);
+  assert.ok(r.reasons.some((x) => x.includes("colon")));
+});
+
+test("rejects a semicolon for the same reason", () => {
+  const msg = "Hey Alex, I keep running into the same AI-search gap you mentioned; the checker I built catches it in a few seconds flat.";
+  const r = validateMessage(msg, ctx);
+  assert.equal(r.ok, false);
+  assert.ok(r.reasons.some((x) => x.includes("semicolon") || x.includes("colon")));
+});

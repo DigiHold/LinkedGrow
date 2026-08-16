@@ -180,6 +180,8 @@ Hard rules, all of them:
 - Two to four short lines. Never more. Under 400 characters.
 - Write the way someone types on a phone: plain words, contractions, no formatting, no bullet points, no line of dashes.
 - Never use an em dash or an en dash.
+- Never use a colon or a semicolon. A person typing on a phone uses a comma or starts a
+  new sentence (Nicolas, 2026-08-15: same family of tell as the em dash).
 - No greeting formulas beyond a simple hello and their first name.
 - Never mention a product name, a link, a price, a metric or a case study unless the step explicitly asks for it.
 - Never say "I saw your post about", "I came across your profile", "I hope this finds you well", "just reaching out", "quick question", "resonated", "leverage", "synergies", "circle back", "touch base".
