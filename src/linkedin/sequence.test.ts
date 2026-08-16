@@ -546,7 +546,7 @@ test("a stale unaccepted invite is withdrawn and stopped", async () => {
   drop();
 });
 
-test("a message that cannot be generated skips the prospect instead of sending", async () => {
+test("a message that cannot be generated sends nothing and keeps the prospect in place", async () => {
   const db = await freshDb();
   let dmCalls = 0;
   await seed(db, STATUS.helloAnswered, daysAgo(1));
@@ -555,8 +555,11 @@ test("a message that cannot be generated skips the prospect instead of sending",
     throw new Error("no clean message after 4 tries");
   };
   await runSequence(baseCfg(), db, d);
-  assert.equal(await countProspectsByStatus(db, STATUS.skipped), 1);
+  // Nothing sent, nothing thrown away: the step is retried on the next pass
+  // (2026-08-17, the cycle runs to its end unless the lead is hot, refused or gone).
   assert.equal(dmCalls, 0);
+  assert.equal(await countProspectsByStatus(db, STATUS.skipped), 0);
+  assert.equal(await countProspectsByStatus(db, STATUS.helloAnswered), 1);
   drop();
 });
 
@@ -903,5 +906,27 @@ test("a seller pitching us is wound down quietly, never handed over", async () =
   assert.equal(await countProspectsByStatus(db, STATUS.stopped), 1);
   assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 0);
   assert.equal(alerts.length, 0);
+  drop();
+});
+
+/**
+ * A draft that fails the gate costs the pass, never the person. It used to
+ * set skipped, which threw a lead away for good because one message came out
+ * unwritable four times in a row (Nicolas, 2026-08-17: the cycle runs to its
+ * end unless the lead is hot, refused or gone).
+ */
+test("a message that cannot pass the gate leaves the lead in place for the next pass", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.connected, daysAgo(1));
+  const failing = deps(fakeActions());
+  failing.writeMessage = async () => {
+    throw new Error("Could not write a message that passes the gate");
+  };
+  await runSequence(baseCfg(), db, failing);
+  const { rows } = await sharedDb().execute({
+    sql: `SELECT sequence_status FROM agent_leads WHERE id = ?`,
+    args: [id],
+  });
+  assert.equal(String(rows[0]?.sequence_status), STATUS.connected, "the step is retried, not abandoned");
   drop();
 });

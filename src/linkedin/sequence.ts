@@ -529,8 +529,14 @@ async function sendStep(
   try {
     message = await deps.writeMessage(p, step, thread);
   } catch (err) {
-    await setProspectStatus(db, p.id, STATUS.skipped);
-    log(`Skipping ${label(p)}: ${err instanceof Error ? err.message : String(err)}`);
+    /**
+     * A draft that cannot pass the gate costs THIS pass, never the person.
+     * This used to set skipped, so 4 failed attempts at one message threw the
+     * lead away for good, mid-sequence. The cycle runs to its end unless the
+     * lead is hot, refused or gone (Nicolas, 2026-08-17); generation is
+     * stochastic, so the next pass gets a fresh try at the same step.
+     */
+    log(`No message for ${label(p)} this pass, trying again next pass: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
   /**
