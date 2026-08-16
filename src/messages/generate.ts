@@ -77,11 +77,19 @@ export async function judgeIcpFit(
     `Person's headline: ${headline}`,
     context ? `What they posted: ${context.slice(0, 500)}` : "",
     "",
-    "Could this specific person plausibly decide to add a tool to their company website, or influence that decision?",
+    // This question was hardcoded to "add a tool to their company website"
+    // until 2026-08-17, which was the right question for exactly one customer
+    // and the wrong one for everybody else. It now asks about the thing this
+    // agent actually sells.
+    `What we sell: ${(ctx.cfg.business.description ?? "").trim().slice(0, 400) || "a software product"}`,
+    "",
+    "Could this specific person plausibly decide to buy what we sell, or influence that decision?",
     "Answer with exactly one word, FIT or SKIP.",
-    "Answer SKIP when they are junior, when their field is unrelated, or when they work at a large company",
-    "or consultancy where a whole department owns the website and no individual could add a tool to it.",
-    "Answer FIT mainly for small businesses, startups, agencies and independents who run their own site.",
+    "Answer SKIP when they are junior, when their field is unrelated to what we sell, or when they",
+    "work somewhere so large that this purchase belongs to a whole department rather than to any",
+    "one person they could be.",
+    "Answer FIT mainly for people close enough to the problem to own the decision: founders,",
+    "operators, owners, and the person who would use it themselves.",
     ctx.matchLevel === "precision"
       ? "Answer FIT only when you are confident. Anything you would have to argue for is a SKIP."
       : "When unsure, answer SKIP.",
