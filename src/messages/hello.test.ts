@@ -75,22 +75,24 @@ test("compliments that would fit anybody are refused", () => {
 });
 
 /**
- * The five shapes Nicolas approved on 2026-07-31. They are deliberately five
- * different structures rather than one template with the noun swapped, because
- * a fixed opening is the pattern a reader spots after two messages and a
- * classifier spots across a whole sending history.
+ * The five shapes, re-cut on 2026-08-15. The 2026-07-31 set engaged with what
+ * the prospect had posted ("your point about cookie banners..."), and Nicolas
+ * banned the whole family: reciting somebody's post, comment or headline back
+ * at them is what every LinkedIn automation does, and no human does it. The
+ * shapes stay structurally distinct, and the signal now picks the register
+ * without ever being cited.
  */
 test("the five approved shapes all pass", () => {
   const approved = [
-    // greeting, then the observation
-    "Glad we connected, Jonathan. That client site going down right before a launch is the kind of week nobody deserves.",
-    // observation, then a short greeting
-    "Your point about cookie banners eating three days of a build was too accurate to scroll past. Good to be connected, Tom.",
-    // the observation alone, name inside it
-    "Still thinking about your pricing page, Sarah. Explaining the tiers instead of hiding them is rarer than it should be.",
+    // greeting, then one warm ordinary line
+    "Glad we connected, Jonathan. Hope the week has been kinder than the usual Monday pile.",
+    // the warm line first, then a short greeting
+    "August has half of LinkedIn on a beach somewhere. Good to be connected, Tom.",
+    // a single easy sentence, name inside it
+    "Better late than never on my end, Sarah, but glad the connection finally came through.",
     // a congratulation on something that just changed
     "Going from solo to a first hire is the scariest good decision there is, Lea. Nice one for making the call.",
-    // plain empathy, no compliment
+    // plain empathy for the kind of situation they are in, none of their words
     "Watching traffic slide with no idea which change caused it is genuinely maddening, Marc. Good to be connected.",
   ];
   for (const message of approved) {

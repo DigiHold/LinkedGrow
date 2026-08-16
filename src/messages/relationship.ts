@@ -206,6 +206,13 @@ Hard rules, all of them:
 - Never say "good to meet you", "nice to meet you" or any variant. You have not met.
 - Never explain why you connected. "That is why I hit connect" and everything like it
   is a script justifying its own existence, and it is the single clearest tell.
+- NEVER refer to how you found them or what you watched them do: their post, their
+  comment, their reaction, their headline, their profile, their search visibility.
+  "Saw your comment on that Calendly post" reads as one message; across a sending
+  history it is the opening fingerprint of every LinkedIn automation, and it is what
+  a spam classifier and an annoyed prospect both pattern-match on (Nicolas,
+  2026-08-15: no human recites what they watched you do). What you know about them
+  shapes the topic and the register; it is never recited as evidence.
 - No trade jargon and no acronyms. Say it the way you would to somebody outside the
   industry, because a stranger reading an acronym knows a script wrote it.`;
 
@@ -222,11 +229,11 @@ Hard rules, all of them:
  * made outside the model and handed to it, which is what these pools do.
  */
 export const HELLO_SHAPES = [
-  "greeting with their first name, then one concrete observation",
-  "the observation first, then a short greeting with their first name",
-  "the observation alone, with their first name dropped inside it",
+  "greeting with their first name, then one warm ordinary line that stands on its own",
+  "the warm ordinary line first, then a short greeting with their first name",
+  "a single easy sentence with their first name dropped inside it",
   "a congratulation on something that just changed for them",
-  "plain empathy for a situation they described, with no compliment",
+  "plain empathy for the kind of situation they are in, in your words and none of theirs",
 ] as const;
 
 /**
@@ -407,14 +414,16 @@ export function helloMessage(
     prospect,
     `You are ${sender.firstName}. ${prospect.firstName} just accepted your connection request on LinkedIn. This is the very first thing you say to them.
 
-${prospect.signalText ? `The specific thing of theirs you actually saw:\n"${prospect.signalText}"` : "You have nothing specific of theirs. Do not invent one."}
-${prospect.headline ? `Their headline: ${prospect.headline}` : ""}
+${prospect.signalText ? `Context you know and never mention: they recently wrote "${prospect.signalText}". It tells you what world they live in, nothing more.` : ""}
+${prospect.headline ? `Context you know and never mention: their headline reads "${prospect.headline}".` : ""}
 
 Write it.
 
 - TWO LINES. Never three. Under 300 characters.
-- ${prospect.signalText ? "Name the real thing of theirs you saw, in your own words, in half a sentence. Not a compliment, just recognition that you read it." : "Say hello and that it is good to connect. Nothing more, because you have nothing true to point at. Do NOT invent a detail about their site, their company or their problems, and do NOT describe their situation in the language of a product."}
 - The greeting is plain and contains their first name. "Glad we connected, Sarah", "Good to be connected, Tom". Never "nice to meet you", because you have not met.
+- The other line is one warm, ordinary sentence a person types without thinking: the week, the season, being glad the invite went through. It stands entirely on its own and refers to nothing you watched them do.
+- NEVER mention their post, their comment, a reaction, their profile, their headline, their company or how you found them. The context above sets your register only; reciting it is surveillance, and it is the one pattern every LinkedIn automation shares.
+- The one exception: when the shape below is a congratulation or empathy, speak to the situation itself in your own plain words, never quoting theirs and never naming where you read about it.
 - SHAPE FOR THIS ONE: ${pickHelloShape(prospect)}. Follow it exactly, so that two messages in a row never share an opening.
 - Ordinary spoken word order. Never a clause that opens on a gerund and lands on the point, because nobody says "Owning a site end to end is why I hit connect" out loud.
 - No trade jargon, no acronyms, no product vocabulary of any kind.
@@ -461,15 +470,16 @@ export function introMessage(
     prospect,
     `You are ${sender.firstName}. You said hello to ${prospect.firstName} on LinkedIn after they accepted your invitation. This is your second message, and the first one with any substance in it.
 
-${prospect.signalText ? `What they actually wrote, which is why you found them:\n"${prospect.signalText}"` : "You have nothing specific they wrote. Do not invent one."}
-${prospect.headline ? `Their headline: ${prospect.headline}` : ""}
+${prospect.signalText ? `Context you know and never mention: they recently wrote "${prospect.signalText}". Use it only to know which world to speak to.` : ""}
+${prospect.headline ? `Context you know and never mention: their headline reads "${prospect.headline}".` : ""}
 
 Write it.
 
-- ${prospect.signalText ? "Open by naming the specific thing they said, in your own words, in a way that shows you read it. Never quote it back at them." : "Open with hello and their first name. Do not pretend to have read anything."}
+- Open with something of YOURS: one honest, specific line about what you keep running into, or quietly find hard, in the world the context above tells you they live in. Spoken from your own chair, about your own days. Give first: people open up to people who disclose something real, not to people who probe (turn-taking self-disclosure, Sprecher 2013).
 - Say who you are AND what you do, in one plain clause, drawn from this and nothing else: ${sender.companyInfo}. Not a pitch, not a benefit, not an offer, just the honest frame: "I build X for Y" or "I run a small Z". This line is not optional. A message that hides why you are around is a bait and switch, and the reveal three messages later costs more trust than saying it now ever would.
+- NEVER mention their post, their comment, a reaction, their headline, or how you found them. No "saw", no "noticed", no "came across", no "your point about". The context picks the topic; it never appears in the message.
 - STRUCTURE FOR THIS ONE: ${rotate(INTRO_OPENINGS, seedFor(prospect), 7)}. Never open two messages the same way, and never with the words "I spend my days".
-- Ask one question they can answer in a single line, about them or about what they said.
+- Ask one question they can answer in a single line, about their side of that world.
 - Close so that ignoring you costs them nothing. Something like "either way, good to be connected". This part matters more than the rest.
 - Never say what you do for a living in a way that sounds like an offer. There is no offer in this message.
 - Three lines. LinkedIn's own InMail data puts the shortest messages 22% above the average response rate and the longest 11% below it, and one question beats none by 50% across Boomerang's 40M emails. More than one question, or a fourth line, spends that.`,
@@ -511,6 +521,8 @@ Write your next message.
 
 - Answer what they actually said or asked, directly and specifically, in the first line. If they asked you a question, answer it honestly before anything else.
 - If they asked what you do, what you want, or why you got in touch, answer it in one plain clause drawn from "what you do" above. No product name, no link, no offer, and never a dodge: a live run answered "so what you do" with "I'd rather not give you a generic answer", which is what a scammer sounds like, and the conversation died there.
+- Give before you ask: somewhere in the message, one small true thing from your own side, drawn only from what this prompt gives you (what you do, where you are based, the ordinary reality of that work). An exchange where you only ask reads as an interview, and interviews get ghosted (turn-taking self-disclosure, Sprecher 2013).
+- Match their energy. A two-word reply earns two short lines back, never three enthusiastic ones.
 - If they sound short, suspicious or annoyed, skip the question back entirely. Answer straight, keep it to two lines, and leave them an easy way to end the chat.
 - Otherwise ask them one question back, about them, that follows from what they just said.
 - Never bring up what you do unprompted. It comes later in the sequence, and volunteering it here turns a conversation into a pitch.

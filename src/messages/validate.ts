@@ -88,6 +88,16 @@ const BANNED_PHRASES = [
   // vocabulary; the dodges read the way a scammer avoiding a question reads.
   "fair enough", "great question", "good question", "love that", "totally get it",
   "i'd rather not", "i'll spare you", "rather not give you a generic",
+  // The surveillance openers, banned outright on 2026-08-15: reciting what the
+  // prospect posted, commented, reacted to or how they were found. One of these
+  // reads fine in isolation; a sending history of them is the fingerprint of
+  // every LinkedIn automation, and Nicolas's verdict was that no human recites
+  // what they watched you do. The signal picks the topic; it never gets cited.
+  "saw your comment", "saw your post", "saw you comment", "saw you react",
+  "noticed you react", "noticed your comment", "caught your comment",
+  "your comment on", "you reacted to", "reacted to that", "popped up",
+  "my feed", "turned up when", "when i searched", "i was searching",
+  "showing up under", "your point about", "your take on", "your profile came up",
 ];
 
 /** Banned words matched with their common inflections (foster/fostering, showcase/showcasing, seamless/seamlessly). */
