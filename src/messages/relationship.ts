@@ -228,7 +228,10 @@ Hard rules, all of them:
   stiff, cover-letter polite, stuffed with abstractions. The pull to answer in kind is
   strong, and it is exactly how an agent outs itself (a live thread on 2026-08-15 did this).
   Pick the one concrete thing they actually said, answer that in plain words from a phone,
-  and let their filler go unanswered.`;
+  and let their filler go unanswered.
+- Calendar talk comes only from the "Today is" line a prompt gives you. "It's only
+  Wednesday" went out on a Monday (2026-08-17), and one wrong weekday outs the whole
+  account. Never guess the day, how far into the week it is, or how the week feels.`;
 
 /**
  * The shapes a first message may take, and the reason they are code rather than a prompt line.
@@ -271,6 +274,15 @@ const ASK_CLOSINGS = [
   "say you will send it only if they want it, and that silence means you drop it for good",
   "ask whether they would rather you send it or leave it, with no follow-up either way",
 ] as const;
+
+/** The account's own weekday, so small talk about the calendar is never invented. */
+function todayLine(ctx: AgentContext): string {
+  const day = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    timeZone: ctx.timezone || "UTC",
+  }).format(new Date());
+  return `Today is ${day} where you are.`;
+}
 
 /** A different digest byte per slot, so the three choices never move together. */
 function rotate<T>(pool: readonly T[], seed: string, slot: number): T {
@@ -427,6 +439,7 @@ export function helloMessage(
     sender,
     prospect,
     `You are ${sender.firstName}. ${prospect.firstName} just accepted your connection request on LinkedIn. This is the very first thing you say to them.
+${todayLine(ctx)}
 
 ${prospect.signalText ? `Context you know and never mention: they recently wrote "${prospect.signalText}". It tells you what world they live in, nothing more.` : ""}
 ${prospect.headline ? `Context you know and never mention: their headline reads "${prospect.headline}".` : ""}
@@ -526,6 +539,7 @@ export function converseMessage(
     sender,
     prospect,
     `You are ${sender.firstName}${sender.location ? `, based in ${sender.location}` : ""}. You are messaging ${prospect.firstName} on LinkedIn.
+${todayLine(ctx)}
 ${sender.companyInfo ? `\nWhat you do, for when they ask and only then: ${sender.companyInfo}` : ""}
 
 The conversation so far:

@@ -446,6 +446,25 @@ export function signalKind(signalType: string | null | undefined): string {
  */
 export async function claimLead(ctx: AgentContext, lead: FoundLead): Promise<boolean> {
   const now = Math.floor(Date.now() / 1000);
+  /**
+   * The same human arrives under two LinkedIn ids: reaction lists serve the
+   * hashed member URN, the viewers page serves the public slug, and the
+   * (workspace, profile_id) key cannot see they are one person. On 2026-08-17
+   * Devargho held two parallel sequences and got two hellos 99 seconds apart,
+   * with 14 more pairs waiting in the queue behind him. The rendered name is
+   * the one thing every door serves, so a living lead with the same name in
+   * the workspace makes this a repeat sighting, never a second person.
+   */
+  const twin = await db().execute({
+    sql: `SELECT profile_id FROM agent_leads
+           WHERE workspace_id = ? AND rejected_at IS NULL
+             AND lower(trim(full_name)) = lower(trim(?)) LIMIT 1`,
+    args: [ctx.workspaceId, safeText(lead.fullName) ?? ""],
+  });
+  // The same id falls through: INSERT OR IGNORE plus the repeat-signal
+  // bookkeeping below is the designed path for a person seen again through
+  // the same door. Only a twin under a DIFFERENT id is refused here.
+  if (twin.rows.length > 0 && String(twin.rows[0]?.profile_id) !== lead.profileId) return false;
   const result = await db().execute({
     sql: `INSERT OR IGNORE INTO agent_leads
             (id, workspace_id, agent_id, source_id, profile_id, profile_url, full_name,

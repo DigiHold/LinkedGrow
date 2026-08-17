@@ -395,6 +395,16 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
     const turns = await countOutboundStep(db, p.id, RELATIONSHIP_STEPS.converse);
     if (turns >= PACING.maxConverseTurns) continue; // the ask picks them up below
 
+    /**
+     * A converse answers something. When the last word in the thread is ours,
+     * the agent is waiting, not owed: writing anyway shipped "Gibran didn't
+     * answer yet, so nothing to reply to there" as a live DM on 2026-08-17,
+     * the model narrating its own confusion. Silence after a conversation
+     * belongs to the ask, on its own clock below.
+     */
+    const thread = await getThread(db, p.id);
+    if ([...thread].reverse()[0]?.from !== "them") continue;
+
     if (await sendStep(cfg, db, deps, p, RELATIONSHIP_STEPS.converse, STATUS.conversing)) budget--;
     await pause();
   }

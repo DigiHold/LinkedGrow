@@ -47,7 +47,10 @@ function person(signalType: string, id = "lena") {
   return {
     profileId: id,
     profileUrl: `https://www.linkedin.com/in/${id}/`,
-    fullName: "Lena Ostrom",
+    // One rendered name per id. The claim treats a same-name row under a
+    // different id as the same human since 2026-08-17, and the ids in these
+    // tests model genuinely different people.
+    fullName: id === "lena" ? "Lena Ostrom" : `Lena ${id}`,
     headline: "Founder, small booking SaaS",
     signalType,
   };

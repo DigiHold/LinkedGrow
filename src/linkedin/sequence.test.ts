@@ -433,6 +433,14 @@ test("once the ask has gone out the agent hands over whatever comes back", async
 test("a conversation gets an answer, and the answer is not the ask", async () => {
   const db = await freshDb();
   const id = await seed(db, STATUS.conversing, daysAgo(1));
+  // Conversing means they wrote last; without their message there is nothing
+  // to answer and the guard below holds the agent's tongue.
+  const past = Math.floor(Date.now() / 1000) - 7200;
+  await sharedDb().execute({
+    sql: `INSERT INTO agent_messages (id, workspace_id, agent_id, lead_id, direction, step, body, sent_at, created_at)
+          VALUES (?, ?, ?, ?, 'in', NULL, 'That sounds a lot like what I run into too', ?, ?)`,
+    args: [crypto.randomUUID(), db.workspaceId, db.agentId, id, past, past],
+  });
   await runSequence(baseCfg(), db, deps(fakeActions()));
   assert.equal(await countProspectsByStatus(db, STATUS.conversing), 1);
   const { rows } = await sharedDb().execute({
@@ -441,6 +449,30 @@ test("a conversation gets an answer, and the answer is not the ask", async () =>
   });
   assert.equal(rows.length, 1);
   assert.equal(rows[0]?.step, "converse");
+  drop();
+});
+
+/**
+ * The Gibran DM of 2026-08-17: a converse turn fired while the last word in
+ * the thread was ours, and the model shipped "Gibran didn't answer yet, so
+ * nothing to reply to there" as a real message. When the agent asked last,
+ * it waits; silence is the ask's business, on its own clock.
+ */
+test("the agent never nudges a conversation where it spoke last", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.conversing, daysAgo(1));
+  const past = Math.floor(Date.now() / 1000) - 7200;
+  await sharedDb().execute({
+    sql: `INSERT INTO agent_messages (id, workspace_id, agent_id, lead_id, direction, step, body, sent_at, created_at)
+          VALUES (?, ?, ?, ?, 'out', 'converse', 'What are you building these days, mostly client work or your own thing?', ?, ?)`,
+    args: [crypto.randomUUID(), db.workspaceId, db.agentId, id, past, past],
+  });
+  await runSequence(baseCfg(), db, deps(fakeActions()));
+  const { rows } = await sharedDb().execute({
+    sql: "SELECT COUNT(*) AS n FROM agent_messages WHERE lead_id = ? AND direction = 'out'",
+    args: [id],
+  });
+  assert.equal(Number(rows[0]?.n), 1, "no second message while they owe the reply");
   drop();
 });
 
