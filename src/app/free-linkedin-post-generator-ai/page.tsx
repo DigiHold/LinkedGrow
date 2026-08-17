@@ -58,12 +58,12 @@ const freeGenFAQs = [
   {
     question: "What happens after the 7-day trial ends?",
     answer:
-      "After the 7-day Pro trial, you'll need a paid plan to continue. Starter is $99/mo for unlimited generation. Your voice training data and all settings carry over automatically when you upgrade.",
+      "After the 7-day Pro trial, you'll need a paid plan to continue. Pro is $99/mo for unlimited generation. Your voice training data and all settings carry over automatically when you upgrade.",
   },
   {
     question: "How much does the paid plan cost after free?",
     answer:
-      "Starter is $99 per month with unlimited post generations, scheduling for up to 10 posts, and a content calendar. Pro is $99 per month adding image generation, analytics, and network notifications. Business is $179 per month with carousels, A/B testing, team collaboration, and advanced analytics. BYOK AI costs are typically $2 to $4 per month with zero markup.",
+      "Pro is $99 per month with unlimited post generation, unlimited scheduling, a content calendar, image generation, analytics, and network notifications. Business is $179 per month with carousels, A/B testing, team collaboration, and advanced analytics. BYOK AI costs are typically $2 to $4 per month with zero markup.",
   },
   {
     question: "What is BYOK and why does it matter for a free generator?",
@@ -73,7 +73,7 @@ const freeGenFAQs = [
   {
     question: "Can I schedule posts on the 7-day Pro trial?",
     answer:
-      "Scheduling is available on paid plans starting at Starter ($99 per month). On the 7-day Pro trial, you can generate posts and copy them to LinkedIn manually, or publish directly to your connected LinkedIn account. Upgrade to Starter for scheduling up to 10 posts.",
+      "Scheduling is available on paid plans starting with Pro ($99 per month). On the 7-day Pro trial, you can generate posts and copy them to LinkedIn manually, or publish directly to your connected LinkedIn account. Every paid plan schedules without limits.",
   },
 ];
 

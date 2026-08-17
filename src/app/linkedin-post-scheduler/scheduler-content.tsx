@@ -59,7 +59,7 @@ const tools: ToolReview[] = [
     overview: [
       "LinkedGrow is the only LinkedIn scheduling tool with BYOK AI generation built in across 26+ models. You write or generate a post, schedule it from the same editor, and the tool publishes directly to your profile or any company page you manage. Total monthly cost lands at $15 to $30 all-in including AI fees.",
       "Scheduling is powered by QStash for exact-time delivery, so posts fire even if you are offline. The visual content calendar shows a week or month view with drag-and-drop rescheduling, and color coding distinguishes drafts, scheduled, and published posts.",
-      "Starter unlocks scheduling for 10 posts at a time. Pro and Business plans ship unlimited scheduling plus carousel scheduling, A/B test scheduling, and team workflows on Business.",
+      "Every plan schedules without limits. Pro and Business ship unlimited scheduling plus carousel scheduling, A/B test scheduling, and team workflows on Business.",
     ],
     pros: [
       "AI post generation + scheduling in one dashboard, no copy-paste between tools",
@@ -69,7 +69,7 @@ const tools: ToolReview[] = [
       "Exact-time delivery via QStash, fires even if you are offline",
     ],
     cons: [
-      "10-post scheduling cap on Starter (Pro and Business are unlimited)",
+      "Unlimited scheduling on Pro and Business",
       "BYOK setup adds 2 minutes for the API key",
       "Smaller community than legacy schedulers like Hootsuite or Buffer",
     ],
@@ -680,7 +680,7 @@ export function PostSchedulerContent({
               <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
                 Pick <Link href="/" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">LinkedGrow</Link>.
                 You get AI generation + scheduling in one dashboard for $99/mo (Starter) plus $2-4/mo in BYOK AI fees.
-                The 10-post Starter cap covers most solo cadences; upgrade to Pro at $99/mo for unlimited if you batch-schedule a month ahead.
+                Pro at $99/mo schedules without limits, so batch-scheduling a month ahead is normal use.
                 Pair it with a consistent <Link href="/blog/linkedin-posting-frequency-guide" className="text-cyan-600 dark:text-cyan-400 hover:underline">posting frequency</Link> for compound growth.
                 Runner-up: Supergrow at $19/mo if you prefer bundled AI with no API key setup.
               </p>

@@ -259,7 +259,7 @@ export function PostGeneratorFreeContent() {
         testimonials={[
           {
             quote:
-              "I started with the 7-day Pro trial to test it out. Within a week I upgraded to Starter because the voice training was so good - my AI posts genuinely sound like me. I am posting 4x per week now and my network has grown 30% in two months.",
+              "I started with the 7-day Pro trial to test it out. Within a week I upgraded to Pro because the voice training was so good - my AI posts genuinely sound like me. I am posting 4x per week now and my network has grown 30% in two months.",
             author: "Lisa C.",
             role: "Product Manager, 12K Followers",
           },

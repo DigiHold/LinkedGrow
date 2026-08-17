@@ -58,7 +58,7 @@ const postGenFreeFAQs = [
   {
     question: "Can I schedule AI-generated posts to LinkedIn?",
     answer:
-      "Yes. After generating a post, you can publish it immediately to LinkedIn or schedule it for a specific date and time. The Starter plan includes 10 scheduled posts, and Pro and Business plans offer unlimited scheduling with a visual content calendar.",
+      "Yes. After generating a post, you can publish it immediately to LinkedIn or schedule it for a specific date and time. Pro and Business plans offer unlimited scheduling with a visual content calendar.",
   },
   {
     question: "How much does it cost after the 7-day Pro trial?",

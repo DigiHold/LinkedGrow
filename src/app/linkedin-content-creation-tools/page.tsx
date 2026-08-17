@@ -63,7 +63,7 @@ const toolsFAQs = [
   {
     question: "Is there a 7-day Pro trial included?",
     answer:
-      "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, scheduling, image generation, and analytics - everything included. After the trial, paid plans start at $99/mo for Starter (unlimited generations, scheduling, content calendar). Pro at $99/mo adds image generation, analytics, and network notifications. Business at $179/mo adds carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support.",
+      "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, scheduling, image generation, and analytics - everything included. After the trial, Pro is $99/mo with unlimited generation, unlimited scheduling, a content calendar, image generation, analytics, and network notifications. Business at $179/mo adds carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support.",
   },
   {
     question: "How does the BYOK model work with content creation tools?",

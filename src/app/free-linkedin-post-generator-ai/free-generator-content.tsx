@@ -310,7 +310,7 @@ export function FreePostGeneratorContent() {
           {
             question: "How much does the AI writer cost after the 7-day trial?",
             answer:
-              "Starter is $99/mo with unlimited writing. Pro is $99/mo and adds image generation, analytics, and network notifications. Business is $179/mo and adds carousels, A/B testing, team collaboration, and API access. BYOK AI costs are typically $2 to $4/month with zero markup from LinkedGrow.",
+              "Pro is $99/mo with unlimited writing, image generation, analytics, and network notifications. Business is $179/mo and adds carousels, A/B testing, team collaboration, and API access. BYOK AI costs are typically $2 to $4/month with zero markup from LinkedGrow.",
           },
           {
             question: "What is BYOK and why does the writer use it?",
@@ -320,7 +320,7 @@ export function FreePostGeneratorContent() {
           {
             question: "Can the AI writer publish directly to LinkedIn?",
             answer:
-              "Yes. Connect your LinkedIn account and publish drafts directly from the editor. Scheduling for future dates is available on Starter and above - 10 scheduled posts on Starter, unlimited on Pro and Business.",
+              "Yes. Connect your LinkedIn account and publish drafts directly from the editor. Scheduling for future dates is unlimited on both Pro and Business.",
           },
         ]}
       />

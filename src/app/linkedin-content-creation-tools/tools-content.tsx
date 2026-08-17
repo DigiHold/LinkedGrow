@@ -303,7 +303,7 @@ export function ContentCreationToolsContent() {
           {
             question: "How much do LinkedIn content creation tools typically cost?",
             answer:
-              "Most LinkedIn content tools charge $49 to $199 per month and cap your generations. LinkedGrow Pro costs $99/month per month for Starter with unlimited post generation, or $99 per month for Pro which adds image generation, analytics, and network notifications. The Business plan at $179 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, your AI costs are $2 to $4 per month on average.",
+              "Most LinkedIn content tools charge $49 to $199 per month and cap your generations. LinkedGrow Pro is $99 per month with unlimited post generation, image generation, analytics, network notifications and 2 agents that find your leads. The Business plan at $179 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, your AI costs are $2 to $4 per month on average.",
           },
           {
             question: "Can I generate unlimited LinkedIn posts?",
