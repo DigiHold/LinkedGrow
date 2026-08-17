@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/cookies.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow Cookie Policy",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "Cookie Policy | LinkedGrow",
     description:
       "How LinkedGrow uses cookies. Learn what we collect, why, and how to manage your cookie preferences.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/cookies.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/cookies",

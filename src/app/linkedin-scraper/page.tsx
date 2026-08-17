@@ -9,7 +9,7 @@ import {
 import { LinkedinScraperContent } from "./scraper-content";
 
 const URL = "https://linkedgrow.ai/linkedin-scraper";
-const OG = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp";
+const OG = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-scraper.webp";
 const DESCRIPTION =
   "What a LinkedIn scraper actually gets you, what it costs your account, and the alternative that finds the same people with the reason to write already attached.";
 

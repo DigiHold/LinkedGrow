@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/ai-linkedin-post-generator-free.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - AI LinkedIn Post Generator Free",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "Free LinkedIn Post Generator: 7-Day Full Pro Trial",
     description:
       "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: everything included needed.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/ai-linkedin-post-generator-free.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/ai-linkedin-post-generator-free",

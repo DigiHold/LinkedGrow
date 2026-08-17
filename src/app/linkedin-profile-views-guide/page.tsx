@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-profile-views-guide.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - LinkedIn Profile Views Guide",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LinkedIn Profile Views 2026: Who Viewed Your Profile | LinkedGrow",
     description:
       "How to see who viewed your LinkedIn profile in 2026 on free and Premium accounts. Privacy modes, viewer limits, and strategies to increase profile visits.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-profile-views-guide.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-profile-views-guide",

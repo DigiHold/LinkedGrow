@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-best-practices.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - LinkedIn Best Practices 2026",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LinkedIn Best Practices for Business Profiles and Posting",
     description:
       "Profile optimization, content strategy, posting frequency, engagement tactics, and the tools to execute LinkedIn best practices for business growth in 2026.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-best-practices.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-best-practices",

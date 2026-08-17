@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-company-page-optimization.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - How to Optimize Your LinkedIn Company Page for More Followers",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "How to Optimize a LinkedIn Company Page for Followers",
     description:
       "SEO strategies, content tactics, posting frequency, employee advocacy, and analytics to grow your LinkedIn company page followers: step by step.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-company-page-optimization.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-company-page-optimization",

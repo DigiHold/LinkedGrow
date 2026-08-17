@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-marketing-tool.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - LinkedIn Marketing Tool",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LinkedIn Marketing Tool for Content, Scheduling, Analytics",
     description:
       "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 43 AI models, BYOK, from $99/mo.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-marketing-tool.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-marketing-tool",

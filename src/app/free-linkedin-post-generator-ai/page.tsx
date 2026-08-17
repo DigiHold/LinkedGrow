@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/free-linkedin-post-generator-ai.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - Free LinkedIn Post Generator AI",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "Free AI LinkedIn Post Writer: BYOK + 26 Models",
     description:
       "43 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK. Voice training matches your style. 7-day Pro trial, with the card charged on day 8 unless you cancel.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/free-linkedin-post-generator-ai.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/free-linkedin-post-generator-ai",

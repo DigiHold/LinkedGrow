@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-new-job-announcement.webp",
         width: 1200,
         height: 630,
         alt: "LinkedIn new job announcement templates",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LinkedIn New Job Announcement: 10 Templates (2026)",
     description:
       "10 LinkedIn new job announcement templates for every scenario. First day, promotion, career pivot, return from break, plus timing tips and an AI generator.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-new-job-announcement.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-new-job-announcement",

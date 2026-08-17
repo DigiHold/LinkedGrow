@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-automation-tools.webp",
         width: 1200,
         height: 630,
         alt: "LinkedIn Automation Tools - Safe vs Risky Comparison",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "Best LinkedIn Automation Tools 2026: Safe vs Risky",
     description:
       "The best LinkedIn automation tools compared with verified 2026 pricing: which are safe, which get accounts restricted, and which one fits the way you work.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-automation-tools.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-automation-tools",

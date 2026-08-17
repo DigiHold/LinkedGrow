@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/ai-carousel-generator-for-linkedin.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - AI Carousel Generator for LinkedIn",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LinkedIn Carousel Maker: AI Builds Multi-Slide Posts Fast",
     description:
       "AI-generated LinkedIn carousel posts with text per slide, brand customization, and direct publishing. Builds multi-slide posts in minutes.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/ai-carousel-generator-for-linkedin.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/ai-carousel-generator-for-linkedin",

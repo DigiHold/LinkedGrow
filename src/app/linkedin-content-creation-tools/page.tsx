@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-content-creation-tools.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - LinkedIn Content Creation Tools",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "Best LinkedIn Content Creation Tools in One Platform (2026)",
     description:
       "LinkedIn content creation tools in one stack: AI post generator, carousel maker, scheduler, analytics, and photo creator. From $99/mo with BYOK.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-content-creation-tools.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-content-creation-tools",

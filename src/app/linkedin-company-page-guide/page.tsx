@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-company-page-guide.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - How to Create a LinkedIn Company Page Step by Step",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "How to Create a LinkedIn Company Page Step by Step",
     description:
       "Complete guide to creating a LinkedIn company page: setup, verification, optimization, common mistakes, and the tools to manage and grow your page over time.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-company-page-guide.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-company-page-guide",
