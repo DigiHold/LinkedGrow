@@ -3,11 +3,11 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { PostGeneratorFreeContent } from "./post-generator-content";
 
 export const metadata: Metadata = {
-  title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
+  title: "Free LinkedIn Post Generator: 7-Day Full Pro Trial",
   description:
     "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: everything included needed.",
   openGraph: {
-    title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
+    title: "Free LinkedIn Post Generator: 7-Day Full Pro Trial",
     description:
       "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: everything included needed.",
     url: "https://linkedgrow.ai/ai-linkedin-post-generator-free",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
+    title: "Free LinkedIn Post Generator: 7-Day Full Pro Trial",
     description:
       "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: everything included needed.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],

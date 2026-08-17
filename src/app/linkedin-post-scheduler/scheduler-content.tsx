@@ -50,7 +50,7 @@ const tools: ToolReview[] = [
     name: "LinkedGrow",
     tagline: "Best for AI-powered scheduling with BYOK",
     pricing: "$99/mo Pro, $179/mo Business",
-    freeTrial: "7-day Pro trial, no card required",
+    freeTrial: "7-day Pro trial",
     bestFor:
       "Founders and creators who want to write with AI and schedule from the same dashboard in one price.",
     imageSlug: "linkedgrow-card",

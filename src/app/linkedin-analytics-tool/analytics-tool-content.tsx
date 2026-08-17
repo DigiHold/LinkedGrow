@@ -52,7 +52,7 @@ const tools: ToolReview[] = [
     name: "LinkedGrow",
     tagline: "Best for AI content + analytics with BYOK",
     pricing: "$99/mo Pro, $179/mo Business",
-    freeTrial: "7-day Pro trial, no card required",
+    freeTrial: "7-day Pro trial",
     bestFor:
       "Creators and founders who want AI post generation, scheduling, and analytics in one dashboard in one price.",
     imageSrc: `${R2_TOOLS}/linkedgrow-card.avif`,

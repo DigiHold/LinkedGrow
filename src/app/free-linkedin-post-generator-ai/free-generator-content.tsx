@@ -230,7 +230,7 @@ export function FreePostGeneratorContent() {
           price: "$99/month",
           apiCost: "$2 to $4/month BYOK",
           benefits: [
-            { text: "7-day Pro trial with full Pro access - no card required" },
+            { text: "7-day Pro trial with full Pro access" },
             { text: "43 AI models switchable on every draft" },
             { text: "Voice training included on the trial" },
             { text: "Unlimited drafts on every paid plan after the trial" },

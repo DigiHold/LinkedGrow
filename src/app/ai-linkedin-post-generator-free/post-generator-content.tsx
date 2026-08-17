@@ -233,7 +233,7 @@ export function PostGeneratorFreeContent() {
           price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
-            { text: "7-day Pro trial with full Pro access - no card required" },
+            { text: "7-day Pro trial with full Pro access" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
             { text: "43 AI models from OpenAI, Anthropic, Google, xAI, and more" },
             { text: "Voice training matches your writing style on all plans" },

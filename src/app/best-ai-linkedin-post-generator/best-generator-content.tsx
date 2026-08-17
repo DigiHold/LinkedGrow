@@ -54,7 +54,7 @@ const tools: ToolReview[] = [
     href: "https://linkedgrow.ai",
     internalHref: "/",
     pricing: "$99/mo Pro, $179/mo Business",
-    freeTrial: "7-day Pro trial, no card required",
+    freeTrial: "7-day Pro trial",
     bestFor: "Founders, coaches, and consultants who post 2 to 5 times a week and care about sounding like themselves.",
     imageSlug: "linkedgrow-card",
     imageAlt: "LinkedGrow dashboard with BYOK API key setup and 26 model selector covering GPT, Claude, Gemini, Grok, Perplexity, and Kimi",
