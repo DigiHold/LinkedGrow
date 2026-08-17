@@ -772,7 +772,16 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
 
             <div className="grid gap-2.5 p-4">
               {[
-                { label: "Invitations this week", value: `${contacted} of 100` },
+                /**
+                 * This printed the ALL-TIME contacted total against a weekly
+                 * cap ("342 of 100"), nonsense for any agent older than a week
+                 * (2026-08-17). The chart already carries the real invitations
+                 * per day, so the week is the sum of its last 7 days.
+                 */
+                {
+                  label: "Invitations this week",
+                  value: `${chart.slice(-7).reduce((n, d) => n + d.invitations, 0)} of 100`,
+                },
                 {
                   label: "Today's limit",
                   value: `${dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? RAMP.weeks))} invitations`,
