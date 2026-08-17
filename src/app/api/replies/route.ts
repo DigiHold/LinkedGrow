@@ -87,7 +87,10 @@ export async function GET() {
         .where(
           and(
             eq(agentLeads.workspaceId, workspaceId),
-            inArray(agentLeads.id, leadIds)
+            inArray(agentLeads.id, leadIds),
+            // A rejected row is a duplicate or a discard, and on 2026-08-17 a
+            // duplicate of a live lead showed up here as its own dead thread.
+            isNull(agentLeads.rejectedAt)
           )
         ),
       // The full conversation both ways, oldest first, which is reading order.

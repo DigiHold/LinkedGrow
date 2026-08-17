@@ -76,19 +76,38 @@ function memberLabel(member: Member | undefined): string {
  */
 /** The state in two words, so it reads off the list without opening anything. */
 function statusPill(status: string | null) {
-  return whatHappensNext(status).done ? (
+  const next = whatHappensNext(status);
+  if (next.closed) return <Pill tone="neutral">Closed</Pill>;
+  return next.done ? (
     <Pill tone="warn">Yours now</Pill>
   ) : (
     <Pill tone="brand">Agent replying</Pill>
   );
 }
 
-function whatHappensNext(status: string | null): { done: boolean; line: string } {
+/**
+ * Three states, not two, and the difference is who owes what. "Yours now"
+ * means a person has to act. On 2026-08-17 it was also stamped on stopped
+ * threads (a refusal the agent wound down: nobody should inherit a no) and on
+ * skipped ones (the sequence will not pitch them, but the agent still answers
+ * their replies), so the list told Nicolas to take over conversations that
+ * were either finished on purpose or still being handled.
+ */
+function whatHappensNext(status: string | null): { done: boolean; closed?: boolean; line: string } {
   switch (status) {
     case "handed_over":
+      return { done: true, line: "The agent has stopped writing to this person. Over to you." };
     case "stopped":
+      return {
+        done: true,
+        closed: true,
+        line: "The agent closed this thread: they declined, or they were selling rather than buying.",
+      };
     case "skipped":
-      return { done: true, line: "The agent has stopped writing to this person." };
+      return {
+        done: false,
+        line: "The sequence will not pitch this person, but the agent still answers them.",
+      };
     case "ask_sent":
       return {
         done: true,
