@@ -567,7 +567,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       transition={{ delay: 0.25 }}
                       className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm mx-auto leading-relaxed"
                     >
-                      Let&apos;s get everything ready in about 2 minutes so you can start creating content right away.
+                      Let&apos;s get everything ready in about 2 minutes so your agent can start finding your leads.
                     </motion.p>
 
                     <motion.div

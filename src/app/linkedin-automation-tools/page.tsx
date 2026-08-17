@@ -58,12 +58,12 @@ const automationFAQs = [
   {
     question: "What does LinkedIn's Terms of Service say about automation?",
     answer:
-      "LinkedIn's Professional Community Policies prohibit using bots, crawlers, scrapers, or other automated means to access, collect data from, or interact with the platform without authorization. Publishing through your own account with user-authorized OAuth tokens is explicitly permitted. The key distinction is between authorized API access and unauthorized platform manipulation.",
+      "LinkedIn's Professional Community Policies prohibit bots, crawlers and scrapers that harvest the platform or blast it at machine speed. What gets accounts restricted is volume and rhythm no human could produce. LinkedGrow works from your own account at a human pace, inside safe limits, on a dedicated address reserved for you, which is the opposite of that pattern.",
   },
   {
     question: "Can I automate LinkedIn posts without getting banned?",
     answer:
-      "Yes. Scheduling posts through tools that use your own account is fully supported and carries zero ban risk. LinkedGrow, Buffer, Hootsuite, and similar content tools all publish through authorized API connections. You connect your LinkedIn account via OAuth, and the tool publishes on your behalf at scheduled times. LinkedIn treats this identically to publishing directly from the LinkedIn app.",
+      "Yes. Scheduling posts is normal account behavior and carries no meaningful risk. LinkedGrow publishes from your own account at the times you chose, the way you would yourself, and uses LinkedIn's own scheduler whenever possible. Nothing is posted faster or more often than a person would.",
   },
   {
     question: "What happens if LinkedIn detects automation on my account?",
@@ -73,7 +73,7 @@ const automationFAQs = [
   {
     question: "Is LinkedGrow a safe LinkedIn automation tool?",
     answer:
-      "Yes. LinkedGrow is a content automation platform that uses LinkedIn's official Share API to publish posts. It never sends connection requests, automated messages, or performs any interaction on your LinkedIn profile. The AI content generation happens entirely outside LinkedIn using your own API keys. Only the final post is published the way a person does with your authorized OAuth connection.",
+      "Yes, by design. LinkedGrow works on your own account the way a person does: it publishes your posts, and its agents send a small, bounded number of invitations and messages during the hours you choose, at human pace, from a dedicated address reserved for your account. Limits are safe by default, you can review every message before it goes, and nothing ever runs faster than a person would.",
   },
 ];
 

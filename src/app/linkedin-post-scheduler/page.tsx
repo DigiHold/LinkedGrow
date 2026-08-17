@@ -60,7 +60,7 @@ const schedulerFAQs = [
   {
     question: "How does the LinkedIn post scheduler work?",
     answer:
-      "Create or generate a post with AI, then choose a date and time to publish. The tool automatically posts to your LinkedIn profile or company page at the scheduled time. A visual content calendar shows all upcoming posts so you can plan a week or month at a glance. LinkedGrow uses QStash for exact-time delivery.",
+      "Create or generate a post with AI, then choose a date and time to publish. The tool automatically posts to your LinkedIn profile or company page at the scheduled time. A visual content calendar shows all upcoming posts so you can plan a week or month at a glance. Delivery is exact to the minute.",
   },
   {
     question: "What is the best time to post on LinkedIn?",
@@ -75,7 +75,7 @@ const schedulerFAQs = [
   {
     question: "What happens if I am offline when a scheduled LinkedIn post publishes?",
     answer:
-      "Scheduled posts publish automatically regardless of whether you are online - that is the whole point of scheduling. LinkedGrow uses QStash by Upstash for reliable exact-time delivery. Once a post is scheduled, it publishes at the specified time without manual intervention.",
+      "Scheduled posts publish automatically regardless of whether you are online - that is the whole point of scheduling. LinkedGrow's own scheduler handles reliable exact-time delivery. Once a post is scheduled, it publishes at the specified time without manual intervention.",
   },
 ];
 

@@ -146,7 +146,7 @@ export function LeadGenerationToolsContent() {
             icon: Calendar,
             title: "Content Calendar and Post Scheduling",
             description:
-              "Consistent posting is the single biggest factor in LinkedIn lead generation through content. The visual content calendar shows your week and month at a glance, so you can spot gaps before they happen. Schedule posts at optimal times and publish through LinkedIn's official Share API, which means your content is treated identically to manual posts.",
+              "Consistent posting is the single biggest factor in LinkedIn lead generation through content. The visual content calendar shows your week and month at a glance, so you can spot gaps before they happen. Schedule posts at optimal times and publish from your own account, so your content is identical to manual posts.",
             highlights: ["Visual calendar", "Optimal timing", "Agent on your account"],
             badge: "From Pro",
             color: "from-amber-500 to-yellow-600",
@@ -313,7 +313,7 @@ export function LeadGenerationToolsContent() {
           {
             question: "How much do LinkedIn lead generation tools cost?",
             answer:
-              "LinkedIn lead generation tools range from $19 per month (LinkedGrow Pro) to $99 per month (Expandi, Dripify) for individual plans. LinkedIn Sales Navigator starts at $99 per month. Enterprise tools like ZoomInfo and 6sense use custom pricing that often exceeds $1,000 per month. LinkedGrow's BYOK model keeps total costs low because AI API usage averages $2 to $4 per month on top of the subscription, with no credit caps or generation limits.",
+              "LinkedIn lead generation tools range from $99 per month (LinkedGrow Pro, agents included) to $99 per month and up (Expandi, Dripify) for individual plans. LinkedIn Sales Navigator starts at $99 per month. Enterprise tools like ZoomInfo and 6sense use custom pricing that often exceeds $1,000 per month. LinkedGrow's BYOK model keeps total costs low because AI API usage averages $2 to $4 per month on top of the subscription, with no credit caps or generation limits.",
           },
           {
             question: "Can LinkedGrow replace my current LinkedIn lead generation stack?",

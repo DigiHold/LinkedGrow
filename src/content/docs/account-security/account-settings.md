@@ -32,12 +32,6 @@ The standard login method. You sign in with your email address and a password yo
 
 Sign in using your Google account. When you sign in with Google, we only access your basic profile information (name and email). We never access your Google Drive, contacts, or other data.
 
-### LinkedIn OAuth
-
-Sign in using your LinkedIn account.
-
-**Important:** LinkedIn OAuth for sign-in is separate from the LinkedIn integration used for posting. Disconnecting LinkedIn as a login method does not affect your ability to publish posts to LinkedIn.
-
 ### Using Multiple Login Methods
 
 You can have all three login methods active at the same time. This gives you flexibility and serves as a backup if one method becomes unavailable. For example, if you forget your password, you can still sign in with Google or LinkedIn.
@@ -46,7 +40,7 @@ You must always have at least one active login method. If you try to disconnect 
 
 ## LinkedIn Connection
 
-Your LinkedIn account connection has its own card section on the Settings page. This is the connection used for publishing posts to LinkedIn and is separate from the LinkedIn OAuth login method.
+Your LinkedIn account connection has its own card section on the Settings page. This is the connection used for publishing posts to LinkedIn and is separate from how you log in to LinkedGrow.
 
 From this card, you can:
 

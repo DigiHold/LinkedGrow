@@ -58,7 +58,7 @@ const tools: ToolReview[] = [
       "LinkedGrow dashboard with content calendar, AI post composer, and direct publishing to LinkedIn profiles and company pages",
     overview: [
       "LinkedGrow is the only LinkedIn scheduling tool with BYOK AI generation built in across 26+ models. You write or generate a post, schedule it from the same editor, and the tool publishes directly to your profile or any company page you manage. Total monthly cost lands at $15 to $30 all-in including AI fees.",
-      "Scheduling is powered by QStash for exact-time delivery, so posts fire even if you are offline. The visual content calendar shows a week or month view with drag-and-drop rescheduling, and color coding distinguishes drafts, scheduled, and published posts.",
+      "Scheduling runs on LinkedGrow's servers, so posts fire at the exact time even if you are offline. The visual content calendar shows a week or month view with drag-and-drop rescheduling, and color coding distinguishes drafts, scheduled, and published posts.",
       "Every plan schedules without limits. Pro and Business ship unlimited scheduling plus carousel scheduling, A/B test scheduling, and team workflows on Business.",
     ],
     pros: [
@@ -66,7 +66,7 @@ const tools: ToolReview[] = [
       "BYOK across 43 AI models keeps total cost at $15 to $30/mo all-in",
       "Direct publishing to personal profiles AND company pages on every plan",
       "Visual content calendar with drag-and-drop rescheduling",
-      "Exact-time delivery via QStash, fires even if you are offline",
+      "Exact-time delivery, fires even if you are offline",
     ],
     cons: [
       "Unlimited scheduling on Pro and Business",

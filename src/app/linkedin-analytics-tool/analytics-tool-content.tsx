@@ -141,17 +141,17 @@ const tools: ToolReview[] = [
   {
     rank: 4,
     name: "Shield",
-    tagline: "Best LinkedIn-only analytics depth",
-    pricing: "Solo $25/mo, Team $50/user/mo, Enterprise custom",
-    freeTrial: "14-day free trial, no card required",
+    tagline: "Shut down in May 2026",
+    pricing: "Discontinued",
+    freeTrial: "No longer available",
     bestFor:
-      "Creators and small teams who want the deepest LinkedIn-specific analytics without the distraction of content creation tools or multi-network dashboards.",
+      "Nobody anymore: Shield announced its shutdown and closed in May 2026. It stays on this list so you know not to look for it, and because its former users need a replacement.",
     imageSrc: `${R2_PAGE}/shield-analytics-dashboard.avif`,
     imageAlt:
       "Shield analytics dashboard with LinkedIn post metrics, audience demographics, and period comparison charts",
     overview: [
-      "Shield is a LinkedIn-only analytics tool built for creators who take their data seriously. The dashboard tracks impressions, engagement rate, follower growth, and audience demographics at both the post level and profile level. Period comparisons let you benchmark any date range against another, so you can measure the impact of strategy changes over time.",
-      "The Team plan at $50/user/mo adds centralized dashboards for agencies managing multiple LinkedIn profiles, with user role management and volume discounts at 10+ profiles. Shield recently added an AI-powered co-pilot that generates reports and answers questions about your data in natural language. If you want pure LinkedIn analytics with no AI writing or scheduling, Shield is the most focused option on this list.",
+      "Shield was a LinkedIn-only analytics tool built for creators who took their data seriously: post-level and profile-level metrics, audience demographics, and period comparisons. It shut down in May 2026, and its former users are the reason analytics-focused alternatives get so many searches today.",
+      "If you relied on Shield, the practical question is where to move: LinkedGrow reads your real post and profile numbers alongside content and agents, and AuthoredUp covers formatting-plus-analytics. Export nothing from Shield now, the service is gone; start from your LinkedIn data on whichever tool you pick.",
     ],
     pros: [
       "Deepest LinkedIn-specific analytics with period comparisons and audience demographics",
@@ -300,7 +300,7 @@ const glanceTools: GlanceRow[] = [
   { rank: 1, tool: "LinkedGrow", bestFor: "AI content + analytics", pricing: "$99/mo (+$2-4 AI)", freeTrial: "7-day Pro", postAnalytics: true, growthTracking: true, highlight: true },
   { rank: 2, tool: "AuthoredUp", bestFor: "Per-post analytics", pricing: "$19.95/mo", freeTrial: "14-day", postAnalytics: true, growthTracking: false },
   { rank: 3, tool: "Taplio", bestFor: "Growth + lead tracking", pricing: "$39-$149/mo", freeTrial: "7-day", postAnalytics: true, growthTracking: true },
-  { rank: 4, tool: "Shield", bestFor: "LinkedIn-only analytics", pricing: "$25-$50/user/mo", freeTrial: "14-day", postAnalytics: true, growthTracking: true },
+  { rank: 4, tool: "Shield", bestFor: "Shut down in May 2026", pricing: "Discontinued", freeTrial: "None", postAnalytics: true, growthTracking: true },
   { rank: 5, tool: "Supergrow", bestFor: "Budget all-in-one", pricing: "$19-$39/mo", freeTrial: "Free plan", postAnalytics: true, growthTracking: true },
   { rank: 6, tool: "Hootsuite", bestFor: "Enterprise multi-network", pricing: "$99-$249/mo", freeTrial: "30-day", postAnalytics: true, growthTracking: true },
   { rank: 7, tool: "Buffer", bestFor: "Simple multi-platform", pricing: "Free, $20/mo", freeTrial: "Free plan", postAnalytics: true, growthTracking: false },
@@ -418,7 +418,7 @@ export function AnalyticsToolContent({
               <Link href="/" className="text-cyan-600 dark:text-cyan-400 hover:underline">LinkedGrow</Link></strong>{" "}
               for creators and teams who also generate and schedule content from the same dashboard. It tracks impressions,
               engagement rate, follower growth, and format performance per post while keeping total costs at $15 to $30/mo
-              thanks to BYOK pricing. For analytics-only users, Shield ($25/mo) and AuthoredUp ($19.95/mo) are the strongest
+              thanks to BYOK pricing. For analytics-only users, AuthoredUp ($19.95/mo) is the strongest
               LinkedIn-specific alternatives.
             </p>
           </div>
@@ -818,7 +818,7 @@ export function AnalyticsToolContent({
                 </Link>
                 , per-client content calendars, exportable analytics, and BYOK so AI costs stay on the client
                 side. Hootsuite Team at $249/mo is the alternative if you also manage non-LinkedIn channels.
-                Shield at $50/user/mo is a strong mid-tier option for agency teams that only need analytics without AI generation.
+                Shield used to be the mid-tier pick for analytics-only agency teams, until it shut down in May 2026; AuthoredUp is the closest remaining option.
               </p>
             </div>
 

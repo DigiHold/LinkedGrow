@@ -63,7 +63,7 @@ const marketingToolFAQs = [
   {
     question: "Does LinkedGrow work with LinkedIn company pages?",
     answer:
-      "Yes. LinkedGrow publishes to both personal profiles and company pages you manage through LinkedIn's official Share API. You can schedule and publish company page content with the same AI tools, calendar, and analytics available for personal profiles.",
+      "Yes. LinkedGrow publishes to both personal profiles and company pages you manage, straight from your own account. You can schedule and publish company page content with the same AI tools, calendar, and analytics available for personal profiles.",
   },
   {
     question: "How is LinkedGrow different from Hootsuite or Buffer for LinkedIn?",

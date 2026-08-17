@@ -21,7 +21,7 @@ Your email address is displayed in your profile but cannot be changed. It is loc
 
 ### Profile picture
 
-Your profile picture is automatically imported from your LinkedIn or Google account when you sign up via OAuth. There is no manual upload option -- your avatar always reflects your connected account.
+Your profile picture is automatically imported from your Google account when you sign up with Google. There is no manual upload option -- your avatar always reflects your connected account.
 
 ## Timezone
 

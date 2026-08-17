@@ -129,7 +129,7 @@ export function AutomationToolsContent() {
             icon: Calendar,
             title: "Post Scheduling",
             description:
-              "Schedule posts to publish at optimal times through LinkedIn's official Share API. Visual content calendar shows your upcoming week and month. LinkedGrow, Buffer, and Hootsuite all use this same authorized API endpoint for scheduled publishing.",
+              "Schedule posts to publish at optimal times from your own account. Visual content calendar shows your upcoming week and month, and LinkedGrow uses LinkedIn's own scheduler whenever possible, so the post ships exactly like a manual one.",
             highlights: ["Agent on your account", "Content calendar", "Timezone support"],
             badge: "Safe",
             color: "from-emerald-500 to-green-600",
@@ -184,9 +184,9 @@ export function AutomationToolsContent() {
         steps={[
           {
             number: "01",
-            title: "Connect with LinkedIn OAuth",
+            title: "Connect your LinkedIn account",
             description:
-              "You authorize LinkedGrow through LinkedIn's agent on your account flow, the same authentication system LinkedIn provides for all approved apps. LinkedIn issues a secure access token that lets the tool publish on your behalf. No browser extensions, no password sharing, no scraping.",
+              "You connect with your LinkedIn email and password, and approve one login prompt on your phone the first time. Your credentials are encrypted the moment they arrive, and your account gets its own dedicated address that never changes. No browser extension, no scraping.",
             icon: Shield,
             color: "from-cyan-500 to-blue-500",
             time: "30 sec",
@@ -204,7 +204,7 @@ export function AutomationToolsContent() {
             number: "03",
             title: "Schedule or publish via API",
             description:
-              "Publish immediately or schedule for the optimal time. LinkedGrow sends the post to LinkedIn through the official Share API, the same endpoint LinkedIn's own mobile app uses. LinkedIn treats API-published posts identically to manual posts.",
+              "Publish immediately or schedule for the optimal time. LinkedGrow publishes from your own account at the scheduled minute and verifies the post on your profile. The result is indistinguishable from a manual post, because it is one.",
             icon: Calendar,
             color: "from-emerald-500 to-green-500",
             time: "15 sec",
@@ -321,12 +321,12 @@ export function AutomationToolsContent() {
           {
             question: "What does LinkedIn's Terms of Service say about automation?",
             answer:
-              "LinkedIn's Professional Community Policies prohibit bots, crawlers, scrapers, or automated means to access or interact with the platform without authorization. Publishing through your own account with user-authorized OAuth tokens is permitted. The key distinction is authorized API access versus unauthorized platform manipulation.",
+              "LinkedIn's Professional Community Policies prohibit bots, crawlers and scrapers that harvest the platform or blast it at machine speed. What gets accounts restricted is volume and rhythm no human could produce. LinkedGrow works from your own account at a human pace, inside safe limits, on a dedicated address reserved for you.",
           },
           {
             question: "Can I automate LinkedIn posts without getting banned?",
             answer:
-              "Yes. Scheduling posts through tools that use your own account is fully supported. LinkedGrow, Buffer, and Hootsuite all publish through authorized API connections. You connect your LinkedIn account via OAuth, and the tool publishes at scheduled times. LinkedIn treats this identically to manual posts.",
+              "Yes. Scheduling posts is normal account behavior. LinkedGrow publishes from your own account at the times you chose, and uses LinkedIn's own scheduler whenever possible, so the post goes out exactly the way a manual one does.",
           },
           {
             question: "What happens if LinkedIn detects automation on my account?",
@@ -336,7 +336,7 @@ export function AutomationToolsContent() {
           {
             question: "Is LinkedGrow a safe LinkedIn automation tool?",
             answer:
-              "Yes. LinkedGrow uses LinkedIn's official Share API to publish posts. It never sends connection requests, automated messages, or performs any interaction on your profile. AI content generation happens outside LinkedIn using your own API keys, and only the final post is published the way a person does.",
+              "Yes, by design. LinkedGrow works on your own account the way a person does: it publishes your posts, and its agents send a small, bounded number of invitations and messages during the hours you choose, at human pace, from a dedicated address reserved for your account. Limits are safe by default, and you can review every message before it goes.",
           },
         ]}
       />

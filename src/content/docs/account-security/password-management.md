@@ -35,7 +35,7 @@ If you cannot remember your password, you can reset it using your email address:
 
 The reset link is valid for 1 hour. If the link expires, you can request a new one by repeating the process. If you do not see the email, check your spam or junk folder.
 
-**Note:** If you signed up using Google or LinkedIn OAuth and never set a password, you can still use the forgot password flow to create one. This gives you the option to sign in with either your password or your social login.
+**Note:** If you signed up using Google and never set a password, you can still use the forgot password flow to create one. This gives you the option to sign in with either your password or your social login.
 
 ## Password Requirements
 

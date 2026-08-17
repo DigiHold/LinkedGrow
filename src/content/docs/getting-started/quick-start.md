@@ -11,7 +11,6 @@ Head to [linkedgrow.ai/sign-up](https://linkedgrow.ai/sign-up) to create your fr
 
 - **Email and password** - Enter your email and choose a password
 - **Sign in with Google** - Use your Google account for one-click signup
-- **Sign in with LinkedIn** - Use your LinkedIn account (also connects LinkedIn automatically)
 
 After signing up, you will land on your dashboard where you can start setting up your account.
 

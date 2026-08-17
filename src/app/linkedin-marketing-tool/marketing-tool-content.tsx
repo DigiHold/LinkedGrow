@@ -128,7 +128,7 @@ export function MarketingToolContent() {
             icon: Calendar,
             title: "Scheduling and Content Calendar",
             description:
-              "Schedule posts for optimal publishing times with a visual content calendar that shows your week and month at a glance. Drag posts, adjust timing, and plan weeks ahead. Publishing goes through LinkedIn's official Share API, so your posts are treated identically to manual ones.",
+              "Schedule posts for optimal publishing times with a visual content calendar that shows your week and month at a glance. Drag posts, adjust timing, and plan weeks ahead. Publishing happens from your own account, so your posts are exactly like manual ones.",
             highlights: ["Visual calendar", "Optimal timing", "Agent on your account"],
             badge: "From Pro",
             color: "from-emerald-500 to-green-600",
@@ -303,7 +303,7 @@ export function MarketingToolContent() {
           {
             question: "How much does a LinkedIn marketing tool cost?",
             answer:
-              "LinkedIn marketing tools range from $19 per month (LinkedGrow Pro) to $299 per seat per month (Sprout Social). Most content-focused tools charge $30 to $80 per month. LinkedGrow uses the BYOK model where your AI API costs average $2 to $4 per month on top of the subscription, giving you unlimited AI generation without monthly caps.",
+              "LinkedIn marketing tools range from $99 per month (LinkedGrow Pro, agents included) to $299 per seat per month (Sprout Social). Most content-focused tools charge $30 to $80 per month. LinkedGrow uses the BYOK model where your AI API costs average $2 to $4 per month on top of the subscription, giving you unlimited AI generation without monthly caps.",
           },
           {
             question: "Is LinkedGrow better than using LinkedIn natively?",
@@ -323,7 +323,7 @@ export function MarketingToolContent() {
           {
             question: "Does LinkedGrow work with LinkedIn company pages?",
             answer:
-              "Yes. LinkedGrow publishes to both personal profiles and company pages you manage through LinkedIn's official Share API. Schedule and publish company page content with the same AI tools, calendar, and analytics available for personal profiles.",
+              "Yes. LinkedGrow publishes to both personal profiles and company pages you manage, straight from your own account. Schedule and publish company page content with the same AI tools, calendar, and analytics available for personal profiles.",
           },
           {
             question: "How is LinkedGrow different from Hootsuite or Buffer?",

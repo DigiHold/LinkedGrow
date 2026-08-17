@@ -61,7 +61,7 @@ const tools: ToolReview[] = [
     overview: [
       "LinkedGrow is the only LinkedIn post generator built around BYOK (bring your own key) across 43 AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. You connect your own API key once and pay the AI provider directly at wholesale rates - typically $2 to $4 per month for regular posting.",
       "Voice training is the core differentiator. You paste 3 to 5 of your best posts, LinkedGrow builds a style profile, and every generation matches your sentence structure and tone. The hook generator, carousel builder, AI image generation, scheduling, content calendar, A/B testing, and analytics all sit in one dashboard.",
-      "Publishing goes directly to personal profiles and company pages you manage. Reddit URLs can be turned into post drafts, scheduled posts fire at exact times via QStash, and the editor previews exactly how the post will look on LinkedIn before you publish.",
+      "Publishing goes directly to personal profiles and company pages you manage. Reddit URLs can be turned into post drafts, scheduled posts fire at the exact minute you chose, and the editor previews exactly how the post will look on LinkedIn before you publish.",
     ],
     pros: [
       "43 AI models with model freedom (use Claude for thought leadership, ChatGPT for storytelling, Gemini for speed)",
