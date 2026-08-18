@@ -785,19 +785,20 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
      * So ArrowDown moves through the menu, the snapshot names the focused
      * item, and Enter is the click.
      */
-    type AxNode = { focused?: boolean; name?: string; children?: AxNode[] };
+    // Through CDP, because patchright 1.61 removed page.accessibility.
+    type AxProp = { name: string; value?: { value?: unknown } };
+    type AxNode = { name?: { value?: string }; properties?: AxProp[] };
+    const cdp = await page.context().newCDPSession(page);
     const focusedName = async (): Promise<string> => {
-      const walk = (n: AxNode | null): AxNode | null => {
-        if (!n) return null;
-        if (n.focused) return n;
-        for (const c of n.children ?? []) {
-          const hit = walk(c);
-          if (hit) return hit;
-        }
-        return null;
-      };
-      const snap = (await page.accessibility.snapshot().catch(() => null)) as AxNode | null;
-      return walk(snap)?.name ?? "";
+      try {
+        const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as { nodes: AxNode[] };
+        const hit = nodes.find((n) =>
+          (n.properties ?? []).some((p) => p.name === "focused" && p.value?.value === true)
+        );
+        return hit?.name?.value ?? "";
+      } catch {
+        return "";
+      }
     };
 
     let pressedDelete = false;
