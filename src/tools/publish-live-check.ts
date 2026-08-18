@@ -751,6 +751,12 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
         .slice(0, 25)
     );
     console.log(`  menu: ${JSON.stringify(items)}`);
+    if (items.length === 0) {
+      // The role-based dump reads nothing off the redesigned menu (2026-08-18,
+      // seven removals in a row printed menu: []), so keep the evidence.
+      const { capturePage } = await import("../linkedin/diagnose.ts");
+      await capturePage(page, "post-menu", "control menu unreadable").catch(() => "");
+    }
 
     /**
      * The exact item, not whatever contains its words.
