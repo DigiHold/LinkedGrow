@@ -129,3 +129,38 @@ test("a plain-words version of the same idea passes", () => {
   const r = validateMessage(msg, ctx);
   assert.equal(r.ok, true, r.reasons.join("; "));
 });
+
+/**
+ * The Gibran DM, verbatim from the live thread of 2026-08-17: the model
+ * narrating its own state ("didn't answer yet, so nothing to reply to there")
+ * to the very person it was talking about. The converse guard stops that pass
+ * from running at all; this locks the sentence itself out of any draft.
+ */
+test("rejects the narration DM that describes the thread instead of speaking in it", () => {
+  const msg =
+    "Gibran didn't answer yet, so nothing to reply to there.\n\nI mostly end up checking sites for stuff that's broken, security holes, missing consent banners.\n\nWhat made you comment on that post in the first place?";
+  const r = validateMessage(msg, { ...ctx, prospectFullName: "Gibran Corbin" });
+  assert.equal(r.ok, false);
+  assert.ok(r.reasons.some((x) => x.includes("narrates the conversation")));
+  assert.ok(r.reasons.some((x) => x.includes("third person")));
+});
+
+test("rejects the prospect's name used as the subject of a saying verb", () => {
+  const msg =
+    "Alex asked about the checker last week and the short answer is that it reads your site the way the AI search tools do. Want me to run it on yours this week?";
+  const r = validateMessage(msg, { ...ctx, prospectFullName: "Alex Morgan" });
+  assert.equal(r.ok, false);
+  assert.ok(r.reasons.some((x) => x.includes("third person")));
+});
+
+test("a vocative name in the greeting is not narration", () => {
+  const r = validateMessage(clean, { ...ctx, prospectFullName: "Alex Morgan" });
+  assert.equal(r.ok, true, r.reasons.join("; "));
+});
+
+test("a prospect called Will does not collide with the verb will", () => {
+  const msg =
+    "Hey Will, the checker reads your site the way AI search tools do. I will reply with the full result once it finishes. Want me to run it on yours?";
+  const r = validateMessage(msg, { ...ctx, prospectFullName: "Will Turner" });
+  assert.equal(r.ok, true, r.reasons.join("; "));
+});

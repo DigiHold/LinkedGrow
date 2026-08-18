@@ -100,6 +100,44 @@ const BANNED_PHRASES = [
   "showing up under", "your point about", "your take on", "your profile came up",
 ];
 
+/**
+ * Lines that describe the conversation instead of taking part in it.
+ *
+ * On 2026-08-17 a live DM went out opening with "Gibran didn't answer yet, so
+ * nothing to reply to there." That is the model narrating its own state to the
+ * very person it is talking about. The converse guard now stops that pass from
+ * existing at all; this stops the sentence itself if it ever finds another way
+ * in, because a person never reports the state of the thread they are typing
+ * into.
+ */
+const NARRATION_PHRASES = [
+  "nothing to reply to", "didn't answer yet", "did not answer yet",
+  "hasn't answered yet", "has not answered yet", "hasn't replied yet",
+  "has not replied yet", "no reply yet", "no answer yet", "went unanswered",
+  "as an ai", "as a language model", "the transcript", "the next pass",
+];
+
+/** Escapes a name so it can sit inside a RegExp. */
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * True when the message speaks about the prospect in the third person: their
+ * own first name as the subject of an answering or saying verb. Writing to
+ * Gibran, a person says "you didn't answer", never "Gibran didn't answer".
+ * Case-sensitive on the name so a prospect called Will does not collide with
+ * "will reply"; a vocative ("Thanks, Gibran") never has a verb right after the
+ * name, so greetings pass untouched.
+ */
+function narratesProspect(text: string, prospectFullName: string | null | undefined): boolean {
+  const first = (prospectFullName ?? "").trim().split(/\s+/)[0] ?? "";
+  if (first.length < 2) return false;
+  const verbs =
+    "(?:didn'?t|did\\s+not|hasn'?t|has\\s+not|never|already)?\\s*(?:answer(?:ed|s)?|repl(?:y|ied|ies)|respond(?:ed|s)?|said|says|asked|asks|wrote|writes|mentioned|mentions)\\b";
+  return new RegExp(`\\b${escapeRegExp(first)}\\s+${verbs}`).test(text);
+}
+
 /** Banned words matched with their common inflections (foster/fostering, showcase/showcasing, seamless/seamlessly). */
 function bannedWordReasons(text: string): string[] {
   const out: string[] = [];
@@ -256,6 +294,13 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   }
   const vague = text.match(VAGUE_REFERENT);
   if (vague) reasons.push(`vague noun standing in for the thing: "${vague[0]}"`);
+  // Narration: the machine describing the thread instead of speaking in it.
+  for (const p of NARRATION_PHRASES) {
+    if (lower.includes(p)) reasons.push(`narrates the conversation: ${p}`);
+  }
+  if (narratesProspect(text, ctx.prospectFullName)) {
+    reasons.push("speaks about the prospect in the third person instead of to them");
+  }
   const wrongName = namesSomebodyElse(text, ctx.prospectFullName ?? null, ctx.senderName);
   if (wrongName) {
     reasons.push(`greets somebody who is not the prospect: "${wrongName}"`);
