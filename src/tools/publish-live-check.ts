@@ -775,55 +775,35 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
      * clicking the deepest element whose trimmed text IS the label sidesteps
      * all three, and this is a check tool rather than a human being imitated.
      */
-    const clicked = await page.evaluate(() => {
-      const wanted = ["Delete post", "Supprimer le post"];
-      const all = Array.from(document.querySelectorAll("span,div,li,button,p,a"));
-      for (const el of all) {
-        const text = (el as HTMLElement).innerText?.trim() ?? "";
-        if (!wanted.includes(text)) continue;
-        const deeper = Array.from(el.querySelectorAll("*")).some(
-          (child) => ((child as HTMLElement).innerText?.trim() ?? "") === text
-        );
-        if (deeper) continue; // not the leaf, keep going down
-        const target = (el.closest('[role="menuitem"]') as HTMLElement | null) ?? (el as HTMLElement);
-        target.click();
-        return true;
-      }
-      return false;
-    });
-    if (!clicked) {
+    /**
+     * Clicked through Playwright, never through page.evaluate.
+     *
+     * The 2026-08-18 capture shows the menu open with "Delete post" plainly on
+     * screen while document.querySelectorAll saw nothing at all: the redesigned
+     * menu renders inside a shadow root, which an evaluate cannot see and a
+     * Playwright locator pierces natively. Every DOM-side click in this flow
+     * has the same blindness, so none of them survive here.
+     */
+    const deleteItem = page
+      .getByText(/^(Delete post|Supprimer le post)$/)
+      .first();
+    if (!(await deleteItem.isVisible().catch(() => false))) {
       console.log(`NO DELETE IN THE MENU. Delete it by hand: ${postUrl}`);
       return;
     }
+    await deleteItem.click().catch(() => {});
     await page.waitForTimeout(2500);
 
-    // Whatever the confirmation offers, printed, because it is the next thing
-    // that will have moved.
-    const asks = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('dialog[open] button, [role="alertdialog"] button, [role="dialog"] button'))
-        .map((b) => (b.getAttribute("aria-label") || (b as HTMLElement).innerText || "").trim())
-        .filter(Boolean)
-        .slice(0, 12)
-    );
-    console.log(`  confirmation offers: ${JSON.stringify(asks)}`);
-
-    // The same DOM click, for the same reason: the menu taught us not to trust
-    // a name match on this page.
-    const confirmed = await page.evaluate(() => {
-      const wanted = /^(delete|supprimer|yes|confirm)$/i;
-      const buttons = Array.from(
-        document.querySelectorAll('dialog[open] button, [role="alertdialog"] button, [role="dialog"] button')
-      );
-      for (const b of buttons) {
-        const text = ((b as HTMLElement).innerText || b.getAttribute("aria-label") || "").trim();
-        if (wanted.test(text)) {
-          (b as HTMLButtonElement).click();
-          return text;
-        }
-      }
-      return null;
-    });
-    console.log(`  pressed: ${confirmed ?? "nothing"}`);
+    // The confirmation, through a locator for the same shadow-root reason.
+    const confirmButton = page
+      .getByRole("button", { name: /^(delete|supprimer|yes|confirm)$/i })
+      .first();
+    if (await confirmButton.isVisible().catch(() => false)) {
+      await confirmButton.click().catch(() => {});
+      console.log("  pressed the confirmation");
+    } else {
+      console.log("  no confirmation dialog appeared");
+    }
     await page.waitForTimeout(7000);
 
     // Read it back rather than trusting the click, the same way publishing does.
