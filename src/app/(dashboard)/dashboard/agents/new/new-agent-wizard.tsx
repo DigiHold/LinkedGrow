@@ -320,22 +320,6 @@ export function NewAgentWizard() {
       .slice(0, 6);
   })();
 
-  // Five example rows, spun from the criteria the customer entered, so the step
-  // shows the shape of a result without pretending anyone has been found.
-  const previewRows = (() => {
-    const roles = splitList(jobRoles);
-    const sectors = splitList(industries);
-    const places = splitList(locations);
-    return Array.from({ length: 5 }, (_, i) => {
-      const parts = [
-        roles.length ? roles[i % roles.length] : "Your buyer",
-        sectors.length ? sectors[i % sectors.length] : null,
-        places.length ? places[i % places.length] : null,
-      ].filter(Boolean);
-      return parts.join(" · ");
-    });
-  })();
-
   // What each step needs before it will let you move on. Kept in one place so
   // the button and the hint under it can never disagree.
   const blocker = (() => {
@@ -979,44 +963,6 @@ export function NewAgentWizard() {
               />
             </Field>
 
-          <div>
-            {/* The five rows below are the shape of a result, built from what
-                you just entered. They carry no names on purpose: nothing has
-                searched yet, and inventing people here would make the targeting
-                feel proven when it is not. */}
-            <div className="rounded-xl border border-dashed border-border p-4">
-              <p className="text-sm text-muted-foreground">
-                Nothing has searched yet. This is what a match will look like,
-                using the criteria you just set.
-              </p>
-            </div>
-
-            <ul className="mt-4 space-y-2">
-              {previewRows.map((row, i) => (
-                <li
-                  key={i}
-                  className="flex items-center gap-3 rounded-xl border border-border p-3"
-                >
-                  <span className="h-9 w-9 flex-none rounded-full bg-slate-100 dark:bg-white/10" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block h-3 w-32 rounded bg-slate-100 dark:bg-white/10" />
-                    <span className="mt-2 block truncate text-sm text-muted-foreground">
-                      {row}
-                    </span>
-                  </span>
-                  <span className="flex-none text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Match
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <p className="mt-4 text-sm text-muted-foreground">
-              When the agent runs, these fill with real people and you reject the
-              ones that do not fit. Every rejection sharpens what it looks for next.
-            </p>
-          </div>
-        
           <dl className="divide-y divide-border">
               <SummaryRow label="Name" value={name || "Not set"} />
               <SummaryRow
