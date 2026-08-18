@@ -166,9 +166,11 @@ const SEL = {
     'button[aria-label*="Schedule post" i], button[aria-label*="Schedule" i], ' +
     "button.share-actions__scheduled-post-btn, " +
     'a[aria-label*="Schedule" i], a:has(svg#clock-medium), button:has(svg#clock-medium)',
-  scheduleDate: 'input[id*="date" i], input[name*="date" i], input[placeholder*="/" ]',
-  scheduleTime: 'input[id*="time" i], input[name*="time" i]',
-  scheduleConfirm: 'button:text-is("Next"), button:text-is("Done"), button:text-is("Schedule")',
+  scheduleDate:
+    'input[data-testid="date-picker-input"], input[id*="date" i], input[name*="date" i], input[placeholder*="/" ]',
+  scheduleTime:
+    'input[data-testid="time-picker-input"], input[id*="time" i], input[name*="time" i]',
+  scheduleConfirm: 'button:text-is("Confirm"), button:text-is("Next"), button:text-is("Done"), button:text-is("Schedule")',
   scheduledPrimary: 'button:text-is("Schedule"), button.share-actions__primary-action',
   fileInput: 'input[type="file"]',
   /**
@@ -262,7 +264,7 @@ export async function downloadAttachment(
  */
 const BUTTON_NAME = {
   post: /^(post|publier|posten|publicar|pubblica|publiceren|publicera|opublikuj|发布|投稿する)$/i,
-  next: /^(next|done|suivant|terminé|termine|weiter|fertig|siguiente|hecho|avanti|fatto|volgende|klaar)$/i,
+  next: /^(next|done|confirm|confirmer|suivant|terminé|termine|weiter|fertig|siguiente|hecho|avanti|fatto|volgende|klaar)$/i,
   schedule: /^(schedule|programmer|planen|programar|pianifica|plannen|schemalägg)/i,
   discard: /^(discard|supprimer|verwerfen|descartar|elimina|weggooien|kasta)/i,
   /**
