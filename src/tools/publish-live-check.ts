@@ -710,7 +710,17 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
     await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
     await page.waitForTimeout(5000);
 
+    /**
+     * Scoped to main, because the page has more than one "..." button.
+     *
+     * On 2026-08-18 this matched the messaging overlay's control menu (the
+     * dump listed reply suggestions like "Thanks Farid"), clicked it, found no
+     * Delete there and gave up while the post's own menu sat unopened in the
+     * middle of the screen. The messaging overlay lives outside main; the post
+     * being deleted is main's only update, so main is the whole fix.
+     */
     const menu = page
+      .locator("main")
       .getByRole("button", { name: /open control menu|more actions|options|plus d'actions/i })
       .first();
     if (!(await menu.isVisible().catch(() => false))) {
