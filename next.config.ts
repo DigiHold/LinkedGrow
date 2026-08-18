@@ -138,6 +138,13 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        // the v1 lifetime deal page dies at the v2 cutover, but its links
+        // live on in the LTD emails and in buyers' history
+        source: "/last-lifetime-deal",
+        destination: "/pricing",
+        permanent: false,
+      },
+      {
         // carousel-guide consolidated into the carousel-templates guide
         source: "/blog/linkedin-carousel-guide",
         destination: "/blog/linkedin-carousel-templates",
