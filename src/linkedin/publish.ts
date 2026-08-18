@@ -156,9 +156,16 @@ const SEL = {
   editor: '.ql-editor[contenteditable="true"], div[role="textbox"][contenteditable="true"]',
   // ":text-is" is exact: "Post" the button, never "Post to anyone" the audience row.
   postButton: 'button.share-actions__primary-action, button:text-is("Post")',
+  /**
+   * The clock in the composer footer. A button historically; on the TipTap
+   * composer read off the 2026-08-18 capture it is an anchor with
+   * aria-label="Scheduled" whose only content is svg#clock-medium, so the
+   * anchor and the icon are both anchors for the lookup now.
+   */
   scheduleButton:
     'button[aria-label*="Schedule post" i], button[aria-label*="Schedule" i], ' +
-    "button.share-actions__scheduled-post-btn",
+    "button.share-actions__scheduled-post-btn, " +
+    'a[aria-label*="Schedule" i], a:has(svg#clock-medium), button:has(svg#clock-medium)',
   scheduleDate: 'input[id*="date" i], input[name*="date" i], input[placeholder*="/" ]',
   scheduleTime: 'input[id*="time" i], input[name*="time" i]',
   scheduleConfirm: 'button:text-is("Next"), button:text-is("Done"), button:text-is("Schedule")',
@@ -1081,7 +1088,21 @@ export async function postFirstComment(
   await dwell(1500, 2800);
 
   // Cleared box means it left. Anything else and we say so rather than assume.
-  const left = (await box.innerText().catch(() => "x")).trim().length === 0;
-  if (!left) log("first comment: typed but the box did not clear");
+  let left = (await box.innerText().catch(() => "x")).trim().length === 0;
+  if (!left) {
+    // The named button did nothing on the redesigned comment box (2026-08-18:
+    // comment typed and held, submit clicked, box untouched, nothing on the
+    // post). Enter posts a comment on LinkedIn, and the keyboard survives DOM
+    // renames that break every button lookup.
+    await box.click().catch(() => {});
+    await sleep(randInt(300, 700));
+    await page.keyboard.press("Enter").catch(() => {});
+    await dwell(1500, 2800);
+    left = (await box.innerText().catch(() => "x")).trim().length === 0;
+  }
+  if (!left) {
+    log("first comment: typed but the box did not clear");
+    await capturePage(page, "comment-box", "first comment would not submit").catch(() => "");
+  }
   return left;
 }
