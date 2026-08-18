@@ -53,9 +53,9 @@ export function CarouselGeneratorContent() {
         primaryCta={{ text: "Start creating carousels", href: "/sign-up" }}
         trustIndicators={["Business plan feature", "AI writes every slide", "Your own AI key"]}
         video={{
-          videoId: "5cE1BRvxfiQ",
-          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
-          duration: "0:10",
+          videoId: "1MVCdQZiN9I",
+          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumb-agents.avif",
+          duration: "1:22",
           ctaText: "See Pricing",
           ctaHref: "/pricing",
         }}

@@ -3,11 +3,11 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { ContentCreationAiContent } from "./ai-content";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Content Creation AI: 26 Models + Voice Training",
+  title: "LinkedIn Content Creation AI: 43 Models + Voice Training",
   description:
     "43 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK pricing, plus dedicated voice training that captures your exact sentence rhythm and style.",
   openGraph: {
-    title: "LinkedIn Content Creation AI: 26 Models + Voice Training",
+    title: "LinkedIn Content Creation AI: 43 Models + Voice Training",
     description:
       "43 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK pricing, plus dedicated voice training that captures your exact sentence rhythm and style.",
     url: "https://linkedgrow.ai/linkedin-content-creation-ai",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Content Creation AI: 26 Models + Voice Training",
+    title: "LinkedIn Content Creation AI: 43 Models + Voice Training",
     description:
       "43 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK pricing, plus dedicated voice training that captures your exact sentence rhythm and style.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-content-creation-ai.webp"],

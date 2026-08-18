@@ -96,7 +96,7 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-5.6, GPT-5.4 mini",
+    description: "GPT-5.2, GPT-5.4 mini",
     icon: OpenAIIcon,
     placeholder: "sk-...",
     apiKeyUrl: "https://platform.openai.com/api-keys",
@@ -106,9 +106,9 @@ const aiProviders = [
     modelField: "openaiModel",
     models: [
       { id: "gpt-5.4-mini", name: "GPT-5.4 mini", recommended: true, price: "~$0.008/post" },
-      { id: "gpt-5.6-terra", name: "GPT-5.6 Terra", price: "~$0.03/post" },
-      { id: "gpt-5.6-sol", name: "GPT-5.6 Sol", price: "~$0.06/post" },
-      { id: "gpt-5.6-luna", name: "GPT-5.6 Luna", price: "~$0.012/post" },
+      { id: "gpt-5.6-terra", name: "GPT-5.2", price: "~$0.03/post" },
+      { id: "gpt-5.6-sol", name: "GPT-5.2", price: "~$0.06/post" },
+      { id: "gpt-5.6-luna", name: "GPT-5 Nano", price: "~$0.012/post" },
       { id: "gpt-5.4", name: "GPT-5.4", price: "~$0.03/post" },
       { id: "gpt-5.4-nano", name: "GPT-5.4 nano", price: "~$0.002/post" },
     ],
@@ -143,14 +143,14 @@ const aiProviders = [
     modelField: "googleModel",
     models: [
       { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", recommended: true, price: "~$0.006/post" },
-      { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", price: "~$0.02/post" },
+      { id: "gemini-3.1-pro-preview", name: "Gemini 3 Pro", price: "~$0.02/post" },
       { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", price: "~$0.001/post" },
     ],
   },
   {
     id: "grok",
     name: "Grok",
-    description: "Grok 4.5, Grok 4.3",
+    description: "Grok 4, Grok 4.3",
     icon: GrokIcon,
     placeholder: "xai-...",
     apiKeyUrl: "https://console.x.ai/team/default/api-keys",
@@ -160,7 +160,7 @@ const aiProviders = [
     modelField: "grokModel",
     models: [
       { id: "grok-4.3", name: "Grok 4.3", recommended: true, price: "~$0.006/post" },
-      { id: "grok-4.5", name: "Grok 4.5", price: "~$0.013/post" },
+      { id: "grok-4.5", name: "Grok 4", price: "~$0.013/post" },
       { id: "grok-4.20-0309-reasoning", name: "Grok 4.20 Reasoning", price: "~$0.006/post" },
     ],
   },

@@ -35,12 +35,12 @@ export function ContentCreationAiContent() {
       <Header />
 
       <LandingHero
-        badge={{ icon: Brain, text: "26 Models, One Voice" }}
+        badge={{ icon: Brain, text: "43 Models, One Voice" }}
         headline={{
           line1: "LinkedIn content creation AI",
           gradient: "with 43 AI models + voice training",
         }}
-        descriptionBold="The AI engine behind LinkedGrow: 26 text models, voice training, BYOK pricing."
+        descriptionBold="The AI engine behind LinkedGrow: 43 text models, voice training, BYOK pricing."
         description="Most LinkedIn AI tools lock you into one model with one writing style. LinkedGrow connects you to 26 frontier models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi, then trains a voice fingerprint from your own posts so every model writes in your cadence - not the generic default."
         valuePropBadges={[
           { icon: Bot, text: "6 AI providers" },
@@ -50,9 +50,9 @@ export function ContentCreationAiContent() {
         primaryCta={{ text: "Try the AI free", href: "/sign-up" }}
         trustIndicators={["7-day Pro trial", "Everything included", "All 43 AI models on trial"]}
         video={{
-          videoId: "5cE1BRvxfiQ",
-          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
-          duration: "0:10",
+          videoId: "1MVCdQZiN9I",
+          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumb-agents.avif",
+          duration: "1:22",
           ctaText: "See Pricing",
           ctaHref: "/pricing",
         }}
@@ -114,7 +114,7 @@ export function ContentCreationAiContent() {
         features={[
           {
             icon: Bot,
-            title: "26 text models from 6 providers",
+            title: "43 text models from 6 providers",
             description:
               "GPT 5.2, GPT 5, Claude Opus 4.7, Claude Sonnet 4.6, Gemini 3 Pro, Gemini 3 Flash, Grok 4.1, Perplexity Sonar Reasoning Pro, Kimi K2.5, and 17 more. Always latest versions. Switch per draft - no contract lock-in to any provider.",
             highlights: ["OpenAI + Anthropic + Google", "Grok + Perplexity + Kimi", "Always latest versions"],

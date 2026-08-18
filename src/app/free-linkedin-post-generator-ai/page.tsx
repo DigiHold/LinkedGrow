@@ -3,11 +3,11 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { FreePostGeneratorContent } from "./free-generator-content";
 
 export const metadata: Metadata = {
-  title: "Free AI LinkedIn Post Writer: 26 Models, BYOK Pricing",
+  title: "Free AI LinkedIn Post Writer: 43 Models, BYOK Pricing",
   description:
     "43 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK. Voice training matches your style. 7-day Pro trial, with the card charged on day 8 unless you cancel.",
   openGraph: {
-    title: "Free AI LinkedIn Post Writer: 26 Models, BYOK Pricing",
+    title: "Free AI LinkedIn Post Writer: 43 Models, BYOK Pricing",
     description:
       "43 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK. Voice training matches your style. 7-day Pro trial, with the card charged on day 8 unless you cancel.",
     url: "https://linkedgrow.ai/free-linkedin-post-generator-ai",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free AI LinkedIn Post Writer: BYOK + 26 Models",
+    title: "Free AI LinkedIn Post Writer: BYOK + 43 Models",
     description:
       "43 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK. Voice training matches your style. 7-day Pro trial, with the card charged on day 8 unless you cancel.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/free-linkedin-post-generator-ai.webp"],
