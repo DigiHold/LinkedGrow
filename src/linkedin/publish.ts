@@ -795,10 +795,16 @@ async function useScheduler(
   // it, is the failure that would otherwise put the post on the wrong day.
   const dateNow = (await dateField.inputValue().catch(() => "")) || "";
   const timeNow = (await timeField.inputValue().catch(() => "")) || "";
-  const dayIn = dateNow.includes(String(wanted.day).padStart(2, "0"));
-  const monthIn = dateNow.includes(String(wanted.month).padStart(2, "0"));
-  const yearIn = dateNow.includes(String(wanted.year));
-  const minuteIn = timeNow.includes(String(wanted.minute).padStart(2, "0"));
+  // Compared as numbers, not as zero-padded strings: the redesigned picker
+  // echoes "08/21/2026 11:00 AM" back as "8/21/2026 11:00AM" (2026-08-18),
+  // which is the same date failing a substring check.
+  const numsIn = (s: string) => (s.match(/\d+/g) ?? []).map(Number);
+  const dateNums = numsIn(dateNow);
+  const timeNums = numsIn(timeNow);
+  const dayIn = dateNums.includes(wanted.day);
+  const monthIn = dateNums.includes(wanted.month);
+  const yearIn = dateNums.includes(wanted.year);
+  const minuteIn = timeNums.includes(wanted.minute);
   if (!dayIn || !monthIn || !yearIn || !minuteIn) {
     throw new ScheduleUnavailableError(
       `The scheduler would not take the date: asked for ${formatDateFor(order, wanted)} ${formatTimeFor(clock, wanted)}, the fields read ${dateNow} ${timeNow}.`

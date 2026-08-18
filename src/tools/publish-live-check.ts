@@ -776,34 +776,64 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
      * all three, and this is a check tool rather than a human being imitated.
      */
     /**
-     * Clicked through Playwright, never through page.evaluate.
+     * Walked to with the keyboard and read through the accessibility tree.
      *
-     * The 2026-08-18 capture shows the menu open with "Delete post" plainly on
-     * screen while document.querySelectorAll saw nothing at all: the redesigned
-     * menu renders inside a shadow root, which an evaluate cannot see and a
-     * Playwright locator pierces natively. Every DOM-side click in this flow
-     * has the same blindness, so none of them survive here.
+     * The menu lives in a CLOSED shadow root (2026-08-18): the capture shows
+     * "Delete post" on screen while page.content() does not contain it, an
+     * evaluate sees nothing, and a locator cannot pierce a closed root either.
+     * Two things still cross it: real keyboard events, and the AX snapshot.
+     * So ArrowDown moves through the menu, the snapshot names the focused
+     * item, and Enter is the click.
      */
-    const deleteItem = page
-      .getByText(/^(Delete post|Supprimer le post)$/)
-      .first();
-    if (!(await deleteItem.isVisible().catch(() => false))) {
+    type AxNode = { focused?: boolean; name?: string; children?: AxNode[] };
+    const focusedName = async (): Promise<string> => {
+      const walk = (n: AxNode | null): AxNode | null => {
+        if (!n) return null;
+        if (n.focused) return n;
+        for (const c of n.children ?? []) {
+          const hit = walk(c);
+          if (hit) return hit;
+        }
+        return null;
+      };
+      const snap = (await page.accessibility.snapshot().catch(() => null)) as AxNode | null;
+      return walk(snap)?.name ?? "";
+    };
+
+    let pressedDelete = false;
+    const seen: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press("ArrowDown");
+      await page.waitForTimeout(350);
+      const name = (await focusedName()).trim();
+      if (name) seen.push(name);
+      if (/^(delete post|supprimer le post)$/i.test(name)) {
+        await page.keyboard.press("Enter");
+        pressedDelete = true;
+        break;
+      }
+    }
+    if (!pressedDelete) {
+      console.log(`  walked: ${JSON.stringify(seen.slice(0, 12))}`);
       console.log(`NO DELETE IN THE MENU. Delete it by hand: ${postUrl}`);
       return;
     }
-    await deleteItem.click().catch(() => {});
     await page.waitForTimeout(2500);
 
-    // The confirmation, through a locator for the same shadow-root reason.
-    const confirmButton = page
-      .getByRole("button", { name: /^(delete|supprimer|yes|confirm)$/i })
-      .first();
-    if (await confirmButton.isVisible().catch(() => false)) {
-      await confirmButton.click().catch(() => {});
-      console.log("  pressed the confirmation");
-    } else {
-      console.log("  no confirmation dialog appeared");
+    // The confirmation dialog sits in the same closed shadow, so the same
+    // keyboard: Tab through it and Enter on the button named Delete.
+    let confirmedPress = false;
+    for (let j = 0; j < 8; j++) {
+      const name = (await focusedName()).trim();
+      if (/^(delete|supprimer)$/i.test(name)) {
+        await page.keyboard.press("Enter");
+        confirmedPress = true;
+        break;
+      }
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(300);
     }
+    console.log(confirmedPress ? "  pressed the confirmation" : "  no confirmation reached by keyboard");
     await page.waitForTimeout(7000);
 
     // Read it back rather than trusting the click, the same way publishing does.
