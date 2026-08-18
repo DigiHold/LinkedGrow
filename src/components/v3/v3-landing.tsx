@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { V3Clip } from "./clip";
+import { YouTubePlayer } from "@/components/youtube-player";
 import { initConstellation, initV3Landing } from "./landing-effects";
 import { V3FaqAside, V3FaqList } from "./faq-section";
 import { V3Plans } from "./pricing-section";
@@ -85,8 +86,6 @@ import {
   NUMPILL,
   PFOOT,
   PH,
-  PH_CHIP,
-  PH_MK,
   PR,
   PSTAT,
   PSTAT_IC,
@@ -192,13 +191,12 @@ export function V3Landing() {
               <figure className={SCREEN_DK}>
                 <div className={CHROME_DK}><i className={CHROME_DOT_DK}></i><i className={CHROME_DOT_DK}></i><i className={CHROME_DOT_DK}></i><span className={CHROME_URL_DK}>app.linkedgrow.ai/agents/saas-founders</span></div>
                 <div className={VID}>
-                  <video autoPlay muted loop playsInline></video>
-                  <div className={PH}>
-                    <span className={PH_MK}><svg><use href="#mark" /></svg></span>
-                    <small>Video 01</small>
-                    <b>Agent overview, the funnel filling in real time</b>
-                    <span className={PH_CHIP}>1920 × 1080 · silent loop · around 18 seconds</span>
-                  </div>
+                  <YouTubePlayer
+                    videoId="1MVCdQZiN9I"
+                    thumbnailUrl="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumb-agents.avif"
+                    ctaText="Start your 7-day trial"
+                    ctaHref="/sign-up"
+                  />
                 </div>
               </figure>
             </div>
