@@ -602,22 +602,57 @@ async function fillDocumentTitle(page: Page, dialog: Locator, postText: string):
  * Enter behaves itself in this editor, unlike the message composer, so a line
  * break is a plain Enter rather than Shift+Enter.
  */
-async function typeBody(page: Page, editor: Locator, text: string): Promise<void> {
-  await clickHumanLocator(page, editor).catch(async () => {
-    await editor.click();
-  });
-  await sleep(randInt(300, 900));
+/**
+ * True once the editor holds focus and keeps it across a beat.
+ *
+ * The composer is TipTap now, and it mounts in two steps: the contenteditable
+ * is on the page before the editor binds to it. A click in that window takes a
+ * focus that the binding then throws away, and from there every keystroke
+ * falls on the page instead of the box. Eight of the nine attempts in the
+ * 2026-08-18 post-check typed a whole post into nothing exactly this way, so
+ * focus has to be held, not merely taken, before a single character is sent.
+ */
+async function holdsFocus(editor: Locator): Promise<boolean> {
+  const focused = () =>
+    editor
+      .evaluate((el) => el === document.activeElement || el.contains(document.activeElement))
+      .catch(() => false);
+  if (!(await focused())) return false;
+  await sleep(randInt(400, 700));
+  return focused();
+}
 
+async function typeBody(page: Page, editor: Locator, text: string): Promise<void> {
   const lines = text.replace(/\r/g, "").split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? "";
-    if (line.length > 0) await typeHumanHere(page, line);
-    if (i < lines.length - 1) {
-      await page.keyboard.press("Enter");
-      await sleep(randInt(90, 260));
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await clickHumanLocator(page, editor).catch(async () => {
+      await editor.click().catch(() => {});
+    });
+    await sleep(randInt(300, 900));
+    if (!(await holdsFocus(editor))) continue;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i] ?? "";
+      if (line.length > 0) await typeHumanHere(page, line);
+      if (i < lines.length - 1) {
+        await page.keyboard.press("Enter");
+        await sleep(randInt(90, 260));
+      }
+      // People stop mid-post. Rarely, and never for the same length of time.
+      if (i > 0 && i % 4 === 0) await dwell(400, 1600);
     }
-    // People stop mid-post. Rarely, and never for the same length of time.
-    if (i > 0 && i % 4 === 0) await dwell(400, 1600);
+
+    const landed = flatten(await editor.innerText().catch(() => ""));
+    if (landed === flatten(text)) return;
+
+    // Something swallowed part of the typing. Clear whatever is in the box and
+    // start the attempt over, rather than leaving a half-post for the caller's
+    // own check to reject without a retry.
+    await editor.click().catch(() => {});
+    await page.keyboard.press("ControlOrMeta+a").catch(() => {});
+    await page.keyboard.press("Backspace").catch(() => {});
+    await sleep(randInt(400, 900));
   }
 }
 
@@ -1013,9 +1048,14 @@ export async function postFirstComment(
     return false;
   }
 
-  await clickHumanLocator(page, box);
-  await sleep(randInt(400, 1100));
-  await typeHumanHere(page, body);
+  // Focus-checked and read back, same as the post body: the comment box is the
+  // same two-step TipTap mount, and a comment typed into nothing used to reach
+  // the submit click anyway.
+  await typeBody(page, box, body);
+  if (flatten(await box.innerText().catch(() => "")) !== flatten(body)) {
+    log("first comment: the box did not take the comment, leaving it");
+    return false;
+  }
   await dwell(1200, 3000);
 
   /**
