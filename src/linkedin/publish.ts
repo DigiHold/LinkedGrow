@@ -773,6 +773,9 @@ async function useScheduler(
   const dateField = await firstVisible(panel.locator(SEL.scheduleDate));
   const timeField = await firstVisible(panel.locator(SEL.scheduleTime));
   if (!dateField || !timeField) {
+    // Evidence first: the 2026-08-18 rebuild opened this far and stopped here,
+    // and no capture meant no way to see what the scheduler looks like now.
+    await capturePage(page, "scheduler", "no date and time fields").catch(() => "");
     throw new ScheduleUnavailableError("The scheduler opened without a date and time to fill in.");
   }
 
