@@ -785,56 +785,50 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
      * So ArrowDown moves through the menu, the snapshot names the focused
      * item, and Enter is the click.
      */
-    // Through CDP, because patchright 1.61 removed page.accessibility.
-    type AxProp = { name: string; value?: { value?: unknown } };
-    type AxNode = { name?: { value?: string }; properties?: AxProp[] };
+    /**
+     * Named through the accessibility tree, clicked by geometry.
+     *
+     * The menu sits in a CLOSED shadow root, so selectors and evaluates see
+     * nothing. The browser's AX tree still names every rendered item and
+     * carries its DOM backend id, and CDP turns that id into a box on screen.
+     * A mouse click on that box needs no DOM access at all. The keyboard walk
+     * tried before this failed because focus never entered the menu.
+     */
     const cdp = await page.context().newCDPSession(page);
-    const focusedName = async (): Promise<string> => {
+    await cdp.send("DOM.enable").catch(() => {});
+    await cdp.send("Accessibility.enable").catch(() => {});
+    type AxNode = { name?: { value?: string }; backendDOMNodeId?: number };
+    const axClick = async (namePattern: RegExp): Promise<string | null> => {
       try {
         const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as { nodes: AxNode[] };
-        const hit = nodes.find((n) =>
-          (n.properties ?? []).some((p) => p.name === "focused" && p.value?.value === true)
+        const hit = nodes.find(
+          (n) => namePattern.test((n.name?.value ?? "").trim()) && n.backendDOMNodeId
         );
-        return hit?.name?.value ?? "";
+        if (!hit?.backendDOMNodeId) return null;
+        const { model } = (await cdp.send("DOM.getBoxModel", {
+          backendNodeId: hit.backendDOMNodeId,
+        })) as { model: { content: number[] } };
+        const q = model.content;
+        const x = (q[0] + q[2] + q[4] + q[6]) / 4;
+        const y = (q[1] + q[3] + q[5] + q[7]) / 4;
+        await page.mouse.click(x, y);
+        return hit.name?.value ?? "clicked";
       } catch {
-        return "";
+        return null;
       }
     };
 
-    let pressedDelete = false;
-    const seen: string[] = [];
-    for (let i = 0; i < 12; i++) {
-      await page.keyboard.press("ArrowDown");
-      await page.waitForTimeout(350);
-      const name = (await focusedName()).trim();
-      if (name) seen.push(name);
-      if (/^(delete post|supprimer le post)$/i.test(name)) {
-        await page.keyboard.press("Enter");
-        pressedDelete = true;
-        break;
-      }
-    }
+    const pressedDelete = await axClick(/^(delete post|supprimer le post)$/i);
     if (!pressedDelete) {
-      console.log(`  walked: ${JSON.stringify(seen.slice(0, 12))}`);
       console.log(`NO DELETE IN THE MENU. Delete it by hand: ${postUrl}`);
       return;
     }
     await page.waitForTimeout(2500);
 
-    // The confirmation dialog sits in the same closed shadow, so the same
-    // keyboard: Tab through it and Enter on the button named Delete.
-    let confirmedPress = false;
-    for (let j = 0; j < 8; j++) {
-      const name = (await focusedName()).trim();
-      if (/^(delete|supprimer)$/i.test(name)) {
-        await page.keyboard.press("Enter");
-        confirmedPress = true;
-        break;
-      }
-      await page.keyboard.press("Tab");
-      await page.waitForTimeout(300);
-    }
-    console.log(confirmedPress ? "  pressed the confirmation" : "  no confirmation reached by keyboard");
+    // The confirmation dialog is the same closed shadow, so the same AX click.
+    await page.waitForTimeout(2000);
+    const confirmed = await axClick(/^(delete|supprimer)$/i);
+    console.log(confirmed ? "  pressed the confirmation" : "  no confirmation reached");
     await page.waitForTimeout(7000);
 
     // Read it back rather than trusting the click, the same way publishing does.
