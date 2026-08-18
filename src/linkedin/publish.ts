@@ -1076,9 +1076,31 @@ export async function postFirstComment(
     .locator("form, .comments-comment-box")
     .filter({ has: box })
     .first();
+  /**
+   * The send button sits BELOW the editor; the post's own action bar has a
+   * button with the same name ABOVE it. On the redesigned post page there is
+   * no form and no .comments-comment-box, so the main fallback used to grab
+   * the action-bar Comment (first in DOM order), click it, and report "the
+   * box did not clear" while the real blue button sat untouched under the
+   * text (2026-08-18 capture). Geometry settles what the DOM renamed: take
+   * the first matching button whose top edge is under the editor's.
+   */
+  const boxTop = (await box.boundingBox().catch(() => null))?.y ?? 0;
+  let below: Locator | null = null;
+  const named = namedButton(page.locator("main"), BUTTON_NAME.comment);
+  const count = await named.count();
+  for (let i = 0; i < count; i++) {
+    const candidate = named.nth(i);
+    if (!(await candidate.isVisible().catch(() => false))) continue;
+    const at = await candidate.boundingBox().catch(() => null);
+    if (at && at.y > boxTop) {
+      below = candidate;
+      break;
+    }
+  }
   const submit =
+    below ??
     (await firstVisible(namedButton(container, BUTTON_NAME.comment))) ??
-    (await firstVisible(namedButton(page.locator("main"), BUTTON_NAME.comment))) ??
     (await firstVisible(namedButton(container, BUTTON_NAME.post)));
   if (!submit || (await submit.isDisabled().catch(() => true))) {
     log("first comment: the submit button never became available");
@@ -1087,8 +1109,9 @@ export async function postFirstComment(
   await clickHumanLocator(page, submit);
   await dwell(1500, 2800);
 
-  // Cleared box means it left. Anything else and we say so rather than assume.
-  let left = (await box.innerText().catch(() => "x")).trim().length === 0;
+  // Cleared box means it left, and a box that detached entirely cleared too:
+  // LinkedIn collapses the composer once the comment is up.
+  let left = (await box.innerText().catch(() => "")).trim().length === 0;
   if (!left) {
     // The named button did nothing on the redesigned comment box (2026-08-18:
     // comment typed and held, submit clicked, box untouched, nothing on the
