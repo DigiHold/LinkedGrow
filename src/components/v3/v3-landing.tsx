@@ -192,6 +192,7 @@ export function V3Landing() {
                 <div className={CHROME_DK}><i className={CHROME_DOT_DK}></i><i className={CHROME_DOT_DK}></i><i className={CHROME_DOT_DK}></i><span className={CHROME_URL_DK}>app.linkedgrow.ai/agents/saas-founders</span></div>
                 <div className={VID}>
                   <YouTubePlayer
+                    flat
                     videoId="1MVCdQZiN9I"
                     thumbnailUrl="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumb-agents.avif"
                     ctaText="Start your 7-day trial"

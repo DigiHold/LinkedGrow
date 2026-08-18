@@ -11,6 +11,8 @@ interface YouTubePlayerProps {
   ctaAction?: () => void;
   ctaHref?: string;
   autoPlay?: boolean;
+  /** No border, radius or shadow: for when the player sits inside a frame that already has them. */
+  flat?: boolean;
 }
 
 export function YouTubePlayer({
@@ -20,6 +22,7 @@ export function YouTubePlayer({
   ctaAction,
   ctaHref,
   autoPlay = true,
+  flat = false,
 }: YouTubePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCTA, setShowCTA] = useState(false);
@@ -151,7 +154,7 @@ export function YouTubePlayer({
   return (
     <div
       ref={containerRef}
-      className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl"
+      className={flat ? "relative aspect-video overflow-hidden bg-slate-900" : "relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl"}
     >
       {!isPlaying ? (
         <button
