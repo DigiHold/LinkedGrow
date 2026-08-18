@@ -30,6 +30,7 @@ import {
   type LinkedInAccount as PanelAccount,
 } from "@/components/dashboard/linkedin/accounts-panel";
 import { cn } from "@/lib/utils";
+import { RAMP } from "@/lib/agent-pace";
 
 const STEPS = [
   { num: 1, label: "Your site" },
@@ -185,9 +186,12 @@ export function NewAgentWizard() {
     typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "Europe/Zurich"
   );
   const [customWarmup, setCustomWarmup] = useState(false);
-  const [warmupStartPerDay, setWarmupStartPerDay] = useState(5);
-  const [warmupIncrementPerWeek, setWarmupIncrementPerWeek] = useState(5);
-  const [warmupWeeks, setWarmupWeeks] = useState(4);
+  // Pre-filled with the envelope the worker actually applies (RAMP is the one
+  // source both this screen and the agent page read), so the wizard can never
+  // describe a different warm-up than the agent page shows.
+  const [warmupStartPerDay, setWarmupStartPerDay] = useState<number>(RAMP.startPerDay);
+  const [warmupIncrementPerWeek, setWarmupIncrementPerWeek] = useState<number>(RAMP.incrementPerWeek);
+  const [warmupWeeks, setWarmupWeeks] = useState<number>(RAMP.weeks);
 
   /**
    * More topics, on demand.
@@ -805,7 +809,7 @@ export function NewAgentWizard() {
                 checked={customWarmup}
                 onChange={setCustomWarmup}
                 label="Set my own warm-up limits"
-                hint="Leave this off unless you know why you are turning it on. The default starts at 5 invitations a day and climbs by 5 each week for a month."
+                hint={`Leave this off unless you know why you are turning it on. The default starts at ${RAMP.startPerDay} invitations a day and climbs by ${RAMP.incrementPerWeek} each week for ${RAMP.weeks} weeks, then holds steady.`}
               />
               {customWarmup && (
                 <div className="space-y-4">
@@ -816,21 +820,21 @@ export function NewAgentWizard() {
                       and a restriction can be permanent. The ramp exists to avoid that.
                     </p>
                   </div>
-                  <Field label="Invitations a day, to begin with" hint="The default is 5.">
+                  <Field label="Invitations a day, to begin with" hint={`The default is ${RAMP.startPerDay}.`}>
                     <Input
                       inputMode="numeric"
                       value={String(warmupStartPerDay)}
                       onChange={(e) => setWarmupStartPerDay(Number(e.target.value.replace(/\D/g, "")) || 1)}
                     />
                   </Field>
-                  <Field label="Added each week" hint="The default is 5.">
+                  <Field label="Added each week" hint={`The default is ${RAMP.incrementPerWeek}.`}>
                     <Input
                       inputMode="numeric"
                       value={String(warmupIncrementPerWeek)}
                       onChange={(e) => setWarmupIncrementPerWeek(Number(e.target.value.replace(/\D/g, "")) || 0)}
                     />
                   </Field>
-                  <Field label="Weeks of ramp" hint="The default is 4, after which it holds steady.">
+                  <Field label="Weeks of ramp" hint={`The default is ${RAMP.weeks}, after which it holds steady.`}>
                     <Input
                       inputMode="numeric"
                       value={String(warmupWeeks)}
