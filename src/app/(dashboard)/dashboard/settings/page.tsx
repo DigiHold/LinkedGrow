@@ -132,8 +132,18 @@ function isSettingsTab(value: string | null): value is SettingsTab {
 }
 
 function SettingsContent() {
+  /**
+   * Who may connect a LinkedIn account: anybody paying, every lifetime holder
+   * (they bought the posting half before agents existed), and admins. The
+   * middleware already walls the rest out of the dashboard; settings stays
+   * reachable so they can pay, which is why this panel needs its own check.
+   */
   const { theme, setTheme } = useTheme();
   const { data: session, update: updateSession } = useSession();
+  const canConnectLinkedIn =
+    !!session?.user?.isAdmin ||
+    !!session?.user?.isLifetimeDeal ||
+    !!session?.user?.stripeSubscriptionId;
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
@@ -706,9 +716,30 @@ function SettingsContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* The accounts themselves, rather than a button that sends the
-                person to another page to do the one thing this tab is for. */}
-            <LinkedInAccountsPanel />
+            {/* Connecting an account buys a dedicated address and is what the
+                agents and the posting both run on, so it belongs behind the
+                same wall as everything else. Lifetime holders bought the
+                posting half outright and keep it without a card. */}
+            {canConnectLinkedIn ? (
+              <LinkedInAccountsPanel />
+            ) : (
+              <div className="rounded-xl border border-border bg-slate-50 p-5 dark:bg-white/[0.02]">
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  Pick a plan to connect an account
+                </p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                  A connected account runs on an address reserved for it, which is bought the
+                  moment you connect. That starts with a plan and a card, and the 7-day trial
+                  charges nothing before day 7.
+                </p>
+                <Link
+                  href="/dashboard/upgrade"
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white"
+                >
+                  See the plans
+                </Link>
+              </div>
+            )}
             <Link
               className="mt-4 inline-block text-[13px] font-medium text-slate-500 underline-offset-4 hover:underline dark:text-slate-400"
               href="/dashboard/settings/linkedin-accounts"

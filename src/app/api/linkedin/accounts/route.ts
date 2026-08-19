@@ -133,10 +133,23 @@ export async function POST(request: NextRequest) {
     if (!data) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    // Deliberately NOT gated on a subscription: in v2 a connected account is
-    // how POSTING works too, and LTD holders keep posting for life without a
-    // card (Nicolas, 2026-08-19). The IP bought here serves their publishing.
-    // The subscription gate lives on agent creation, in api/agents.
+    /**
+     * Card first, connection second, with one exception.
+     *
+     * Connecting buys a dedicated address within minutes, so it cannot be
+     * open to accounts that have never paid. Lifetime holders are the
+     * exception and always will be: they bought the posting half outright
+     * before agents existed, and posting runs on this same connection.
+     */
+    const owner = data.owner ?? data.user;
+    const mayConnect =
+      !!data.user.isAdmin || !!owner.isLifetimeDeal || !!owner.stripeSubscriptionId;
+    if (!mayConnect) {
+      return NextResponse.json(
+        { error: "Pick a plan before connecting an account.", needsCheckout: true },
+        { status: 403 }
+      );
+    }
     const workspaceId = data.teamOwnerId ?? data.user.id;
 
     const body = await request.json();

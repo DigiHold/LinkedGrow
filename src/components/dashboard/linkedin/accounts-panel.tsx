@@ -665,6 +665,10 @@ export function ConnectLinkedInDialog({
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data?.needsCheckout) {
+          window.location.href = "/dashboard/upgrade";
+          return;
+        }
         setError(data.error || "The account could not be connected.");
         return;
       }
