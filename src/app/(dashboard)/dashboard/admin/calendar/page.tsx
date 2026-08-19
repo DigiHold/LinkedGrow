@@ -86,20 +86,6 @@ function AdminCalendarInner() {
           <p className="flex items-center gap-2 text-sm text-slate-500">
             <Loader2 className="h-4 w-4 animate-spin" /> Checking the connection...
           </p>
-        ) : !state.configured ? (
-          <div>
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              This deployment cannot see GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET.
-              They are injected at build time, so a deployment that started before they were saved
-              never receives them: redeploy from Vercel and reload this page.
-            </p>
-            <a
-              href="/api/google/calendar/connect"
-              className="mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-cyan-500 hover:text-cyan-600 dark:border-slate-700 dark:text-slate-200"
-            >
-              Try connecting anyway
-            </a>
-          </div>
         ) : connected ? (
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />

@@ -3,6 +3,13 @@ import { auth } from "@/lib/auth";
 import { CALENDAR_SCOPES, calendarConfigured } from "@/lib/google-calendar";
 
 /**
+ * Never prerendered. Vercel's Sensitive environment variables are absent at
+ * build time, so a route frozen at build reports the calendar as unconfigured
+ * for ever, whatever production actually holds.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Starts the one and only Google Calendar authorisation, admin only.
  *
  * `prompt=consent` and `access_type=offline` together are what make Google
