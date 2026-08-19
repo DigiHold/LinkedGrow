@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { demoBookings } from "@/lib/db/schema";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { BOOKING, candidateSlots, freeSlots } from "@/lib/booking";
-import { busyRanges } from "@/lib/google-calendar";
+import { busyRanges, eventStillLive } from "@/lib/google-calendar";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 
 /**
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const last = candidates[candidates.length - 1] as number;
 
     const rows = await db
-      .select({ slotStart: demoBookings.slotStart })
+      .select({ id: demoBookings.id, slotStart: demoBookings.slotStart, googleEventId: demoBookings.googleEventId })
       .from(demoBookings)
       .where(
         and(
@@ -45,12 +45,31 @@ export async function GET(request: NextRequest) {
         )
       );
 
+    /**
+     * A demo deleted from the calendar is a cancelled demo.
+     *
+     * Google is where a human cancels: they open the event and delete it. Our
+     * row is what blocks the slot, so it has to follow, or the time stays
+     * unbookable for ever with nothing on screen explaining why.
+     */
+    const live: number[] = [];
+    for (const row of rows) {
+      if (!row.googleEventId || (await eventStillLive(row.googleEventId).catch(() => true))) {
+        live.push(row.slotStart);
+        continue;
+      }
+      await db
+        .update(demoBookings)
+        .set({ status: "cancelled", updatedAt: Math.floor(Date.now() / 1000) })
+        .where(eq(demoBookings.id, row.id));
+    }
+
     // The host's own calendar, when it is connected. A failure there must not
     // take the page down: worst case the host declines a slot by hand.
     const busy = await busyRanges(first, last + BOOKING.durationMinutes * 60).catch(() => []);
 
     return NextResponse.json({
-      slots: freeSlots(candidates, rows.map((r) => r.slotStart), busy),
+      slots: freeSlots(candidates, live, busy),
       durationMinutes: BOOKING.durationMinutes,
       hostTimezone: BOOKING.hostTimezone,
     });

@@ -86,7 +86,7 @@ export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; f
   }, [slots, tz]);
 
   const time = (seconds: number) =>
-    new Intl.DateTimeFormat(undefined, {
+    new Intl.DateTimeFormat("en-US", {
       timeZone: tz,
       hour: "numeric",
       minute: "2-digit",
@@ -94,7 +94,7 @@ export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; f
 
   const longDay = (key: string) => {
     const [y, m, d] = key.split("-").map(Number);
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",

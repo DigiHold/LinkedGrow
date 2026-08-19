@@ -165,3 +165,25 @@ export async function createDemoEvent(params: {
   if (!data.id) return null;
   return { eventId: data.id, meetUrl: data.hangoutLink ?? null };
 }
+
+/**
+ * Whether a demo we created is still in the host's calendar.
+ *
+ * Deleting the event in Google is how a human cancels a call, and it has to
+ * free the slot. Our own row is what blocks the booker, so it has to be told.
+ * An unknown answer (no calendar, a network failure) counts as still live: a
+ * slot wrongly held is an annoyance, a slot wrongly freed is two people on the
+ * same call.
+ */
+export async function eventStillLive(eventId: string): Promise<boolean> {
+  const token = await accessToken();
+  if (!token) return true;
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events/${encodeURIComponent(eventId)}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (res.status === 404 || res.status === 410) return false;
+  if (!res.ok) return true;
+  const data = (await res.json()) as { status?: string };
+  return data.status !== "cancelled";
+}
