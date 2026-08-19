@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const SUGGESTED_QUESTIONS = [
-  "How do I create my first post?",
-  "What is BYOK and how does it work?",
+  "How do I create my first agent?",
+  "How do agents find leads for me?",
   "How to connect my LinkedIn account?",
   "What are the pricing plans?",
 ];
@@ -497,9 +497,9 @@ export default function ChatWidget() {
                     <div className="rounded-2xl rounded-tl-sm bg-slate-100 px-4 py-3 dark:bg-slate-800">
                       <p className="text-sm text-slate-700 dark:text-slate-300">
                         Hi! I&apos;m LinkedGrow&apos;s AI assistant. I can help you
-                        with anything about LinkedGrow - from getting started
-                        to setting up your AI API keys. What can I help you
-                        with?
+                        with anything about LinkedGrow - from setting up your
+                        first agent to managing your leads. What can I help
+                        you with?
                       </p>
                     </div>
                   </div>
