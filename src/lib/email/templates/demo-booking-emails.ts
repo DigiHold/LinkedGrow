@@ -1,5 +1,5 @@
 import { baseEmailTemplate } from "./base-template";
-import { p, lead, small, button, textLink, figures } from "./parts";
+import { p, lead, small, button, figures } from "./parts";
 
 /**
  * The two emails a booked demo sends: one to the person, one to us.
@@ -32,8 +32,8 @@ ${figures([
   { label: "Where", value: "Google Meet" },
   ...(website ? [{ label: "We will look at", value: website }] : []),
 ])}
-${p("We open LinkedGrow and build an agent on your case: who it would look for, where it would hunt, what it would say. It runs on my screen, so you see exactly what yours would do before you sign up for anything.")}
-${p("Bring your questions about account safety, pricing, anything. There is no deck and no second call.")}
+${p("On the call I share my screen and build an agent on your business, the same way you would build your own: what it reads, who it looks for, where it hunts, what it writes.")}
+${p("You watch it happen and you ask whatever you want along the way, about how it protects your account, what it costs, or how it decides who is worth a message.")}
 ${meetUrl ? button(meetUrl, "Join the call") : p("The Google Meet link is in the calendar invitation that follows this email.")}
 ${small("Something came up? Reply to this email and we move it. Cancelling costs you nothing and frees the slot for somebody else.")}
 `,
@@ -55,7 +55,7 @@ When: ${params.when}
 How long: ${params.minutes} minutes
 Where: Google Meet${params.website ? `\nWe will look at: ${params.website}` : ""}
 
-We open LinkedGrow and build an agent on your case: who it would look for, where it would hunt, what it would say. It runs on my screen, so you see exactly what yours would do before you sign up for anything.
+On the call I share my screen and build an agent on your business, the same way you would build your own: what it reads, who it looks for, where it hunts, what it writes. You watch it happen and you ask whatever you want along the way.
 ${params.meetUrl ? `\nJoin the call: ${params.meetUrl}\n` : "\nThe Google Meet link is in the calendar invitation that follows this email.\n"}
 Something came up? Reply to this email and we move it.`;
 
@@ -84,7 +84,7 @@ ${figures([
   ...(website ? [{ label: "Website", value: website }] : []),
 ])}
 ${note ? p(`What they want the agent to find: ${note}`) : ""}
-${website ? p(`Read the site before the call: ${textLink(website, website)}`) : ""}
+${website ? p(`Read the site before the call: <a href="${website}" style="color:#0A66C2;text-decoration:underline;">${website}</a>`) : ""}
 ${inCalendar ? "" : p("This is not in your Google Calendar: the calendar is not connected, so nothing was written to it.")}
 ${button(`${APP}/dashboard/settings?tab=calendar`, "Open the calendar settings")}
 `,
