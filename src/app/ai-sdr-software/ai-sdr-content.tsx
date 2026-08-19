@@ -47,14 +47,14 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
           { icon: MessageSquare, text: "Writes every message" },
           { icon: CalendarCheck, text: "Books the call" },
         ]}
-        primaryCta={{ text: "Book a live demo", href: "/book-demo" }}
+        primaryCta={{ text: "Start your 7-day trial", href: "/sign-up" }}
         trustIndicators={["7-day trial", "Your own LinkedIn account", "Agents included in the price"]}
         video={{
           videoId: "1MVCdQZiN9I",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumb-agents.avif",
           duration: "1:22",
-          ctaText: "Book a live demo",
-          ctaHref: "/book-demo",
+          ctaText: "See pricing",
+          ctaHref: "/pricing",
         }}
       />
 
@@ -204,11 +204,11 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
       />
 
       <LandingCTA
-        badge="15 minutes, your website, your agent"
-        headline={{ line1: "See your AI SDR", gradient: "built on your business" }}
-        description="We create the agent live from your own website, tune who it goes after, and answer everything you want to ask. You keep what we build."
-        primaryCta={{ text: "Book a 15-minute demo", href: "/book-demo" }}
-        trustIndicators={["15 minutes", "Built on your own website", "No account needed to book"]}
+        badge="Your agent, running this week"
+        headline={{ line1: "Put an AI SDR", gradient: "on your own account" }}
+        description="Give it your website, pick who it should go after, and it starts working LinkedIn the same day. Seven days to judge it on the leads it brings you."
+        primaryCta={{ text: "Start your 7-day trial", href: "/sign-up" }}
+        trustIndicators={["7-day trial", "2 agents included", "Cancel any time"]}
       />
 
       <LandingRelatedContent
