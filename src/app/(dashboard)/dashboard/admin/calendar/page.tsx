@@ -25,12 +25,16 @@ function AdminCalendarInner() {
   const failure = params.get("error");
 
   const [state, setState] = useState<{ configured: boolean; connected: boolean } | null>(null);
+  // A failed check is its own state. It used to fall back to "configured:
+  // false", which accused the environment of missing variables that were
+  // sitting right there.
+  const [checkFailed, setCheckFailed] = useState(false);
 
   useEffect(() => {
     fetch("/api/google/calendar/status")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("status"))))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then(setState)
-      .catch(() => setState({ configured: false, connected: false }));
+      .catch(() => setCheckFailed(true));
   }, []);
 
   const connected = justConnected || state?.connected;
@@ -61,15 +65,41 @@ function AdminCalendarInner() {
       )}
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
-        {state === null ? (
+        {checkFailed ? (
+          <div>
+            <p className="font-semibold text-slate-900 dark:text-white">
+              Could not read the connection status
+            </p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Sign in again if this page has been open a while, then reload. The button below still
+              works.
+            </p>
+            <a
+              href="/api/google/calendar/connect"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 px-5 py-3 text-[15px] font-bold text-white shadow-lg shadow-cyan-500/20"
+            >
+              <CalendarCheck className="h-5 w-5" />
+              Connect Google Calendar
+            </a>
+          </div>
+        ) : state === null ? (
           <p className="flex items-center gap-2 text-sm text-slate-500">
             <Loader2 className="h-4 w-4 animate-spin" /> Checking the connection...
           </p>
         ) : !state.configured ? (
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET are missing from the
-            environment. Add them in Vercel, redeploy, and this button starts working.
-          </p>
+          <div>
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              This deployment cannot see GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET.
+              They are injected at build time, so a deployment that started before they were saved
+              never receives them: redeploy from Vercel and reload this page.
+            </p>
+            <a
+              href="/api/google/calendar/connect"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-cyan-500 hover:text-cyan-600 dark:border-slate-700 dark:text-slate-200"
+            >
+              Try connecting anyway
+            </a>
+          </div>
         ) : connected ? (
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
