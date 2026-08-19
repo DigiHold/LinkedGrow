@@ -63,13 +63,6 @@ const LEAD_SOURCES: {
     icon: Users,
   },
   {
-    id: "creator",
-    label: "A creator's audience",
-    hint: "People who comment under someone your buyers follow. Usually the densest room there is.",
-    icon: UserRoundSearch,
-    recommended: true,
-  },
-  {
     id: "competitor",
     label: "Competitor engagement",
     hint: "People interacting with who you compete against.",
@@ -158,7 +151,7 @@ export function NewAgentWizard() {
   // Several sources at once, because the worker has always rotated through them two per pass and
   // only this screen insisted on one. An agent watching competitors AND buying signals AND a
   // lookalike search finds warm people three different ways, which is the point of having three.
-  const [sources, setSources] = useState<string[]>(["buying_event"]);
+  const [sources, setSources] = useState<string[]>(["creator", "buying_event"]);
   const [sourceTargets, setSourceTargets] = useState<Record<string, string>>({});
   // Which buying events count. Both on by default: they answer different questions and neither is
   // noisy on its own.
@@ -1256,13 +1249,13 @@ function OptionCard({
 const SOURCE_TARGET: Record<string, { label: string; hint: string; placeholder: string } | undefined> = {
   creator: {
     label: "Which people do your buyers follow?",
-    hint: "Names or their LinkedIn profile addresses, comma separated. The agent reads their recent posts and takes the people who commented or reacted. Pick someone your buyers read, not the biggest name you know: a niche voice brings a far better room than a celebrity.",
-    placeholder: "linkedin.com/in/their-profile, Jane Doe",
+    hint: "LinkedIn profile addresses, comma separated, never names: a name has to be searched for and misses every profile whose address carries digits. The agent reads their recent posts and takes the people who commented or reacted. Pick someone your buyers actually read, not the biggest name you know: a niche voice brings a far better room than a celebrity.",
+    placeholder: "linkedin.com/in/their-profile, linkedin.com/in/another-one",
   },
   competitor: {
     label: "Which competitors?",
-    hint: "Companies only, names or LinkedIn page URLs, comma separated. For a person, use A creator's audience above. The agent reads the company's recent posts and takes the people who commented or reacted, skipping anyone who works there.",
-    placeholder: "Gojiberry, Taplio",
+    hint: "LinkedIn company page addresses, comma separated, never names. The agent reads the company's recent posts and takes the people who commented or reacted, skipping anyone who works there.",
+    placeholder: "linkedin.com/company/taplio, linkedin.com/company/gong-io",
   },
   market: {
     label: "Describe the customers you already have",

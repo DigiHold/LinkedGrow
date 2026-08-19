@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { agents, agentSources } from "@/lib/db/schema";
 import { loadSessionUser } from "@/lib/auth-user";
+import { parseLinkedInSource, sourceHint } from "@/lib/agent-sources";
 
 /**
  * Adding a place for an agent to hunt, after it was created.
@@ -17,22 +18,6 @@ import { loadSessionUser } from "@/lib/auth-user";
 
 const TYPES = ["competitor", "creator", "keyword", "buying_event"] as const;
 const EVENTS = ["jobchange", "hiring", "funding", "event"] as const;
-
-/** The company or person a URL points at, or null when it points elsewhere. */
-function linkedinUrl(raw: string, want: "company" | "in"): string | null {
-  try {
-    const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
-    if (!/(^|\.)linkedin\.com$/.test(url.hostname)) return null;
-    const parts = url.pathname.split("/").filter(Boolean);
-    if (parts[0] !== want || !parts[1]) return null;
-    const slug = parts[1];
-    return want === "company"
-      ? `https://www.linkedin.com/company/${slug}/posts/`
-      : `https://www.linkedin.com/in/${slug}/recent-activity/all/`;
-  } catch {
-    return null;
-  }
-}
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -89,33 +74,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let config: Record<string, unknown> = {};
 
     if (type === "competitor" || type === "creator") {
-      const want = type === "competitor" ? "company" : "in";
-      // A name is allowed for a creator: the worker resolves it with one
-      // search. A company has to be a URL, because names collide.
-      if (value.startsWith("http") || value.includes("linkedin.com")) {
-        const url = linkedinUrl(value, want);
-        if (!url) {
-          return NextResponse.json(
-            {
-              error:
-                want === "company"
-                  ? "That is not a LinkedIn company page address"
-                  : "That is not a LinkedIn profile address",
-            },
-            { status: 400 }
-          );
-        }
-        config = { url };
-        label = url.split("/")[4] ?? value;
-      } else if (type === "creator") {
-        config = {};
-        label = value;
-      } else {
+      // Addresses only. A name would send the worker hunting through LinkedIn
+      // search, which costs a search and misses every profile whose slug
+      // carries digits.
+      const parsed = parseLinkedInSource(value, type);
+      if (!parsed) {
         return NextResponse.json(
-          { error: "Paste the company page address, like linkedin.com/company/acme" },
+          { error: `Paste ${sourceHint(type)}` },
           { status: 400 }
         );
       }
+      config = { url: parsed.url };
+      label = parsed.label;
     } else if (type === "keyword") {
       const queries = value
         .split(",")

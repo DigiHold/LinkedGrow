@@ -1228,14 +1228,14 @@ function AddSource({ agentId, onDone }: { agentId: string; onDone: () => void })
   const [error, setError] = useState<string | null>(null);
 
   const PLACEHOLDER: Record<string, string> = {
-    creator: "linkedin.com/in/their-profile, or just their name",
+    creator: "linkedin.com/in/their-profile",
     competitor: "linkedin.com/company/their-company",
     keyword: "finding clients, cold outreach, empty pipeline",
     buying_event: "",
   };
   const HINT: Record<string, string> = {
-    creator: "Everybody who likes and comments under this person's posts.",
-    competitor: "Everybody who engages with this company's posts.",
+    creator: "Everybody who likes and comments under this person's posts. Paste the profile address, not the name.",
+    competitor: "Everybody who engages with this company's posts. Paste the page address, not the name.",
     keyword: "People posting about these phrases. Separate them with commas.",
     buying_event: "People a life event just made reachable.",
   };

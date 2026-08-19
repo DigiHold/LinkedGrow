@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/schema";
 import { and, count, eq, inArray, isNull } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
+import { parseLinkedInSource } from "@/lib/agent-sources";
 import { EXTRA_AGENT_PRICE, effectiveAgentQuota, effectivePlan, hasAgentSubscription, type PlanId } from "@/lib/plans";
 
 /**
@@ -354,6 +355,36 @@ export async function POST(request: NextRequest) {
       "own_posts", "creator", "group", "buying_event", "linkedin_search", "csv",
     ] as const;
     const sources = Array.isArray(body?.sources) ? body.sources.slice(0, 15) : [];
+
+    /**
+     * Companies and creators arrive as addresses and are stored as addresses.
+     * The wizard used to pass whatever was typed straight through as a label,
+     * so a pasted URL became the source's name and the worker had to resolve
+     * it by search anyway, which costs a search and fails on any slug with
+     * digits in it.
+     */
+    const badTargets: string[] = [];
+    for (const r of sources) {
+      const type = (r as { type?: string })?.type;
+      const label = (r as { label?: string })?.label;
+      if ((type !== "competitor" && type !== "creator") || typeof label !== "string") continue;
+      if ((r as { config?: { url?: string } })?.config?.url) continue;
+      const parsed = parseLinkedInSource(label, type);
+      if (!parsed) {
+        badTargets.push(label);
+        continue;
+      }
+      (r as { label: string; config: unknown }).label = parsed.label;
+      (r as { label: string; config: unknown }).config = { url: parsed.url };
+    }
+    if (badTargets.length) {
+      return NextResponse.json(
+        {
+          error: `Paste LinkedIn addresses rather than names: ${badTargets.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
     const rows = sources
       .filter((r: unknown): r is { type: string; label: string; config?: unknown } =>
         !!r && typeof r === "object" &&
