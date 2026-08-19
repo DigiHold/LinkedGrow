@@ -22,7 +22,7 @@ interface SlotsPayload {
   durationMinutes: number;
 }
 
-export function DemoBooker({ avatarUrl }: { avatarUrl: string }) {
+export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; framed?: boolean }) {
   const [slots, setSlots] = useState<number[]>([]);
   const [duration, setDuration] = useState(15);
   const [loading, setLoading] = useState(true);
@@ -142,8 +142,8 @@ export function DemoBooker({ avatarUrl }: { avatarUrl: string }) {
   const open = !!pickedDay && step === 1;
 
   return (
-    <div className="mx-auto w-fit max-w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(11,33,84,0.10)] dark:border-white/10 dark:bg-slate-900 dark:shadow-[0_24px_60px_rgba(0,0,0,0.5)]">
-      <div className="h-1 w-full bg-linear-to-r from-blue-600 to-cyan-500" />
+    <div className={`mx-auto w-fit max-w-full overflow-hidden bg-white dark:bg-slate-900 ${framed ? "" : "rounded-3xl border border-slate-200 shadow-[0_24px_60px_rgba(11,33,84,0.10)] dark:border-white/10 dark:shadow-[0_24px_60px_rgba(0,0,0,0.5)]"}`}>
+      {!framed && <div className="h-1 w-full bg-linear-to-r from-blue-600 to-cyan-500" />}
 
       {step === 1 && (
         <div
