@@ -16,6 +16,14 @@ import {
 
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   EmptyState,
   PageHeader,
   PageShell,
@@ -175,6 +183,26 @@ function BillingScreen() {
   const [loading, setLoading] = useState(true);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  async function confirmCancel() {
+    setCancelling(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/stripe/cancel", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "The cancellation could not be scheduled");
+      // Re-read the truth from Stripe rather than guessing at the new state.
+      const fresh = await fetch("/api/stripe/billing");
+      if (fresh.ok) setBilling(await fresh.json());
+      setCancelOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The cancellation could not be scheduled");
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/stripe/billing")
@@ -349,6 +377,15 @@ function BillingScreen() {
             <Button onClick={() => router.push("/dashboard/upgrade")}>
               {!subscription ? "Pick a plan" : "Change plan"}
             </Button>
+            {subscription && !subscription.cancelAtPeriodEnd ? (
+              <Button
+                variant="outline"
+                onClick={() => setCancelOpen(true)}
+                className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+              >
+                Cancel subscription
+              </Button>
+            ) : null}
             {billing?.agentQuota ? (
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {billing.agentQuota} agent{billing.agentQuota === 1 ? "" : "s"} on this plan
@@ -493,6 +530,33 @@ function BillingScreen() {
         </a>{" "}
         and we will sort it out.
       </p>
+
+      <Dialog open={cancelOpen} onOpenChange={(open) => { if (!cancelling) setCancelOpen(open); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel your subscription?</DialogTitle>
+            <DialogDescription>
+              Your plan stays active until the end of the current period, and
+              during a trial that means your card is never charged. The agents
+              stop at that date; your leads, conversations and content stay on
+              the account.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" disabled={cancelling} onClick={() => setCancelOpen(false)}>
+              Keep my plan
+            </Button>
+            <Button
+              disabled={cancelling}
+              onClick={confirmCancel}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {cancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Yes, cancel it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }
