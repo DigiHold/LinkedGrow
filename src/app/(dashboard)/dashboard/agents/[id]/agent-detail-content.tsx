@@ -929,11 +929,45 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                               : "off"}
                         </div>
                       </div>
+                      <div className="flex flex-none items-center gap-1">
+                        <button
+                          type="button"
+                          title={source.enabled ? "Turn this source off" : "Turn this source back on"}
+                          onClick={async () => {
+                            await fetch(`/api/agents/${agentId}/sources/${source.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ enabled: !source.enabled }),
+                            });
+                            load();
+                          }}
+                          className={cn(
+                            "rounded-md px-2 py-1 text-[11px] font-semibold",
+                            source.enabled
+                              ? "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
+                              : "text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+                          )}
+                        >
+                          {source.enabled ? "Turn off" : "Turn on"}
+                        </button>
+                        <button
+                          type="button"
+                          title="Remove this source"
+                          onClick={async () => {
+                            await fetch(`/api/agents/${agentId}/sources/${source.id}`, { method: "DELETE" });
+                            load();
+                          }}
+                          className="rounded-md px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
               </ul>
             )}
+            <AddSource agentId={agentId} onDone={load} />
             <ImportList agentId={agentId} onDone={load} />
           </div>
         </div>
@@ -1180,6 +1214,138 @@ function ActivityChart({ days }: { days: ChartDay[] }) {
  * explanation is how somebody concludes the product is broken, when in fact the
  * other 260 were already in the workspace.
  */
+/**
+ * Adding a place to hunt, after the wizard.
+ *
+ * A creator is deliberately first: one person's comment section is denser
+ * than any company page, and company pages go quiet without warning.
+ */
+function AddSource({ agentId, onDone }: { agentId: string; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState("creator");
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const PLACEHOLDER: Record<string, string> = {
+    creator: "linkedin.com/in/their-profile, or just their name",
+    competitor: "linkedin.com/company/their-company",
+    keyword: "finding clients, cold outreach, empty pipeline",
+    buying_event: "",
+  };
+  const HINT: Record<string, string> = {
+    creator: "Everybody who likes and comments under this person's posts.",
+    competitor: "Everybody who engages with this company's posts.",
+    keyword: "People posting about these phrases. Separate them with commas.",
+    buying_event: "People a life event just made reachable.",
+  };
+
+  const submit = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/agents/${agentId}/sources`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, value }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "The source could not be added");
+      setValue("");
+      setOpen(false);
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The source could not be added");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <div className="border-t border-border px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400"
+        >
+          + Add a source
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-border px-4 py-4">
+      <div className="flex flex-wrap gap-2">
+        {[
+          { id: "creator", label: "A person's posts" },
+          { id: "competitor", label: "A company page" },
+          { id: "keyword", label: "A subject" },
+          { id: "buying_event", label: "A buying event" },
+        ].map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => { setType(option.id); setValue(""); }}
+            className={cn(
+              "rounded-lg border px-3 py-1.5 text-xs font-semibold",
+              type === option.id
+                ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+                : "border-border text-slate-600 dark:text-slate-300"
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{HINT[type]}</p>
+
+      {type === "buying_event" ? (
+        <select
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-slate-900 dark:text-white"
+        >
+          <option value="">Pick an event</option>
+          <option value="jobchange">Just changed role</option>
+          <option value="hiring">Hiring for the work</option>
+          <option value="funding">Just raised money</option>
+          <option value="event">Going to an event</option>
+        </select>
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={PLACEHOLDER[type]}
+          className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-slate-900 dark:text-white"
+        />
+      )}
+
+      {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          disabled={saving || !value.trim()}
+          onClick={submit}
+          className="rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white disabled:opacity-50"
+        >
+          {saving ? "Adding..." : "Add source"}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setOpen(false); setError(null); }}
+          className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-500"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ImportList({ agentId, onDone }: { agentId: string; onDone: () => void }) {
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
