@@ -177,6 +177,10 @@ const authProxy = auth(async (req) => {
       "/api/admin/affiliates/action",
       "/api/admin/backfill-free-users",
       "/api/mcp",
+      // The demo booker is used by strangers before they have an account,
+      // which is the point of the page. Both routes guard themselves with an
+      // IP rate limit and hard validation.
+      "/api/book-demo",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {

@@ -1611,3 +1611,30 @@ export type NewAgentMessage = typeof agentMessages.$inferInsert;
 export type AgentEvent = typeof agentEvents.$inferSelect;
 export type AgentAiUsage = typeof agentAiUsage.$inferSelect;
 export type NewAgentEvent = typeof agentEvents.$inferInsert;
+
+/**
+ * Demo calls booked from the public /ai-sdr-software page.
+ *
+ * The unique index on (slot_start) where status = 'booked' lives in the
+ * database and is the only real defence against two people taking the same
+ * minute; the availability list is just a hint that can be seconds stale.
+ */
+export const demoBookings = sqliteTable("demo_bookings", {
+  id: text("id").primaryKey(),
+  slotStart: integer("slot_start").notNull(),
+  durationMinutes: integer("duration_minutes").notNull().default(15),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  website: text("website"),
+  note: text("note"),
+  visitorTimezone: text("visitor_timezone"),
+  status: text("status").notNull().default("booked"),
+  googleEventId: text("google_event_id"),
+  meetUrl: text("meet_url"),
+  cancelToken: text("cancel_token").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export type DemoBooking = typeof demoBookings.$inferSelect;
+export type NewDemoBooking = typeof demoBookings.$inferInsert;
