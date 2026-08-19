@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://linkedgrow.ai";
   if (!code) {
-    return NextResponse.redirect(`${base}/dashboard/admin/calendar?error=denied`);
+    return NextResponse.redirect(`${base}/dashboard/settings?tab=calendar&error=denied`);
   }
 
   try {
@@ -39,11 +39,11 @@ export async function GET(request: NextRequest) {
     if (!res.ok || !data.refresh_token) {
       // No refresh token means Google reused an earlier grant. Revoking the
       // app's access in the Google account and reconnecting fixes it.
-      return NextResponse.redirect(`${base}/dashboard/admin/calendar?error=no_refresh_token`);
+      return NextResponse.redirect(`${base}/dashboard/settings?tab=calendar&error=no_refresh_token`);
     }
     await storeRefreshToken(data.refresh_token);
-    return NextResponse.redirect(`${base}/dashboard/admin/calendar?connected=1`);
+    return NextResponse.redirect(`${base}/dashboard/settings?tab=calendar&connected=1`);
   } catch {
-    return NextResponse.redirect(`${base}/dashboard/admin/calendar?error=failed`);
+    return NextResponse.redirect(`${base}/dashboard/settings?tab=calendar&error=failed`);
   }
 }

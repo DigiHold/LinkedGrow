@@ -86,7 +86,7 @@ ${figures([
 ${note ? p(`What they want the agent to find: ${note}`) : ""}
 ${website ? p(`Read the site before the call: ${textLink(website, website)}`) : ""}
 ${inCalendar ? "" : p("This is not in your Google Calendar: the calendar is not connected, so nothing was written to it.")}
-${button(`${APP}/dashboard/admin/calendar`, "Open the calendar settings")}
+${button(`${APP}/dashboard/settings?tab=calendar`, "Open the calendar settings")}
 `,
   });
 }
