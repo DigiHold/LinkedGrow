@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { agents, agentSources } from "@/lib/db/schema";
@@ -52,6 +52,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .where(and(eq(agents.id, id), eq(agents.workspaceId, workspaceId)))
       .limit(1);
     if (!agent) return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+
+    /**
+     * The same ceiling the wizard applies, enforced where it actually counts.
+     *
+     * The worker reads at most 8 sources a visit, so a list of fifty does not
+     * find more: it starves the ones that work, since each waits its turn
+     * behind the rest, and it slows the learning that needs several passes per
+     * source before it can tell a good room from a bad one.
+     */
+    const MAX_ENABLED_SOURCES = 15;
+    const [{ count: enabledCount } = { count: 0 }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(agentSources)
+      .where(and(eq(agentSources.agentId, id), eq(agentSources.enabled, true)));
+    if (Number(enabledCount) >= MAX_ENABLED_SOURCES) {
+      return NextResponse.json(
+        {
+          error: `An agent works best with ${MAX_ENABLED_SOURCES} live sources at most, and this one is there. Turn one off before adding another.`,
+        },
+        { status: 409 }
+      );
+    }
 
     const body = await request.json();
     const type = typeof body?.type === "string" ? body.type : "";
