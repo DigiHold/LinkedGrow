@@ -83,9 +83,6 @@ const FIRST_COMMENT_DELAY_MS = { min: 60_000, max: 210_000 };
  */
 const MAX_POSTS_PER_SESSION = 3;
 
-const NO_ACCOUNT_MESSAGE =
-  "No LinkedIn account is connected, so this post could not be published. Connect one and publish again.";
-
 const SIGNED_OUT_MESSAGE =
   "Your LinkedIn session has expired. Sign in once from the dashboard and this post goes out on its own.";
 
@@ -372,11 +369,16 @@ export async function publishPass(): Promise<void> {
   if (!candidates.length) return;
 
   const byAccount = new Map<string, AccountWork>();
+  let waitingForAccount = 0;
   for (const post of candidates) {
     const account = await accountForPost(post);
     if (!account) {
-      // Nothing about the next minute changes the answer, so this is final.
-      await markFailed(post.id, NO_ACCOUNT_MESSAGE);
+      // The owner has no connected LinkedIn account right now. The promise
+      // made at the v2 cutover is that a scheduled post WAITS for its owner
+      // to reconnect, so the row stays scheduled and a later pass, possibly
+      // days from now, finds the account and publishes at the slot. Failing
+      // it here would kill a post whose slot has not even arrived.
+      waitingForAccount += 1;
       continue;
     }
     // The account's own clock decides whether now is a reasonable hour to be
@@ -387,6 +389,9 @@ export async function publishPass(): Promise<void> {
     const existing = byAccount.get(account.id);
     if (existing) existing.jobs.push({ post, action });
     else byAccount.set(account.id, { account, jobs: [{ post, action }] });
+  }
+  if (waitingForAccount > 0) {
+    log("posts waiting for a LinkedIn reconnection", { count: waitingForAccount });
   }
   if (!byAccount.size) return;
 

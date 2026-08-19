@@ -809,8 +809,12 @@ async function remove(accountId: string, postUrl: string): Promise<void> {
           backendNodeId: hit.backendDOMNodeId,
         })) as { model: { content: number[] } };
         const q = model.content;
-        const x = (q[0] + q[2] + q[4] + q[6]) / 4;
-        const y = (q[1] + q[3] + q[5] + q[7]) / 4;
+        if (q.length < 8) throw new Error("incomplete box model quad");
+        const [qx1, qy1, qx2, qy2, qx3, qy3, qx4, qy4] = q as [
+          number, number, number, number, number, number, number, number,
+        ];
+        const x = (qx1 + qx2 + qx3 + qx4) / 4;
+        const y = (qy1 + qy2 + qy3 + qy4) / 4;
         await page.mouse.click(x, y);
         return hit.name?.value ?? "clicked";
       } catch {
