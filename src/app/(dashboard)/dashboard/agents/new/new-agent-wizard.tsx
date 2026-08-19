@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Check,
   Crosshair,
+  UserRoundSearch,
   Loader2,
   Plus,
   Search,
@@ -60,6 +61,13 @@ const LEAD_SOURCES: {
     label: "Lookalike audience",
     hint: "People who resemble the customers you already have.",
     icon: Users,
+  },
+  {
+    id: "creator",
+    label: "A creator's audience",
+    hint: "People who comment under someone your buyers follow. Usually the densest room there is.",
+    icon: UserRoundSearch,
+    recommended: true,
   },
   {
     id: "competitor",
@@ -1246,9 +1254,14 @@ function OptionCard({
  * roles and industries already given on the next step, so there is nothing extra to ask.
  */
 const SOURCE_TARGET: Record<string, { label: string; hint: string; placeholder: string } | undefined> = {
+  creator: {
+    label: "Which people do your buyers follow?",
+    hint: "Names or their LinkedIn profile addresses, comma separated. The agent reads their recent posts and takes the people who commented or reacted. Pick someone your buyers read, not the biggest name you know: a niche voice brings a far better room than a celebrity.",
+    placeholder: "linkedin.com/in/their-profile, Jane Doe",
+  },
   competitor: {
     label: "Which competitors?",
-    hint: "Company names or their LinkedIn page URLs, comma separated. The agent reads their recent posts and takes the people who commented or reacted, skipping anyone who works there.",
+    hint: "Companies only, names or LinkedIn page URLs, comma separated. For a person, use A creator's audience above. The agent reads the company's recent posts and takes the people who commented or reacted, skipping anyone who works there.",
     placeholder: "Gojiberry, Taplio",
   },
   market: {
