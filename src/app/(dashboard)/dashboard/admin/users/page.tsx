@@ -57,6 +57,7 @@ interface UserData {
   stripeCustomerId: string | null;
   /** A live Stripe subscription, the only thing "paid" means here. */
   hasSubscription: boolean;
+  subscription: { status: string; trialEnd: number | null; cancelAt: number | null } | null;
   accounts: AdminAccountRow[];
 }
 
@@ -73,13 +74,44 @@ const planColors: Record<string, string> = {
   trial: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
   starter: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   pro: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
-  business: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  business: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
+
+/** LTD overrides every colour: gold, recognisable at a glance. */
+const LTD_BADGE = "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-300";
 
 /** What the Plan column says: the plan only counts once it is paid for. */
 function displayPlan(user: UserData): string {
   return user.hasSubscription ? user.plan : "trial";
 }
+
+/**
+ * The line under the badge that answers the questions an admin actually has:
+ * did the card go in, when does the trial charge, did they cancel, did the
+ * payment fail. Null means nothing worth saying (a paying LTD, for example).
+ */
+function planDetail(user: UserData): { text: string; tone: "warn" | "bad" | "muted" } | null {
+  const sub = user.subscription;
+  if (!sub) {
+    if (user.isLifetimeDeal) return null;
+    return { text: "No card", tone: "muted" };
+  }
+  const day = (ts: number) =>
+    new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (sub.cancelAt) return { text: `Cancels ${day(sub.cancelAt)}`, tone: "warn" };
+  if (sub.status === "trialing" && sub.trialEnd)
+    return { text: `Card in · first charge ${day(sub.trialEnd)}`, tone: "muted" };
+  if (sub.status === "past_due" || sub.status === "unpaid")
+    return { text: "Payment failed", tone: "bad" };
+  if (sub.status === "active") return { text: "Paying", tone: "muted" };
+  return { text: sub.status, tone: "muted" };
+}
+
+const detailTone: Record<"warn" | "bad" | "muted", string> = {
+  warn: "text-amber-600 dark:text-amber-400",
+  bad: "text-red-600 dark:text-red-400",
+  muted: "text-slate-500 dark:text-slate-400",
+};
 
 export default function AdminUsersPage() {
   const { data: session } = useSession();
@@ -392,18 +424,28 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td data-label="Plan" className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {displayPlan(user) === "business" && (
                           <Crown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                         )}
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                            planColors[displayPlan(user)] || planColors.free
+                            user.isLifetimeDeal
+                              ? LTD_BADGE
+                              : planColors[displayPlan(user)] || planColors.free
                           }`}
                         >
                           {displayPlan(user)}{user.isLifetimeDeal ? " LTD" : ""}
                         </span>
                       </div>
+                      {(() => {
+                        const detail = planDetail(user);
+                        return detail ? (
+                          <p className={`mt-1 text-[11px] font-medium ${detailTone[detail.tone]}`}>
+                            {detail.text}
+                          </p>
+                        ) : null;
+                      })()}
                     </td>
                     <td data-label="LinkedIn" className="px-4 py-3">
                       {user.accounts.length > 0 ? (

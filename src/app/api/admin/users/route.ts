@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { linkedinAccounts } from "@/lib/db/schema";
+import { stripe } from "@/lib/stripe";
 import { inArray, like, or, sql, desc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -77,6 +78,31 @@ export async function GET(request: NextRequest) {
       accountsByUser.set(row.workspaceId, list);
     }
 
+    // The billing truth for this page's subscribers, straight from Stripe:
+    // trial end, scheduled cancellation, payment state. Only the few rows
+    // holding a subscription id cost an API call, and a failed lookup shows
+    // as no detail rather than a broken page.
+    const subDetails = new Map<
+      string,
+      { status: string; trialEnd: number | null; cancelAt: number | null }
+    >();
+    await Promise.all(
+      usersList
+        .filter((u) => u.stripeSubscriptionId)
+        .map(async (u) => {
+          const sub = await stripe.subscriptions
+            .retrieve(u.stripeSubscriptionId as string)
+            .catch(() => null);
+          if (sub) {
+            subDetails.set(u.id, {
+              status: sub.status,
+              trialEnd: sub.trial_end ?? null,
+              cancelAt: sub.cancel_at ?? null,
+            });
+          }
+        })
+    );
+
     return NextResponse.json({
       users: usersList.map(({ stripeSubscriptionId, ...user }) => ({
         ...user,
@@ -84,6 +110,7 @@ export async function GET(request: NextRequest) {
         // Paid means a live Stripe subscription, never the plan column: v1
         // wrote plan values (LTD holders carry business) with no card behind.
         hasSubscription: !!stripeSubscriptionId,
+        subscription: subDetails.get(user.id) ?? null,
         accounts: (accountsByUser.get(user.id) ?? []).map((a) => ({
           name: a.fullName || a.email,
           profileUrl: a.profileUrl,
