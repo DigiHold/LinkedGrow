@@ -120,7 +120,9 @@ const authProxy = auth(async (req) => {
   // Redirect non-logged-in users to sign in for protected routes
   if (isProtectedRoute && !isLoggedIn) {
     const signInUrl = new URL("/sign-in", nextUrl);
-    signInUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+    // pathname alone dropped the query string, which killed campaign links
+    // like /dashboard/upgrade?coupon=... for signed-out users (2026-08-19).
+    signInUrl.searchParams.set("callbackUrl", nextUrl.pathname + nextUrl.search);
     return NextResponse.redirect(signInUrl);
   }
 

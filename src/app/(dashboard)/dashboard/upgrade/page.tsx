@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Check,
@@ -52,6 +53,18 @@ const planHighlights: Record<PlanId, string[]> = {
 };
 
 export default function UpgradePage() {
+  return (
+    <Suspense fallback={null}>
+      <UpgradePageInner />
+    </Suspense>
+  );
+}
+
+function UpgradePageInner() {
+  // A campaign link can carry a promotion code (?coupon=LGUSER2026). It rides
+  // through sign-in via the callbackUrl and lands on the Stripe checkout
+  // pre-applied; an unknown code costs nothing, the checkout API ignores it.
+  const couponFromUrl = useSearchParams().get("coupon")?.trim() || "";
   const { data: session } = useSession();
   const userPlan = (session?.user?.plan || "free") as PlanId;
   const userEmail = session?.user?.email || "";
@@ -106,6 +119,7 @@ export default function UpgradePage() {
         body: JSON.stringify({
           planId,
           email: userEmail,
+          ...(couponFromUrl ? { coupon: couponFromUrl } : {}),
         }),
       });
 
