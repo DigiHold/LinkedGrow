@@ -7,7 +7,7 @@ import { loadSessionUser } from "@/lib/auth-user";
 import { encryptApiKey, EncryptionNotConfiguredError } from "@/lib/encryption";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { agentQuotaFor } from "@/lib/plans";
-import { effectivePlan, hasAgentSubscription } from "@/lib/plans";
+import { effectivePlan } from "@/lib/plans";
 
 /**
  * The connected LinkedIn accounts in this workspace, for the agent wizard's

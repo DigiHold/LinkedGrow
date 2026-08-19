@@ -327,6 +327,17 @@ export function LinkedInAccountsPanel({
                   >
                     {status.label}
                   </span>
+                  {account.status === "pending" && (
+                    // Two support tickets on launch day came from this state
+                    // saying nothing: people read "waiting" as something THEY
+                    // had to do, deleted the account and wrote in.
+                    <p className="mt-1.5 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">
+                      Nothing to do here: we prepare a dedicated connection and
+                      sign in for you, which takes a few minutes. If LinkedIn
+                      wants a verification, a prompt appears right here on this
+                      page.
+                    </p>
+                  )}
                 </div>
 
                 {mode === "pick" ? (
