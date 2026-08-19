@@ -170,7 +170,7 @@ export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; f
                   </div>
                 </div>
                 <h2 className="mt-5 font-display text-[27px] font-bold leading-tight tracking-tight text-balance">
-                  See an AI SDR built <span className="text-cyan-300">live</span> on your business
+                  Pick a time, we <span className="text-cyan-300">show you</span> the agent
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-white/80">
                   A short Google Meet where we build an agent from your own website, show what it
