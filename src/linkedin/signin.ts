@@ -266,6 +266,11 @@ async function waitForApproval(
                  status = 'challenged', status_reason = ?, updated_at = ?
            WHERE id = ? AND workspace_id = ?`,
     args: [
+      // challenge_asked_at, then last_challenge_at: the missing second
+      // timestamp made this a 5-args-for-6-placeholders crash, which killed
+      // every sign-in that hit the phone-tap checkpoint (found live on
+      // launch morning, 2026-08-19, on Nicolas's own account).
+      Math.floor(Date.now() / 1000),
       Math.floor(Date.now() / 1000),
       "LinkedIn sent a notification to the LinkedIn app on your phone. Open it and tap Yes, and this finishes on its own.",
       Math.floor(Date.now() / 1000),
@@ -451,6 +456,31 @@ export async function signIn(input: SignInInput): Promise<void> {
   await dwell(400, 1100);
   await typeHuman(page, SEL.password, input.password);
   await dwell(600, 1600);
+
+  // Read both fields back before submitting. The login page can finish
+  // hydrating after the typing starts and reset what was already typed:
+  // that exact race submitted an empty email with a filled password on
+  // launch morning (2026-08-19) and burned a sign-in attempt on a real
+  // account. Same defence as the composer's typeBody.
+  for (const [selector, wanted] of [
+    [SEL.email, input.email],
+    [SEL.password, input.password],
+  ] as const) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const field = page.locator(selector).first();
+      const current = await field.inputValue().catch(() => "");
+      if (current === wanted) break;
+      if (attempt === 2) {
+        throw new SignInFailed(
+          "The login form kept dropping what was typed into it. Trying again from the top."
+        );
+      }
+      await field.click().catch(() => {});
+      await field.fill("").catch(() => {});
+      await typeHuman(page, selector, wanted);
+      await dwell(300, 800);
+    }
+  }
   await submitLogin(page);
 
   await page.waitForLoadState("domcontentloaded").catch(() => {});
