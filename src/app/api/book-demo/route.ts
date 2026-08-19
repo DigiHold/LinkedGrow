@@ -7,7 +7,14 @@ import { BOOKING, candidateSlots } from "@/lib/booking";
 import { createDemoEvent } from "@/lib/google-calendar";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/email/ses-client";
-import { baseEmailTemplate } from "@/lib/email/templates/base-template";
+import {
+  demoBookedSubject,
+  demoBookedEmailTemplate,
+  demoBookedEmailText,
+  demoBookedOpsSubject,
+  demoBookedOpsEmailTemplate,
+  demoBookedOpsEmailText,
+} from "@/lib/email/templates/demo-booking-emails";
 
 /**
  * Books one demo call.
@@ -123,42 +130,34 @@ export async function POST(request: NextRequest) {
       timeZoneName: "short",
     }).format(new Date(slotStart * 1000));
 
+    const firstName = name.split(" ")[0] || name;
+    const emailArgs = {
+      firstName,
+      when,
+      minutes: BOOKING.durationMinutes,
+      meetUrl: event?.meetUrl ?? null,
+      website: siteUrl,
+    };
     await sendEmail({
       to: email,
-      subject: `Your LinkedGrow demo: ${when}`,
-      html: baseEmailTemplate({
-        preheader: `${when}, ${BOOKING.durationMinutes} minutes with Nicolas.`,
-        content: `
-          <h1 style="font-size:22px;margin:0 0 16px">You are booked in</h1>
-          <p style="margin:0 0 14px">${when}, ${BOOKING.durationMinutes} minutes with Nicolas, founder of LinkedGrow.</p>
-          <p style="margin:0 0 14px">We build an agent from your own website, tune who it goes after, and answer whatever you want to ask.${
-            event?.meetUrl
-              ? ` The Google Meet link is in the calendar invitation, and here: <a href="${event.meetUrl}">${event.meetUrl}</a>.`
-              : " The Google Meet link follows in a separate calendar invitation."
-          }</p>
-          <p style="margin:0">Something came up? Reply to this email and we move it.</p>
-        `,
-      }),
-      text: `You are booked in.\n\n${when}, ${BOOKING.durationMinutes} minutes with Nicolas, founder of LinkedGrow.${
-        event?.meetUrl ? `\n\nGoogle Meet: ${event.meetUrl}` : ""
-      }\n\nReply to this email to move it.`,
+      subject: demoBookedSubject(when),
+      html: demoBookedEmailTemplate(emailArgs),
+      text: demoBookedEmailText(emailArgs),
     }).catch(() => null);
 
+    const opsArgs = {
+      name,
+      email,
+      when,
+      website: siteUrl,
+      note: note || null,
+      inCalendar: !!event,
+    };
     await sendEmail({
       to: "contact@linkedgrow.ai",
-      subject: `Demo booked: ${name}${siteUrl ? ` (${siteUrl})` : ""}`,
-      html: baseEmailTemplate({
-        preheader: `${when}`,
-        content: `
-          <h1 style="font-size:20px;margin:0 0 14px">New demo booked</h1>
-          <p style="margin:0 0 8px"><strong>${name}</strong>, ${email}</p>
-          <p style="margin:0 0 8px">${when}</p>
-          ${siteUrl ? `<p style="margin:0 0 8px">Website: <a href="${siteUrl}">${siteUrl}</a></p>` : ""}
-          ${note ? `<p style="margin:0">What they want the agent to find: ${note}</p>` : ""}
-          ${event ? "" : '<p style="margin:12px 0 0;color:#b45309">Not in your calendar: connect Google Calendar in the admin.</p>'}
-        `,
-      }),
-      text: `${name} (${email}) booked ${when}.${siteUrl ? ` Website: ${siteUrl}.` : ""}${note ? ` Note: ${note}` : ""}`,
+      subject: demoBookedOpsSubject(name, siteUrl),
+      html: demoBookedOpsEmailTemplate(opsArgs),
+      text: demoBookedOpsEmailText(opsArgs),
     }).catch(() => null);
 
     return NextResponse.json({ ok: true, meetUrl: event?.meetUrl ?? null });
