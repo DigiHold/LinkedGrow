@@ -102,7 +102,7 @@ export function V3Footer() {
           <div><h4 className={H4}>Quick links</h4>
             <div className="grid grid-cols-2 gap-6">
               <ul className={LINKS}>
-                <li><Link href="/features">Features</Link></li><li><Link href="/pricing">Pricing</Link></li><li><Link href="/blog">Blog</Link></li>
+                <li><Link href="/book-demo">Book a demo</Link></li><li><Link href="/pricing">Pricing</Link></li><li><Link href="/blog">Blog</Link></li>
                 <li><Link href="/industries">Industries</Link></li><li><Link href="/for">Who it&apos;s for</Link></li><li><Link href="/use-cases">Use cases</Link></li></ul>
               <ul className={LINKS}>
                 <li><Link href="/about">About us</Link></li><li><Link href="/help">Help center</Link></li><li><Link href="/docs">Documentation</Link></li>
