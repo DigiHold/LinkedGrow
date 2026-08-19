@@ -170,11 +170,11 @@ export function DemoBooker({ avatarUrl }: { avatarUrl: string }) {
                   </div>
                 </div>
                 <h2 className="mt-5 font-display text-[27px] font-bold leading-tight tracking-tight text-balance">
-                  Your AI SDR, built <span className="text-cyan-300">live</span> in {duration} minutes
+                  See an AI SDR built <span className="text-cyan-300">live</span> on your business
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-white/80">
-                  A short Google Meet where we build an agent from your own website, tune who it
-                  goes after, and answer every question you have.
+                  A short Google Meet where we build an agent from your own website, show what it
+                  would go after, and answer every question you have.
                 </p>
                 <ul className="mt-8 space-y-3 text-sm text-white/80">
                   <li className="flex items-center gap-2.5">
@@ -427,7 +427,7 @@ export function DemoBooker({ avatarUrl }: { avatarUrl: string }) {
             </p>
             <p className="flex items-center gap-2.5 text-[14.5px] text-slate-700 dark:text-slate-300">
               <Bot className="h-4 w-4 shrink-0 text-blue-600" />
-              We build your agent together, live
+              Built on your business, live
             </p>
           </div>
         </div>
