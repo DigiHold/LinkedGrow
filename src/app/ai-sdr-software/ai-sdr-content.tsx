@@ -3,7 +3,7 @@
 import { V3_ROOT } from "@/components/v3/root";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
-import { DemoBooker } from "@/components/booking/demo-booker";
+import { LandingHero } from "@/components/landing/landing-hero";
 import { QuickAnswer } from "@/components/seo/quick-answer";
 import { LandingPainPoints } from "@/components/landing/landing-pain-points";
 import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
@@ -21,6 +21,7 @@ import {
   Inbox,
   MessageSquare,
   Radar,
+  Repeat,
   Search,
   ShieldCheck,
   Sparkles,
@@ -28,39 +29,34 @@ import {
   Wallet,
 } from "lucide-react";
 
-const AVATAR = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/nicolas-lecocq-2026.avif";
-
 export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer: string }> }) {
   return (
     <main className={V3_ROOT}>
       <Header />
 
-      {/* The hero is the booking itself: the page's single job is a demo in the
-          diary, so the calendar stands where a video usually would. */}
-      <section className="relative px-4 pb-16 pt-28 sm:pt-32">
-        <div className="mx-auto max-w-6xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-[13px] font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300">
-            <Bot className="h-3.5 w-3.5" />
-            AI SDR software for LinkedIn
-          </span>
-          <h1 className="mx-auto mt-5 max-w-3xl font-display text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 text-balance sm:text-5xl lg:text-[56px] dark:text-white">
-            The AI SDR that finds your clients{" "}
-            <span className="bg-linear-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-              on LinkedIn
-            </span>
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-            LinkedGrow is AI SDR software for founders, consultants and agencies who sell on
-            LinkedIn. It works your own account every working day: it finds people who match your
-            buyer, opens the conversation, and hands you the ones worth your time. Pick a slot
-            below and we build yours together.
-          </p>
-        </div>
-
-        <div className="mt-12">
-          <DemoBooker avatarUrl={AVATAR} />
-        </div>
-      </section>
+      <LandingHero
+        badge={{ icon: Bot, text: "AI SDR software for LinkedIn" }}
+        headline={{
+          line1: "The AI SDR that finds your clients",
+          gradient: "and starts the conversation",
+        }}
+        descriptionBold="You describe who you sell to. The agent works your LinkedIn account every working day."
+        description="LinkedGrow is AI SDR software for founders, consultants and agencies who sell on LinkedIn. It finds people who match your buyer, warms them up, opens the conversation at a human pace, and hands you the ones worth your time."
+        valuePropBadges={[
+          { icon: Radar, text: "Finds leads daily" },
+          { icon: MessageSquare, text: "Writes every message" },
+          { icon: CalendarCheck, text: "Books the call" },
+        ]}
+        primaryCta={{ text: "Book a live demo", href: "/book-demo" }}
+        trustIndicators={["7-day trial", "Your own LinkedIn account", "Agents included in the price"]}
+        video={{
+          videoId: "1MVCdQZiN9I",
+          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumb-agents.avif",
+          duration: "1:22",
+          ctaText: "Book a live demo",
+          ctaHref: "/book-demo",
+        }}
+      />
 
       <QuickAnswer
         question="What is AI SDR software?"
@@ -96,12 +92,20 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
               "Hiring for outreach means salary, tooling, ramp-up and management, before a single meeting lands in the diary.",
             color: "violet",
           },
+          {
+            icon: Repeat,
+            stat: "0 replies",
+            title: "Blast tools burn the account",
+            description:
+              "The same template to 500 people gets ignored, reported, and eventually restricted. Volume without relevance costs you the profile you built.",
+            color: "amber",
+          },
         ]}
       />
 
       <LandingHowItWorks
         badge="From website to first conversation"
-        headline={{ text: "How the AI SDR", gradient: "works your account" }}
+        headline={{ text: "How the agent works", gradient: "your LinkedIn account" }}
         description="You describe the business once. The agent does the daily work, and you step in when somebody is worth talking to."
         steps={[
           {
@@ -203,8 +207,8 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
         badge="15 minutes, your website, your agent"
         headline={{ line1: "See your AI SDR", gradient: "built on your business" }}
         description="We create the agent live from your own website, tune who it goes after, and answer everything you want to ask. You keep what we build."
-        primaryCta={{ text: "Pick a time above", href: "#top" }}
-        trustIndicators={["7-day trial", "Cancel any time", "No account needed to book"]}
+        primaryCta={{ text: "Book a 15-minute demo", href: "/book-demo" }}
+        trustIndicators={["15 minutes", "Built on your own website", "No account needed to book"]}
       />
 
       <LandingRelatedContent
@@ -224,6 +228,11 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
             title: "LinkedGrow v2",
             href: "/blog/linkedgrow-v2",
             type: "blog",
+          },
+          {
+            title: "Book a LinkedGrow demo",
+            href: "/book-demo",
+            type: "page",
           },
           {
             title: "Pricing",
