@@ -93,11 +93,37 @@ export function ChallengePrompt({
     }
   };
 
-  // Only while something is genuinely waiting on the person. A sign-in that
-  // gave up is rendered by whoever hosts this component, next to the Try again
-  // button that acts on it, so showing it here too said the same thing twice.
-  if (!info || (info.state !== "awaiting_code" && info.state !== "awaiting_approval")) {
+  // Only while something is genuinely waiting on the person, or right after
+  // they acted: hiding during "submitted" made the box vanish and then come
+  // back when LinkedIn refused a code, which read as the same question asked
+  // twice for no reason (Maria's connect, launch day). A sign-in that gave up
+  // is rendered by whoever hosts this component, next to the Try again button
+  // that acts on it, so showing it here too said the same thing twice.
+  if (
+    !info ||
+    (info.state !== "awaiting_code" &&
+      info.state !== "awaiting_approval" &&
+      info.state !== "submitted")
+  ) {
     return null;
+  }
+
+  // The seconds between sending a code and LinkedIn's verdict. Without this
+  // the form disappeared as if finished, so a refusal looked like a brand new,
+  // inexplicable request.
+  if (info.state === "submitted") {
+    return (
+      <div className="flex items-start gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-4">
+        <Loader2 className="mt-0.5 h-4 w-4 flex-none animate-spin text-primary" />
+        <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">
+          <span className="font-semibold text-slate-900 dark:text-white">
+            Your code is being entered on the LinkedIn screen right now.
+          </span>{" "}
+          This takes a few seconds. If LinkedIn refuses it, this box will ask
+          again and a fresh code will be on its way to you.
+        </p>
+      </div>
+    );
   }
 
   /**
@@ -140,6 +166,16 @@ export function ChallengePrompt({
       className="space-y-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-4"
       onSubmit={submit}
     >
+      {/* The worker writes this exact prefix when LinkedIn refuses a code
+          (src/linkedin/signin.ts in the worker repo). The first, instructional
+          reason is not worth repeating here, the refusal absolutely is. */}
+      {info.reason?.startsWith("LinkedIn did not accept") && (
+        <p className="text-[13px] font-medium leading-relaxed text-amber-700 dark:text-amber-300">
+          LinkedIn did not accept the previous code and just sent a new one.
+          This is LinkedIn being careful, not a bug: only the newest code
+          works.
+        </p>
+      )}
       <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">
         <span className="font-semibold text-slate-900 dark:text-white">
           LinkedIn is asking to verify {label}.
@@ -165,8 +201,9 @@ export function ChallengePrompt({
         <p className="text-[13px] text-red-700 dark:text-red-300">{error}</p>
       )}
       <p className="text-[13px] text-slate-500 dark:text-slate-400">
-        Codes from an app change every 30 seconds, so if one is refused just
-        read the next one.
+        {info.kind === "authenticator app"
+          ? "Codes from an app change every 30 seconds, so if one is refused just read the next one."
+          : "LinkedIn sometimes sends several codes in a row, and each new one cancels the ones before it. Always use the most recent message, and avoid signing in to LinkedIn yourself while this runs."}
       </p>
     </form>
   );
