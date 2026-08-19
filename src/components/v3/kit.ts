@@ -420,6 +420,14 @@ export const MCARD_C =
   "hover:shadow-[0_40px_80px_-40px_#d97757] after:[background:linear-gradient(327deg,#d97757_2%,#3d1a10_78%)]";
 export const MCARD_D =
   "hover:shadow-[0_40px_80px_-40px_#00b8db] after:[background:linear-gradient(327deg,#00b8db_2%,#062a4d_78%)]";
+/* Grok has no brand colour of its own, so graphite rather than an invented one. */
+export const MCARD_E =
+  "hover:shadow-[0_40px_80px_-40px_#94a3b8] after:[background:linear-gradient(327deg,#5a6472_2%,#101419_78%)]";
+/* The wide one: tile and copy on the left, the clip filling the right. */
+export const MCARD_WIDE =
+  "[grid-column:1/-1] max-[900px]:[grid-column:auto] " +
+  "[&>div]:grid [&>div]:items-center [&>div]:gap-9 [&>div]:[grid-template-columns:1fr_1.08fr] " +
+  "[&>div]:max-[900px]:[grid-template-columns:1fr]";
 export const MCARD_FLIP = "justify-start [&>div:last-child]:[order:-1] [&>div:last-child]:mb-7 [&>div:last-child]:mt-0";
 export const MCARD_H3 =
   "mt-6 font-v3-display! text-[clamp(24px,2.6vw,31px)] font-semibold! leading-[1.2] tracking-[-.04em]! text-white";
