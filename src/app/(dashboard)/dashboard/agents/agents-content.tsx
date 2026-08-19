@@ -305,7 +305,13 @@ export function AgentsContent() {
         if (!r.ok) throw new Error("Could not load your agents");
         return r.json();
       })
-      .then((payload: Payload) => {
+      .then((payload: Payload & { requiresCheckout?: boolean }) => {
+        // No subscription means the agent story starts at the checkout, not
+        // at an empty list with a button that will only refuse them later.
+        if (payload.requiresCheckout) {
+          window.location.replace("/dashboard/upgrade");
+          return;
+        }
         if (!cancelled) setData(payload);
       })
       .catch((e: Error) => {

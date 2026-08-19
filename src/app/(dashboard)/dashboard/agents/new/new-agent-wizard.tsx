@@ -394,7 +394,14 @@ export function NewAgentWizard() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Could not create the agent");
+      if (!res.ok) {
+        // No subscription: the first step is the checkout, not an error.
+        if (data?.needsCheckout) {
+          router.push("/dashboard/upgrade");
+          return;
+        }
+        throw new Error(data.error || "Could not create the agent");
+      }
       router.push(`/dashboard/agents/${data.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create the agent");

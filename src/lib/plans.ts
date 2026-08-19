@@ -186,6 +186,24 @@ export function agentQuotaFor(plan: PlanId): number {
   return PLANS[plan].limits.agents;
 }
 
+/**
+ * Agents are gated on a live Stripe subscription, never on the plan column
+ * alone. v1 wrote plan values without any card behind them (every LTD holder
+ * carries 'business'), and an agent costs real money the moment its LinkedIn
+ * account connects: a dedicated IP is bought. So testing agents starts at the
+ * checkout, card first, for everyone who has never subscribed, LTD included
+ * (their permanent 50% coupon applies there). The posting features stay open
+ * to them exactly as before; this gate guards the agent surface only.
+ * Admins bypass: they run the house accounts.
+ */
+export function hasAgentSubscription(user: {
+  stripeSubscriptionId?: string | null;
+  isAdmin?: boolean | null;
+}): boolean {
+  if (user.isAdmin) return true;
+  return typeof user.stripeSubscriptionId === "string" && user.stripeSubscriptionId.length > 0;
+}
+
 /** How many agents may run in total: the plan, plus whatever was bought on top. */
 export function effectiveAgentQuota(plan: PlanId, extraAgents = 0): number {
   // A cancelled account keeps nothing, whatever it once paid for as an add-on:

@@ -10,7 +10,7 @@ import {
 } from "@/lib/db/schema";
 import { and, count, eq, inArray, isNull } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
-import { EXTRA_AGENT_PRICE, effectiveAgentQuota, effectivePlan, type PlanId } from "@/lib/plans";
+import { EXTRA_AGENT_PRICE, effectiveAgentQuota, effectivePlan, hasAgentSubscription, type PlanId } from "@/lib/plans";
 
 /**
  * The workspace owns agents, not the individual user, so a team member sees
@@ -38,6 +38,13 @@ async function resolveWorkspace(userId: string) {
       (data.owner?.billingInterval ?? data.user.billingInterval) === "year"
         ? ("year" as const)
         : ("month" as const),
+    // The subscription belongs to whoever pays, so a team member reads the
+    // owner's, same as the plan above.
+    agentSubscription: hasAgentSubscription({
+      stripeSubscriptionId:
+        data.owner?.stripeSubscriptionId ?? data.user.stripeSubscriptionId,
+      isAdmin: data.user.isAdmin,
+    }),
   };
 }
 
@@ -90,6 +97,7 @@ export async function GET() {
     if (rows.length === 0) {
       return NextResponse.json({
         agents: [],
+        requiresCheckout: !workspace.agentSubscription,
         quota: { used: 0, limit: effectiveAgentQuota(workspace.plan, workspace.extraAgents), extra: workspace.extraAgents, interval: workspace.billingInterval },
       });
     }
@@ -150,6 +158,7 @@ export async function GET() {
         // The IP itself is never exposed, only the country it sits in.
         funnel: byAgent.get(row.id),
       })),
+      requiresCheckout: !workspace.agentSubscription,
       quota: { used: rows.length, limit: effectiveAgentQuota(workspace.plan, workspace.extraAgents), extra: workspace.extraAgents, interval: workspace.billingInterval },
     });
   } catch {
@@ -171,6 +180,15 @@ export async function POST(request: NextRequest) {
     const workspace = await resolveWorkspace(session.user.id);
     if (!workspace) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    if (!workspace.agentSubscription) {
+      // Card first, agent second: creating one leads straight to buying a
+      // dedicated IP, so the checkout is the first step for every workspace
+      // that has never subscribed, whatever its v1 plan column says.
+      return NextResponse.json(
+        { error: "Running agents needs an active subscription.", needsCheckout: true },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

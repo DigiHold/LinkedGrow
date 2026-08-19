@@ -7,7 +7,7 @@ import { loadSessionUser } from "@/lib/auth-user";
 import { encryptApiKey, EncryptionNotConfiguredError } from "@/lib/encryption";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { agentQuotaFor } from "@/lib/plans";
-import { effectivePlan } from "@/lib/plans";
+import { effectivePlan, hasAgentSubscription } from "@/lib/plans";
 
 /**
  * The connected LinkedIn accounts in this workspace, for the agent wizard's
@@ -133,6 +133,10 @@ export async function POST(request: NextRequest) {
     if (!data) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    // Deliberately NOT gated on a subscription: in v2 a connected account is
+    // how POSTING works too, and LTD holders keep posting for life without a
+    // card (Nicolas, 2026-08-19). The IP bought here serves their publishing.
+    // The subscription gate lives on agent creation, in api/agents.
     const workspaceId = data.teamOwnerId ?? data.user.id;
 
     const body = await request.json();
