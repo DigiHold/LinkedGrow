@@ -59,7 +59,14 @@ These override everything else in this file.
 
 **Build gate:** `npx next build` is the only automated gate. There is no ESLint config and no typecheck script; do not assume lint runs anywhere. If the build passes, the code ships.
 
-**Deployment: `staging` only, and this is the one rule with no exception.** `staging` -> https://staging.linkedgrow.ai, and every branch of v2 work goes there. `main` serves live v1 to paying customers and nothing from this repo reaches it until Nicolas triggers the cutover. This reverses the "default is main" rule that applies in the v1 repo; if you find yourself about to push v2 anywhere else, stop.
+**Deployment since the cutover (2026-08-19): `main` is production and the ONLY push target.**
+linkedgrow.ai serves `main`, which carries v2. The flow, decided by Nicolas the same day: commit on
+the local `staging` branch (this directory is a git worktree, `main` is checked out by the old v1
+directory, so `staging` stays the local branch name) and deploy with `git push origin staging:main`.
+**Do not push `origin staging` anymore**: staging.linkedgrow.ai is frozen; when Nicolas wants a
+test bed again he resyncs the remote staging branch from main himself. RULE ZERO is history, the
+`~/Documents/GitHub/linkedgrow` directory is the archived v1 (rollback tag `v1-final`), and the
+build gate before any push is unchanged: `npx next build` locally first.
 
 Vercel purges the whole CDN cache on every deploy; no manual cache clearing exists or is needed. The worker deploys separately: `git pull` in `/opt/linkedgrow/app` on the VPS, then `systemctl restart linkedgrow-worker`.
 
