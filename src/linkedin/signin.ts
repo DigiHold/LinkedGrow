@@ -537,6 +537,9 @@ export async function signIn(input: SignInInput): Promise<void> {
         sql: `UPDATE linkedin_accounts SET challenge_state = 'awaiting_code',
                  status_reason = ?, updated_at = ? WHERE id = ?`,
         args: [
+          // The app's ChallengePrompt matches on the "LinkedIn did not accept"
+          // prefix to tell a refusal from the instructional first ask. Change
+          // this sentence and change the prompt with it.
           "LinkedIn did not accept that code. Enter a fresh one and it will try again.",
           Math.floor(Date.now() / 1000),
           accountId,
