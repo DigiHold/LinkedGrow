@@ -174,10 +174,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Account created successfully",
-      // The caller reports this account to Reditus so a referral can be matched
-      // to the Stripe customer later. It is the new account's own id and the
-      // response only ever reaches the person who just created it.
-      userId,
     });
   } catch (error) {
 return NextResponse.json(

@@ -9,7 +9,6 @@ import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff, Sparkles } f
 import { redirectToCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
 import { trackSignup } from "@/lib/insight";
-import { trackReferralConversion } from "@/lib/reditus";
 
 type SocialProvider = "google" | null;
 
@@ -82,17 +81,12 @@ function SignUpContent() {
         window.removeEventListener('message', handleMessage);
         // Only a brand-new account counts as a signup, not a returning login.
         // The OAuth callback sends isNewUser=true only when it created the user.
-        const isNewUser = event.data.isNewUser === true;
-        if (isNewUser) {
+        if (event.data.isNewUser === true) {
           trackSignup();
         }
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
         const userEmail = session?.user?.email;
-        // Reditus needs the address, which only exists once the session is back.
-        if (isNewUser && userEmail) {
-          trackReferralConversion(userEmail, session?.user?.id);
-        }
         // Every new account goes to Checkout. The plan buttons on the pricing
         // page carry their own choice in the query string; a signup that came
         // from anywhere else gets Pro monthly, which is what the product sells
@@ -167,11 +161,6 @@ function SignUpContent() {
 
       // Account was really created (register returned ok) - fire signup goal once
       trackSignup();
-      // Same normalization as register/route.ts, otherwise Reditus records the
-      // conversion under an address the account does not have and the affiliate
-      // is never credited. The id travels with it so the Stripe payments that
-      // follow Checkout can be tied back to this signup.
-      trackReferralConversion(email.toLowerCase().trim(), data.userId);
 
       const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
       // Same defaults as the OAuth path above: the account exists but owns
