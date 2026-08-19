@@ -40,6 +40,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface AdminAccountRow {
+  name: string;
+  profileUrl: string | null;
+  status: string;
+}
+
 interface UserData {
   id: string;
   name: string | null;
@@ -48,8 +54,10 @@ interface UserData {
   isLifetimeDeal: boolean;
   isAdmin: boolean;
   createdAt: string;
-  linkedinProfileName: string | null;
   stripeCustomerId: string | null;
+  /** A live Stripe subscription, the only thing "paid" means here. */
+  hasSubscription: boolean;
+  accounts: AdminAccountRow[];
 }
 
 interface UsersResponse {
@@ -62,10 +70,16 @@ interface UsersResponse {
 
 const planColors: Record<string, string> = {
   free: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  trial: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
   starter: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   pro: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
   business: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 };
+
+/** What the Plan column says: the plan only counts once it is paid for. */
+function displayPlan(user: UserData): string {
+  return user.hasSubscription ? user.plan : "trial";
+}
 
 export default function AdminUsersPage() {
   const { data: session } = useSession();
@@ -79,6 +93,8 @@ export default function AdminUsersPage() {
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
+  // The LinkedIn column's popup: which user's connected accounts are open.
+  const [accountsUser, setAccountsUser] = useState<UserData | null>(null);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -377,23 +393,27 @@ export default function AdminUsersPage() {
                     </td>
                     <td data-label="Plan" className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        {user.plan === "business" && (
+                        {displayPlan(user) === "business" && (
                           <Crown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                         )}
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                            planColors[user.plan] || planColors.free
+                            planColors[displayPlan(user)] || planColors.free
                           }`}
                         >
-                          {user.plan}{user.isLifetimeDeal ? " LTD" : ""}
+                          {displayPlan(user)}{user.isLifetimeDeal ? " LTD" : ""}
                         </span>
                       </div>
                     </td>
                     <td data-label="LinkedIn" className="px-4 py-3">
-                      {user.linkedinProfileName ? (
-                        <span className="text-sm text-green-600 dark:text-green-400">
-                          {user.linkedinProfileName}
-                        </span>
+                      {user.accounts.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setAccountsUser(user)}
+                          className="text-sm font-medium text-cyan-600 hover:underline dark:text-cyan-400"
+                        >
+                          {user.accounts.length} account{user.accounts.length === 1 ? "" : "s"}
+                        </button>
                       ) : (
                         <span className="text-sm text-slate-500 dark:text-slate-400">Not connected</span>
                       )}
@@ -532,6 +552,45 @@ export default function AdminUsersPage() {
           </button>
         </div>
       )}
+
+      {/* Connected LinkedIn accounts popup */}
+      <Dialog open={!!accountsUser} onOpenChange={(open) => { if (!open) setAccountsUser(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connected LinkedIn accounts</DialogTitle>
+            <DialogDescription>
+              {accountsUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="space-y-2">
+            {(accountsUser?.accounts ?? []).map((account, index) => (
+              <li
+                key={index}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700"
+              >
+                {account.profileUrl ? (
+                  <a
+                    href={account.profileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-cyan-600 hover:underline dark:text-cyan-400"
+                  >
+                    {account.name}
+                  </a>
+                ) : (
+                  // No profile URL until the first sign-in captures it.
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {account.name}
+                  </span>
+                )}
+                <span className="text-xs capitalize text-slate-500 dark:text-slate-400">
+                  {account.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit User Modal */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
