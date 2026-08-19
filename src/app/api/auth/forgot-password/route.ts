@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users, passwordResetTokens } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
@@ -51,9 +51,15 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Find user by email
+    /**
+     * Matched without regard to case, because the column holds what people
+     * typed. One lifetime holder stored as greg@LonewolfWorkforce.com asked
+     * for a reset three times and got nothing: the lookup lowercased his
+     * input, SQLite compares text exactly, so the row was never found and the
+     * route answered "if an account exists" to somebody who owned one.
+     */
     const user = await db.query.users.findFirst({
-      where: eq(users.email, normalizedEmail),
+      where: sql`lower(${users.email}) = ${normalizedEmail}`,
     });
 
     // Always return success to prevent email enumeration
