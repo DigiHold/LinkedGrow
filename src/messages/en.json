@@ -99,17 +99,36 @@
     "starter": {
       "name": "Starter",
       "description": "For regular creators",
-      "features": ["Unlimited posts", "10 scheduled posts", "Content calendar", "AI voice training"]
+      "features": [
+        "Unlimited posts",
+        "10 scheduled posts",
+        "Content calendar",
+        "AI voice training"
+      ]
     },
     "pro": {
       "name": "Pro",
       "description": "For serious growth",
-      "features": ["Everything in Starter", "Unlimited scheduling", "AI image generation", "Hooks generator", "Analytics dashboard"]
+      "features": [
+        "Everything in Starter",
+        "Unlimited scheduling",
+        "AI image generation",
+        "Hooks generator",
+        "Analytics dashboard"
+      ]
     },
     "business": {
       "name": "Business",
       "description": "For teams & agencies",
-      "features": ["Everything in Pro", "Carousel generator", "A/B testing", "Team collaboration", "Advanced analytics", "API access", "Priority support"]
+      "features": [
+        "Everything in Pro",
+        "Carousel generator",
+        "A/B testing",
+        "Team collaboration",
+        "Advanced analytics",
+        "API access",
+        "Priority support"
+      ]
     },
     "cta": "Get {discount}% Off"
   },
@@ -188,7 +207,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: January 2026",
+    "lastUpdated": "Last updated: August 2026",
     "section1": {
       "title": "1. Introduction",
       "p1": "LinkedGrow, a service operated by Vayalis (SIREN: 987827649, VAT: FR69987827649), located at 78 Avenue Des Champs-Elysees, 75008 Paris, France (\"we\", \"our\", or \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services at linkedgrow.ai.",
@@ -199,12 +218,24 @@
       "sub1": {
         "title": "2.1 Personal Information",
         "description": "When you register for an account, we collect:",
-        "items": ["Email address", "Name (optional)", "Password (encrypted)", "LinkedIn profile information (when you connect your account)", "Payment information (processed securely by Stripe)"]
+        "items": [
+          "Email address",
+          "Name (optional)",
+          "Password (encrypted)",
+          "LinkedIn profile information (when you connect your account)",
+          "Payment information (processed securely by Stripe)"
+        ]
       },
       "sub2": {
         "title": "2.2 Usage Data",
         "description": "We automatically collect certain information when you use our service:",
-        "items": ["IP address and approximate location", "Browser type and version", "Pages visited and features used", "Time and date of visits", "Device information"]
+        "items": [
+          "IP address and approximate location",
+          "Browser type and version",
+          "Pages visited and features used",
+          "Time and date of visits",
+          "Device information"
+        ]
       },
       "sub3": {
         "title": "2.3 AI API Keys",
@@ -214,7 +245,15 @@
     "section3": {
       "title": "3. How We Use Your Information",
       "description": "We use your information to:",
-      "items": ["Provide and maintain our service", "Process your transactions and send related information", "Send you technical notices and support messages", "Respond to your comments and questions", "Analyze usage patterns to improve our service", "Detect and prevent fraudulent activity", "Comply with legal obligations"]
+      "items": [
+        "Provide and maintain our service",
+        "Process your transactions and send related information",
+        "Send you technical notices and support messages",
+        "Respond to your comments and questions",
+        "Analyze usage patterns to improve our service",
+        "Detect and prevent fraudulent activity",
+        "Comply with legal obligations"
+      ]
     },
     "section4": {
       "title": "4. Cookies and Tracking Technologies",
@@ -225,7 +264,13 @@
     "section5": {
       "title": "5. Third-Party Services",
       "description": "We share your information with the following third-party services:",
-      "items": ["Stripe - Payment processing", "LinkedIn - Account connection and posting", "Google Analytics - Website analytics (with your consent)", "Google Ads, Facebook, LinkedIn, TikTok - Advertising (with your consent)", "Vercel - Website hosting"]
+      "items": [
+        "Stripe - Payment processing",
+        "LinkedIn - Account connection and posting",
+        "Google Analytics - Website analytics (with your consent)",
+        "Google Ads, Facebook, LinkedIn, TikTok - Advertising (with your consent)",
+        "Vercel - Website hosting"
+      ]
     },
     "section6": {
       "title": "6. Data Retention",
@@ -234,7 +279,15 @@
     "section7": {
       "title": "7. Your Rights (GDPR/CCPA)",
       "description": "Depending on your location, you may have the following rights:",
-      "items": ["Access - Request a copy of your personal data", "Rectification - Request correction of inaccurate data", "Erasure - Request deletion of your data", "Portability - Request your data in a portable format", "Objection - Object to processing of your data", "Withdraw Consent - Withdraw previously given consent", "Do Not Sell (CCPA) - Opt out of sale of personal information"],
+      "items": [
+        "Access - Request a copy of your personal data",
+        "Rectification - Request correction of inaccurate data",
+        "Erasure - Request deletion of your data",
+        "Portability - Request your data in a portable format",
+        "Objection - Object to processing of your data",
+        "Withdraw Consent - Withdraw previously given consent",
+        "Do Not Sell (CCPA) - Opt out of sale of personal information"
+      ],
       "contact": "To exercise these rights, contact us at contact@linkedgrow.ai."
     },
     "section8": {
@@ -250,11 +303,16 @@
       "description": "LinkedGrow is not intended for users under 16 years of age. We do not knowingly collect personal information from children under 16."
     },
     "section11": {
-      "title": "11. Changes to This Policy",
-      "description": "We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the \"Last updated\" date."
+      "title": "11. Google user data and Limited Use",
+      "p1": "LinkedGrow uses Google APIs for two things only: signing in with your Google account, and reading calendar availability so that demo calls can be booked at a free time. The use of raw or derived user data received from Google Workspace APIs will adhere to the Google User Data Policy, including the Limited Use requirements.",
+      "p2": "In particular, we do not use any Google user data, whether raw, aggregated, or derived, to create, train, or improve machine learning or artificial intelligence models, whether ours or anyone else's. Google user data is never sold, and is never transferred except as needed to provide the features described above. The AI features in LinkedGrow operate on content you create in the app and on LinkedIn data, never on data received from Google APIs."
     },
     "section12": {
-      "title": "12. Contact Us",
+      "title": "12. Changes to This Policy",
+      "description": "We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the \"Last updated\" date."
+    },
+    "section13": {
+      "title": "13. Contact Us",
       "description": "If you have questions about this Privacy Policy or our privacy practices, please contact us at:",
       "email": "Email:",
       "company": "Vayalis - 78 Avenue Des Champs-Elysees, 75008 Paris, France"
@@ -360,7 +418,14 @@
     "section2": {
       "title": "2. How We Use Cookies",
       "description": "LinkedGrow uses cookies and similar technologies for the following purposes:",
-      "items": ["Keep you signed in to your account", "Remember your preferences and settings", "Understand how you use our website", "Improve our services based on usage patterns", "Show you relevant advertisements on other platforms", "Measure the effectiveness of our marketing campaigns"]
+      "items": [
+        "Keep you signed in to your account",
+        "Remember your preferences and settings",
+        "Understand how you use our website",
+        "Improve our services based on usage patterns",
+        "Show you relevant advertisements on other platforms",
+        "Measure the effectiveness of our marketing campaigns"
+      ]
     },
     "section3": {
       "title": "3. Types of Cookies We Use",
@@ -398,7 +463,11 @@
     "section5": {
       "title": "5. Your Cookie Choices",
       "description": "You have several options to manage cookies:",
-      "items": ["Cookie Banner: When you first visit our site, you can accept all, reject all, or customize your preferences.", "Browser Settings: Most browsers allow you to block or delete cookies through their settings.", "Opt-Out Tools: You can opt out of interest-based advertising through the Digital Advertising Alliance."],
+      "items": [
+        "Cookie Banner: When you first visit our site, you can accept all, reject all, or customize your preferences.",
+        "Browser Settings: Most browsers allow you to block or delete cookies through their settings.",
+        "Opt-Out Tools: You can opt out of interest-based advertising through the Digital Advertising Alliance."
+      ],
       "reset": {
         "title": "Reset Your Cookie Preferences",
         "description": "Click the button below to clear your cookie preferences and see the consent banner again.",

@@ -168,10 +168,16 @@ export default async function PrivacyPage() {
               </p>
             </section>
 
-            <section className="mb-8">
+            {/* Google requires this statement to be hosted publicly (OAuth
+                verification, Limited Use). Section id so the reply to their
+                Third-Party Data Safety Team can link straight to it. */}
+            <section className="mb-8" id="google-limited-use">
               <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-white">{t("section11.title")}</h2>
+              <p className="text-muted-foreground mb-4">
+                {t("section11.p1")}
+              </p>
               <p className="text-muted-foreground">
-                {t("section11.description")}
+                {t("section11.p2")}
               </p>
             </section>
 
@@ -180,11 +186,18 @@ export default async function PrivacyPage() {
               <p className="text-muted-foreground">
                 {t("section12.description")}
               </p>
-              <p className="text-muted-foreground mt-2">
-                {t("section12.email")} <a href="mailto:contact@linkedgrow.ai" className="text-cyan-600 hover:underline">contact@linkedgrow.ai</a>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-white">{t("section13.title")}</h2>
+              <p className="text-muted-foreground">
+                {t("section13.description")}
               </p>
               <p className="text-muted-foreground mt-2">
-                {t("section12.company")}
+                {t("section13.email")} <a href="mailto:contact@linkedgrow.ai" className="text-cyan-600 hover:underline">contact@linkedgrow.ai</a>
+              </p>
+              <p className="text-muted-foreground mt-2">
+                {t("section13.company")}
               </p>
             </section>
           </div>
