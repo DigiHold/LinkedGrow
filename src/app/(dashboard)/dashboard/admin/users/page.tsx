@@ -505,15 +505,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td data-label="" className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setDetailsUser(user)}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-cyan-600 hover:text-cyan-700 dark:text-cyan-400"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          More details
-                        </button>
-                        {user.id !== session?.user?.id && (
+                        {user.id !== session?.user?.id ? (
                           <>
                             {/* Desktop: ellipsis dropdown */}
                             <Button
@@ -526,6 +518,15 @@ export default function AdminUsersPage() {
                             </Button>
                             {/* Responsive: inline buttons */}
                             <div className="flex items-center gap-1 lg:hidden">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => setDetailsUser(user)}
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" />
+                                Details
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -546,6 +547,15 @@ export default function AdminUsersPage() {
                               </Button>
                             </div>
                           </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setDetailsUser(user)}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-cyan-600 hover:text-cyan-700 dark:text-cyan-400"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Details
+                          </button>
                         )}
                       </div>
                     </td>
