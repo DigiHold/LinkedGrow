@@ -412,7 +412,7 @@ export function bandsWithin(window?: Window): Visit[] {
 export function currentVisit(
   accountId: string,
   tz: string,
-  opts: { firstRun?: boolean; window?: Window } = {},
+  opts: { firstRun?: boolean; window?: Window; lastRunAt?: Date | null } = {},
   at: Date = new Date()
 ): CurrentVisit | null {
   const clock = localClock(tz, at);
@@ -437,8 +437,41 @@ export function currentVisit(
 
   const plan = dayPlan(accountId, clock.day, clock.weekday, opts.window);
   const index = plan.findIndex((v) => clock.minutes >= v.startMin && clock.minutes < v.endMin);
-  if (index < 0) return null;
-  return { ...(plan[index] as Visit), index, count: plan.length };
+  if (index >= 0) return { ...(plan[index] as Visit), index, count: plan.length };
+
+  /**
+   * The catch-up, for a window that opened and closed while the previous pass
+   * was still running.
+   *
+   * Passes are single-flight, and a sibling account's half-hour session holds
+   * the whole pass. On 2026-08-20 one account's 14:21-14:44 window fell
+   * entirely inside the other's session and the visit never happened; the
+   * account then sat silent for two hours while its owner watched the lead
+   * count not move. A visit begun a few minutes late is what a busy person
+   * looks like anyway, so a recently missed window is taken late rather than
+   * dropped, under three conditions: it ended within the grace, it was not
+   * already visited, and the customer's own closing time is still ahead,
+   * because starting after their chosen end would break the hours they set.
+   */
+  const GRACE_MIN = 45;
+  const closing = Math.min(LAST_MINUTE, opts.window?.endMin ?? LAST_MINUTE);
+  if (clock.minutes >= closing) return null;
+  const last = opts.lastRunAt ? localClock(tz, opts.lastRunAt) : null;
+  for (let i = plan.length - 1; i >= 0; i--) {
+    const v = plan[i] as Visit;
+    if (v.endMin > clock.minutes) continue;
+    if (clock.minutes - v.endMin > GRACE_MIN) break;
+    const alreadyRan = last !== null && last.day === clock.day && last.minutes >= v.startMin;
+    if (alreadyRan) break;
+    const length = v.endMin - v.startMin;
+    return {
+      startMin: clock.minutes,
+      endMin: Math.min(closing, clock.minutes + length),
+      index: i,
+      count: plan.length,
+    };
+  }
+  return null;
 }
 
 /** When the account next opens LinkedIn, for the log and for the dashboard. */

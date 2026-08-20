@@ -107,6 +107,7 @@ async function runAgent(ctx: AgentContext): Promise<void> {
    */
   const visit = currentVisit(ctx.linkedinAccountId, ctx.timezone, {
     firstRun: ctx.lastRunAt === null,
+    lastRunAt: ctx.lastRunAt,
     window: {
       days: ctx.cfg.businessHours.days,
       startMin: ctx.cfg.businessHours.startHour * 60,
