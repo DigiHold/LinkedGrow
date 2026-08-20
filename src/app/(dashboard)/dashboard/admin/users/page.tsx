@@ -463,28 +463,33 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td data-label="Plan" className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {displayPlan(user) === "business" && (
-                          <Crown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        )}
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                            user.isLifetimeDeal
-                              ? LTD_BADGE
-                              : planColors[displayPlan(user)] || planColors.free
-                          }`}
-                        >
-                          {displayPlan(user)}{user.isLifetimeDeal ? " LTD" : ""}
+                      {/* One container: the stacked mobile cell is a flex row,
+                          and two separate children would spread the badge to
+                          the middle instead of sitting next to its detail. */}
+                      <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 lg:flex-col lg:items-start lg:justify-start">
+                        <span className="inline-flex items-center gap-2">
+                          {displayPlan(user) === "business" && (
+                            <Crown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                          )}
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                              user.isLifetimeDeal
+                                ? LTD_BADGE
+                                : planColors[displayPlan(user)] || planColors.free
+                            }`}
+                          >
+                            {displayPlan(user)}{user.isLifetimeDeal ? " LTD" : ""}
+                          </span>
                         </span>
+                        {(() => {
+                          const detail = planDetail(user);
+                          return detail ? (
+                            <p className={`text-[11px] font-medium ${detailTone[detail.tone]}`}>
+                              {detail.text}
+                            </p>
+                          ) : null;
+                        })()}
                       </div>
-                      {(() => {
-                        const detail = planDetail(user);
-                        return detail ? (
-                          <p className={`mt-1 text-[11px] font-medium ${detailTone[detail.tone]}`}>
-                            {detail.text}
-                          </p>
-                        ) : null;
-                      })()}
                     </td>
                     <td data-label="LinkedIn" className="px-4 py-3">
                       {user.accounts.length > 0 ? (
