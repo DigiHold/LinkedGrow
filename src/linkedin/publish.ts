@@ -622,9 +622,25 @@ async function fillDocumentTitle(page: Page, dialog: Locator, postText: string):
  * focus has to be held, not merely taken, before a single character is sent.
  */
 async function holdsFocus(editor: Locator): Promise<boolean> {
+  /**
+   * Shadow-aware, since 2026-08-20. LinkedIn ships a composer variant (seen
+   * on Premium and Sales Navigator accounts) whose editor lives in a shadow
+   * root. There, document.activeElement is the shadow HOST, never the inner
+   * editor, so the old comparison said "no focus" while the caret sat in the
+   * box, and typing never started: two customers' posts failed for two days
+   * on a check that was wrong, not a click that missed. The walk below
+   * descends through nested shadow roots to the element that really holds
+   * the caret.
+   */
   const focused = () =>
     editor
-      .evaluate((el) => el === document.activeElement || el.contains(document.activeElement))
+      .evaluate((el) => {
+        let active: Element | null = document.activeElement;
+        while (active?.shadowRoot?.activeElement) {
+          active = active.shadowRoot.activeElement;
+        }
+        return !!active && (el === active || el.contains(active));
+      })
       .catch(() => false);
   if (!(await focused())) return false;
   await sleep(randInt(400, 700));
