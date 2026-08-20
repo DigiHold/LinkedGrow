@@ -634,12 +634,23 @@ async function holdsFocus(editor: Locator): Promise<boolean> {
 async function typeBody(page: Page, editor: Locator, text: string): Promise<void> {
   const lines = text.replace(/\r/g, "").split("\n");
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  /**
+   * Eight patient attempts, not three quick ones. TipTap's binding window is
+   * not a fixed beat: on a heavy account (large network, Premium modules) it
+   * runs for several seconds, and three sub-second retries all landed inside
+   * it on 2026-08-20, on every attempt, on two different posts. The waits
+   * grow so the later attempts sit far outside any plausible mount.
+   */
+  for (let attempt = 1; attempt <= 8; attempt++) {
     await clickHumanLocator(page, editor).catch(async () => {
       await editor.click().catch(() => {});
     });
     await sleep(randInt(300, 900));
-    if (!(await holdsFocus(editor))) continue;
+    if (!(await holdsFocus(editor))) {
+      log("editor focus not held", { attempt, of: 8 });
+      await sleep(attempt * 800 + randInt(200, 600));
+      continue;
+    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] ?? "";
