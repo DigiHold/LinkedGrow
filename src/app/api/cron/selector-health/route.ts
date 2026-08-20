@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, agentEvents, workerFlags } from "@/lib/db/schema";
+import { posts, agentEvents, workerFlags, linkedinAccounts } from "@/lib/db/schema";
 import { and, eq, gte, inArray } from "drizzle-orm";
 import { sendSelectorAlertEmail } from "@/lib/email";
 
@@ -70,6 +70,11 @@ export interface Health {
   publish: { attempted: number; published: number; failed: number; selector_failures: number; rate: number | null };
   agents: { errors: number; paused: number; selector_failures: number };
   worst: string[];
+  /** Accounts failing on their own while the fleet is green: repeated
+   *  failures and not one success in the window. One customer's LinkedIn
+   *  variant breaking is invisible to the fleet rate, and it was a customer
+   *  ticket that surfaced exactly this on 2026-08-20. */
+  struggling_accounts: string[];
   alerting: boolean;
   alert_sent: boolean;
 }
@@ -78,7 +83,12 @@ async function measure(): Promise<Health> {
   const since = new Date(Date.now() - WINDOW_HOURS * 3600_000);
 
   const recent = await db
-    .select({ status: posts.status, error: posts.errorMessage, updatedAt: posts.updatedAt })
+    .select({
+      status: posts.status,
+      error: posts.errorMessage,
+      updatedAt: posts.updatedAt,
+      accountId: posts.linkedinAccountId,
+    })
     .from(posts)
     .where(and(gte(posts.updatedAt, since), inArray(posts.status, ["published", "failed"])));
 
@@ -109,10 +119,43 @@ async function measure(): Promise<Health> {
 
   const rate = attempted >= ENOUGH_TO_JUDGE ? published / attempted : null;
 
-  // Two ways to be unhealthy: publishing is mostly failing, or several accounts
-  // hit the same missing control, which is the signature of a rename.
+  // One account failing alone, repeatedly, with nothing published: the fleet
+  // rate cannot see it, and the customer should not be our monitoring.
+  const byAccount = new Map<string, { failed: number; published: number; lastError: string | null }>();
+  for (const p of recent) {
+    if (!p.accountId) continue;
+    const row = byAccount.get(p.accountId) ?? { failed: 0, published: 0, lastError: null };
+    if (p.status === "published") row.published++;
+    else {
+      row.failed++;
+      row.lastError = p.error ?? row.lastError;
+    }
+    byAccount.set(p.accountId, row);
+  }
+  const strugglingIds = [...byAccount.entries()].filter(
+    ([, r]) => r.failed >= 3 && r.published === 0
+  );
+  const struggling: string[] = [];
+  if (strugglingIds.length) {
+    const names = await db
+      .select({ id: linkedinAccounts.id, fullName: linkedinAccounts.fullName })
+      .from(linkedinAccounts)
+      .where(inArray(linkedinAccounts.id, strugglingIds.map(([id]) => id)));
+    const nameOf = new Map(names.map((n) => [n.id, n.fullName ?? n.id]));
+    for (const [id, r] of strugglingIds) {
+      struggling.push(
+        `Account "${nameOf.get(id) ?? id}": ${r.failed} failed, 0 published in ${WINDOW_HOURS}h. Last error: ${r.lastError ?? "none recorded"}`
+      );
+    }
+  }
+
+  // Three ways to be unhealthy: publishing is mostly failing, several accounts
+  // hit the same missing control (the signature of a rename), or one account
+  // is failing everything on its own while everyone else is fine.
   const alerting =
-    (rate !== null && rate < HEALTHY_RATE && selectorFailures > 0) || agentSelector >= 3;
+    (rate !== null && rate < HEALTHY_RATE && selectorFailures > 0) ||
+    agentSelector >= 3 ||
+    struggling.length > 0;
 
   return {
     window_hours: WINDOW_HOURS,
@@ -123,6 +166,7 @@ async function measure(): Promise<Health> {
       selector_failures: agentSelector,
     },
     worst,
+    struggling_accounts: struggling,
     alerting,
     alert_sent: false,
   };
@@ -147,7 +191,7 @@ async function alertOnce(health: Health): Promise<boolean> {
     rate: health.publish.rate,
     selectorFailures: health.publish.selector_failures,
     agentFailures: health.agents.selector_failures,
-    missing: health.worst,
+    missing: [...health.worst, ...health.struggling_accounts],
   });
 
   await db
