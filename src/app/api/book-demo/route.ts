@@ -120,15 +120,22 @@ export async function POST(request: NextRequest) {
         .where(and(eq(demoBookings.slotStart, slotStart), eq(demoBookings.status, "booked")));
     }
 
-    const when = new Intl.DateTimeFormat("en-US", {
-      timeZone: visitorTimezone || BOOKING.hostTimezone,
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZoneName: "short",
-    }).format(new Date(slotStart * 1000));
+    // The same instant read in two clocks: the guest gets their own time, we
+    // get ours. One shared string put the visitor's timezone in our inbox, so
+    // a UK 12:00 booking read as 12:00 to us in Paris when it is 13:00 here.
+    const formatWhen = (zone: string) =>
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: zone,
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZoneName: "short",
+      }).format(new Date(slotStart * 1000));
+
+    const when = formatWhen(visitorTimezone || BOOKING.hostTimezone);
+    const whenHost = formatWhen(BOOKING.hostTimezone);
 
     const firstName = name.split(" ")[0] || name;
     const emailArgs = {
@@ -145,10 +152,14 @@ export async function POST(request: NextRequest) {
       text: demoBookedEmailText(emailArgs),
     }).catch(() => null);
 
+    // Our copy shows our own time first, and the guest's time in brackets so
+    // we know what they saw when we get on the call.
+    const opsWhen =
+      when === whenHost ? whenHost : `${whenHost} (their time: ${when})`;
     const opsArgs = {
       name,
       email,
-      when,
+      when: opsWhen,
       website: siteUrl,
       note: note || null,
       inCalendar: !!event,
