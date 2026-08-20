@@ -48,7 +48,7 @@ export function V3PlanCards() {
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Up to 1,500 buyers contacted a month</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Your whole team in one workspace</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Hand a conversation to a teammate, history and all</span></li>
-              <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>A/B testing across your sequences</span></li>
+              <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>A/B testing on your posts</span></li>
               <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Team reporting on what each agent and each person produced</span></li>
             </ul>
             <a className={`${FILL} ${FILL_LIGHT} ${FILL_LG} ${FILL_WIDE}`} href="/sign-up?plan=business">Start free for 7 days

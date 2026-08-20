@@ -61,7 +61,7 @@ The left sidebar provides access to all features:
 Every new account starts with a 7-day trial that runs the whole product, agents included. A card is taken at signup and charged when the trial ends, and cancelling before then costs nothing. After that there are two plans:
 
 - **Pro, $99 a month** - 2 agents finding and messaging your leads every working day, each on its own LinkedIn account and its own dedicated IP, plus unlimited posts, carousels and scheduling on your own AI key
-- **Business, $179 a month** - everything in Pro with 3 agents, seats for your team, A/B testing on your message sequences and team reporting
+- **Business, $179 a month** - everything in Pro with 3 agents, seats for your team, A/B testing on your posts and team reporting
 
 Extra agents are $49 a month each on either plan.
 
