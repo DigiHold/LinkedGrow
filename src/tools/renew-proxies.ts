@@ -35,7 +35,9 @@ import { optionalEnv } from "../config.ts";
  * the supplier API is IP-allowlisted to this box alone.
  */
 
-const RENEW_WITHIN_DAYS = 10;
+/** Override for a one-off manual run (e.g. RENEW_WINDOW_DAYS=30 to exercise
+ *  the renewal branch on everything at once). Cron runs use the default. */
+const RENEW_WITHIN_DAYS = Number(process.env.RENEW_WINDOW_DAYS ?? 10);
 const ALERT_WITHIN_DAYS = 7;
 const PERIOD = "1m"; // 30 days for ~$3, discounts for longer are not worth churn risk
 const DAY_MS = 86_400_000;
