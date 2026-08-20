@@ -18,7 +18,7 @@ import { optionalEnv } from "../config.ts";
  * supplier API is IP-allowlisted to this box alone.
  */
 
-const THRESHOLD_USD = 15;
+const THRESHOLD_USD = 25;
 const TOPUP_USD = 100;
 const CARD_PAYMENT_ID = 30; // "Visa / MasterCard" in balance/payments/list
 
