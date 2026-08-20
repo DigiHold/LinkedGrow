@@ -152,14 +152,13 @@ export async function POST(request: NextRequest) {
       text: demoBookedEmailText(emailArgs),
     }).catch(() => null);
 
-    // Our copy shows our own time first, and the guest's time in brackets so
-    // we know what they saw when we get on the call.
-    const opsWhen =
-      when === whenHost ? whenHost : `${whenHost} (their time: ${when})`;
+    // Our copy shows our own time, and the guest's on its own line when it
+    // differs, so we know what they saw when we get on the call.
     const opsArgs = {
       name,
       email,
-      when: opsWhen,
+      when: whenHost,
+      guestWhen: when === whenHost ? null : when,
       website: siteUrl,
       note: note || null,
       inCalendar: !!event,

@@ -68,12 +68,13 @@ export function demoBookedOpsEmailTemplate(params: {
   name: string;
   email: string;
   when: string;
+  guestWhen?: string | null;
   website: string | null;
   note: string | null;
   inCalendar: boolean;
   meetUrl: string | null;
 }): string {
-  const { name, email, when, website, note, inCalendar, meetUrl } = params;
+  const { name, email, when, guestWhen, website, note, inCalendar, meetUrl } = params;
   return baseEmailTemplate({
     preheader: when,
     content: `
@@ -82,6 +83,7 @@ ${figures([
   { label: "Who", value: name },
   { label: "Email", value: email },
   { label: "When", value: when },
+  ...(guestWhen ? [{ label: "Their time", value: guestWhen }] : []),
   ...(website ? [{ label: "Website", value: website }] : []),
 ])}
 ${note ? p(`What they want the agent to find: ${note}`) : ""}
@@ -103,6 +105,7 @@ export const demoBookedOpsEmailText = (params: {
   when: string;
   website: string | null;
   note: string | null;
+  guestWhen?: string | null;
   inCalendar: boolean;
   meetUrl: string | null;
 }) =>
@@ -110,7 +113,7 @@ export const demoBookedOpsEmailText = (params: {
 
 Who: ${params.name}
 Email: ${params.email}
-When: ${params.when}${params.website ? `\nWebsite: ${params.website}` : ""}
+When: ${params.when}${params.guestWhen ? `\nTheir time: ${params.guestWhen}` : ""}${params.website ? `\nWebsite: ${params.website}` : ""}
 ${params.note ? `\nWhat they want the agent to find: ${params.note}\n` : ""}${
     params.meetUrl
       ? `\nJoin the call: ${params.meetUrl}\n`
