@@ -101,8 +101,10 @@ const planColors: Record<string, string> = {
 /** LTD overrides every colour: gold, recognisable at a glance. */
 const LTD_BADGE = "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-300";
 
-/** What the Plan column says: the plan only counts once it is paid for. */
+/** What the Plan column says: the plan only counts once it is paid for.
+ *  An LTD paid once and for all, so their plan shows as bought, never "trial". */
 function displayPlan(user: UserData): string {
+  if (user.isLifetimeDeal) return user.plan;
   return user.hasSubscription ? user.plan : "trial";
 }
 

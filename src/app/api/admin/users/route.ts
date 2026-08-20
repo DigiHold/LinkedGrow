@@ -26,8 +26,12 @@ const FILTERS: Record<string, () => SQL | undefined> = {
       isNotNull(users.trialEndedAt),
       gte(users.trialEndedAt, new Date())
     ),
-  card: () => isNotNull(users.stripeCustomerId),
-  no_card: () => isNull(users.stripeCustomerId),
+  // A card on file means a subscription: v2 takes the card at signup and the
+  // sub is what holds it. A bare Stripe customer id proves only a past
+  // payment (every LTD has one from their one-time purchase in v1).
+  card: () => isNotNull(users.stripeSubscriptionId),
+  no_card: () =>
+    and(isNull(users.stripeSubscriptionId), eq(users.isLifetimeDeal, false)),
   ltd: () => eq(users.isLifetimeDeal, true),
   churned: () =>
     and(
