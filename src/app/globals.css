@@ -64,6 +64,7 @@
   --animate-v3-breathe: v3-breathe 2.2s ease-in-out infinite;
   --animate-v3-live: v3-live 3.4s ease-in-out infinite;
   --animate-v3-ripple: v3-ripple 0.55s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  --animate-v3-featured: v3-featured 24s linear infinite;
 }
 
 @keyframes v3-float {
@@ -113,6 +114,17 @@
     transform: translate(-50%, -50%) scale(1);
     opacity: 0;
   }
+}
+
+/* The "Featured on" marquee in the footer: the track holds the list twice,
+   so sliding half its own width loops seamlessly. Paused on hover so a badge
+   can be clicked, and off entirely under reduced motion. */
+@keyframes v3-featured {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-v3-featured { animation: none; }
 }
 
 @theme {

@@ -82,6 +82,62 @@ const FILL_SM =
   "before:[transform:translateY(102%)] before:[transition:transform_.46s_var(--ease-v3)] " +
   "hover:text-white hover:[transform:translateY(-2px)] hover:shadow-[0_16px_34px_-14px_rgba(21,93,252,.62)] hover:before:[transform:translateY(0)] " +
   "[&_svg]:[transition:transform_.26s_var(--ease-v3)] hover:[&_svg]:[transform:translateX(4px)]";
+/**
+ * The launch directories LinkedGrow is listed on, scrolling under the
+ * socials the way Amabrik's footer does it. Icons live in /public/featured
+ * and keep their own colours; the name reads dark on light and light on
+ * dark, like every other footer text.
+ */
+const FEATURED: { name: string; href: string; icon: string }[] = [
+  { name: "Divvlaunches", href: "https://www.divvlaunches.com/product/linkedgrow", icon: "/featured/divvlaunches.webp" },
+];
+
+function FeaturedOn() {
+  if (FEATURED.length === 0) return null;
+  // A marquee with 2 badges loops a lot of empty road: stay still until the
+  // list is long enough to look like a procession.
+  const moving = FEATURED.length >= 4;
+  return (
+    <div className="mt-7">
+      <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-v3-mut dark:text-v3-mut-d">
+        Featured on
+      </span>
+      <div className="relative mt-3 max-w-[320px] overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_10%,#000_90%,transparent)]">
+        <div
+          className={`flex w-max items-center gap-2.5 ${moving ? "animate-v3-featured hover:[animation-play-state:paused]" : ""}`}
+        >
+          {(moving ? [...FEATURED, ...FEATURED] : FEATURED).map((f, i) => (
+            <a
+              key={`${f.name}-${i}`}
+              href={f.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`LinkedGrow on ${f.name}`}
+              aria-hidden={i >= FEATURED.length ? "true" : undefined}
+              tabIndex={i >= FEATURED.length ? -1 : undefined}
+              className="inline-flex flex-none items-center gap-2 rounded-[10px] border border-v3-line bg-white/60 px-3 py-1.5 transition-colors hover:border-v3-line2 hover:bg-white dark:border-v3-line-d dark:bg-white/5 dark:hover:border-v3-line2-d dark:hover:bg-white/10"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={f.icon}
+                alt=""
+                width={20}
+                height={20}
+                loading="lazy"
+                decoding="async"
+                className="block h-5 w-auto max-w-[80px] rounded object-contain"
+              />
+              <span className="whitespace-nowrap text-[12.5px] font-semibold text-v3-ink dark:text-white">
+                {f.name}
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function V3Footer() {
   return (
     <div className={V3_BLOCK}>
@@ -98,6 +154,7 @@ export function V3Footer() {
               <a href="https://www.facebook.com/nl.nicolaslecocq/?utm_source=linkedgrow&utm_medium=website_footer" target="_blank" rel="noopener noreferrer" aria-label="Facebook" style={{ "--sc": "#1877F2" } as React.CSSProperties}><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z" /></svg></a>
               <a href="https://www.youtube.com/@LinkedGrow?utm_source=linkedgrow&utm_medium=website_footer" target="_blank" rel="noopener noreferrer" aria-label="YouTube" style={{ "--sc": "#FF0000" } as React.CSSProperties}><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 00.5 6.19C0 8.08 0 12 0 12s0 3.92.5 5.81a3.02 3.02 0 002.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 002.12-2.14C24 15.92 24 12 24 12s0-3.92-.5-5.81zM9.55 15.57V8.43L15.82 12z" /></svg></a>
             </div>
+            <FeaturedOn />
           </div>
           <div><h4 className={H4}>Quick links</h4>
             <div className="grid grid-cols-2 gap-6">
