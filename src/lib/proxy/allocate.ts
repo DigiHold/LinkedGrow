@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { linkedinAccounts, proxyAllocations } from "@/lib/db/schema";
 import { encryptApiKey, decryptApiKey } from "@/lib/encryption";
@@ -101,7 +101,13 @@ async function takeFromPool(
       and(
         eq(proxyAllocations.country, country.toUpperCase()),
         eq(proxyAllocations.status, "active"),
-        isNull(proxyAllocations.linkedinAccountId)
+        isNull(proxyAllocations.linkedinAccountId),
+        // Never hand out an address about to lapse: the supplier gives no
+        // grace after expiry, and the daily renewal pass needs at least one
+        // run to pick a rebound address up. Three days is that margin. This
+        // also excludes rows with no known term (customer-supplied ones),
+        // which were never ours to redistribute in the first place.
+        gt(proxyAllocations.expiresAt, new Date(Date.now() + 3 * 86_400_000))
       )
     )
     .limit(1);
@@ -158,7 +164,10 @@ export async function requestAllocation(
   if (spare) {
     await db
       .update(proxyAllocations)
-      .set({ linkedinAccountId, status: "active", updatedAt: now })
+      // workspaceId moves with the binding: the renewal pass decides "still
+      // paying?" by the owner, and a spare left pointing at the workspace
+      // that first bought it would be judged by a stranger's subscription.
+      .set({ workspaceId, linkedinAccountId, status: "active", updatedAt: now })
       .where(eq(proxyAllocations.id, spare.id));
     await db
       .update(linkedinAccounts)
