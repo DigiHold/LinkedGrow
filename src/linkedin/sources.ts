@@ -61,7 +61,7 @@ export async function mineOwnPosts(
     // than a duplicate. Everything else about the read is identical.
     { ...cfg, skipConnected: false },
     {
-      targets: [`${base}/recent-activity/all/`],
+      targets: [`${base.replace(/\/+$/, "").replace(/\/recent-activity(\/all)?$/, "")}/recent-activity/all/`],
       maxPerPost: opts.maxPerPost ?? 40,
       maxPostsPerTarget: opts.maxPosts ?? 5,
       dryRun: true,

@@ -804,7 +804,10 @@ export async function sourcePass(
             await saveSourceConfig(source.id, ctx.agentId, { ...config, url }).catch(() => {});
           }
           found = await mine(ctx, page, ctx.cfg, {
-            targets: [`${url.replace(/\/+$/, "")}/recent-activity/all/`],
+            // The dashboard stores creator URLs WITH the suffix since
+            // 2026-08-18, and doubling it opens a page LinkedIn answers with
+            // nothing: every creator source mined 0 for two days that way.
+            targets: [`${url.replace(/\/+$/, "").replace(/\/recent-activity(\/all)?$/, "")}/recent-activity/all/`],
             maxPerPost: budget.perPost,
             maxPostsPerTarget: budget.posts,
             dryRun: true,
