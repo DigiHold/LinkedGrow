@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
-  Mail,
   Calendar,
   Shield,
   ExternalLink,
@@ -44,6 +43,10 @@ interface AdminAccountRow {
   name: string;
   profileUrl: string | null;
   status: string;
+  country: string | null;
+  dedicatedIp: string | null;
+  ipStatus: string | null;
+  ipExpiresAt: string | null;
 }
 
 interface UserData {
@@ -55,11 +58,29 @@ interface UserData {
   isAdmin: boolean;
   createdAt: string;
   stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  trialStartedAt: string | null;
+  trialEndedAt: string | null;
+  hasUsedTrial: boolean;
+  extraAgents: number;
+  billingInterval: string | null;
   /** A live Stripe subscription, the only thing "paid" means here. */
   hasSubscription: boolean;
   subscription: { status: string; trialEnd: number | null; cancelAt: number | null } | null;
   accounts: AdminAccountRow[];
+  spareIps: { ip: string | null; country: string; status: string }[];
 }
+
+/** The filter pills, in the order an admin reaches for them. */
+const FILTERS = [
+  { key: "all", label: "All" },
+  { key: "paying", label: "Paying" },
+  { key: "trial", label: "In trial" },
+  { key: "ltd", label: "LTD" },
+  { key: "card", label: "Card in" },
+  { key: "no_card", label: "No card" },
+  { key: "churned", label: "Churned" },
+] as const;
 
 interface UsersResponse {
   users: UserData[];
@@ -118,6 +139,9 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<string>("all");
+  // The details popup: everything about one user in one place.
+  const [detailsUser, setDetailsUser] = useState<UserData | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -125,8 +149,6 @@ export default function AdminUsersPage() {
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
-  // The LinkedIn column's popup: which user's connected accounts are open.
-  const [accountsUser, setAccountsUser] = useState<UserData | null>(null);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -177,7 +199,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, search]);
+  }, [page, search, filter]);
 
   const fetchUsers = async () => {
     try {
@@ -188,6 +210,9 @@ export default function AdminUsersPage() {
       });
       if (search) {
         params.set("search", search);
+      }
+      if (filter !== "all") {
+        params.set("filter", filter);
       }
 
       const response = await fetch(`/api/admin/users?${params}`);
@@ -335,11 +360,11 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Search and Stats */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
         <form onSubmit={handleSearch} className="flex gap-2 flex-1">
           <Input
             type="text"
-            placeholder="Search by name or email..."
+            placeholder="Search by name, email or dedicated IP..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
@@ -351,6 +376,27 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => {
+              setFilter(f.key);
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              filter === f.key
+                ? "bg-cyan-600 border-cyan-600 text-white"
+                : "border-border text-slate-600 hover:bg-gray-50 dark:text-slate-300 dark:hover:bg-gray-800/60"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {/* Users Table */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-x-auto">
           <table className="w-full responsive-table">
@@ -358,9 +404,6 @@ export default function AdminUsersPage() {
               <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
                 <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                   User
-                </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
-                  Email
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                   Plan
@@ -379,7 +422,7 @@ export default function AdminUsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center">
+                  <td colSpan={5} className="px-4 py-8 text-center">
                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500"></div>
                     </div>
@@ -387,7 +430,7 @@ export default function AdminUsersPage() {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
                     No users found
                   </td>
                 </tr>
@@ -411,16 +454,10 @@ export default function AdminUsersPage() {
                               <Shield className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                             )}
                           </div>
-                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                            {user.id.slice(0, 8)}...
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {user.email}
                           </span>
                         </div>
-                      </div>
-                    </td>
-                    <td data-label="Email" className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        <span className="text-sm">{user.email}</span>
                       </div>
                     </td>
                     <td data-label="Plan" className="px-4 py-3">
@@ -451,7 +488,7 @@ export default function AdminUsersPage() {
                       {user.accounts.length > 0 ? (
                         <button
                           type="button"
-                          onClick={() => setAccountsUser(user)}
+                          onClick={() => setDetailsUser(user)}
                           className="text-sm font-medium text-cyan-600 hover:underline dark:text-cyan-400"
                         >
                           {user.accounts.length} account{user.accounts.length === 1 ? "" : "s"}
@@ -468,30 +505,14 @@ export default function AdminUsersPage() {
                     </td>
                     <td data-label="" className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        {user.stripeCustomerId ? (
-                          <a
-                            href={`https://dashboard.stripe.com/customers/${user.stripeCustomerId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-cyan-600 hover:text-cyan-700 dark:text-cyan-400"
-                          >
-                            Stripe
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          user.isLifetimeDeal && (
-                            <a
-                              href={`https://dashboard.stripe.com/search?query=${encodeURIComponent(user.email)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400"
-                              title="No stored Stripe customer - search by email to issue a refund"
-                            >
-                              Find on Stripe
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          )
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setDetailsUser(user)}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-cyan-600 hover:text-cyan-700 dark:text-cyan-400"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          More details
+                        </button>
                         {user.id !== session?.user?.id && (
                           <>
                             {/* Desktop: ellipsis dropdown */}
@@ -572,6 +593,17 @@ export default function AdminUsersPage() {
           <button
             onClick={() => {
               const user = users.find(u => u.id === openDropdownId);
+              if (user) setDetailsUser(user);
+              setOpenDropdownId(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            More details
+          </button>
+          <button
+            onClick={() => {
+              const user = users.find(u => u.id === openDropdownId);
               if (user) openEditModal(user);
               setOpenDropdownId(null);
             }}
@@ -595,42 +627,168 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Connected LinkedIn accounts popup */}
-      <Dialog open={!!accountsUser} onOpenChange={(open) => { if (!open) setAccountsUser(null); }}>
-        <DialogContent className="sm:max-w-md">
+      {/* Everything about one user: identity, billing, accounts and their addresses */}
+      <Dialog open={!!detailsUser} onOpenChange={(open) => { if (!open) setDetailsUser(null); }}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Connected LinkedIn accounts</DialogTitle>
-            <DialogDescription>
-              {accountsUser?.email}
-            </DialogDescription>
+            <DialogTitle>{detailsUser?.name || "No name"}</DialogTitle>
+            <DialogDescription>{detailsUser?.email}</DialogDescription>
           </DialogHeader>
-          <ul className="space-y-2">
-            {(accountsUser?.accounts ?? []).map((account, index) => (
-              <li
-                key={index}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700"
-              >
-                {account.profileUrl ? (
+          {detailsUser && (
+            <div className="space-y-5">
+              {/* Identity */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <span className="text-slate-500 dark:text-slate-400">User id</span>
+                <span className="font-mono text-xs break-all">{detailsUser.id}</span>
+                <span className="text-slate-500 dark:text-slate-400">Joined</span>
+                <span>{formatDate(detailsUser.createdAt)}</span>
+                <span className="text-slate-500 dark:text-slate-400">Plan</span>
+                <span>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                      detailsUser.isLifetimeDeal
+                        ? LTD_BADGE
+                        : planColors[displayPlan(detailsUser)] || planColors.free
+                    }`}
+                  >
+                    {displayPlan(detailsUser)}{detailsUser.isLifetimeDeal ? " LTD" : ""}
+                  </span>
+                  {detailsUser.extraAgents > 0 && (
+                    <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                      +{detailsUser.extraAgents} extra agent{detailsUser.extraAgents === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </span>
+                {detailsUser.billingInterval && (
+                  <>
+                    <span className="text-slate-500 dark:text-slate-400">Billing</span>
+                    <span className="capitalize">{detailsUser.billingInterval}ly</span>
+                  </>
+                )}
+                {(() => {
+                  const detail = planDetail(detailsUser);
+                  return detail ? (
+                    <>
+                      <span className="text-slate-500 dark:text-slate-400">Status</span>
+                      <span className={`font-medium ${detailTone[detail.tone]}`}>{detail.text}</span>
+                    </>
+                  ) : null;
+                })()}
+                {detailsUser.trialEndedAt && (
+                  <>
+                    <span className="text-slate-500 dark:text-slate-400">Trial</span>
+                    <span>
+                      {detailsUser.trialStartedAt ? formatDate(detailsUser.trialStartedAt) : "?"} to {formatDate(detailsUser.trialEndedAt)}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Stripe */}
+              <div className="flex flex-wrap gap-3 border-t border-border pt-4">
+                {detailsUser.stripeCustomerId ? (
                   <a
-                    href={account.profileUrl}
+                    href={`https://dashboard.stripe.com/customers/${detailsUser.stripeCustomerId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-cyan-600 hover:underline dark:text-cyan-400"
+                    className="inline-flex items-center gap-1 text-sm text-cyan-600 hover:underline dark:text-cyan-400"
                   >
-                    {account.name}
+                    Stripe customer
+                    <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 ) : (
-                  // No profile URL until the first sign-in captures it.
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {account.name}
-                  </span>
+                  <a
+                    href={`https://dashboard.stripe.com/search?query=${encodeURIComponent(detailsUser.email)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-amber-600 hover:underline dark:text-amber-400"
+                    title="No stored Stripe customer - search by email"
+                  >
+                    Find on Stripe
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
                 )}
-                <span className="text-xs capitalize text-slate-500 dark:text-slate-400">
-                  {account.status}
-                </span>
-              </li>
-            ))}
-          </ul>
+                {detailsUser.stripeSubscriptionId && (
+                  <a
+                    href={`https://dashboard.stripe.com/subscriptions/${detailsUser.stripeSubscriptionId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-cyan-600 hover:underline dark:text-cyan-400"
+                  >
+                    Subscription
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+
+              {/* LinkedIn accounts and their dedicated addresses */}
+              <div className="border-t border-border pt-4">
+                <p className="text-sm font-medium mb-2">
+                  LinkedIn accounts
+                  <span className="ml-1 text-slate-500 dark:text-slate-400 font-normal">
+                    ({detailsUser.accounts.length})
+                  </span>
+                </p>
+                {detailsUser.accounts.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Not connected</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {detailsUser.accounts.map((account, index) => (
+                      <li
+                        key={index}
+                        className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          {account.profileUrl ? (
+                            <a
+                              href={account.profileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-cyan-600 hover:underline dark:text-cyan-400"
+                            >
+                              {account.name}
+                            </a>
+                          ) : (
+                            // No profile URL until the first sign-in captures it.
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                              {account.name}
+                            </span>
+                          )}
+                          <span className="text-xs capitalize text-slate-500 dark:text-slate-400">
+                            {account.status}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+                          {account.dedicatedIp ? (
+                            <>
+                              <span className="font-mono">{account.dedicatedIp}</span>
+                              <span>{account.country}</span>
+                              {account.ipExpiresAt && (
+                                <span>paid until {formatDate(account.ipExpiresAt)}</span>
+                              )}
+                              {account.ipStatus && account.ipStatus !== "active" && (
+                                <span className="capitalize text-amber-600 dark:text-amber-400">{account.ipStatus}</span>
+                              )}
+                            </>
+                          ) : (
+                            <span>No dedicated address yet</span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {detailsUser.spareIps.length > 0 && (
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    Parked addresses:{" "}
+                    {detailsUser.spareIps
+                      .map((s) => `${s.ip ?? "ordering"} (${s.country})`)
+                      .join(", ")}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
