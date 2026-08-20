@@ -275,7 +275,8 @@ export function humanCompanyName(slug: string): string {
 
 export function signalSentence(
   signalType: string | null,
-  sourceLabel: string
+  sourceLabel: string,
+  postTopic: string | null = null
 ): string {
   const [kind, ...rest] = (signalType ?? "").split(":");
   const subject = rest.join(":").trim();
@@ -292,11 +293,14 @@ export function signalSentence(
    * wins, and the slug is only tidied up when there is no label at all.
    */
   const company = sourceLabel.trim() || humanCompanyName(subject);
+  // When the miner caught what the post was about, name it. "a post about
+  // cold email deliverability" is worth far more to the customer than "a post".
+  const about = postTopic ? ` about ${postTopic.replace(/[.…]+$/, "")}` : "";
   switch (kind) {
     case "comment":
-      return `Commented on a post by ${company}`;
+      return `Commented on ${company}'s post${about}`;
     case "reaction":
-      return `Reacted to a post by ${company}`;
+      return `Reacted to ${company}'s post${about}`;
     case "search":
       return `Came up in a search for "${named}"`;
     case "question":
@@ -339,8 +343,12 @@ async function claimAll(
       signalType: person.source ?? null,
       // The question they posted when there is one, because their own words
       // beat any sentence of ours. Otherwise the sentence built from the shape
-      // of the signal, so the column is never blank.
-      signalText: person.context ?? signalSentence(person.source ?? null, sourceLabel),
+      // of the signal, widened with the post's topic when the miner caught it,
+      // so "Reacted to a post by X" becomes "Reacted to X's post about Y".
+      signalText:
+        person.context ?? signalSentence(person.source ?? null, sourceLabel, person.signalTopic ?? null),
+      // The post they engaged with, so the customer can open it to verify.
+      signalUrl: person.signalUrl ?? null,
       sourceId,
     });
     if (!ok) continue; // Another agent already has them, which is the right outcome.

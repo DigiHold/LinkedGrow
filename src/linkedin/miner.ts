@@ -21,6 +21,11 @@ export interface Engager {
   source: string;
   /** For intent leads, the question they posted, used to personalise the first message. */
   context?: string;
+  /** The post they engaged with: its permalink and a short topic, read off the
+   *  page the miner is already on. Lets the Signal column say what they reacted
+   *  to and link to it, instead of a bare "Reacted to a post by X". */
+  signalUrl?: string;
+  signalTopic?: string;
   /**
    * Where LinkedIn says they are, when the card says at all.
    *
@@ -764,9 +769,16 @@ async function mineTarget(
   let opened = 0;
   let reacted = 0;
   for (const i of range) {
+    // Read the post this reaction list belongs to before opening the modal,
+    // while its button is still on the page. Free: the post is already loaded.
+    const meta = await postMeta(page.locator(REACTION_BUTTON_SELECTOR).nth(i));
     if (!(await openReactionsModal(page, i))) continue;
     opened += 1;
     const reactors = await extractFromDialog(page, `reaction:${label}`, perList, !cfg.skipConnected);
+    for (const r of reactors) {
+      if (meta.url) r.signalUrl = meta.url;
+      if (meta.topic) r.signalTopic = meta.topic;
+    }
     reacted += reactors.length;
     engagers.push(...reactors);
     await closeDialog(page);
@@ -920,10 +932,17 @@ async function extractCommenters(
       return rows;
     }, COMMENT_ITEM_SELECTOR);
 
+    // The post these comments hang under, read from the count button that
+    // opened the thread. Same free DOM read as the reactions path.
+    const meta = await postMeta(button);
     readMeter.names += raw.length;
     for (const r of raw) {
       const engager = toCommenter(r, `comment:${label}`, !cfg.skipConnected);
-      if (engager) engagers.push(engager);
+      if (engager) {
+        if (meta.url) engager.signalUrl = meta.url;
+        if (meta.topic) engager.signalTopic = meta.topic;
+        engagers.push(engager);
+      }
       if (engagers.length >= maxPerPost * range.length) break;
     }
     await sleep(actionDelayMs(cfg));
@@ -979,6 +998,47 @@ export function reactionRange(available: number, cap: number, skip: number): num
   const out: number[] = [];
   for (let i = start; i < end; i += 1) out.push(i);
   return out;
+}
+
+/**
+ * The post a button lives under: its permalink and a short topic.
+ *
+ * A pure DOM read on the page the miner is already viewing, so it adds no
+ * navigation, no click and no request: LinkedIn sees nothing new. Walks up
+ * from the reaction or comment button to the update container, reads the
+ * activity urn (which is all a feed permalink needs) and the first words of
+ * the post body. Any failure returns nulls and the caller falls back to the
+ * plain sentence, so a moved selector degrades, it never breaks a pass.
+ */
+async function postMeta(button: Locator): Promise<{ url: string | null; topic: string | null }> {
+  try {
+    return await button.evaluate((el) => {
+      let node: Element | null = el;
+      let urn: string | null = null;
+      while (node && !urn) {
+        for (const attr of ["data-urn", "data-id", "data-activity-urn"]) {
+          const v = node.getAttribute?.(attr);
+          if (v && /urn:li:(activity|ugcPost|share):/.test(v)) {
+            urn = /urn:li:(activity|ugcPost|share):[0-9]+/.exec(v)?.[0] ?? null;
+            break;
+          }
+        }
+        node = node.parentElement;
+      }
+      const container = (el.closest("[data-urn], .feed-shared-update-v2, .fie-impression-container") ?? el) as Element;
+      const textEl = container.querySelector(
+        ".update-components-text, .feed-shared-inline-show-more-text, .update-components-update-v2__commentary, [data-test-id='main-feed-activity-card'] span[dir='ltr']"
+      );
+      let topic = (textEl?.textContent ?? "").replace(/\s+/g, " ").trim();
+      if (topic.length > 90) topic = topic.slice(0, 90).replace(/\s+\S*$/, "") + "…";
+      return {
+        url: urn ? `https://www.linkedin.com/feed/update/${urn}/` : null,
+        topic: topic || null,
+      };
+    });
+  } catch {
+    return { url: null, topic: null };
+  }
 }
 
 async function postReactionRange(page: Page, cap: number, skip: number): Promise<number[]> {
