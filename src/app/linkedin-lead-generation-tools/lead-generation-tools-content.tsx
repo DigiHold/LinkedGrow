@@ -326,6 +326,7 @@ export function LeadGenerationToolsContent() {
       <LandingRelatedContent
         headline="Related Resources"
         links={[
+          { title: "B2B Lead Generation Tools", href: "/b2b-lead-generation-tools" },
           { title: "LinkedIn Marketing Tool", href: "/linkedin-marketing-tool" },
           { title: "LinkedIn Automation Tools", href: "/linkedin-automation-tools" },
           { title: "Lead Generation Use Case", href: "/use-cases/lead-generation" },

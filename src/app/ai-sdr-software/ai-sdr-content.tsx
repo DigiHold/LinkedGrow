@@ -220,6 +220,11 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
             type: "page",
           },
           {
+            title: "B2B lead generation tools",
+            href: "/b2b-lead-generation-tools",
+            type: "page",
+          },
+          {
             title: "LinkedIn AI agent",
             href: "/linkedin-ai-agent",
             type: "page",
