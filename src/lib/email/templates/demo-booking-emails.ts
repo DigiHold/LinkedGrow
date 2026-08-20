@@ -71,8 +71,9 @@ export function demoBookedOpsEmailTemplate(params: {
   website: string | null;
   note: string | null;
   inCalendar: boolean;
+  meetUrl: string | null;
 }): string {
-  const { name, email, when, website, note, inCalendar } = params;
+  const { name, email, when, website, note, inCalendar, meetUrl } = params;
   return baseEmailTemplate({
     preheader: when,
     content: `
@@ -85,8 +86,13 @@ ${figures([
 ])}
 ${note ? p(`What they want the agent to find: ${note}`) : ""}
 ${website ? p(`Read the site before the call: <a href="${website}" style="color:#0A66C2;text-decoration:underline;">${website}</a>`) : ""}
-${inCalendar ? "" : p("This is not in your Google Calendar: the calendar is not connected, so nothing was written to it.")}
-${button(`${APP}/dashboard/settings?tab=calendar`, "Open the calendar settings")}
+${
+  meetUrl
+    ? button(meetUrl, "Join the call")
+    : inCalendar
+      ? p("The Google Meet link is in the calendar invitation.")
+      : p("This is not in your Google Calendar: the calendar is not connected, so no Meet link was created. Connect it here: " + `<a href="${APP}/dashboard/settings?tab=calendar" style="color:#0A66C2;text-decoration:underline;">calendar settings</a>`)
+}
 `,
   });
 }
@@ -98,6 +104,7 @@ export const demoBookedOpsEmailText = (params: {
   website: string | null;
   note: string | null;
   inCalendar: boolean;
+  meetUrl: string | null;
 }) =>
   `A demo just went in the diary.
 
@@ -105,5 +112,9 @@ Who: ${params.name}
 Email: ${params.email}
 When: ${params.when}${params.website ? `\nWebsite: ${params.website}` : ""}
 ${params.note ? `\nWhat they want the agent to find: ${params.note}\n` : ""}${
-    params.inCalendar ? "" : "\nNot in your Google Calendar: the calendar is not connected.\n"
+    params.meetUrl
+      ? `\nJoin the call: ${params.meetUrl}\n`
+      : params.inCalendar
+        ? "\nThe Google Meet link is in the calendar invitation.\n"
+        : "\nNot in your Google Calendar: the calendar is not connected.\n"
   }`;

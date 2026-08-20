@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
       website: siteUrl,
       note: note || null,
       inCalendar: !!event,
+      meetUrl: event?.meetUrl ?? null,
     };
     await sendEmail({
       to: "contact@linkedgrow.ai",
