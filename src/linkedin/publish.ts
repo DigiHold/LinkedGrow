@@ -931,6 +931,17 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   // keystroke or a half-typed line is caught here rather than on the feed.
   const typed = await editor.innerText().catch(() => "");
   if (flatten(typed) !== flatten(body)) {
+    // Deterministic mismatches mean the editor TRANSFORMS something in this
+    // text, and guessing which character from the outside wasted a morning on
+    // 2026-08-20. Log both sides and keep the page, so the next failure says
+    // exactly what the box held.
+    log("read-back mismatch", {
+      wantLen: flatten(body).length,
+      gotLen: flatten(typed).length,
+      want: flatten(body).slice(0, 200),
+      got: flatten(typed).slice(0, 200),
+    });
+    await capturePage(page, "composer", "read-back mismatch").catch(() => "");
     throw new PublishError(
       "The composer did not hold the post as written, so nothing was published."
     );
