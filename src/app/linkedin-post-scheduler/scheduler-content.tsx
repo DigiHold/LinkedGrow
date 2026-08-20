@@ -57,19 +57,19 @@ const tools: ToolReview[] = [
     imageAlt:
       "LinkedGrow dashboard with content calendar, AI post composer, and direct publishing to LinkedIn profiles and company pages",
     overview: [
-      "LinkedGrow is the only LinkedIn scheduling tool with BYOK AI generation built in across 26+ models. You write or generate a post, schedule it from the same editor, and the tool publishes directly to your profile or any company page you manage. Total monthly cost lands at $15 to $30 all-in including AI fees.",
-      "Scheduling runs on LinkedGrow's servers, so posts fire at the exact time even if you are offline. The visual content calendar shows a week or month view with drag-and-drop rescheduling, and color coding distinguishes drafts, scheduled, and published posts.",
-      "Every plan schedules without limits. Pro and Business ship unlimited scheduling plus carousel scheduling, A/B test scheduling, and team workflows on Business.",
+      "LinkedGrow is the only LinkedIn post scheduler with BYOK AI generation built in across 43 AI models. You write or generate a post, schedule it from the same editor, and the tool publishes directly to your profile or any company page you manage. Content AI runs on your own key at about $2-4/mo, so there is no per-seat AI markup.",
+      "Once a post is queued, it publishes at the time you chose whether or not you are online. The visual content calendar shows a week or month view with drag-and-drop rescheduling, and color coding distinguishes drafts, scheduled, and published posts.",
+      "Both paid plans schedule without limits. Pro and Business ship unlimited scheduling plus carousel scheduling, A/B test scheduling, and team workflows on Business.",
     ],
     pros: [
       "AI post generation + scheduling in one dashboard, no copy-paste between tools",
-      "BYOK across 43 AI models keeps total cost at $15 to $30/mo all-in",
+      "BYOK across 43 AI models keeps content AI at about $2-4/mo on your own key",
       "Direct publishing to personal profiles AND company pages on every plan",
       "Visual content calendar with drag-and-drop rescheduling",
-      "Exact-time delivery, fires even if you are offline",
+      "Publishes at your chosen time whether or not you are online",
     ],
     cons: [
-      "Unlimited scheduling on Pro and Business",
+      "No free plan - a 7-day Pro trial (card required), then $99/mo",
       "BYOK setup adds 2 minutes for the API key",
       "Smaller community than legacy schedulers like Hootsuite or Buffer",
     ],
@@ -337,6 +337,14 @@ const criteria = [
   },
 ];
 
+const nativeLimits = [
+  "You cannot edit a scheduled post, so fixing a typo means deleting it and scheduling a fresh version.",
+  "There is no content calendar, so queued posts sit in a flat list that makes planning a full month hard to see.",
+  "Only text, image, and video posts can be scheduled, not polls, events, or articles, and there are no recurring posts.",
+  "There are no analytics or best-time suggestions, so you never learn when your audience is actually online.",
+  "The mobile app is more limited than desktop, with fewer previews and weaker handling of drafts.",
+];
+
 export function PostSchedulerContent({
   faqs,
 }: {
@@ -362,24 +370,24 @@ export function PostSchedulerContent({
           <div className="flex justify-center mb-6">
             <span className={EB_LT}>
               <i className={EB_DOT_LT}></i>
-              Independent ranking · Updated July 2026
+              Independent ranking · Updated August 2026
             </span>
           </div>
           <h1 className="m-0 text-center font-v3-display! text-[clamp(43px,6.8vw,88px)] font-semibold! leading-[.98]! tracking-[-.048em]! text-white">
-            8 Best LinkedIn Scheduling Tools in 2026:{" "}
+            LinkedIn Post Scheduler: 8 Best Tools in 2026,{" "}
             <span className="text-v3-sky">
               Ranked by Use Case
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-[62ch] text-center text-[clamp(16.5px,1.35vw,19px)] leading-[1.58]! text-[rgba(255,255,255,.76)]">
-            We tested 8 LinkedIn scheduling tools for 2026 and ranked them by use case, with
-            real pricing, pros and cons, and the best tool for each type of creator.
+            How to schedule LinkedIn posts free with the native tool, then the 8 best LinkedIn
+            post schedulers for 2026, ranked by use case with real pricing, pros, and cons.
           </p>
 
           {/* Quick Answer */}
           <div className="mt-8 rounded-[18px] border border-[rgba(255,255,255,.14)] bg-[rgba(255,255,255,.06)] p-6 text-left [backdrop-filter:blur(6px)]">
             <p className="text-[1.0625rem] leading-relaxed text-[rgba(255,255,255,.82)]">
-              <strong>The best LinkedIn scheduling tool in 2026 is <Link href="/" className="text-v3-sky hover:underline">LinkedGrow</Link></strong> for most creators and teams because it combines AI post generation with auto-publishing to both personal profiles and company pages at a total cost of $15 to $30/mo (including BYOK AI fees). For multi-platform scheduling, Buffer remains the reliable pick. For enterprise teams needing approval workflows across 10+ social accounts, Hootsuite justifies its higher price.
+              <strong>The best LinkedIn post scheduler in 2026 is <Link href="/" className="text-v3-sky hover:underline">LinkedGrow</Link></strong> for most creators and teams because it combines AI post generation with auto-publishing to both personal profiles and company pages. Pro is $99/mo, with content AI on your own key at about $2-4/mo instead of a per-seat markup. For multi-platform scheduling, Buffer remains the reliable pick. For enterprise teams needing approval workflows across 10+ social accounts, Hootsuite justifies its higher price.
             </p>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-3 text-sm">
@@ -509,6 +517,92 @@ export function PostSchedulerContent({
             Total monthly cost matters more than sticker price. LinkedGrow Pro at $99/mo plus $2-4 in AI
             fees beats $52-$249 bundled tools on capability per dollar.
           </p>
+        </div>
+      </section>
+
+      {/* ===== HOW TO SCHEDULE A LINKEDIN POST ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
+              How to schedule a LinkedIn post
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              There are 2 ways to do it: free inside LinkedIn, or with a dedicated scheduler that
+              adds a calendar, AI, and analytics. Here is how each one works, and where the free
+              route stops being enough.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                Schedule free with LinkedIn&apos;s native tool
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                LinkedIn has a built-in scheduler in the post composer, on both desktop and the
+                mobile app. Start a post, write your copy, then click the clock icon next to the
+                Post button. Pick a date and time, from a few minutes ahead up to about 90 days out,
+                and confirm. Your queued posts sit under your profile activity, where you can
+                preview, reschedule, or delete them before they publish. It costs nothing and it
+                works for personal profiles and company pages you manage.
+              </p>
+              <p className="mt-4 text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                The native scheduler covers the basics, but it stops short in 5 ways that start to
+                matter once you post consistently:
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                {nativeLimits.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-3 text-[15px] text-slate-700 dark:text-slate-300"
+                  >
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-linear-to-r from-cyan-500 to-blue-600" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                Schedule with a dedicated tool
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                A dedicated LinkedIn post scheduler fixes those gaps. You connect your account once,
+                write or generate the post, then pick a slot on a visual calendar that shows the
+                whole week or month at a glance. The tool publishes automatically at the chosen
+                time, and you can drag a post to a new slot, edit a queued draft, or schedule a
+                carousel without leaving the page. Most tools add AI generation, best-time
+                suggestions, and per-post analytics, which is the real reason creators move off the
+                native scheduler once posting becomes a habit.
+              </p>
+              <p className="mt-4 text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                LinkedGrow handles this end to end. See the{" "}
+                <Link
+                  href="/features/post-scheduling"
+                  className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline"
+                >
+                  post scheduling feature
+                </Link>
+                , learn how to{" "}
+                <Link
+                  href="/blog/view-scheduled-posts-linkedin"
+                  className="text-cyan-600 dark:text-cyan-400 hover:underline"
+                >
+                  view and manage scheduled posts
+                </Link>
+                , and check the{" "}
+                <Link
+                  href="/free-tools/linkedin-best-time-to-post"
+                  className="text-cyan-600 dark:text-cyan-400 hover:underline"
+                >
+                  best time to post
+                </Link>{" "}
+                before you queue a week ahead.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -679,8 +773,8 @@ export function PostSchedulerContent({
               </h3>
               <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
                 Pick <Link href="/" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">LinkedGrow</Link>.
-                You get AI generation + scheduling in one dashboard for $99/mo (Starter) plus $2-4/mo in BYOK AI fees.
-                Pro at $99/mo schedules without limits, so batch-scheduling a month ahead is normal use.
+                You get AI generation + scheduling in one dashboard for $99/mo on Pro, plus about $2-4/mo in BYOK content AI fees.
+                Pro schedules without limits, so batch-scheduling a month ahead is normal use.
                 Pair it with a consistent <Link href="/blog/linkedin-posting-frequency-guide" className="text-cyan-600 dark:text-cyan-400 hover:underline">posting frequency</Link> for compound growth.
                 Runner-up: Supergrow at $19/mo if you prefer bundled AI with no API key setup.
               </p>
@@ -745,7 +839,7 @@ export function PostSchedulerContent({
           line1: "Start free with the best",
           gradient: "LinkedIn scheduling tool in 2026",
         }}
-        description="AI generation + auto-publishing + visual calendar in one dashboard. Total cost stays at $15 to $30/mo all-in. Join 179+ founders."
+        description="AI generation + auto-publishing + visual calendar in one dashboard. Pro is $99/mo, with content AI on your own key at about $2-4/mo. Join 179+ founders."
         primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
         trustIndicators={[
           "Everything included",
