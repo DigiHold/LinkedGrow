@@ -325,21 +325,36 @@ export function NewAgentWizard() {
        with the checkout button again. */
     let cancelled = false;
     let attempts = 0;
+    /* The draft hydrates from the FIRST response, always: a visitor coming
+       back from the cancel page has no subscription and never will until
+       they pay, and holding their own work hostage for 12 seconds was a bug
+       caught on staging (2026-08-21). Only the subscription flag re-polls,
+       for the visitor coming back from Stripe ahead of the webhook. */
+    const pollSub = () => {
+      fetch("/api/agents/drafts")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!d || cancelled) return;
+          if (d.agentSubscription) {
+            setAgentSub(true);
+            setStep(4);
+          } else if (attempts < 6) {
+            attempts += 1;
+            setTimeout(pollSub, 2000);
+          }
+        })
+        .catch(() => {});
+    };
     const load = () => {
       fetch("/api/agents/drafts")
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
           if (!d || cancelled) return;
-          if (
-            !d.agentSubscription &&
-            searchParams.get("resume") === "1" &&
-            attempts < 6
-          ) {
-            attempts += 1;
-            setTimeout(load, 2000);
-            return;
-          }
           apply(d);
+          if (searchParams.get("resume") === "1" && !d.agentSubscription) {
+            attempts += 1;
+            setTimeout(pollSub, 2000);
+          }
         })
         .catch(() => setAgentSub(null));
     };
