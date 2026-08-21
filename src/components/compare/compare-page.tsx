@@ -140,7 +140,7 @@ export function ComparePage({
         descriptionBold={hero.descriptionBold}
         headline={{ line1: hero.line1, gradient: hero.gradient }}
         primaryCta={{ text: "Launch my agent for $0", href: "/sign-up" }}
-        trustIndicators={TRUST}
+        trustIndicators={showLeadsDemo ? [] : TRUST}
         valuePropBadges={hero.valueProps}
         {...(showLeadsDemo
           ? {
@@ -298,7 +298,7 @@ export function ComparePage({
         description={cta.description}
         headline={{ line1: cta.line1, gradient: cta.gradient }}
         primaryCta={{ text: "Launch my agent for $0", href: "/sign-up" }}
-        trustIndicators={TRUST}
+        trustIndicators={showLeadsDemo ? [] : TRUST}
       />
 
       <Footer />
