@@ -181,6 +181,9 @@ const authProxy = auth(async (req) => {
       // which is the point of the page. Both routes guard themselves with an
       // IP rate limit and hard validation.
       "/api/book-demo",
+      // Written to by the Google Ads Script (bearer secret + IP rate limit),
+      // read by the local ads agent straight from Turso. Never session-authed.
+      "/api/ads-snapshot",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {

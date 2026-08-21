@@ -1638,3 +1638,16 @@ export const demoBookings = sqliteTable("demo_bookings", {
 
 export type DemoBooking = typeof demoBookings.$inferSelect;
 export type NewDemoBooking = typeof demoBookings.$inferInsert;
+
+/**
+ * Daily Google Ads stats, pushed by the Ads Script running inside the Google
+ * Ads account (Tools -> Scripts). The local ads agent reads the latest row,
+ * applies the rules in GOOGLE-ADS.md, and messages Nicolas only when there is
+ * something actionable. One row per push, payload is the raw JSON snapshot.
+ */
+export const googleAdsSnapshots = sqliteTable("google_ads_snapshots", {
+  id: text("id").primaryKey(),
+  day: text("day").notNull(),
+  payload: text("payload").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
