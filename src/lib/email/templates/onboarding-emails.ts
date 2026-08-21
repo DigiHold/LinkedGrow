@@ -15,7 +15,32 @@ const APP = "https://linkedgrow.ai";
 
 export const welcomeSubject = "Your account is ready, here is what happens next";
 
-export function welcomeEmailTemplate(params: { firstName: string; endsOn: string }): string {
+/**
+ * Since the card moved to launch, this email goes out the moment checkout
+ * completes, which for almost everyone is right after they built their agent
+ * in the wizard. `agentReady` is whether a saved draft exists: with one, the
+ * only honest ask is the LinkedIn connection; without one (someone who paid
+ * from the upgrade page), the old two-step version is still the true story.
+ */
+export function welcomeEmailTemplate(params: {
+  firstName: string;
+  endsOn: string;
+  agentReady: boolean;
+}): string {
+  if (params.agentReady) {
+    return baseEmailTemplate({
+      preheader: "One step left and your agent starts working today.",
+      content: `
+${p(`Hello ${params.firstName},`)}
+${lead("Your 7-day trial is running and your agent is one step from live.")}
+${p(`Your card is on file and it is charged on ${params.endsOn}, so cancelling before then costs nothing and takes one click.`)}
+${p("The agent you built is saved: who it looks for, where it looks, and what its messages say. The one thing it still needs is the LinkedIn account it works from.")}
+${p("Connecting takes the email and password of the account it should run as. It signs in on an address reserved for that account and moves at a human pace, which is why the first week is slower on purpose.")}
+${button(`${APP}/dashboard/agents/new?resume=1`, "Connect my LinkedIn & launch")}
+${small("It starts finding people the same day and you get one email a week with what it found, plus an immediate one whenever somebody replies.")}
+`,
+    });
+  }
   return baseEmailTemplate({
     preheader: "Two steps and your agent starts working today.",
     content: `
@@ -31,8 +56,16 @@ ${small("It starts finding people the same day and you get one email a week with
   });
 }
 
-export const welcomeEmailText = (params: { firstName: string; endsOn: string }) =>
-  `Hello ${params.firstName},
+export const welcomeEmailText = (params: { firstName: string; endsOn: string; agentReady: boolean }) =>
+  params.agentReady
+    ? `Hello ${params.firstName},
+
+Your 7-day trial is running and your agent is one step from live. Your card is charged on ${params.endsOn}, so cancelling before then costs nothing.
+
+The agent you built is saved. Connect the LinkedIn account it works from and it starts the same day.
+
+${APP}/dashboard/agents/new?resume=1`
+    : `Hello ${params.firstName},
 
 Your account is open and your 7-day trial is running. Your card is charged on ${params.endsOn}, so cancelling before then costs nothing.
 

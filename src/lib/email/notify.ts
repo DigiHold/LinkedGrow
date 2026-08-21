@@ -248,6 +248,7 @@ export async function sendTrialWelcomeEmail(params: {
   to: string;
   name: string | null;
   endsOn: string;
+  agentReady: boolean;
 }) {
   const firstName = firstNameOf(params.name);
   return sendEmail({
