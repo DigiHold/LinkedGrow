@@ -1,4 +1,4 @@
-import type { Page } from "patchright";
+import type { Locator, Page } from "patchright";
 import type { Config } from "../config.ts";
 import { log } from "../logger.ts";
 import { openSession, hasSessionCookie } from "../browser/driver.ts";
@@ -1029,8 +1029,17 @@ async function postMeta(button: Locator): Promise<{ url: string | null; topic: s
       const textEl = container.querySelector(
         ".update-components-text, .feed-shared-inline-show-more-text, .update-components-update-v2__commentary, [data-test-id='main-feed-activity-card'] span[dir='ltr']"
       );
-      let topic = (textEl?.textContent ?? "").replace(/\s+/g, " ").trim();
-      if (topic.length > 90) topic = topic.slice(0, 90).replace(/\s+\S*$/, "") + "…";
+      /* innerText keeps the spaces the layout shows; textContent glues
+         sibling blocks together, and "Collective.When I started" shipped in a
+         real signal on 2026-08-22 because of it. */
+      let topic = ((textEl as HTMLElement | null)?.innerText ?? textEl?.textContent ?? "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (topic.length > 90) {
+        const head = topic.slice(0, 90);
+        const sentence = /^[\s\S]{24,}?[.!?](?=\s|$)/.exec(head)?.[0];
+        topic = sentence ?? head.replace(/\s+\S*$/, "") + "…";
+      }
       return {
         url: urn ? `https://www.linkedin.com/feed/update/${urn}/` : null,
         topic: topic || null,

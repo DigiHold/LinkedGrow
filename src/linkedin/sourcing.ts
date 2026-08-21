@@ -295,7 +295,10 @@ export function signalSentence(
   const company = sourceLabel.trim() || humanCompanyName(subject);
   // When the miner caught what the post was about, name it. "a post about
   // cold email deliverability" is worth far more to the customer than "a post".
-  const about = postTopic ? ` about ${postTopic.replace(/[.…]+$/, "")}` : "";
+  /* The topic is the post's own opening words, so it renders as a quote. The
+     paraphrase form produced 'post about I'm not accepting new creators', which
+     no human would write. */
+  const about = postTopic ? `: "${postTopic}"` : "";
   switch (kind) {
     case "comment":
       return `Commented on ${company}'s post${about}`;
