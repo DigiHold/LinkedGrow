@@ -23,10 +23,6 @@ export {
   affiliateRejectedEmailText,
 } from "./templates/affiliate-rejected-email";
 export {
-  subscriptionWelcomeEmailTemplate,
-  subscriptionWelcomeEmailText,
-} from "./templates/subscription-welcome-email";
-export {
   networkNotificationInviteEmailTemplate,
   networkNotificationInviteEmailText,
 } from "./templates/network-notification-invite-email";
@@ -81,10 +77,6 @@ import {
   affiliateRejectedEmailTemplate,
   affiliateRejectedEmailText,
 } from "./templates/affiliate-rejected-email";
-import {
-  subscriptionWelcomeEmailTemplate,
-  subscriptionWelcomeEmailText,
-} from "./templates/subscription-welcome-email";
 import {
   networkNotificationInviteEmailTemplate,
   networkNotificationInviteEmailText,
@@ -190,25 +182,6 @@ export async function sendAffiliateRejectedEmail({
     text: affiliateRejectedEmailText({ name }),
   });
 }
-
-export async function sendSubscriptionWelcomeEmail({
-  to,
-  name,
-  planName,
-}: {
-  to: string;
-  name?: string;
-  planName: string;
-}) {
-  const displayPlan = planName.charAt(0).toUpperCase() + planName.slice(1);
-  return sendEmail({
-    to,
-    subject: `Welcome to LinkedGrow ${displayPlan}!`,
-    html: subscriptionWelcomeEmailTemplate({ name, planName }),
-    text: subscriptionWelcomeEmailText({ name, planName }),
-  });
-}
-
 
 interface SendNetworkNotificationInviteEmailParams {
   to: string;
