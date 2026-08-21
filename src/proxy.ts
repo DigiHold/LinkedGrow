@@ -22,6 +22,10 @@ const PAYWALL_ALLOWED_PREFIXES = [
   "/dashboard/upgrade",
   "/dashboard/settings",
   "/dashboard/affiliate",
+  // The wizard is open before the card: a workspace builds its agent, sees
+  // the value, and meets the checkout at "Connect LinkedIn & launch". The
+  // routes that cost money (connect, activate) gate themselves server-side.
+  "/dashboard/agents",
 ];
 
 // The API side of the same allowlist. A paywalled account must still be able
@@ -35,6 +39,11 @@ const PAYWALL_ALLOWED_API_PREFIXES = [
   "/api/consent",
   "/api/support",
   "/api/chat",
+  // The pre-card wizard: reading agents, saving the draft, the site read
+  // (rate limited per user). POST /api/agents and the LinkedIn connect both
+  // refuse workspaces without a subscription on their own.
+  "/api/agents",
+  "/api/linkedin/accounts",
 ];
 
 // Wrapper: intercept signout BEFORE auth() touches the request

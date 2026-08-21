@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff, Sparkles } from "lucide-react";
-import { redirectToCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
 import { trackSignup } from "@/lib/insight";
 
@@ -91,16 +90,18 @@ function SignUpContent() {
         // page carry their own choice in the query string; a signup that came
         // from anywhere else gets Pro monthly, which is what the product sells
         // by default. The trial and the charge both follow whichever it is.
-        const plan = searchParams.get("plan") || "pro";
-        if (userEmail) {
-          const interval = (searchParams.get("interval") as "month" | "year") || "month";
-          const coupon = searchParams.get("coupon") || undefined;
-          const redirected = await redirectToCheckout(plan, userEmail, undefined, interval, coupon);
-          if (redirected) return;
-        }
-        // Otherwise use callbackUrl from the OAuth response if provided, or dashboard
+        /* Straight into the wizard, never into a payment page. The card is
+           asked at "Connect LinkedIn & launch", after the agent is built and
+           the value is on screen (4 signups, 0 cards on 2026-08-21 with the
+           checkout-first flow). A website typed on the home rides along so
+           the first wizard screen is already filled. */
+        const site = searchParams.get("website");
         const redirectTo = sanitizeCallbackUrl(event.data.callbackUrl || callbackUrl);
-        router.push(redirectTo);
+        if (redirectTo !== "/dashboard") {
+          router.push(redirectTo);
+          return;
+        }
+        router.push(`/dashboard/agents/new${site ? `?website=${encodeURIComponent(site)}` : ""}`);
       } else if (event.data.type === `${provider}-error`) {
         window.removeEventListener('message', handleMessage);
         setErrorMessage(event.data.error || `Failed to sign up with ${provider}`);
@@ -163,21 +164,24 @@ function SignUpContent() {
       trackSignup();
 
       const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
-      // Same defaults as the OAuth path above: the account exists but owns
-      // nothing until Checkout runs, so the plan travels with it.
       const plan = searchParams.get("plan") || "pro";
       const interval = (searchParams.get("interval") as "month" | "year") || "month";
       const coupon = searchParams.get("coupon") || undefined;
       const ltd = searchParams.get("ltd");
 
-      // Straight into Checkout, signed in on the way. Bouncing through
-      // /sign-in and asking for the password a second time put a wall in the
-      // middle of the one step the whole funnel depends on, and only the
-      // Google path avoided it.
+      /* Signed in on the way, then straight into the wizard, never into a
+         payment page. The card is asked at "Connect LinkedIn & launch",
+         after the agent is built and the value is on screen (4 signups,
+         0 cards on 2026-08-21 with the checkout-first flow). */
       const signedIn = await signIn("credentials", { email, password, redirect: false });
       if (signedIn?.ok && !ltd) {
-        const redirected = await redirectToCheckout(plan, email, undefined, interval, coupon);
-        if (redirected) return;
+        const site = searchParams.get("website");
+        if (callbackUrl !== "/dashboard") {
+          router.push(callbackUrl);
+          return;
+        }
+        router.push(`/dashboard/agents/new${site ? `?website=${encodeURIComponent(site)}` : ""}`);
+        return;
       }
 
       // Anything unexpected falls back to the old route rather than leaving

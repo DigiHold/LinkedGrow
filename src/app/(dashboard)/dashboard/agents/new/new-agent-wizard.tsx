@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -30,6 +30,8 @@ import {
   accountLabel,
   type LinkedInAccount as PanelAccount,
 } from "@/components/dashboard/linkedin/accounts-panel";
+import { useSession } from "next-auth/react";
+import { redirectToCheckout } from "@/lib/checkout";
 import { cn } from "@/lib/utils";
 import { RAMP } from "@/lib/agent-pace";
 
@@ -136,9 +138,18 @@ type LinkedInAccount = PanelAccount;
 
 export function NewAgentWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /* Whether this workspace can attach a LinkedIn account yet. null while
+     loading. Without a subscription the wizard still builds everything: the
+     card is asked at the end, because connecting an account reserves a paid
+     dedicated address and launching is when the trial should start, not when
+     someone only wants to look around (4 signups, 0 cards, 2026-08-21). */
+  const [agentSub, setAgentSub] = useState<boolean | null>(null);
 
   const [accounts, setAccounts] = useState<LinkedInAccount[]>([]);
 
@@ -304,6 +315,93 @@ export function NewAgentWizard() {
     loadAccounts();
   }, [loadAccounts]);
 
+  /* The saved draft, and whether the card wall is behind us. A workspace
+     coming back from Stripe lands with ?resume=1: its work reloads and the
+     wizard opens on the step that was waiting for the payment. */
+  useEffect(() => {
+    /* Coming back from Stripe, the webhook that records the subscription can
+       be a few seconds behind the redirect. On resume the fetch retries
+       until the subscription shows up rather than greeting a paying customer
+       with the checkout button again. */
+    let cancelled = false;
+    let attempts = 0;
+    const load = () => {
+      fetch("/api/agents/drafts")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!d || cancelled) return;
+          if (
+            !d.agentSubscription &&
+            searchParams.get("resume") === "1" &&
+            attempts < 6
+          ) {
+            attempts += 1;
+            setTimeout(load, 2000);
+            return;
+          }
+          apply(d);
+        })
+        .catch(() => setAgentSub(null));
+    };
+    const apply = (d: {
+      agentSubscription?: boolean;
+      draft?: { name?: string | null; config?: Record<string, unknown> } | null;
+    }) => {
+        if (!d) return;
+        setAgentSub(!!d.agentSubscription);
+        const c = d.draft?.config as Record<string, any> | undefined;
+        if (c && typeof c === "object") {
+          if (typeof c.website === "string") setWebsite(c.website);
+          if (typeof d.draft?.name === "string" && d.draft.name) setName(d.draft.name);
+          if (Array.isArray(c.sources)) setSources(c.sources);
+          if (c.sourceTargets && typeof c.sourceTargets === "object") setSourceTargets(c.sourceTargets);
+          if (Array.isArray(c.buyingEvents)) setBuyingEvents(c.buyingEvents);
+          if (Array.isArray(c.keywords)) setKeywords(c.keywords);
+          if (typeof c.jobRoles === "string") setJobRoles(c.jobRoles);
+          if (typeof c.industries === "string") setIndustries(c.industries);
+          if (typeof c.locations === "string") setLocations(c.locations);
+          if (typeof c.matchLevel === "string") setMatchLevel(c.matchLevel);
+          if (Array.isArray(c.companySizes)) setCompanySizes(c.companySizes);
+          if (typeof c.smartLeadFinder === "boolean") setSmartLeadFinder(c.smartLeadFinder);
+          if (typeof c.companyInfo === "string") setCompanyInfo(c.companyInfo);
+          if (typeof c.goal === "string") setGoal(c.goal);
+          if (typeof c.tone === "string") setTone(c.tone);
+          if (typeof c.skipConnected === "boolean") setSkipConnected(c.skipConnected);
+          if (typeof c.reviewMode === "boolean") setReviewMode(c.reviewMode);
+          if (typeof c.observeOnly === "boolean") setObserveOnly(c.observeOnly);
+          if (typeof c.testRecipients === "string") setTestRecipients(c.testRecipients);
+          if (Array.isArray(c.workdayDays)) setWorkdayDays(c.workdayDays);
+          if (typeof c.workdayStart === "number") setWorkdayStart(c.workdayStart);
+          if (typeof c.workdayEnd === "number") setWorkdayEnd(c.workdayEnd);
+          if (typeof c.timezone === "string") setTimezone(c.timezone);
+          if (typeof c.customWarmup === "boolean") setCustomWarmup(c.customWarmup);
+          if (typeof c.warmupStartPerDay === "number") setWarmupStartPerDay(c.warmupStartPerDay);
+          if (typeof c.warmupIncrementPerWeek === "number") setWarmupIncrementPerWeek(c.warmupIncrementPerWeek);
+          if (typeof c.warmupWeeks === "number") setWarmupWeeks(c.warmupWeeks);
+          if (d.agentSubscription && searchParams.get("resume") === "1") setStep(4);
+        }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Everything the wizard holds, in one saveable object. */
+  const draftPayload = () => ({
+    name: name.trim() || null,
+    config: {
+      website: website.trim(),
+      sources, sourceTargets, buyingEvents, keywords,
+      jobRoles, industries, locations, matchLevel, companySizes,
+      smartLeadFinder, companyInfo, goal, tone,
+      skipConnected, reviewMode, observeOnly, testRecipients,
+      workdayDays, workdayStart, workdayEnd, timezone,
+      customWarmup, warmupStartPerDay, warmupIncrementPerWeek, warmupWeeks,
+    },
+  });
+
   const addKeyword = useCallback(() => {
     const value = keywordDraft.trim();
     if (!value || keywords.length >= MAX_SIGNALS) return;
@@ -331,13 +429,41 @@ export function NewAgentWizard() {
     if (step === 5 && !name.trim()) return "Give the agent a name.";
     if (step === 3 && keywords.length < MIN_SIGNALS)
       return `Add at least ${MIN_SIGNALS} signals. You have ${keywords.length}.`;
-    if (step === 4 && !linkedinAccountId) return "Pick the account that sends.";
+    if (step === 4 && agentSub !== false && !linkedinAccountId) return "Pick the account that sends.";
     return null;
   })();
 
   const submit = async () => {
     setSaving(true);
     setError(null);
+
+    /* No subscription yet: the work is saved, then Stripe. The trial costs
+       nothing today; Stripe brings them back here with ?resume=1 and the
+       wizard reopens on the connect step with everything intact. */
+    if (agentSub === false) {
+      try {
+        const saved = await fetch("/api/agents/drafts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(draftPayload()),
+        });
+        if (!saved.ok) throw new Error("Could not save your agent");
+        const went = await redirectToCheckout(
+          "pro",
+          session?.user?.email ?? "",
+          (msg) => setError(msg),
+          "month",
+          undefined,
+          "/dashboard/agents/new?resume=1"
+        );
+        if (!went) setSaving(false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not save your agent");
+        setSaving(false);
+      }
+      return;
+    }
+
     try {
       const res = await fetch("/api/agents", {
         method: "POST",
@@ -403,6 +529,8 @@ export function NewAgentWizard() {
         }
         throw new Error(data.error || "Could not create the agent");
       }
+      // The draft is spent: the real row exists now.
+      void fetch("/api/agents/drafts", { method: "DELETE" }).catch(() => {});
       router.push(`/dashboard/agents/${data.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create the agent");
@@ -894,14 +1022,30 @@ export function NewAgentWizard() {
             >
               {/* Connecting happens here rather than on a settings page, so
                   nobody has to leave the wizard halfway through and find
-                  their way back. */}
-              <LinkedInAccountsPanel
-                emptyHint="No LinkedIn account connected yet. Connect the profile you want this agent to work from."
-                mode="pick"
-                onChanged={loadAccounts}
-                onSelect={setLinkedinAccountId}
-                selectedId={linkedinAccountId}
-              />
+                  their way back. Before the trial starts there is nothing to
+                  pick yet: connecting reserves a dedicated address, so it
+                  waits on the other side of the checkout. */}
+              {agentSub === false ? (
+                <div className="rounded-xl border border-border bg-slate-50 p-5 text-sm leading-relaxed text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    Your LinkedIn connects right after you start the trial.
+                  </p>
+                  <p className="mt-2">
+                    Connecting reserves a dedicated residential address for your
+                    account, in your country, and it stays yours. That is part of
+                    the plan, so it comes just after the checkout: $0 today,
+                    7 days free, then $99/month. Cancel any time before day 7.
+                  </p>
+                </div>
+              ) : (
+                <LinkedInAccountsPanel
+                  emptyHint="No LinkedIn account connected yet. Connect the profile you want this agent to work from."
+                  mode="pick"
+                  onChanged={loadAccounts}
+                  onSelect={setLinkedinAccountId}
+                  selectedId={linkedinAccountId}
+                />
+              )}
             </Field>
 
             </Group>
@@ -1000,6 +1144,7 @@ export function NewAgentWizard() {
               <SummaryRow
                 label="Sending account"
                 value={(() => {
+                  if (agentSub === false) return "Connects after you start the trial";
                   const picked = accounts.find((a) => a.id === linkedinAccountId);
                   return picked ? accountLabel(picked) : "Not picked";
                 })()}
@@ -1017,9 +1162,17 @@ export function NewAgentWizard() {
               What happens next
             </h3>
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-              <li>
-                The agent is created paused. It does nothing until you start it.
-              </li>
+              {agentSub === false ? (
+                <li>
+                  Next screen is the trial checkout: $0 today, 7 days free, then
+                  $99/month, cancel any time before day 7. Right after it you
+                  connect your LinkedIn and the agent starts warming up.
+                </li>
+              ) : (
+                <li>
+                  The agent is created paused. It does nothing until you start it.
+                </li>
+              )}
               <li>
                 A new LinkedIn account warms up for a month before it works at
                 full pace, which is what keeps it safe.
@@ -1044,7 +1197,12 @@ export function NewAgentWizard() {
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                {agentSub === false ? "Saving..." : "Creating..."}
+              </>
+            ) : agentSub === false ? (
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                Start my 7-day trial
               </>
             ) : (
               <>

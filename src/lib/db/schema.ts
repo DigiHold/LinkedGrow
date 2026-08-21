@@ -36,6 +36,8 @@ export const users = sqliteTable("users", {
   trialStartedAt: integer("trial_started_at", { mode: "timestamp" }),
   trialEndedAt: integer("trial_ended_at", { mode: "timestamp" }),
   hasUsedTrial: integer("has_used_trial", { mode: "boolean" }).default(false),
+  // Last time the abandoned-checkout email went out, so retries never spam.
+  abandonEmailedAt: integer("abandon_emailed_at"),
   ltdSource: text("ltd_source", { enum: ["stripe", "dealify", "dealmirror", "dealfuel"] }),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
@@ -1650,4 +1652,27 @@ export const googleAdsSnapshots = sqliteTable("google_ads_snapshots", {
   day: text("day").notNull(),
   payload: text("payload").notNull(),
   createdAt: integer("created_at").notNull(),
+});
+
+/**
+ * A configured agent waiting for its trial to start.
+ *
+ * The wizard lets a workspace without a subscription build the whole agent
+ * (site read, targeting, schedule) so the value is on screen before the card
+ * is asked for. The draft holds that work while the checkout happens; the
+ * real agents row is only created once a LinkedIn account can be attached,
+ * which is behind the subscription because connecting buys a dedicated IP.
+ * One draft per workspace: the wizard overwrites it on every save.
+ */
+export const agentDrafts = sqliteTable("agent_drafts", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdBy: text("created_by").notNull(),
+  name: text("name"),
+  config: text("config").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
 });

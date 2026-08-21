@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { checkAIRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -112,6 +113,20 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    /* The read runs on our own key, and the wizard is open before any card
+       now, so the spend is capped per user rather than by good faith. Ten a
+       day is several full setups; nobody legitimate reaches it. */
+    const limited = rateLimit(`analyze-website:${session.user.id}`, {
+      maxRequests: 10,
+      windowMs: 24 * 60 * 60 * 1000,
+    });
+    if (!limited.success) {
+      return NextResponse.json(
+        { error: "Daily limit reached for site reads. Fill the steps by hand or try tomorrow." },
+        { status: 429 }
+      );
     }
 
     const limit = checkAIRateLimit(session.user.id);
