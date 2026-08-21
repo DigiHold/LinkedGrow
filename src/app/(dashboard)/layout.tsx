@@ -4,7 +4,6 @@ import { Topbar } from "@/components/dashboard/topbar";
 import { SidebarProvider } from "@/components/dashboard/sidebar-context";
 import { CrumbProvider } from "@/components/dashboard/crumb-context";
 import { SessionProvider } from "@/components/providers/session-provider";
-import { OnboardingCheck } from "@/components/dashboard/onboarding-check";
 import { LiveTicker } from "@/components/dashboard/agents/live-ticker";
 
 export default async function DashboardLayout({
@@ -46,9 +45,6 @@ export default async function DashboardLayout({
               </div>
             </CrumbProvider>
           </div>
-
-          {/* Setup wizard for first-time users, on any dashboard page */}
-          <OnboardingCheck />
         </div>
       </SidebarProvider>
     </SessionProvider>

@@ -154,8 +154,6 @@ export async function GET() {
         : 0,
       // Publishing preferences
       autoLikeAfterPublish: user.autoLikeAfterPublish !== false, // default true
-      // Onboarding
-      onboardingCompleted: !!user.onboardingCompleted,
     });
   } catch (error) {
 return NextResponse.json(
@@ -372,10 +370,6 @@ export async function PUT(request: NextRequest) {
 
     if (autoLikeAfterPublish !== undefined) {
       updateData.autoLikeAfterPublish = !!autoLikeAfterPublish;
-    }
-
-    if (body.onboardingCompleted !== undefined) {
-      updateData.onboardingCompleted = !!body.onboardingCompleted;
     }
 
     if (body.brandColors !== undefined) {

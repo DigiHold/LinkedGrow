@@ -130,8 +130,6 @@ export const users = sqliteTable("users", {
   // Publishing preferences
   autoLikeAfterPublish: integer("auto_like_after_publish", { mode: "boolean" }).default(true),
 
-  // Onboarding
-  onboardingCompleted: integer("onboarding_completed", { mode: "boolean" }).default(false),
 });
 
 // Sessions table for NextAuth
