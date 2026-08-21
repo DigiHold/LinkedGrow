@@ -51,6 +51,7 @@ export {
   sendChurnImmediateEmail,
   sendChurnValueEmail,
   sendChurnAskEmail,
+  sendSignupWelcomeEmail,
   sendTrialWelcomeEmail,
   sendNoAgentEmail,
   sendNoAccountEmail,

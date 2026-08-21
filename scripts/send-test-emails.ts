@@ -1,22 +1,22 @@
 // Script to send test emails
 import "dotenv/config";
 import { sendEmail } from "../src/lib/email/ses-client";
-import { welcomeEmailTemplate, welcomeEmailText } from "../src/lib/email/templates/welcome-email";
+import { signupWelcomeSubject, signupWelcomeEmailTemplate, signupWelcomeEmailText } from "../src/lib/email/templates/onboarding-emails";
 import { resetPasswordEmailTemplate, resetPasswordEmailText } from "../src/lib/email/templates/reset-password-email";
 
 async function sendTestEmails() {
   const testEmail = "contact@linkedgrow.ai";
 
   try {
-    // Send welcome email
-    console.log("Sending welcome email...");
+    // Send the signup welcome email
+    console.log("Sending signup welcome email...");
     await sendEmail({
       to: testEmail,
-      subject: "Welcome to LinkedGrow!",
-      html: welcomeEmailTemplate({ name: "Nicolas", email: testEmail }),
-      text: welcomeEmailText({ name: "Nicolas", email: testEmail }),
+      subject: signupWelcomeSubject,
+      html: signupWelcomeEmailTemplate({ firstName: "Nicolas" }),
+      text: signupWelcomeEmailText({ firstName: "Nicolas" }),
     });
-    console.log("Welcome email sent!");
+    console.log("Signup welcome email sent!");
 
     // Send password reset email
     console.log("Sending password reset email...");

@@ -51,6 +51,9 @@ import {
   selectorAlertEmailText,
 } from "./templates/ops-emails";
 import {
+  signupWelcomeSubject,
+  signupWelcomeEmailTemplate,
+  signupWelcomeEmailText,
   welcomeSubject,
   welcomeEmailTemplate,
   welcomeEmailText,
@@ -243,6 +246,16 @@ export async function sendChurnAskEmail(params: { to: string; name: string | nul
 }
 
 // ----------------------------------------------------------------- onboarding
+
+export async function sendSignupWelcomeEmail(params: { to: string; name: string | null }) {
+  const firstName = firstNameOf(params.name);
+  return sendEmail({
+    to: params.to,
+    subject: signupWelcomeSubject,
+    html: signupWelcomeEmailTemplate({ firstName }),
+    text: signupWelcomeEmailText({ firstName }),
+  });
+}
 
 export async function sendTrialWelcomeEmail(params: {
   to: string;

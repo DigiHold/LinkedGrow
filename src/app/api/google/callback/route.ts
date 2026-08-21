@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 
 import { signUp, subscribeToNewsletter, brevoDate } from '@/lib/newsletter';
+import { sendSignupWelcomeEmail } from '@/lib/email';
 
 
 function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
@@ -201,10 +202,11 @@ export async function GET(request: NextRequest) {
         where: eq(users.id, userId),
       });
 
-      // Add every new user to the Welcome list (#9) so Brevo automation
-      // sends the welcome email. Also add to the Blog list (#11) if they
-      // opted in via the newsletter checkbox on the sign-up page.
-      // Seed free-user conversion attributes so the daily cron has a
+      // Add every new user to the Welcome list (#9) for segmentation. The
+      // welcome email itself is ours (sendSignupWelcomeEmail below); the old
+      // Brevo automation on this list is gone. Also add to the Blog list
+      // (#11) if they opted in via the newsletter checkbox on the sign-up
+      // page. Seed free-user conversion attributes so the daily cron has a
       // known starting state.
       const fullName = googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim();
       signUp({
@@ -224,6 +226,12 @@ export async function GET(request: NextRequest) {
       if (subscribeNewsletterCookie) {
         subscribeToNewsletter({ email: googleUser.email, name: fullName, source: 'google_signup' }).catch(() => {});
       }
+
+      // Awaited on purpose: Vercel freezes the function once the redirect
+      // returns, so a fire-and-forget send dies mid-flight.
+      try {
+        await sendSignupWelcomeEmail({ to: googleUser.email, name: fullName || null });
+      } catch {}
 
     } else {
       // Login flow

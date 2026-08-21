@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
 import { signUp, subscribeToNewsletter, brevoDate } from "@/lib/newsletter";
+import { sendSignupWelcomeEmail } from "@/lib/email";
 import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
 
 
@@ -148,9 +149,10 @@ export async function POST(request: NextRequest) {
         .where(eq(affiliates.id, validAffiliate.id));
     }
 
-    // Add every new user to the Welcome list (#9) so Brevo automation sends
-    // the welcome email. Also add to the Blog list (#11) if they opted in via
-    // the "Get growth tips, new features, and exclusive offers" checkbox.
+    // Add every new user to the Welcome list (#9) for segmentation. The
+    // welcome email itself is ours (sendSignupWelcomeEmail below); the old
+    // Brevo automation on this list is gone. Also add to the Blog list (#11)
+    // if they opted in via the "Get growth tips" checkbox.
     // Seed free-user conversion attributes so the daily cron and real-time
     // hooks have a known starting state for every contact.
     signUp({
@@ -170,6 +172,13 @@ export async function POST(request: NextRequest) {
     if (subscribeNewsletter) {
       subscribeToNewsletter({ email, name: name || undefined, source: "email_signup" }).catch(() => {});
     }
+
+    // Awaited on purpose: Vercel freezes the function when the response
+    // returns, so a fire-and-forget send dies mid-flight (the ticket-email
+    // incident). The failure stays silent; signup never breaks over an email.
+    try {
+      await sendSignupWelcomeEmail({ to: email, name: name || null });
+    } catch {}
 
     return NextResponse.json({
       success: true,

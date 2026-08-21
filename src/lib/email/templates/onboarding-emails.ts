@@ -11,6 +11,38 @@ import { p, lead, small, button, figures } from "./parts";
 
 const APP = "https://linkedgrow.ai";
 
+// ------------------------------------------------------------ signup welcome
+
+/**
+ * Goes out the moment the account exists, from our own sender. It used to be
+ * a Brevo automation on list #9; that automation is gone, so without this
+ * email a new signup heard nothing until the day they added a card.
+ */
+export const signupWelcomeSubject = "Your account is open, here is the first step";
+
+export function signupWelcomeEmailTemplate(params: { firstName: string }): string {
+  return baseEmailTemplate({
+    preheader: "Build your agent now, your card only comes in at launch.",
+    content: `
+${p(`Hello ${params.firstName},`)}
+${lead("Your account is open and building your agent costs nothing.")}
+${p("Give the wizard your website and it works out who you sell to, then proposes the targeting: the job titles, the industries, the countries, and the sources worth watching. You edit rather than invent, and you decide at the end whether anything starts.")}
+${p("We do not ask for a card at this step. The 7-day trial starts only when you press launch, so nothing runs and you pay nothing while you set things up.")}
+${button(`${APP}/dashboard/agents/new`, "Build my agent")}
+${small("It takes about 3 minutes and you can change every answer later.")}
+`,
+  });
+}
+
+export const signupWelcomeEmailText = (params: { firstName: string }) =>
+  `Hello ${params.firstName},
+
+Your account is open and building your agent costs nothing. Give the wizard your website and it proposes the targeting, which you edit rather than invent.
+
+We do not ask for a card at this step. The 7-day trial starts only when you press launch.
+
+${APP}/dashboard/agents/new`;
+
 // ------------------------------------------------------------------- welcome
 
 export const welcomeSubject = "Your account is ready, here is what happens next";
