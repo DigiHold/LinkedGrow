@@ -149,6 +149,11 @@ export function ComparePage({
                 thumbnailUrl: `${R2_IMAGES}/video-thumb-agents.avif`,
                 ctaText: "Start your 7-day trial",
                 ctaHref: "/sign-up",
+                chromeUrl: "app.linkedgrow.ai/agents/saas-founders",
+                annotations: {
+                  left: 'no template,\nno "I saw your post"',
+                  right: "every lead shows you\nthe post it came from",
+                },
               },
             }
           : {})}
