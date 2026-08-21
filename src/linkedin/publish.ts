@@ -279,6 +279,74 @@ const BUTTON_NAME = {
 } as const;
 
 /** The same lookup for a page or a container, by what the button is called. */
+/**
+ * Presses a button that lives behind a CLOSED shadow root.
+ *
+ * The redesigned composer's photo Editor is one (2026-08-21): the screen shows
+ * the dialog and its blue Next while the serialized DOM contains no "Editor"
+ * at all, and the only DOM button named Next is a feed carousel arrow behind
+ * the overlay. Locators cannot pierce a closed root, so this borrows the
+ * pattern the live-check delete already proved: the browser's AX tree still
+ * names every rendered control and carries its DOM backend id, CDP turns that
+ * id into a box on screen, and a mouse click on that box needs no DOM access.
+ * The search is scoped to buttons INSIDE an open dialog, so the feed's own
+ * "Next" carousel arrow can never be the target, and classic composers, which
+ * have no such dialog, never trigger it.
+ */
+async function pressAcrossClosedShadow(page: Page, name: RegExp): Promise<boolean> {
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("DOM.enable").catch(() => {});
+      await cdp.send("Accessibility.enable").catch(() => {});
+      type AxNode = {
+        nodeId: string;
+        childIds?: string[];
+        role?: { value?: string };
+        name?: { value?: string };
+        backendDOMNodeId?: number;
+      };
+      const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as { nodes: AxNode[] };
+      const byId = new Map(nodes.map((n) => [n.nodeId, n]));
+      let hit: AxNode | null = null;
+      for (const d of nodes.filter((n) => (n.role?.value ?? "") === "dialog")) {
+        const stack = [...(d.childIds ?? [])];
+        while (stack.length && !hit) {
+          const n = byId.get(stack.pop()!);
+          if (!n) continue;
+          if (
+            (n.role?.value ?? "") === "button" &&
+            name.test((n.name?.value ?? "").trim()) &&
+            n.backendDOMNodeId
+          ) {
+            hit = n;
+            break;
+          }
+          stack.push(...(n.childIds ?? []));
+        }
+        if (hit) break;
+      }
+      if (!hit?.backendDOMNodeId) return false;
+      const { model } = (await cdp.send("DOM.getBoxModel", {
+        backendNodeId: hit.backendDOMNodeId,
+      })) as { model: { content: number[] } };
+      const q = model.content;
+      if (!q || q.length < 8) return false;
+      const [qx1, qy1, qx2, qy2, qx3, qy3, qx4, qy4] = q as [
+        number, number, number, number, number, number, number, number,
+      ];
+      const x = (qx1 + qx2 + qx3 + qx4) / 4;
+      const y = (qy1 + qy2 + qy3 + qy4) / 4;
+      await page.mouse.click(x, y);
+      return true;
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    return false;
+  }
+}
+
 function namedButton(scope: Page | Locator, name: RegExp): Locator {
   return scope.getByRole("button", { name });
 }
@@ -401,10 +469,18 @@ async function waitForUpload(
       if (!(await firstVisible(dialog.locator(SEL.uploadProgress)))) {
         const alreadyPostable = await firstVisible(namedButton(page, BUTTON_NAME.post));
         if (!alreadyPostable) {
-          const onwards = await firstVisible(namedButton(page, BUTTON_NAME.next));
-          if (onwards && !(await onwards.isDisabled().catch(() => true))) {
-            await clickHumanLocator(page, onwards);
+          /* The closed-shadow Editor first: on those accounts the DOM-visible
+             "Next" is a feed carousel arrow, and clicking it does nothing for
+             the dialog on top. The AX-guarded keyboard press comes before the
+             locator for exactly that reason. */
+          if (await pressAcrossClosedShadow(page, BUTTON_NAME.next)) {
             await dwell(1500, 3000);
+          } else {
+            const onwards = await firstVisible(namedButton(page, BUTTON_NAME.next));
+            if (onwards && !(await onwards.isDisabled().catch(() => true))) {
+              await clickHumanLocator(page, onwards);
+              await dwell(1500, 3000);
+            }
           }
         }
       }
