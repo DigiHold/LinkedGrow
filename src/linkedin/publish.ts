@@ -391,7 +391,13 @@ async function waitForUpload(
      * Nothing is clicked while the upload is still running, because Next stays
      * disabled until the file is in, and a disabled button is skipped.
      */
-    if (mimeType?.startsWith("video/")) {
+    /* Images joined this club on the redesigned composer: Greg's photo on
+       2026-08-21 uploaded fine and sat on the Editor screen with its Next
+       button, while this loop waited two minutes for a Post button that
+       cannot exist until Next is taken (screenshot in the debug capture).
+       The guard below keeps classic accounts safe: Next is only pressed
+       when no Post button is visible anywhere. */
+    if (mimeType?.startsWith("video/") || mimeType?.startsWith("image/")) {
       if (!(await firstVisible(dialog.locator(SEL.uploadProgress)))) {
         const alreadyPostable = await firstVisible(namedButton(page, BUTTON_NAME.post));
         if (!alreadyPostable) {
