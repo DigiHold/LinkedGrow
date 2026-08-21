@@ -53,6 +53,7 @@ interface UserData {
   id: string;
   name: string | null;
   email: string;
+  avatarHash: string;
   plan: string;
   isLifetimeDeal: boolean;
   isAdmin: boolean;
@@ -103,6 +104,31 @@ const LTD_BADGE = "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text
 
 /** What the Plan column says: the plan only counts once it is paid for.
  *  An LTD paid once and for all, so their plan shows as bought, never "trial". */
+/**
+ * Gravatar when the email has one, the letter otherwise. The letter renders
+ * underneath and d=404 makes the image fail for emails without a Gravatar,
+ * so the fallback is simply the image never covering it.
+ */
+function UserAvatar({ user, size }: { user: Pick<UserData, "name" | "email" | "avatarHash">; size: "sm" | "lg" }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div
+      className={`${size === "sm" ? "w-8 h-8 text-xs" : "w-10 h-10"} relative shrink-0 overflow-hidden rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white font-medium`}
+    >
+      {(user.name || user.email.charAt(0)).charAt(0).toUpperCase()}
+      {user.avatarHash && !failed && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`https://www.gravatar.com/avatar/${user.avatarHash}?s=80&d=404`}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 function displayPlan(user: UserData): string {
   if (user.isLifetimeDeal) return user.plan;
   return user.hasSubscription ? user.plan : "trial";
@@ -444,9 +470,7 @@ export default function AdminUsersPage() {
                   >
                     <td data-label="User" className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium">
-                          {(user.name || user.email.charAt(0)).charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar user={user} size="sm" />
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-sm">
@@ -957,9 +981,7 @@ export default function AdminUsersPage() {
             {deletingUser && (
               <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white font-medium">
-                    {(deletingUser.name || deletingUser.email.charAt(0)).charAt(0).toUpperCase()}
-                  </div>
+                  <UserAvatar user={deletingUser} size="lg" />
                   <div>
                     <p className="font-medium">{deletingUser.name || "No name"}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{deletingUser.email}</p>

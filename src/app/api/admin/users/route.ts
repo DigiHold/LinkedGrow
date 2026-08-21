@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { linkedinAccounts, proxyAllocations } from "@/lib/db/schema";
 import { stripe } from "@/lib/stripe";
 import { and, eq, gte, inArray, isNotNull, isNull, like, lt, or, sql, desc, type SQL } from "drizzle-orm";
+
+// Same recipe as the blog comments route: Gravatar keys on the MD5 of the
+// trimmed, lowercased email.
+function gravatarHash(email: string): string {
+  return createHash("md5").update(email.trim().toLowerCase()).digest("hex");
+}
 
 /**
  * The admin's view of the user base.
@@ -225,6 +232,7 @@ export async function GET(request: NextRequest) {
           id: user.id,
           name: user.name,
           email: user.email,
+          avatarHash: gravatarHash(user.email),
           plan: user.plan,
           isLifetimeDeal: user.isLifetimeDeal,
           isAdmin: user.isAdmin,
