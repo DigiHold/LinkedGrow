@@ -144,6 +144,8 @@ export function ComparePage({
         valuePropBadges={hero.valueProps}
         {...(showLeadsDemo
           ? {
+              monoLine:
+                "Use any agent: OpenClaw / Hermes / Claude / ChatGPT / Codex / Cursor / Grok Bot",
               video: {
                 videoId: "1MVCdQZiN9I",
                 thumbnailUrl: `${R2_IMAGES}/video-thumb-agents.avif`,
