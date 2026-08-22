@@ -39,12 +39,7 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
         aria-label="Close demo"
         tabIndex={-1}
       />
-      <div
-        className={
-          "absolute left-1/2 top-1/2 flex max-h-[calc(100vh-24px)] w-[min(1020px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-3xl bg-white shadow-2xl dark:bg-slate-900 " +
-          "lg:grid lg:h-[min(640px,calc(100vh-32px))] lg:grid-cols-[1fr_385px] lg:overflow-hidden"
-        }
-      >
+      <div className="absolute inset-3 flex flex-col overflow-y-auto rounded-3xl bg-white shadow-2xl dark:bg-slate-900 sm:inset-6 lg:grid lg:grid-cols-[1fr_385px] lg:overflow-hidden">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 z-[3] flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55"
@@ -60,7 +55,7 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
           <div className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-blue-600/20 blur-3xl" />
           {/* The 16:9 box gives up width before it ever gives up a pixel of
               height, so the video is always fully visible, never cropped. */}
-          <div className="relative mx-auto w-[min(100%,calc((100vh-300px)*16/9))] overflow-hidden rounded-2xl border border-white/10 shadow-[0_28px_70px_-24px_rgba(0,0,0,.85)] max-lg:w-full">
+          <div className="relative mx-auto w-[min(100%,calc((100vh-230px)*16/9))] overflow-hidden rounded-2xl border border-white/10 shadow-[0_28px_70px_-24px_rgba(0,0,0,.85)] max-lg:w-full">
             <div className="aspect-video">
               <iframe
                 src={`https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&mute=1&rel=0&playsinline=1`}
