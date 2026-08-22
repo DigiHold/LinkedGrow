@@ -223,8 +223,7 @@ export function V3Header({
           className={
             "group/demo relative rounded-[10px] p-[9px] leading-[0] text-[rgba(255,255,255,.85)] " +
             "[transition:background_.22s,color_.22s] hover:bg-[rgba(255,255,255,.13)] " +
-            "[.fx_&]:text-v3-ink2 dark:[.fx_&]:text-v3-ink2-d [.fx_&]:hover:bg-v3-bg2 dark:[.fx_&]:hover:bg-v3-bg2-d " +
-            "max-[1040px]:hidden"
+            "[.fx_&]:text-v3-ink2 dark:[.fx_&]:text-v3-ink2-d [.fx_&]:hover:bg-v3-bg2 dark:[.fx_&]:hover:bg-v3-bg2-d"
           }
         >
           <svg width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
