@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { initV3Chrome } from "./chrome-effects";
+import { DemoModal } from "./demo-modal";
 import { V3_BLOCK } from "./root";
 
 /**
@@ -20,9 +21,18 @@ import { V3_BLOCK } from "./root";
  * selector hooks for chrome-effects.js and carry nothing visual.
  */
 
-/* The bar itself, and the formed state the scroll handler toggles with `fx`. */
+/* The bar itself, and the formed state the scroll handler toggles with `fx`.
+   At rest it sits below the 44px launch banner; once the scroll pins it, it
+   docks to the viewport top and the banner scrolls away above it. */
 const NAVHOLD =
-  "navhold absolute left-0 right-0 top-0 z-[90] px-6 pt-4 [&.fx]:fixed [&.fx]:pt-2.5";
+  "navhold absolute left-0 right-0 top-11 z-[90] px-6 pt-4 [&.fx]:fixed [&.fx]:top-0 [&.fx]:pt-2.5";
+
+/* The launch banner: 44px, in the page flow above the floating nav. One slow
+   light sweep is the whole animation, enough to catch the eye once without
+   nagging. */
+const BANNER =
+  "group relative z-[88] flex h-11 items-center justify-center overflow-hidden px-4 " +
+  "[background:linear-gradient(96deg,var(--color-v3-cyan),var(--color-v3-blue))]";
 const NAV =
   "mx-auto flex max-w-[1180px] items-center gap-[22px] rounded-[17px] border border-[rgba(255,255,255,.15)] bg-[rgba(255,255,255,.07)] " +
   "py-[9px] pl-4 pr-2.5 [backdrop-filter:blur(18px)_saturate(1.6)] [transition:.4s_var(--ease-v3)] " +
@@ -122,6 +132,7 @@ const PROG =
 
 export function V3Header({ onDark = false }: { onDark?: boolean }) {
   const { data: session, status } = useSession();
+  const [demoOpen, setDemoOpen] = useState(false);
   // Until the session resolves, neither state is shown: rendering "Sign in" to
   // someone who is already signed in and then swapping it is worse than a beat
   // of nothing.
@@ -145,6 +156,43 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
       </defs></svg>
     <div className={PROG} id="prog"></div>
 
+    {/*═══ LAUNCH BANNER ═══*/}
+    <Link href="/sign-up" className={BANNER} aria-label="LinkedGrow v2 launch offer: 30% off for 3 months">
+      <style>{`
+        @keyframes lg-banner-sweep {
+          0% { transform: translateX(-160%) skewX(-18deg); }
+          38% { transform: translateX(260%) skewX(-18deg); }
+          100% { transform: translateX(260%) skewX(-18deg); }
+        }
+      `}</style>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 w-1/3 bg-[linear-gradient(105deg,transparent,rgba(255,255,255,.28),transparent)]"
+        style={{ animation: "lg-banner-sweep 5.5s ease-in-out infinite" }}
+      />
+      <span className="flex min-w-0 items-center gap-2.5 text-[13.5px] font-semibold text-white">
+        <span className="hidden items-center gap-1.5 rounded-full bg-white/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[.08em] sm:flex">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+          </span>
+          v2 launch
+        </span>
+        <span className="truncate">
+          30% off for 3 months.
+          <span className="hidden font-medium text-white/85 md:inline">
+            {" "}Find hundreds of high-intent leads in your first days.
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1 underline underline-offset-[3px]">
+          Claim the offer
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="[transition:transform_.25s] group-hover:translate-x-0.5">
+            <path d="M5 12h13M13 6l6 6-6 6" />
+          </svg>
+        </span>
+      </span>
+    </Link>
+
     {/*═══ NAV ═══*/}
     {/* A header element, not a div. The nav inside it was the only landmark on
         the page, so a crawler and a screen reader both had a list of links with
@@ -159,6 +207,36 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
           <a href="/free-tools" className={NL_A}>Free Tools</a><a href="/blog" className={NL_A}>Blog</a><a href="/pricing" className={NL_A}>Pricing</a>
         </nav>
         <div className="ml-auto"></div>
+        <button
+          type="button"
+          onClick={() => setDemoOpen(true)}
+          aria-label="Watch the demo"
+          className={
+            "group/demo relative rounded-[10px] p-[9px] leading-[0] text-[rgba(255,255,255,.85)] " +
+            "[transition:background_.22s,color_.22s] hover:bg-[rgba(255,255,255,.13)] " +
+            "[.fx_&]:text-v3-ink2 dark:[.fx_&]:text-v3-ink2-d [.fx_&]:hover:bg-v3-bg2 dark:[.fx_&]:hover:bg-v3-bg2-d " +
+            "max-[1040px]:hidden"
+          }
+        >
+          <svg width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21.165 9.187c0-.555 0-.833-.11-.961a.458.458 0 0 0-.384-.16c-.168.014-.365.21-.758.603L16.582 12l3.331 3.332c.393.392.59.588.758.602a.459.459 0 0 0 .385-.16c.11-.128.11-.406.11-.961V9.187Zm-18.333.796c0-1.54 0-2.31.3-2.898a2.75 2.75 0 0 1 1.202-1.202c.588-.3 1.358-.3 2.898-.3h4.95c1.54 0 2.31 0 2.899.3a2.75 2.75 0 0 1 1.201 1.202c.3.588.3 1.358.3 2.898v4.034c0 1.54 0 2.31-.3 2.898a2.75 2.75 0 0 1-1.201 1.202c-.589.3-1.359.3-2.899.3h-4.95c-1.54 0-2.31 0-2.898-.3a2.75 2.75 0 0 1-1.202-1.202c-.3-.588-.3-1.358-.3-2.898V9.983Z" />
+          </svg>
+          {/* The Watch Demo Now tooltip, tail first, exactly under the icon */}
+          <span
+            aria-hidden="true"
+            className={
+              "pointer-events-none absolute left-1/2 top-full z-[95] -translate-x-1/2 translate-y-1 opacity-0 " +
+              "[transition:opacity_.18s,transform_.18s] group-hover/demo:translate-y-2 group-hover/demo:opacity-100"
+            }
+          >
+            <svg width="16" height="6" viewBox="0 0 16 6" fill="none" className="mx-auto block">
+              <path d="M2 6H14L8.70711 0.707107C8.31658 0.316583 7.68342 0.316583 7.29289 0.707107L2 6Z" fill="#101828" />
+            </svg>
+            <span className="block whitespace-nowrap rounded-[10px] bg-[#101828] px-3.5 py-2 text-[13px] font-semibold text-white">
+              Watch Demo Now
+            </span>
+          </span>
+        </button>
         {status === "loading" ? null : signedIn ? (
           <a className={FILL_SM} href="/dashboard">Go to dashboard
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></a>
@@ -187,6 +265,8 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
           </div>
       </div>
     </header>
+
+    <DemoModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </div>
   );
 }

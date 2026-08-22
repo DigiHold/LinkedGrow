@@ -22,7 +22,20 @@ interface SlotsPayload {
   durationMinutes: number;
 }
 
-export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; framed?: boolean }) {
+export function DemoBooker({
+  avatarUrl,
+  framed = false,
+  stacked = false,
+}: {
+  avatarUrl: string;
+  framed?: boolean;
+  /**
+   * The demo-modal shape: no brand rail, calendar full width, and the hours
+   * of the picked day inline below it in one scrollable row. The page keeps
+   * the wide three-column layout; the modal cannot afford it.
+   */
+  stacked?: boolean;
+}) {
   const [slots, setSlots] = useState<number[]>([]);
   const [duration, setDuration] = useState(15);
   const [loading, setLoading] = useState(true);
@@ -147,11 +160,12 @@ export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; f
 
       {step === 1 && (
         <div
-          className="grid transition-[grid-template-columns] duration-500 ease-out lg:min-h-[520px]"
+          className={stacked ? "" : "grid transition-[grid-template-columns] duration-500 ease-out lg:min-h-[520px]"}
           style={{ gridTemplateColumns: undefined }}
         >
-          <div className="grid lg:grid-cols-[300px_440px_auto]">
+          <div className={stacked ? "" : "grid lg:grid-cols-[300px_440px_auto]"}>
             {/* Brand rail */}
+            {!stacked && (
             <aside className="relative overflow-hidden bg-linear-to-br from-blue-500 via-blue-600 to-blue-800 p-7 text-white">
               <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:46px_46px]" />
               <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-cyan-400/30 blur-3xl" />
@@ -192,6 +206,7 @@ export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; f
                 </ul>
               </div>
             </aside>
+            )}
 
             {/* Calendar */}
             <section className="p-7">
@@ -273,7 +288,53 @@ export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; f
               </p>
             </section>
 
-            {/* Hours, hidden until a day is picked */}
+            {/* Hours, hidden until a day is picked. Stacked: one scrollable
+                row right under the calendar, the modal's shape. */}
+            {stacked && pickedDay && (
+              <div className="border-t border-slate-200 px-5 py-4 dark:border-white/10">
+                <div className="mb-2.5 flex items-baseline justify-between gap-3">
+                  <span className="font-display text-[14.5px] font-bold text-slate-900 dark:text-white">
+                    {longDay(pickedDay)}
+                  </span>
+                  <span className="text-[12px] text-slate-500 dark:text-slate-400">Your time</span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1.5">
+                  {daySlots.map((s) => {
+                    const isArmed = armed === s;
+                    if (isArmed) {
+                      return (
+                        <div key={s} className="flex shrink-0 gap-2">
+                          <span className="shrink-0 rounded-xl border-[1.5px] border-blue-600 px-4 py-2.5 text-center text-sm font-semibold tabular-nums text-blue-600">
+                            {time(s)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setStep(2)}
+                            className="shrink-0 rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 px-4 text-sm font-bold text-white"
+                          >
+                            Next ›
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setArmed(s)}
+                        className="shrink-0 rounded-xl border-[1.5px] border-slate-200 px-4 py-2.5 text-center text-sm font-semibold tabular-nums text-slate-900 transition-colors hover:border-blue-600 hover:text-blue-600 dark:border-slate-700 dark:text-white"
+                      >
+                        {time(s)}
+                      </button>
+                    );
+                  })}
+                  {daySlots.length === 0 && (
+                    <p className="text-sm text-slate-500">Nothing left on this day.</p>
+                  )}
+                </div>
+              </div>
+            )}
+            {!stacked && (
             <aside
               ref={listRef}
               className={[
@@ -330,6 +391,7 @@ export function DemoBooker({ avatarUrl, framed = false }: { avatarUrl: string; f
                 </>
               )}
             </aside>
+            )}
           </div>
         </div>
       )}
