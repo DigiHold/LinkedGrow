@@ -89,6 +89,29 @@ const authProxy = auth(async (req) => {
     return response;
   }
 
+  /**
+   * A promotion claimed by a click. The launch banner links with ?coupon=,
+   * the code lands in a 30-day cookie, and the checkout applies it for this
+   * visitor only: the discount belongs to the people who saw and clicked the
+   * offer, and the click is measurable, unlike a blanket discount every
+   * checkout silently received. The code itself is validated against Stripe
+   * at checkout time, so a made-up value in the URL buys nothing.
+   */
+  const couponCode = nextUrl.searchParams.get("coupon");
+  if (couponCode && /^[A-Za-z0-9_-]{3,40}$/.test(couponCode)) {
+    const cleanUrl = new URL(nextUrl);
+    cleanUrl.searchParams.delete("coupon");
+    const response = NextResponse.redirect(cleanUrl);
+    response.cookies.set("lg_coupon", couponCode.toUpperCase(), {
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+    });
+    return response;
+  }
+
   // A session object is not a session. An invalidated token can still
   // deserialise into one with no user on it, and treating that as signed in is
   // what created the loop above: redirected away from /sign-in, refused by

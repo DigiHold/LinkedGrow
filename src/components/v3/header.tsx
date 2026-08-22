@@ -166,7 +166,7 @@ export function V3Header({
     <div className={PROG + (progress ? "" : " hidden")} id="prog"></div>
 
     {/*═══ LAUNCH BANNER ═══*/}
-    <Link href="/sign-up" className={BANNER} aria-label="LinkedGrow v2 launch offer: 30% off for 3 months">
+    <Link href="/sign-up?coupon=V2LAUNCH" className={BANNER} aria-label="LinkedGrow v2 launch offer: 30% off for 3 months">
       <style>{`
         @keyframes lg-banner-sweep {
           0% { transform: translateX(-160%) skewX(-18deg); }
