@@ -138,13 +138,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const asked = typeof body?.linkedinAccountId === "string" ? body.linkedinAccountId : null;
-    // The oldest connected account is the default, and it is stored on the post
-    // so the answer to "where did this appear" survives a disconnection later.
+    // The request's choice wins, then the one already stored on the post, then
+    // the oldest connected account. The result is stored back on the post so
+    // the answer to "where did this appear" survives a disconnection later.
+    const asked =
+      typeof body?.linkedinAccountId === "string"
+        ? body.linkedinAccountId
+        : post.linkedinAccountId;
     const account = asked ? connected.find((a) => a.id === asked) : connected[0];
     if (!account) {
       return NextResponse.json(
-        { error: "That LinkedIn account is not connected to this workspace" },
+        {
+          error:
+            "The LinkedIn account chosen for this post is not connected any more. Pick another account and publish again.",
+        },
         { status: 400 }
       );
     }

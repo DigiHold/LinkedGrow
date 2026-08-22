@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, media, users } from "@/lib/db/schema";
+import { posts, media, users, linkedinAccounts } from "@/lib/db/schema";
+import { loadSessionUser } from "@/lib/auth-user";
 import { eq, and, inArray, count, gte } from "drizzle-orm";
 import { deleteMultipleFromR2, uploadToR2, isR2Configured } from "@/lib/storage/r2";
 import sharp from "sharp";
@@ -122,7 +123,41 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { content, status, postType, scheduledAt, metadata, mediaInfo, mediaData, removeMedia, firstComment } = body;
+    const { content, status, postType, scheduledAt, metadata, mediaInfo, mediaData, removeMedia, firstComment, linkedinAccountId } = body;
+
+    // Same check as creation: the chosen account must be one of the
+    // workspace's own, active. Passing null puts the post back on the
+    // default (oldest connected account).
+    let chosenAccountId: string | null | undefined = undefined;
+    if (linkedinAccountId !== undefined) {
+      if (linkedinAccountId === null) {
+        chosenAccountId = null;
+      } else {
+        if (typeof linkedinAccountId !== "string" || linkedinAccountId.length > 64) {
+          return NextResponse.json({ error: "Invalid LinkedIn account" }, { status: 400 });
+        }
+        const data = await loadSessionUser(user.id);
+        const workspaceId = data?.teamOwnerId ?? user.id;
+        const [owned] = await db
+          .select({ id: linkedinAccounts.id })
+          .from(linkedinAccounts)
+          .where(
+            and(
+              eq(linkedinAccounts.id, linkedinAccountId),
+              eq(linkedinAccounts.workspaceId, workspaceId),
+              eq(linkedinAccounts.status, "active")
+            )
+          )
+          .limit(1);
+        if (!owned) {
+          return NextResponse.json(
+            { error: "That LinkedIn account is not connected to this workspace" },
+            { status: 400 }
+          );
+        }
+        chosenAccountId = owned.id;
+      }
+    }
 
     // Validate scheduled posts have a future date
     if (status === "scheduled") {
@@ -180,6 +215,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (content !== undefined) updateData.content = content.trim();
     if (status !== undefined) updateData.status = status;
     if (postType !== undefined) updateData.postType = postType;
+    if (chosenAccountId !== undefined) updateData.linkedinAccountId = chosenAccountId;
     if (scheduledAt !== undefined)
       updateData.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
     if (metadata !== undefined)

@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
+import { posts, media, users, teams, teamMembers, linkedinAccounts } from "@/lib/db/schema";
+import { loadSessionUser } from "@/lib/auth-user";
 import { eq, desc, and, inArray, or, count, gte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { PLANS, PlanId } from "@/lib/plans";
@@ -241,7 +242,39 @@ export async function POST(request: NextRequest) {
       mediaInfo, // { storageUrl, storageKey, mimeType, fileSize } - image already uploaded to R2
       mediaData, // { base64, mimeType } - image to be uploaded to R2 (from Reddit/Generator pages)
       firstComment, // Auto-comment to post after publication
+      linkedinAccountId, // Which connected account publishes this post
     } = body;
+
+    // The account choice is checked against the workspace, not the user: on a
+    // team, the accounts hang off the owner. An unknown or disconnected id is
+    // refused rather than silently falling back to the oldest account, which
+    // is how a post meant for one profile appeared on another (2026-08-22).
+    let chosenAccountId: string | null = null;
+    if (linkedinAccountId !== undefined && linkedinAccountId !== null) {
+      if (typeof linkedinAccountId !== "string" || linkedinAccountId.length > 64) {
+        return NextResponse.json({ error: "Invalid LinkedIn account" }, { status: 400 });
+      }
+      const data = await loadSessionUser(user.id);
+      const workspaceId = data?.teamOwnerId ?? user.id;
+      const [owned] = await db
+        .select({ id: linkedinAccounts.id })
+        .from(linkedinAccounts)
+        .where(
+          and(
+            eq(linkedinAccounts.id, linkedinAccountId),
+            eq(linkedinAccounts.workspaceId, workspaceId),
+            eq(linkedinAccounts.status, "active")
+          )
+        )
+        .limit(1);
+      if (!owned) {
+        return NextResponse.json(
+          { error: "That LinkedIn account is not connected to this workspace" },
+          { status: 400 }
+        );
+      }
+      chosenAccountId = owned.id;
+    }
 
     if (!content || content.trim() === "") {
       return NextResponse.json(
@@ -408,6 +441,7 @@ return NextResponse.json(
       status,
       postType: actualPostType,
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      linkedinAccountId: chosenAccountId,
       metadata: metadata ? JSON.stringify(metadata) : null,
       createdAt: now,
       updatedAt: now,

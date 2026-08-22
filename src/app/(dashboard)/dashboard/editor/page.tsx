@@ -194,6 +194,13 @@ function EditorContent() {
   const [originalHadMedia, setOriginalHadMedia] = useState(false);
   const [originalMediaKey, setOriginalMediaKey] = useState<string | null>(null);
   const [userTimezone, setUserTimezone] = useState<string | null>(null);
+  // Which connected LinkedIn account carries this post. Only offered when the
+  // workspace has more than one: with a single account there is no choice to
+  // make, and the worker's default (that account) is already right.
+  const [liAccounts, setLiAccounts] = useState<
+    { id: string; fullName: string | null; email: string }[]
+  >([]);
+  const [postAccountId, setPostAccountId] = useState<string | null>(null);
   const [hasImageApiKey, setHasImageApiKey] = useState(false);
   const [hasTextApiKey, setHasTextApiKey] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -227,6 +234,27 @@ function EditorContent() {
     fetchTimezone();
   }, []);
 
+  // The connected accounts, for the "publishes from" choice. The default is
+  // the oldest one, which is also what the worker falls back to, so the select
+  // never disagrees with what would happen without it.
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const response = await fetch("/api/linkedin/accounts");
+        if (!response.ok) return;
+        const data = await response.json();
+        const active = (data.accounts ?? []).filter(
+          (a: { status: string }) => a.status === "active"
+        );
+        setLiAccounts(active);
+        if (active.length > 0) {
+          setPostAccountId((prev) => prev ?? active[0].id);
+        }
+      } catch {}
+    };
+    fetchAccounts();
+  }, []);
+
   // Load initial content from query param (from hooks page, etc.)
   useEffect(() => {
     if (initialContent && !editPostId) {
@@ -247,6 +275,9 @@ function EditorContent() {
             setFirstComment(data.post.firstComment || "");
             setCurrentPostId(data.post.id);
             setCurrentPostStatus(data.post.status || "draft");
+            if (data.post.linkedinAccountId) {
+              setPostAccountId(data.post.linkedinAccountId);
+            }
             // Load existing media if present
             if (data.post.media && data.post.media.length > 0) {
               const existingMedia = data.post.media[0];
@@ -423,7 +454,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
       const response = await fetch(`/api/posts/${currentPostId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, mediaInfo, removeMedia, firstComment: firstComment || null }),
+        body: JSON.stringify({ content, mediaInfo, removeMedia, firstComment: firstComment || null, linkedinAccountId: postAccountId }),
       });
       if (!response.ok) throw new Error("Failed to save changes");
       setSuccessMessage("Changes saved!");
@@ -457,7 +488,7 @@ showError(error instanceof Error ? error.message : "Failed to save changes");
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "draft", mediaInfo, removeMedia, firstComment: firstComment || null }),
+          body: JSON.stringify({ content, status: "draft", mediaInfo, removeMedia, firstComment: firstComment || null, linkedinAccountId: postAccountId }),
         });
         if (!response.ok) throw new Error("Failed to update post");
       } else {
@@ -470,6 +501,7 @@ showError(error instanceof Error ? error.message : "Failed to save changes");
             postType: attachedImage ? "image" : "text",
             mediaInfo,
             firstComment: firstComment || null,
+            linkedinAccountId: postAccountId,
           }),
         });
         if (!response.ok) {
@@ -523,6 +555,7 @@ showError(error instanceof Error ? error.message : "Failed to save draft");
             postType: isVideo ? "video" : isPdf ? "carousel" : (attachedImage ? "image" : "text"),
             mediaInfo,
             firstComment: firstComment || null,
+            linkedinAccountId: postAccountId,
           }),
         });
         if (!response.ok) {
@@ -546,6 +579,7 @@ showError(error instanceof Error ? error.message : "Failed to save draft");
         {
           postId,
           text: content,
+          linkedinAccountId: postAccountId ?? undefined,
           videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
           videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
           videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
@@ -608,7 +642,7 @@ showError(error instanceof Error ? error.message : "Failed to publish");
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaInfo, removeMedia, firstComment: firstComment || null }),
+          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaInfo, removeMedia, firstComment: firstComment || null, linkedinAccountId: postAccountId }),
         });
         if (!response.ok) throw new Error("Failed to schedule post");
       } else {
@@ -622,6 +656,7 @@ showError(error instanceof Error ? error.message : "Failed to publish");
             scheduledAt,
             mediaInfo,
             firstComment: firstComment || null,
+            linkedinAccountId: postAccountId,
           }),
         });
         if (!response.ok) {
@@ -939,6 +974,25 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
                 {isVideoMedia(attachedImage) && (
                   <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
                     Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
+                  </div>
+                )}
+                {/* With 2+ connected accounts the post must say which profile
+                    it goes out from; the worker's silent default (oldest
+                    account) surprised everyone on 2026-08-22. */}
+                {liAccounts.length > 1 && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Publish from</label>
+                    <select
+                      value={postAccountId ?? ""}
+                      onChange={(e) => setPostAccountId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+                    >
+                      {liAccounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.fullName || account.email}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
                 {/* Save Changes - only when editing an existing post */}
