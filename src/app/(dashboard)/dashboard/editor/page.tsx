@@ -31,12 +31,7 @@ import { ImageGeneratorModal } from "@/components/dashboard/image-generator-moda
 import { Textarea } from "@/components/ui/textarea";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { localToUTC, getNowInTimezone, resolveTimezone } from "@/lib/timezone";
-import {
-  publishAndWatch,
-  publishStageLabel,
-  PUBLISH_STILL_RUNNING,
-  type PublishStage,
-} from "@/lib/publish-client";
+import { queuePost } from "@/lib/publish-client";
 
 const LINKEDIN_MAX_CHARS = 3000;
 
@@ -170,10 +165,6 @@ function EditorContent() {
   const [currentPostStatus, setCurrentPostStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savingAction, setSavingAction] = useState<"changes" | "draft" | "publish" | null>(null);
-  // Publishing goes through a browser now, so it takes a minute rather than a
-  // second. Saying which minute it is in is the difference between working and
-  // frozen.
-  const [publishStage, setPublishStage] = useState<PublishStage | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showErrorToast, setShowErrorToast] = useState(false);
@@ -571,38 +562,30 @@ showError(error instanceof Error ? error.message : "Failed to save draft");
 
       if (!postId) throw new Error("This post could not be saved, so nothing was published");
 
-      // Queue it for the LinkedIn session. Images and PDFs are looked up from
-      // the media table by postId; videos are passed inline because they aren't
-      // stored there. Nothing is published inside this request: the worker
-      // types it into the composer and this waits for the post's own row.
-      const outcome = await publishAndWatch(
-        {
-          postId,
-          text: content,
-          linkedinAccountId: postAccountId ?? undefined,
-          videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
-          videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
-          videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
-        },
-        setPublishStage
-      );
+      // Queued, not awaited: the LinkedIn session takes minutes on purpose,
+      // and My posts is where its badge moves from Publishing to Published.
+      // Holding people here on a spinner for that long read as broken
+      // (Nicolas, 2026-08-22).
+      await queuePost({
+        postId,
+        text: content,
+        linkedinAccountId: postAccountId ?? undefined,
+        videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
+        videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
+        videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
+      });
 
-      if (outcome.state === "failed") throw new Error(outcome.message);
-
-      setSuccessMessage(
-        outcome.state === "published" ? "Posted to LinkedIn." : PUBLISH_STILL_RUNNING
-      );
+      setSuccessMessage("Your post is on its way. Track it in My posts.");
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
         router.push("/dashboard/posts");
-      }, 1500);
+      }, 1200);
     } catch (error) {
 showError(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsSaving(false);
       setSavingAction(null);
-      setPublishStage(null);
     }
   };
 
@@ -1045,11 +1028,6 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
                   )}
                   {savingAction === "publish" ? "Publishing..." : "Publish now"}
                 </Button>
-                {publishStage && (
-                  <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-                    {publishStageLabel(publishStage)}
-                  </p>
-                )}
               </CardContent>
             </Card>
 

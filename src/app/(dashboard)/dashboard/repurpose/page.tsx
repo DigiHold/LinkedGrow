@@ -41,12 +41,7 @@ import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PlanId, canAccessFeature } from "@/lib/plans";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { localToUTC, resolveTimezone } from "@/lib/timezone";
-import {
-  publishAndWatch,
-  publishStageLabel,
-  PUBLISH_STILL_RUNNING,
-  type PublishStage,
-} from "@/lib/publish-client";
+import { queuePost } from "@/lib/publish-client";
 import Link from "next/link";
 
 // Reddit icon component
@@ -421,7 +416,6 @@ function ContentRepurposingContent() {
   const [isPublishing, setIsPublishing] = useState(false);
   // Publishing runs in a browser on the server, so it takes a minute. This is
   // what the wait says while it happens.
-  const [publishStage, setPublishStage] = useState<PublishStage | null>(null);
   const [showScheduler, setShowScheduler] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
@@ -775,30 +769,25 @@ showToast(error instanceof Error ? error.message : "Failed to save draft");
 
       // The worker types this into the composer, so the answer arrives on the
       // post's own row rather than in the response to this call.
-      const outcome = await publishAndWatch(
-        {
-          postId: post.id,
-          text: currentPost,
-          videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
-          videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
-          videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
-        },
-        setPublishStage
-      );
-
-      if (outcome.state === "failed") throw new Error(outcome.message);
+      // Queued, not awaited: the LinkedIn session takes minutes on purpose,
+      // and My posts is where its badge moves from Publishing to Published.
+      // Holding people on a spinner for that long read as broken
+      // (Nicolas, 2026-08-22).
+      await queuePost({
+        postId: post.id,
+        text: currentPost,
+        videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
+        videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
+        videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
+      });
 
       clearDraft();
-      showToast(
-        outcome.state === "published" ? "Posted to LinkedIn." : PUBLISH_STILL_RUNNING,
-        "success"
-      );
-      setTimeout(() => router.push("/dashboard/posts"), 1500);
+      showToast("Your post is on its way. Track it in My posts.", "success");
+      setTimeout(() => router.push("/dashboard/posts"), 1200);
     } catch (error) {
 showToast(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsPublishing(false);
-      setPublishStage(null);
     }
   };
 
@@ -1529,11 +1518,6 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                   )}
                   {isPublishing ? "Publishing..." : "Publish to LinkedIn"}
                 </Button>
-                {publishStage && (
-                  <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-                    {publishStageLabel(publishStage)}
-                  </p>
-                )}
                 <Button
                   variant="outline"
                   className="w-full"
