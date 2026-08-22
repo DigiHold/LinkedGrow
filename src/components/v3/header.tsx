@@ -34,7 +34,7 @@ const BANNER =
   "group relative z-[88] flex h-11 items-center justify-center overflow-hidden px-4 " +
   "[background:linear-gradient(96deg,#fbbf24,#f97316)]";
 const NAV =
-  "mx-auto flex max-w-[1180px] items-center gap-[22px] rounded-[17px] border border-[rgba(255,255,255,.15)] bg-[rgba(255,255,255,.07)] " +
+  "mx-auto flex max-w-[1180px] items-center gap-[22px] max-[1040px]:gap-2 rounded-[17px] border border-[rgba(255,255,255,.15)] bg-[rgba(255,255,255,.07)] " +
   "py-[9px] pl-4 pr-2.5 [backdrop-filter:blur(18px)_saturate(1.6)] [transition:.4s_var(--ease-v3)] " +
   "[.fx_&]:border-v3-line2 [.fx_&]:bg-[rgba(255,255,255,.93)] [.fx_&]:shadow-[0_18px_46px_-30px_rgba(6,9,17,.55)] " +
   "dark:[.fx_&]:border-v3-line-d dark:[.fx_&]:bg-[rgba(13,20,32,.82)]";
