@@ -23,6 +23,7 @@ import {
   accountForPost,
   actionFor,
   claimPost,
+  clickJitterMsFor,
   failOrRequeue,
   loadDuePosts,
   markFailed,
@@ -134,6 +135,13 @@ async function writeOne(
       scheduleFor:
         action === "prepare"
           ? { at: new Date(post.scheduledAt * 1000), timeZone: account.timezone }
+          : undefined,
+      // The session opened DIRECT_HEAD_START early, so the composing is done
+      // before the hour; the click waits for the slot plus this post's own
+      // small jitter. A publish-now (not wasScheduled) never waits.
+      notBefore:
+        action === "publish" && post.wasScheduled
+          ? new Date(post.scheduledAt * 1000 + clickJitterMsFor(post.id))
           : undefined,
     });
 

@@ -14,6 +14,7 @@ import {
   claimPost,
   failOrRequeue,
   jitterMsFor,
+  DIRECT_HEAD_START_MS,
   leadMsFor,
   loadDuePosts,
   markHandedToScheduler,
@@ -270,10 +271,18 @@ test("a post scheduled for very soon skips LinkedIn's scheduler and waits for it
   });
   assert.equal(actionFor(soon, ZONE, now), "wait", "it was handed to the scheduler too late");
 
-  // At its slot it goes out the direct way, once its own jitter has passed.
+  // The direct path opens early: the session is claimed DIRECT_HEAD_START
+  // before the slot so the composing happens ahead of the hour, and the click
+  // itself is held inside publishPost until slot + clickJitterMsFor. Opening
+  // any earlier than the head start would hold a browser for nothing.
   const slotMs = soon.scheduledAt * 1000;
-  assert.equal(actionFor(soon, ZONE, slotMs), "wait", "it published on the exact second");
-  assert.equal(actionFor(soon, ZONE, slotMs + jitterMsFor(soon.id) + 1), "publish");
+  assert.equal(
+    actionFor(soon, ZONE, slotMs - DIRECT_HEAD_START_MS - 1),
+    "wait",
+    "it opened before its head start"
+  );
+  assert.equal(actionFor(soon, ZONE, slotMs - DIRECT_HEAD_START_MS), "publish");
+  assert.equal(actionFor(soon, ZONE, slotMs), "publish");
 });
 
 test("a post LinkedIn already holds is only looked for after its slot", () => {

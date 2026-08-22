@@ -57,6 +57,15 @@ export interface PublishInput {
    */
   scheduleFor?: { at: Date; timeZone: string };
   /**
+   * Hold the finished post and press Post at this moment, never before.
+   *
+   * The direct path opens its session ahead of the slot (DIRECT_HEAD_START in
+   * the store), so the slow part, a browser and a human-paced composer, is
+   * already done when the minute arrives. Composing used to start AT the
+   * slot, which put every directly published post 5 to 10 minutes late.
+   */
+  notBefore?: Date;
+  /**
    * Walk the whole composer and then throw it away.
    *
    * Everything happens for real: the composer opens, the body is typed through
@@ -1163,6 +1172,22 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
     await useScheduler(page, dialog, input.scheduleFor.at, input.scheduleFor.timeZone);
     log("post handed to LinkedIn's scheduler", { at: input.scheduleFor.at.toISOString() });
     return { url: null, verified: false, scheduled: true };
+  }
+
+  /**
+   * Everything slow is behind us; if the slot has not arrived, hold here and
+   * press Post at the customer's hour. Somebody proofreading their post until
+   * the minute they meant to publish it is the most natural pause there is.
+   * Capped so a wrong clock can never hold a browser hostage for an hour.
+   */
+  if (input.notBefore && !input.rehearse) {
+    const wait = Math.min(input.notBefore.getTime() - Date.now(), 15 * 60 * 1000);
+    if (wait > 0) {
+      log("post is ready early, holding the click for its slot", {
+        forSeconds: Math.round(wait / 1000),
+      });
+      await sleep(wait);
+    }
   }
 
   // Scoped first, then the whole page. The composer is a page of its own now

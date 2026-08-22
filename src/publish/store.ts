@@ -138,6 +138,29 @@ export function jitterMsFor(postId: string): number {
   return (digest.readUInt32BE(0) % (MAX_JITTER_MS + 1));
 }
 
+/**
+ * How early the direct path opens its session before the slot.
+ *
+ * Composing takes 3 to 8 minutes at a human pace, and it used to START at the
+ * slot, which put every directly published post that much past its hour.
+ * Starting early moves all the slow work before the hour; the Post click
+ * itself is held until the slot plus clickJitterMsFor, so the post appears
+ * within a couple of minutes of the time the customer picked, never ten
+ * (Nicolas, 2026-08-22).
+ */
+export const DIRECT_HEAD_START_MS = 10 * 60 * 1000;
+
+/**
+ * The pause between the slot and the actual Post click, seeded per post.
+ *
+ * 15 to 150 seconds: enough that no account ever posts on the exact second,
+ * which is its own robot signature, and small enough that an 18:00 post still
+ * reads as 18:00 on the feed.
+ */
+export function clickJitterMsFor(postId: string): number {
+  return 15_000 + (jitterMsFor(postId) % 135_000);
+}
+
 /** How far ahead of its slot this particular post gets written. Fixed per post. */
 export function leadMsFor(postId: string): number {
   const digest = createHash("sha256").update(`${postId}:lead`).digest();
@@ -188,15 +211,17 @@ export function actionFor(
   const untilSlot = slot - at;
 
   // Preparation has had its rounds. Leave the account alone and take the
-  // direct path at the slot, exactly as if the lead had run out.
+  // direct path, opening early so the click can land at the slot.
   if (post.attempts >= PREPARE_TRY_BUDGET) {
-    return slot + jitterMsFor(post.id) <= at ? "publish" : "wait";
+    return slot - DIRECT_HEAD_START_MS <= at ? "publish" : "wait";
   }
 
   // Too close for LinkedIn's picker to be worth it, so it goes out the direct
-  // way at its slot, with jitter so it never lands on the exact second.
+  // way: the session opens ahead of the slot, the composing happens in that
+  // head start, and publishPost holds the finished post until the slot plus
+  // its own small click jitter.
   if (untilSlot <= MIN_NATIVE_LEAD_MS) {
-    return slot + jitterMsFor(post.id) <= at ? "publish" : "wait";
+    return slot - DIRECT_HEAD_START_MS <= at ? "publish" : "wait";
   }
 
   if (at < slot - leadMsFor(post.id)) return "wait";
