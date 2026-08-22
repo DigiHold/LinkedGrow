@@ -293,7 +293,20 @@ const BUTTON_NAME = {
  * "Next" carousel arrow can never be the target, and classic composers, which
  * have no such dialog, never trigger it.
  */
-async function pressAcrossClosedShadow(page: Page, name: RegExp): Promise<boolean> {
+type AxButton = { name: string; disabled: boolean; backendDOMNodeId: number };
+type AxDialogView = { hasDialog: boolean; hasProgress: boolean; buttons: AxButton[] };
+
+/**
+ * What the dialogs on screen offer right now, read from the AX tree.
+ *
+ * One CDP pass collects every button inside every open dialog, with its
+ * accessible name and disabled state, plus whether any progressbar is running
+ * inside a dialog. This is the only honest witness on the fully closed-shadow
+ * composer (2026-08-22): the serialized DOM holds nothing but the feed there,
+ * so every locator-based check reads the wrong document.
+ */
+async function scanDialogsAX(page: Page): Promise<AxDialogView> {
+  const view: AxDialogView = { hasDialog: false, hasProgress: false, buttons: [] };
   try {
     const cdp = await page.context().newCDPSession(page);
     try {
@@ -305,28 +318,61 @@ async function pressAcrossClosedShadow(page: Page, name: RegExp): Promise<boolea
         role?: { value?: string };
         name?: { value?: string };
         backendDOMNodeId?: number;
+        properties?: { name?: string; value?: { value?: unknown } }[];
       };
       const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as { nodes: AxNode[] };
       const byId = new Map(nodes.map((n) => [n.nodeId, n]));
-      let hit: AxNode | null = null;
       for (const d of nodes.filter((n) => (n.role?.value ?? "") === "dialog")) {
+        view.hasDialog = true;
         const stack = [...(d.childIds ?? [])];
-        while (stack.length && !hit) {
+        while (stack.length) {
           const n = byId.get(stack.pop()!);
           if (!n) continue;
-          if (
-            (n.role?.value ?? "") === "button" &&
-            name.test((n.name?.value ?? "").trim()) &&
-            n.backendDOMNodeId
-          ) {
-            hit = n;
-            break;
+          const role = n.role?.value ?? "";
+          if (role === "progressbar") view.hasProgress = true;
+          if (role === "button" && n.backendDOMNodeId) {
+            view.buttons.push({
+              name: (n.name?.value ?? "").trim(),
+              disabled: (n.properties ?? []).some(
+                (p) => p.name === "disabled" && p.value?.value === true
+              ),
+              backendDOMNodeId: n.backendDOMNodeId,
+            });
           }
           stack.push(...(n.childIds ?? []));
         }
-        if (hit) break;
       }
-      if (!hit?.backendDOMNodeId) return false;
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    // An unreadable tree reads as no dialog, and the DOM paths take over.
+  }
+  return view;
+}
+
+/**
+ * Presses a button that lives behind a CLOSED shadow root.
+ *
+ * The redesigned composer's photo Editor is one (2026-08-21): the screen shows
+ * the dialog and its blue Next while the serialized DOM contains no "Editor"
+ * at all, and the only DOM button named Next is a feed carousel arrow behind
+ * the overlay. Locators cannot pierce a closed root, so this borrows the
+ * pattern the live-check delete already proved: the browser's AX tree still
+ * names every rendered control and carries its DOM backend id, CDP turns that
+ * id into a box on screen, and a mouse click on that box needs no DOM access.
+ * The search is scoped to buttons INSIDE an open dialog, so the feed's own
+ * "Next" carousel arrow can never be the target, and classic composers, which
+ * have no such dialog, never trigger it. A disabled button is never pressed.
+ */
+async function pressAcrossClosedShadow(page: Page, name: RegExp): Promise<boolean> {
+  try {
+    const view = await scanDialogsAX(page);
+    const hit = view.buttons.find((b) => name.test(b.name) && !b.disabled);
+    if (!hit) return false;
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("DOM.enable").catch(() => {});
       const { model } = (await cdp.send("DOM.getBoxModel", {
         backendNodeId: hit.backendDOMNodeId,
       })) as { model: { content: number[] } };
@@ -409,7 +455,8 @@ async function waitForUpload(
    * That is safe for finding a button and unsafe for deciding whether an upload
    * is running, so the progress check below uses the narrowest scope available.
    */
-  const composer = (await firstVisible(page.locator("dialog[open]"))) ?? dialog;
+  const composer =
+    (await firstVisible(page.locator('div[role="dialog"], dialog[open]'))) ?? dialog;
 
   while (Date.now() < deadline) {
     await sleep(1500);
@@ -466,13 +513,34 @@ async function waitForUpload(
        The guard below keeps classic accounts safe: Next is only pressed
        when no Post button is visible anywhere. */
     if (mimeType?.startsWith("video/") || mimeType?.startsWith("image/")) {
-      if (!(await firstVisible(dialog.locator(SEL.uploadProgress)))) {
+      const domComposer = await firstVisible(
+        page.locator('div[role="dialog"], dialog[open]')
+      );
+      if (!domComposer) {
+        /* The whole composer is behind a closed shadow root. Every DOM check
+           in this loop is blind here, and `dialog` fell back to body, where a
+           feed video's own progressbar reads as "still uploading" for ever:
+           that is what stalled the fleet on 2026-08-21. The AX tree is the
+           only witness, so in this mode it makes every decision alone. */
+        const ax = await scanDialogsAX(page);
+        if (ax.hasDialog) {
+          const enabled = (name: RegExp) =>
+            ax.buttons.some((b) => name.test(b.name) && !b.disabled);
+          if (!ax.hasProgress && enabled(BUTTON_NAME.post)) return;
+          if (!ax.hasProgress && enabled(BUTTON_NAME.next)) {
+            if (await pressAcrossClosedShadow(page, BUTTON_NAME.next)) {
+              await dwell(1500, 3000);
+            }
+          }
+          continue;
+        }
+      } else if (!(await firstVisible(domComposer.locator(SEL.uploadProgress)))) {
         const alreadyPostable = await firstVisible(namedButton(page, BUTTON_NAME.post));
         if (!alreadyPostable) {
           /* The closed-shadow Editor first: on those accounts the DOM-visible
              "Next" is a feed carousel arrow, and clicking it does nothing for
-             the dialog on top. The AX-guarded keyboard press comes before the
-             locator for exactly that reason. */
+             the dialog on top. The AX-guarded press comes before the locator
+             for exactly that reason. */
           if (await pressAcrossClosedShadow(page, BUTTON_NAME.next)) {
             await dwell(1500, 3000);
           } else {
@@ -596,39 +664,53 @@ async function attachMedia(
       `LinkedIn did not offer a way to attach a ${wanted.toLowerCase()} (looked for ${wantedNames.join(" or ")}), so nothing was posted.`
     );
   }
+  /* Listening BEFORE the click: the closed-shadow composer opens the picker
+     natively off the entry itself and never mounts a file input in the DOM,
+     which is how Mohamed's photo died with "would not accept the attachment"
+     on 2026-08-22. On classic composers no chooser fires and this resolves
+     null while the input hunt below does its usual job. */
+  const nativePicker = page
+    .waitForEvent("filechooser", { timeout: 8_000 })
+    .catch(() => null);
   await clickHumanLocator(page, addMedia);
   await dwell(900, 2200);
 
-  // Mounted by the click above, and not necessarily inside the scoped
-  // container, so the page is the fallback here as well.
-  await page
-    .waitForSelector(SEL.fileInput, { state: "attached", timeout: 10_000 })
-    .catch(() => {});
-  let input = dialog.locator(SEL.fileInput).first();
-  if ((await input.count()) === 0) input = page.locator(SEL.fileInput).first();
-
-  if ((await input.count()) === 0) {
-    /**
-     * A document has one more step: LinkedIn shows a "Share a document" screen
-     * with a Choose file button, and there is no input in the page at all until
-     * that button is pressed. Waiting for one is waiting for something that
-     * will never exist, which is how a carousel failed with "LinkedIn would not
-     * accept the attachment" on a composer that was working perfectly.
-     *
-     * The file-chooser event covers both shapes: an input created on click, and
-     * a native dialog.
-     */
-    const chooser = await firstVisible(page.locator(SEL.chooseFile));
-    if (!chooser) {
-      throw new PublishError("LinkedIn would not accept the attachment, so nothing was posted.");
-    }
-    const [picker] = await Promise.all([
-      page.waitForEvent("filechooser", { timeout: 15_000 }),
-      clickHumanLocator(page, chooser),
-    ]);
+  const picker = await nativePicker;
+  if (picker) {
     await picker.setFiles(filePath);
   } else {
-    await input.setInputFiles(filePath);
+    // Mounted by the click above, and not necessarily inside the scoped
+    // container, so the page is the fallback here as well.
+    await page
+      .waitForSelector(SEL.fileInput, { state: "attached", timeout: 10_000 })
+      .catch(() => {});
+    let input = dialog.locator(SEL.fileInput).first();
+    if ((await input.count()) === 0) input = page.locator(SEL.fileInput).first();
+
+    if ((await input.count()) === 0) {
+      /**
+       * A document has one more step: LinkedIn shows a "Share a document"
+       * screen with a Choose file button, and there is no input in the page at
+       * all until that button is pressed. Waiting for one is waiting for
+       * something that will never exist, which is how a carousel failed with
+       * "LinkedIn would not accept the attachment" on a composer that was
+       * working perfectly.
+       *
+       * The file-chooser event covers both shapes: an input created on click,
+       * and a native dialog.
+       */
+      const chooser = await firstVisible(page.locator(SEL.chooseFile));
+      if (!chooser) {
+        throw new PublishError("LinkedIn would not accept the attachment, so nothing was posted.");
+      }
+      const [latePicker] = await Promise.all([
+        page.waitForEvent("filechooser", { timeout: 15_000 }),
+        clickHumanLocator(page, chooser),
+      ]);
+      await latePicker.setFiles(filePath);
+    } else {
+      await input.setInputFiles(filePath);
+    }
   }
   await waitForUpload(page, dialog, mimeType, postText);
 
@@ -898,6 +980,19 @@ async function useScheduler(
   const clock = /am|pm/i.test(prefilledTime) ? "h12" : "h24";
 
   await setField(page, dateField, formatDateFor(order, wanted));
+
+  /* Typing in the date leaves the calendar dropdown open, and it sits exactly
+     on top of the time field: the click below then never lands (84 blocked
+     retries on Ahmed's post, 2026-08-22, until the whole attempt timed out).
+     Escape closes the dropdown and only the dropdown; if it took the panel
+     with it, the read-back below reports empty fields and the post falls
+     back to going out at its slot, which is the safe direction. */
+  for (let i = 0; i < 2; i++) {
+    if (!(await firstVisible(page.locator(".artdeco-calendar__wrapper")))) break;
+    await page.keyboard.press("Escape").catch(() => {});
+    await sleep(randInt(400, 900));
+  }
+
   await setField(page, timeField, formatTimeFor(clock, wanted));
 
   // Read it back. A field that reformats what was typed, or silently rejects
@@ -1078,10 +1173,21 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
     (await firstVisible(namedButton(dialog, BUTTON_NAME.post))) ??
     (await firstVisible(namedButton(page, BUTTON_NAME.post))) ??
     (await firstVisible(page.locator(SEL.postButton)));
+
+  /* On the fully closed-shadow composer no locator can see the Post button;
+     the AX tree can, disabled state included, and the geometry click needs no
+     DOM access. The feed read-back below stays the only proof either way. */
+  let axPost: AxButton | null = null;
   if (!postButton) {
-    throw new PublishError("The Post button was not there, so nothing was published.");
+    const ax = await scanDialogsAX(page);
+    axPost = ax.buttons.find((b) => BUTTON_NAME.post.test(b.name)) ?? null;
+    if (!axPost) {
+      throw new PublishError("The Post button was not there, so nothing was published.");
+    }
   }
-  const disabled = await postButton.isDisabled().catch(() => true);
+  const disabled = postButton
+    ? await postButton.isDisabled().catch(() => true)
+    : axPost === null || axPost.disabled;
 
   // Everything above happened. Nothing below does.
   if (input.rehearse) {
@@ -1103,10 +1209,14 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   if (disabled) {
     throw new PublishError("LinkedIn kept the Post button disabled, so nothing was published.");
   }
-  await clickHumanLocator(page, postButton);
-
-  // The dialog closing is the first sign it went, and it is not proof.
-  await dialog.waitFor({ state: "hidden", timeout: 60_000 }).catch(() => {});
+  if (postButton) {
+    await clickHumanLocator(page, postButton);
+    // The dialog closing is the first sign it went, and it is not proof.
+    await dialog.waitFor({ state: "hidden", timeout: 60_000 }).catch(() => {});
+  } else if (!(await pressAcrossClosedShadow(page, BUTTON_NAME.post))) {
+    // Nothing was pressed, so throwing cannot double-post.
+    throw new PublishError("The Post button was not there, so nothing was published.");
+  }
   await dwell(2500, 4500);
 
   if (!input.profileUrl) return { url: null, verified: false, scheduled: false };

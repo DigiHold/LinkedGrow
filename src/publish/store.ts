@@ -29,6 +29,18 @@ export const CLAIM_LEASE_MS = 20 * 60 * 1000;
 export const MAX_PUBLISH_ATTEMPTS = 3;
 
 /**
+ * Preparation rounds before LinkedIn's scheduler is left alone.
+ *
+ * Preparation is optional sugar: the direct path at the slot is the safety
+ * net. Two failed rounds mean the picker is not cooperating tonight, and a
+ * third composer session on the customer's account buys nothing but risk, so
+ * past this the post waits quietly and goes out the direct way. It exists
+ * because these rounds used to be billed as publish attempts, which killed a
+ * post 5 hours before its own slot on 2026-08-22.
+ */
+export const PREPARE_TRY_BUDGET = 2;
+
+/**
  * The widest a scheduled post may drift past its slot.
  *
  * Only reached by a post that missed its own preparation window, because a
@@ -174,6 +186,12 @@ export function actionFor(
   }
 
   const untilSlot = slot - at;
+
+  // Preparation has had its rounds. Leave the account alone and take the
+  // direct path at the slot, exactly as if the lead had run out.
+  if (post.attempts >= PREPARE_TRY_BUDGET) {
+    return slot + jitterMsFor(post.id) <= at ? "publish" : "wait";
+  }
 
   // Too close for LinkedIn's picker to be worth it, so it goes out the direct
   // way at its slot, with jitter so it never lands on the exact second.
@@ -643,7 +661,14 @@ export async function failOrRequeue(
   message: string
 ): Promise<"failed" | "requeued"> {
   const now = nowSeconds();
-  if (post.attempts >= MAX_PUBLISH_ATTEMPTS) {
+  // A scheduled post may have spent PREPARE_TRY_BUDGET rounds on the native
+  // scheduler before its slot ever arrived. Those rounds stay counted so
+  // actionFor knows to stop preparing, and the cap grows by the same amount so
+  // the direct path at the slot keeps its full three tries.
+  const cap = post.wasScheduled
+    ? MAX_PUBLISH_ATTEMPTS + PREPARE_TRY_BUDGET
+    : MAX_PUBLISH_ATTEMPTS;
+  if (post.attempts >= cap) {
     await db().execute({
       sql: `UPDATE posts
                SET status = 'failed', error_message = ?, publish_claimed_at = NULL, updated_at = ?

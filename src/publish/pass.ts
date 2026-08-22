@@ -338,11 +338,26 @@ async function handleJobFailure(
   action: PostAction,
   error: unknown
 ): Promise<void> {
-  if (error instanceof ScheduleUnavailableError) {
+  /**
+   * ANY failure during preparation falls back, not only the polite ones.
+   *
+   * The first version only spared `error instanceof ScheduleUnavailableError`,
+   * and a datepicker whose calendar sat on the time field threw a raw locator
+   * timeout instead: three of those marked Ahmed's post failed at 00:45 for an
+   * 05:30 slot (2026-08-22), which is exactly the outcome this function exists
+   * to prevent. The round stays counted (keepAttempt) so actionFor stops
+   * preparing after PREPARE_TRY_BUDGET and the account is left alone until the
+   * slot; the direct path keeps its own full set of tries on top.
+   */
+  if (action === "prepare") {
     logError("LinkedIn's scheduler could not be used, falling back to posting at the slot", error, {
       postId: post.id,
     });
-    await releaseScheduled(post.id, null).catch(() => {});
+    const message =
+      error instanceof ScheduleUnavailableError || error instanceof PublishError
+        ? error.message
+        : "LinkedIn's scheduler could not be driven; the post goes out at its slot instead.";
+    await releaseScheduled(post.id, message, true).catch(() => {});
     return;
   }
 
