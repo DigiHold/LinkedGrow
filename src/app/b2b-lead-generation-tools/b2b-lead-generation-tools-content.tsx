@@ -277,6 +277,7 @@ export function B2bLeadGenerationToolsContent({
         headline="Related Resources"
         links={[
           { title: "AI SDR Software", href: "/ai-sdr-software", type: "page" },
+          { title: "AI Sales Tools", href: "/ai-sales-tools", type: "page" },
           { title: "LinkedIn Lead Generation Tools", href: "/linkedin-lead-generation-tools", type: "page" },
           { title: "Buying Signals", href: "/features/buying-signals", type: "feature" },
           { title: "Lead Generation Use Case", href: "/use-cases/lead-generation", type: "page" },
