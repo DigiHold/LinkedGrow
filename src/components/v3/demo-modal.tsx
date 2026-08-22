@@ -39,7 +39,7 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
         aria-label="Close demo"
         tabIndex={-1}
       />
-      <div className="absolute inset-3 grid overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-slate-900 sm:inset-6 lg:grid-cols-[1.35fr_1fr]">
+      <div className="absolute inset-3 flex flex-col overflow-y-auto rounded-3xl bg-white shadow-2xl dark:bg-slate-900 sm:inset-6 lg:grid lg:grid-cols-[1fr_385px] lg:overflow-hidden">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 z-[3] flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55"
@@ -48,8 +48,9 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
           <X className="h-5 w-5" />
         </button>
 
-        {/* The video side, left and wider: the pitch before the calendar */}
-        <div className="relative hidden flex-col justify-center bg-slate-950 p-6 sm:p-10 lg:flex">
+        {/* The video side: left on desktop and as wide as the 385px booking
+            column allows; on top of the booking on mobile. */}
+        <div className="relative flex shrink-0 flex-col justify-center bg-slate-950 p-5 sm:p-8 lg:p-10">
           <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-blue-600/20 blur-3xl" />
           <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_28px_70px_-24px_rgba(0,0,0,.85)]">
@@ -68,8 +69,8 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
           </p>
         </div>
 
-        {/* The booking side, under its own heading */}
-        <div className="flex min-h-0 flex-col overflow-y-auto">
+        {/* The booking side, under its own heading, capped at 385px on desktop */}
+        <div className="flex min-h-0 flex-col lg:overflow-y-auto">
           <div className="px-6 pb-2 pt-7 sm:px-9 sm:pt-9">
             <h2 className="font-display text-[26px] font-bold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-[30px]">
               Let&apos;s build an agent{" "}
