@@ -13,12 +13,9 @@ import { EmojiPicker } from "./emoji-picker";
 const NICOLAS_AVATAR =
   "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/nicolas-lecocq-2026.avif";
 
-/**
- * The pricing-page teaser video. Placeholder clip while Nicolas records his
- * own; swap this URL when his file lands on R2.
- */
+/** The pricing-page teaser: Nicolas waving, 4 seconds, looped by the player. */
 const PRICING_VIDEO_URL =
-  "https://cdn-captiwate.com/settings/98457d93-1d6f-405b-a268-844c60ae151e.mp4";
+  "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/videos/chatbot-teaser-nicolas.mp4";
 
 const SUGGESTED_QUESTIONS = [
   "How do I create my first agent?",
