@@ -422,7 +422,7 @@ export default function ChatWidget() {
           only: under 640px it never shows. */}
       {!isDashboard && showVideo && !isOpen && (
         <div
-          className="fixed bottom-5 right-5 z-[9996] hidden sm:block"
+          className="fixed bottom-5 right-5 z-[9994] hidden sm:block"
           style={{ animation: "chat-teaser-in 0.45s ease-out forwards" }}
         >
           <style>{`
