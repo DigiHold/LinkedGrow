@@ -79,7 +79,7 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
               <span className="bg-linear-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">together</span>
             </h2>
             <p className="mt-1.5 text-[14px] text-slate-500 dark:text-slate-400">
-              15 minutes live with Nicolas, the founder, on your own website.
+              15 minutes live with me, Nicolas, on your own website.
             </p>
           </div>
           <div className="px-2 pb-4">
