@@ -483,6 +483,32 @@ export async function countActionsSince(
   return Number(rows[0]?.total ?? 0);
 }
 
+/**
+ * Outbound messages in the window, split by lane.
+ *
+ * Replies (the converse step, recorded as the action's detail) answer
+ * somebody who already wrote to this account. A human always answers those,
+ * so they run outside the outreach budget with their own brake, while hello,
+ * intro and ask stay inside dmPerDayMax. Account-wide for the same reason
+ * countActionsSince is: LinkedIn watches the profile, not our agents.
+ */
+export async function countDmSince(
+  ctx: DB,
+  sinceIso: string,
+  lane: "replies" | "outreach"
+): Promise<number> {
+  const since = Math.floor(new Date(sinceIso).getTime() / 1000);
+  // Matches RELATIONSHIP_STEPS.converse, the step sendStep writes as detail.
+  const { rows } = await db().execute({
+    sql: `SELECT COUNT(*) AS total FROM agent_actions
+          WHERE workspace_id = ? AND linkedin_account_id = ?
+            AND type = 'dm' AND detail ${lane === "replies" ? "=" : "!="} 'converse'
+            AND created_at >= ?`,
+    args: [ctx.workspaceId, ctx.linkedinAccountId, since],
+  });
+  return Number(rows[0]?.total ?? 0);
+}
+
 export async function countProspectsByStatus(ctx: DB, status: string): Promise<number> {
   const { rows } = await db().execute({
     sql: `SELECT COUNT(*) AS total FROM agent_leads

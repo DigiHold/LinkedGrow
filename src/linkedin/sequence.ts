@@ -25,6 +25,7 @@ import {
   countOutboundStep,
   recordAction,
   countActionsSince,
+  countDmSince,
   countProspectsByStatus,
   accountWarmupStart,
   announce,
@@ -99,6 +100,15 @@ function isDue(p: ProspectRow, range: readonly [number, number]): boolean {
 
 /** Invites still unaccepted after this many days are given up on (stale-invite handling). */
 const STALE_CONNECT_DAYS = 21;
+
+/**
+ * The runaway brake on the reply lane, per account per day.
+ *
+ * Replies do not consume the outreach budget (a person answers everyone who
+ * writes to them), so this is the only thing standing between a bug and an
+ * account mass-messaging its own inbox. No human answers 40 threads a day.
+ */
+const REPLIES_PER_DAY_BRAKE = 40;
 
 export interface SequenceDeps {
   actions: LinkedInActions;
@@ -400,16 +410,28 @@ function normalizeName(name: string): string {
 async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: () => Promise<void>): Promise<void> {
   // Both ceilings, and the smaller one wins, the same way invitations are
   // bounded. Counted on the LinkedIn account rather than the agent, because the
-  // limit is LinkedIn's and LinkedIn watches the profile.
-  const today = cfg.limits.dmPerDayMax - (await countActionsSince(db, "dm", dayAgoIso()));
-  const thisWeek = cfg.limits.dmPerWeekMax - (await countActionsSince(db, "dm", weekAgoIso()));
+  // limit is LinkedIn's and LinkedIn watches the profile. Outreach only:
+  // replies run in their own lane below.
+  const today = cfg.limits.dmPerDayMax - (await countDmSince(db, dayAgoIso(), "outreach"));
+  const thisWeek = cfg.limits.dmPerWeekMax - (await countDmSince(db, weekAgoIso(), "outreach"));
   let budget = Math.min(today, thisWeek);
-  if (budget <= 0) return;
+
+  /**
+   * Somebody who wrote to this account gets answered whatever the outreach
+   * budget spent today: a human answers everyone who writes, and rationing
+   * answers behind hellos is how a reply once waited days. Answering a
+   * 1st-degree connection who just messaged you is also the least risky
+   * message an account ever sends. The ceiling here is a runaway brake, not
+   * pacing: no human answers 40 threads a day, so reaching it means a bug,
+   * and stopping is the point.
+   */
+  let replyAllowance =
+    REPLIES_PER_DAY_BRAKE - (await countDmSince(db, dayAgoIso(), "replies"));
 
   // 1. Answer the people who wrote back, up to the cap on how many times the
   //    agent will answer before it has to come to the point.
   for (const p of await getProspects(db, STATUS.conversing)) {
-    if (budget <= 0) break;
+    if (replyAllowance <= 0) break;
 
     const turns = await countOutboundStep(db, p.id, RELATIONSHIP_STEPS.converse);
     if (turns >= PACING.maxConverseTurns) continue; // the ask picks them up below
@@ -438,9 +460,13 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
     ]);
     if (Date.now() / 1000 < last.at + delayHours * 3600) continue;
 
-    if (await sendStep(cfg, db, deps, p, RELATIONSHIP_STEPS.converse, STATUS.conversing)) budget--;
+    if (await sendStep(cfg, db, deps, p, RELATIONSHIP_STEPS.converse, STATUS.conversing)) {
+      replyAllowance--;
+    }
     await pause();
   }
+
+  if (budget <= 0) return;
 
   // 2. The hello, once they have accepted. Same day, never the same minute.
   //    Two lines, no question, nothing asked for.
