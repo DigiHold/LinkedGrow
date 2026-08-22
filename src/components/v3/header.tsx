@@ -130,7 +130,14 @@ const PROG =
   "prog fixed left-0 top-0 z-[995] h-0.5 w-0 shadow-[0_0_12px_rgba(21,93,252,.6)] " +
   "[background:linear-gradient(90deg,var(--color-v3-cyan),var(--color-v3-blue))]";
 
-export function V3Header({ onDark = false }: { onDark?: boolean }) {
+export function V3Header({
+  onDark = false,
+  progress = false,
+}: {
+  onDark?: boolean;
+  /** The reading progress bar. Articles only: a marketing page has no "how far in am I" to answer. */
+  progress?: boolean;
+}) {
   const { data: session, status } = useSession();
   const [demoOpen, setDemoOpen] = useState(false);
   // Until the session resolves, neither state is shown: rendering "Sign in" to
@@ -147,14 +154,16 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
         V3_BLOCK +
         // An inner page opens with the nav already formed, so it must not
         // animate in from the transparent state on first paint.
-        (onDark ? "" : " [&_.navhold]:[transition:none] [&_.prog]:hidden")
+        (onDark ? "" : " [&_.navhold]:[transition:none]")
       }
     >
       <svg width="0" height="0" className="absolute" aria-hidden="true"><defs>
         <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#00b8db" /><stop offset="1" stopColor="#155dfc" /></linearGradient>
         <symbol id="mark" viewBox="0 0 379 230"><path d="M205.9185,32.0339c.9512,8.7484,8.8874,15.128,17.6358,14.1767l88.8761-9.6638-93.389,116.1758-93.3595-75.0479c-6.8339-5.4935-16.9741-4.3909-22.4676,2.443L3.9774,203.5681c-5.4935,6.8339-4.3909,16.9741,2.443,22.4676,6.8339,5.4935,16.9741,4.3909,22.4676-2.443l89.2246-110.9953,93.3595,75.0479c6.8339,5.4935,16.9741,4.3909,22.4676-2.443l103.4013-128.631,9.6638,88.8761c.9512,8.7484,8.8874,15.128,17.6358,14.1767s15.128-8.8874,14.1767-17.6358l-13.8363-127.25c-.9512-8.7484-8.8874-15.128-17.6358-14.1767l-127.25,13.8363c-8.7484.9512-15.128,8.8874-14.1767,17.6358Z" /></symbol>
       </defs></svg>
-    <div className={PROG} id="prog"></div>
+    {/* Kept in the DOM even when invisible: chrome-effects bails out of the
+        whole nav handler when #prog is missing. */}
+    <div className={PROG + (progress ? "" : " hidden")} id="prog"></div>
 
     {/*═══ LAUNCH BANNER ═══*/}
     <Link href="/sign-up" className={BANNER} aria-label="LinkedGrow v2 launch offer: 30% off for 3 months">
