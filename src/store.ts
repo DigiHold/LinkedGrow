@@ -313,9 +313,9 @@ export async function recordInbound(
 export async function getThread(
   ctx: DB,
   prospectId: number
-): Promise<{ from: "us" | "them"; body: string }[]> {
+): Promise<{ from: "us" | "them"; body: string; at: number }[]> {
   const res = await db().execute({
-    sql: `SELECT direction, body FROM agent_messages
+    sql: `SELECT direction, body, sent_at FROM agent_messages
           WHERE workspace_id = ? AND agent_id = ? AND lead_id = ?
           ORDER BY sent_at ASC, created_at ASC`,
     args: [ctx.workspaceId, ctx.agentId, uuidFor(prospectId)],
@@ -323,6 +323,9 @@ export async function getThread(
   return res.rows.map((r) => ({
     from: String(r.direction) === "in" ? ("them" as const) : ("us" as const),
     body: String(r.body),
+    // Unix seconds. The converse step measures its reply delay from this,
+    // because it is the one clock nothing else in the system ever touches.
+    at: Number(r.sent_at ?? 0),
   }));
 }
 

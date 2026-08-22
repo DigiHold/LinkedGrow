@@ -434,8 +434,11 @@ test("a conversation gets an answer, and the answer is not the ask", async () =>
   const db = await freshDb();
   const id = await seed(db, STATUS.conversing, daysAgo(1));
   // Conversing means they wrote last; without their message there is nothing
-  // to answer and the guard below holds the agent's tongue.
-  const past = Math.floor(Date.now() / 1000) - 7200;
+  // to answer and the guard below holds the agent's tongue. The message is
+  // 4 hours old because the reply delay is now measured from the message
+  // itself (30 to 180 minutes, seeded per lead), not from the row's
+  // updated_at: past 3 hours, every seed is due.
+  const past = Math.floor(Date.now() / 1000) - 4 * 3600;
   await sharedDb().execute({
     sql: `INSERT INTO agent_messages (id, workspace_id, agent_id, lead_id, direction, step, body, sent_at, created_at)
           VALUES (?, ?, ?, ?, 'in', NULL, 'That sounds a lot like what I run into too', ?, ?)`,

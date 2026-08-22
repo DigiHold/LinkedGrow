@@ -239,7 +239,27 @@ async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<vo
       // Store only what is new, so a re-read does not duplicate the thread.
       const known = await getThread(db, p.id);
       const knownInbound = known.filter((t) => t.from === "them").length;
-      for (const turn of theirs.slice(knownInbound)) {
+      const fresh = theirs.slice(knownInbound);
+
+      /**
+       * Nothing new means nothing to do. The inbox keeps showing this thread
+       * under "they replied" until the agent answers, so without this exit
+       * every pass re-ran the whole handler on the same message: one model
+       * read, a counted reply action, and a status write whose row touch
+       * reset the updated_at clock. That loop kept Ekwealor's answer 3 days
+       * behind (2026-08-19 to 22). Only the post-reply states skip: a state
+       * still waiting for its transition, from a crash between the ingest
+       * and the status write, gets its re-run.
+       */
+      if (
+        fresh.length === 0 &&
+        (status === STATUS.conversing || status === STATUS.helloAnswered)
+      ) {
+        await pause();
+        continue;
+      }
+
+      for (const turn of fresh) {
         await recordInbound(db, p.id, turn.body);
       }
       await recordAction(db, p.id, "reply", p.profile_url);
@@ -390,7 +410,6 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
   //    agent will answer before it has to come to the point.
   for (const p of await getProspects(db, STATUS.conversing)) {
     if (budget <= 0) break;
-    if (!isDue(p, [PACING.replyDelayMinutes[0] / 60, PACING.replyDelayMinutes[1] / 60])) continue;
 
     const turns = await countOutboundStep(db, p.id, RELATIONSHIP_STEPS.converse);
     if (turns >= PACING.maxConverseTurns) continue; // the ask picks them up below
@@ -403,7 +422,21 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
      * belongs to the ask, on its own clock below.
      */
     const thread = await getThread(db, p.id);
-    if ([...thread].reverse()[0]?.from !== "them") continue;
+    const last = [...thread].reverse()[0];
+    if (last?.from !== "them") continue;
+
+    /**
+     * Due is measured from THEIR message, never from the row's updated_at.
+     * The inbox sync touches the lead row on every pass it processes, and a
+     * clock anchored on updated_at reset with every touch: Ekwealor's answer
+     * starved for 3 days behind that loop (2026-08-19 to 22) while the agent
+     * kept logging that it would answer on the next pass.
+     */
+    const delayHours = dueAfterHours(p.id, [
+      PACING.replyDelayMinutes[0] / 60,
+      PACING.replyDelayMinutes[1] / 60,
+    ]);
+    if (Date.now() / 1000 < last.at + delayHours * 3600) continue;
 
     if (await sendStep(cfg, db, deps, p, RELATIONSHIP_STEPS.converse, STATUS.conversing)) budget--;
     await pause();
