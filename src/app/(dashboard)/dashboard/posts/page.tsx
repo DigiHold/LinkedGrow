@@ -56,7 +56,7 @@ function PostsHeaderActions() {
   );
 }
 
-type PostStatus = "all" | "draft" | "scheduled" | "published";
+type PostStatus = "all" | "draft" | "scheduled" | "published" | "failed";
 
 interface Post {
   id: string;
@@ -240,6 +240,7 @@ export default function PostsPage() {
     draft: posts.filter((p) => p.status === "draft").length,
     scheduled: posts.filter((p) => p.status === "scheduled").length,
     published: posts.filter((p) => p.status === "published").length,
+    failed: posts.filter((p) => p.status === "failed").length,
   };
 
   const tabs: { id: PostStatus; label: string; count: number }[] = [
@@ -247,6 +248,12 @@ export default function PostsPage() {
     { id: "draft", label: "Drafts", count: counts.draft },
     { id: "scheduled", label: "Scheduled", count: counts.scheduled },
     { id: "published", label: "Published", count: counts.published },
+    // Only when something actually failed: a post that vanishes from Scheduled
+    // without appearing anywhere is how Ahmed lost one on 2026-08-22. An empty
+    // red tab for everyone else would only raise blood pressure.
+    ...(counts.failed > 0
+      ? [{ id: "failed" as const, label: "Failed", count: counts.failed }]
+      : []),
   ];
 
   const filteredPosts = posts.filter((post) => {
