@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import {
   ArrowLeft,
   ArrowRight,
@@ -559,7 +560,21 @@ export function NewAgentWizard() {
     // surface sits above the dashboard chrome rather than fighting the layout.
     <div className="fixed inset-0 z-50 overflow-y-auto bg-white dark:bg-background">
       <div className="mx-auto w-full max-w-[960px] px-6 pb-24 pt-8 sm:pt-12">
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-1">
+          {/* The same camera as the site header: the presentation video, one
+              click away while somebody fills in their first agent. */}
+          <VideoModal
+            videoId="1MVCdQZiN9I"
+            triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            trigger={
+              <>
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21.165 9.187c0-.555 0-.833-.11-.961a.458.458 0 0 0-.384-.16c-.168.014-.365.21-.758.603L16.582 12l3.331 3.332c.393.392.59.588.758.602a.459.459 0 0 0 .385-.16c.11-.128.11-.406.11-.961V9.187Zm-18.333.796c0-1.54 0-2.31.3-2.898a2.75 2.75 0 0 1 1.202-1.202c.588-.3 1.358-.3 2.898-.3h4.95c1.54 0 2.31 0 2.899.3a2.75 2.75 0 0 1 1.201 1.202c.3.588.3 1.358.3 2.898v4.034c0 1.54 0 2.31-.3 2.898a2.75 2.75 0 0 1-1.201 1.202c-.589.3-1.359.3-2.899.3h-4.95c-1.54 0-2.31 0-2.898-.3a2.75 2.75 0 0 1-1.202-1.202c-.3-.588-.3-1.358-.3-2.898V9.983Z" />
+                </svg>
+                <span className="sr-only">Watch the demo video</span>
+              </>
+            }
+          />
           <Link href="/dashboard/agents">
             <Button variant="ghost" size="sm" className="text-muted-foreground">
               <ArrowLeft className="mr-2 h-4 w-4" />
