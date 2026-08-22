@@ -32,7 +32,7 @@ const NAVHOLD =
    nagging. */
 const BANNER =
   "group relative z-[88] flex h-11 items-center justify-center overflow-hidden px-4 " +
-  "[background:linear-gradient(96deg,var(--color-v3-cyan),var(--color-v3-blue))]";
+  "[background:linear-gradient(96deg,#fbbf24,#f97316)]";
 const NAV =
   "mx-auto flex max-w-[1180px] items-center gap-[22px] rounded-[17px] border border-[rgba(255,255,255,.15)] bg-[rgba(255,255,255,.07)] " +
   "py-[9px] pl-4 pr-2.5 [backdrop-filter:blur(18px)_saturate(1.6)] [transition:.4s_var(--ease-v3)] " +
@@ -167,24 +167,24 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
       `}</style>
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 w-1/3 bg-[linear-gradient(105deg,transparent,rgba(255,255,255,.28),transparent)]"
+        className="pointer-events-none absolute inset-y-0 w-1/3 bg-[linear-gradient(105deg,transparent,rgba(255,255,255,.45),transparent)]"
         style={{ animation: "lg-banner-sweep 5.5s ease-in-out infinite" }}
       />
-      <span className="flex min-w-0 items-center gap-2.5 text-[13.5px] font-semibold text-white">
-        <span className="hidden items-center gap-1.5 rounded-full bg-white/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[.08em] sm:flex">
+      <span className="flex min-w-0 items-center gap-3 text-[13.5px] font-bold text-slate-950">
+        <span className="hidden items-center gap-1.5 rounded-full bg-slate-950 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[.08em] text-white sm:flex">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-80" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400" />
           </span>
           v2 launch
         </span>
         <span className="truncate">
           30% off for 3 months.
-          <span className="hidden font-medium text-white/85 md:inline">
+          <span className="hidden font-semibold text-slate-950/75 md:inline">
             {" "}Find hundreds of high-intent leads in your first days.
           </span>
         </span>
-        <span className="flex shrink-0 items-center gap-1 underline underline-offset-[3px]">
+        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-950 px-3.5 py-1.5 text-[12.5px] font-bold text-white [transition:transform_.2s] group-hover:scale-[1.04]">
           Claim the offer
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="[transition:transform_.25s] group-hover:translate-x-0.5">
             <path d="M5 12h13M13 6l6 6-6 6" />
