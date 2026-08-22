@@ -232,7 +232,7 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
             <svg width="16" height="6" viewBox="0 0 16 6" fill="none" className="mx-auto block">
               <path d="M2 6H14L8.70711 0.707107C8.31658 0.316583 7.68342 0.316583 7.29289 0.707107L2 6Z" fill="#101828" />
             </svg>
-            <span className="block whitespace-nowrap rounded-[10px] bg-[#101828] px-3.5 py-2 text-[13px] font-semibold text-white">
+            <span className="block whitespace-nowrap rounded-[12px] bg-[#101828] px-5 py-3 text-[13.5px] font-semibold leading-none text-white shadow-[0_12px_30px_-10px_rgba(6,9,17,.5)]">
               Watch Demo Now
             </span>
           </span>

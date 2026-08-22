@@ -417,10 +417,12 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Pricing teaser video - appears after load, opens the chat */}
+      {/* Pricing teaser video: it takes the launcher's own spot, over the
+          face, and the face comes back the moment it is dismissed. Desktop
+          only: under 640px it never shows. */}
       {!isDashboard && showVideo && !isOpen && (
         <div
-          className="fixed bottom-[88px] right-5 z-[9995] hidden sm:block"
+          className="fixed bottom-5 right-5 z-[9996] hidden sm:block"
           style={{ animation: "chat-teaser-in 0.45s ease-out forwards" }}
         >
           <style>{`
@@ -429,10 +431,10 @@ export default function ChatWidget() {
               to { opacity: 1; transform: translateY(0) scale(1); }
             }
           `}</style>
-          <div className="group relative rounded-[26px] bg-gradient-to-br from-cyan-400 to-blue-600 p-[3px] shadow-[0_18px_50px_-18px_rgba(21,93,252,.55)] transition-transform duration-300 hover:scale-[1.04]">
+          <div className="group relative rounded-[20px] bg-gradient-to-br from-cyan-400 to-blue-600 p-[2px] shadow-[0_16px_44px_-16px_rgba(21,93,252,.6)] transition-transform duration-300 hover:scale-[1.05]">
             <button
               onClick={handleOpen}
-              className="block h-[236px] w-[172px] cursor-pointer overflow-hidden rounded-[23px]"
+              className="block h-[172px] w-[112px] cursor-pointer overflow-hidden rounded-[18px]"
               aria-label="Open chat"
             >
               <video
@@ -446,17 +448,18 @@ export default function ChatWidget() {
             </button>
             <button
               onClick={() => setVideoDismissed(true)}
-              className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-black/60 group-hover:opacity-100"
+              className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/45 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-black/65 group-hover:opacity-100"
               aria-label="Dismiss video"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       )}
 
-      {/* Chat bubble button - marketing pages only */}
-      {!isDashboard && (
+      {/* Chat bubble button - marketing pages only. Hidden while the teaser
+          video occupies its spot. */}
+      {!isDashboard && !(showVideo && !isOpen) && (
         <button
           onClick={isOpen ? handleClose : handleOpen}
           className="fixed bottom-5 right-5 z-[9995] block rounded-full transition-transform duration-300 hover:scale-105 active:scale-95"
