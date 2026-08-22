@@ -591,9 +591,12 @@ export default function ChatWidget() {
                         message.role === "user" ? "items-end" : "items-start"
                       )}
                     >
+                      {/* w-full, not max-w-full: the bubble's 80% cap resolves
+                          against this row, and a content-sized row shrank the
+                          cap onto the text itself, wrapping 4 words on 2 lines. */}
                       <div
                         className={cn(
-                          "flex max-w-full gap-2.5",
+                          "flex w-full gap-2.5",
                           message.role === "user" && "flex-row-reverse"
                         )}
                       >
