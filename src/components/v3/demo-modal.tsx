@@ -44,7 +44,7 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
         aria-label="Close demo"
         tabIndex={-1}
       />
-      <div className="absolute left-1/2 top-1/2 flex max-h-[calc(100vh-24px)] w-fit max-w-[calc(100vw-24px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-3xl bg-white shadow-2xl dark:bg-slate-900 max-lg:w-[calc(100vw-24px)] lg:flex-row lg:overflow-hidden">
+      <div className="absolute left-1/2 top-1/2 flex max-h-[calc(100vh-24px)] w-fit max-w-[calc(100vw-24px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-3xl bg-white shadow-2xl dark:bg-slate-900 max-lg:w-[calc(100vw-24px)] lg:flex-row lg:overflow-hidden [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600">
         <button
           onClick={onClose}
           className="absolute right-3 top-3 z-[3] flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55"
@@ -72,7 +72,7 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
 
         {/* The booking side, under its own heading, a fixed 385px on desktop */}
-        <div className="flex min-h-0 w-full flex-col lg:w-[385px] lg:overflow-y-auto">
+        <div className="flex min-h-0 w-full flex-col lg:w-[385px] lg:overflow-y-auto [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600">
           <div className="px-5 pb-1 pt-6">
             <h2 className="font-display text-[23px] font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
               Let&apos;s build an agent{" "}

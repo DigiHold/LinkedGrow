@@ -298,40 +298,36 @@ export function DemoBooker({
                   </span>
                   <span className="text-[12px] text-slate-500 dark:text-slate-400">Your time</span>
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-1.5">
-                  {daySlots.map((s) => {
-                    const isArmed = armed === s;
-                    if (isArmed) {
-                      return (
-                        <div key={s} className="flex shrink-0 gap-2">
-                          <span className="shrink-0 rounded-xl border-[1.5px] border-blue-600 px-4 py-2.5 text-center text-sm font-semibold tabular-nums text-blue-600">
-                            {time(s)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setStep(2)}
-                            className="shrink-0 rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 px-4 text-sm font-bold text-white"
-                          >
-                            Next ›
-                          </button>
-                        </div>
-                      );
-                    }
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setArmed(s)}
-                        className="shrink-0 rounded-xl border-[1.5px] border-slate-200 px-4 py-2.5 text-center text-sm font-semibold tabular-nums text-slate-900 transition-colors hover:border-blue-600 hover:text-blue-600 dark:border-slate-700 dark:text-white"
-                      >
-                        {time(s)}
-                      </button>
-                    );
-                  })}
+                <div className="flex gap-2 overflow-x-auto pb-1.5 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600">
+                  {daySlots.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setArmed(s)}
+                      className={
+                        armed === s
+                          ? "shrink-0 rounded-xl border-[1.5px] border-blue-600 bg-blue-50 px-4 py-2.5 text-center text-sm font-bold tabular-nums text-blue-600 dark:bg-blue-500/10"
+                          : "shrink-0 rounded-xl border-[1.5px] border-slate-200 px-4 py-2.5 text-center text-sm font-semibold tabular-nums text-slate-900 transition-colors hover:border-blue-600 hover:text-blue-600 dark:border-slate-700 dark:text-white"
+                      }
+                    >
+                      {time(s)}
+                    </button>
+                  ))}
                   {daySlots.length === 0 && (
                     <p className="text-sm text-slate-500">Nothing left on this day.</p>
                   )}
                 </div>
+                {/* Under the row rather than inline: squeezed between two
+                    chips, half out of view, nobody read it as the way forward. */}
+                {armed !== null && (
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="mt-3 w-full rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.01]"
+                  >
+                    Next ›
+                  </button>
+                )}
               </div>
             )}
             {!stacked && (
