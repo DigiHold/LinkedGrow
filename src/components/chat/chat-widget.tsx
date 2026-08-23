@@ -128,7 +128,7 @@ function InlineSupportForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
         />
       </div>
       <div>
@@ -138,7 +138,7 @@ function InlineSupportForm({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
         />
       </div>
       <div>
@@ -148,7 +148,7 @@ function InlineSupportForm({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe your issue or question..."
           rows={3}
-          className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
+          className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
         />
       </div>
       {status === "error" && (
@@ -492,7 +492,7 @@ export default function ChatWidget() {
       {(isOpen || (!isDashboard && hasInteracted)) && (
         <div
           className={cn(
-            "fixed z-[9995] flex flex-col overflow-hidden bg-white shadow-2xl transition-all duration-300 ease-in-out dark:bg-slate-900",
+            "fixed z-[9995] flex flex-col overflow-hidden overflow-x-hidden bg-white shadow-2xl transition-all duration-300 ease-in-out dark:bg-slate-900",
             // Mobile: full screen
             "inset-0 sm:inset-auto",
             // Desktop: floating panel
@@ -751,7 +751,7 @@ export default function ChatWidget() {
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
                 rows={1}
-                className="max-h-28 min-h-[52px] w-full resize-none rounded-t-2xl bg-transparent px-3.5 pb-2 pt-3.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="max-h-28 min-h-[52px] w-full resize-none rounded-t-2xl bg-transparent px-3.5 pb-2 pt-3.5 text-base text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-sm"
               />
               <div className="flex items-center justify-between px-2 pb-2">
                 <button
