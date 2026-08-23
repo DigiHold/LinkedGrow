@@ -454,12 +454,17 @@ export default function ChatWidget() {
         </div>
       )}
 
-      {/* Chat bubble button - marketing pages only. Hidden while the teaser
-          video occupies its spot. */}
-      {!isDashboard && !(showVideo && !isOpen) && (
+      {/* Chat bubble button - marketing pages only. While the teaser video
+          occupies its spot it hides on the SAME breakpoint the teaser shows
+          on: under 640px the teaser never renders, so the launcher must stay,
+          which is exactly what vanished on mobile pricing (2026-08-23). */}
+      {!isDashboard && (
         <button
           onClick={isOpen ? handleClose : handleOpen}
-          className="fixed bottom-5 right-5 z-[9995] block rounded-full transition-transform duration-300 hover:scale-105 active:scale-95"
+          className={cn(
+            "fixed bottom-5 right-5 z-[9995] block rounded-full transition-transform duration-300 hover:scale-105 active:scale-95",
+            showVideo && !isOpen && "sm:hidden"
+          )}
           aria-label={isOpen ? "Close chat" : "Open chat"}
         >
           {isOpen ? (
