@@ -381,6 +381,7 @@ interface WebApplicationJsonLdProps {
   applicationCategory?: string;
   operatingSystem?: string;
   browserRequirements?: string;
+  dateModified?: string;
 }
 
 export function WebApplicationJsonLd({
@@ -390,6 +391,7 @@ export function WebApplicationJsonLd({
   applicationCategory = "UtilityApplication",
   operatingSystem = "All",
   browserRequirements = "Requires JavaScript. Requires HTML5.",
+  dateModified,
 }: WebApplicationJsonLdProps) {
   const jsonLd = {
     "@context": "https://schema.org",
@@ -400,6 +402,7 @@ export function WebApplicationJsonLd({
     applicationCategory,
     operatingSystem,
     browserRequirements,
+    ...(dateModified ? { dateModified } : {}),
     offers: {
       "@type": "Offer",
       price: "0",
