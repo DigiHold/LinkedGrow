@@ -112,6 +112,19 @@ interface AttachedMedia {
 type AttachedImage = AttachedMedia;
 
 // Helper to check if media is a video
+
+/** The image format the file's first bytes actually carry, or null when LinkedIn would refuse it. */
+async function sniffImageFormat(file: File): Promise<"jpeg" | "png" | "gif" | "webp" | null> {
+  const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  if (head.length < 12) return null;
+  const ascii = (from: number, to: number) => String.fromCharCode(...head.slice(from, to));
+  if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return "jpeg";
+  if (head[0] === 0x89 && ascii(1, 4) === "PNG") return "png";
+  if (ascii(0, 3) === "GIF") return "gif";
+  if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "webp";
+  return null;
+}
+
 export function isVideoMedia(media: AttachedMedia | null | undefined): boolean {
   return media?.mimeType?.startsWith("video/") ?? false;
 }
@@ -235,6 +248,17 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
       if (!validTypes.includes(file.type)) {
         onError?.("Please upload a valid image file (JPEG, PNG, GIF, or WebP)");
+        return;
+      }
+
+      // The bytes, not the extension. A browser labels a file from its name, so an
+      // AVIF saved as "photo.jpeg" arrives as image/jpeg and LinkedIn refuses it in
+      // the composer with "This image format is not supported".
+      const signature = await sniffImageFormat(file);
+      if (!signature) {
+        onError?.(
+          "LinkedIn rejects this image format. Accepted formats: JPEG, PNG, GIF, WebP. The file's content does not match its extension."
+        );
         return;
       }
 
