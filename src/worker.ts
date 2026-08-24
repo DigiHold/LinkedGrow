@@ -217,6 +217,17 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       return;
     }
 
+    /* A publish that arrived while sourcing ran. Sourcing held the browser
+       for a quarter of an hour on 2026-08-24 while a due post logged "no slot
+       free" every minute: the pre-pass check cannot see work that arrives
+       mid-pass. The sequence is written on the next visit; the person who
+       pressed Publish is not. */
+    if (await publishingIsWaiting(ctx.linkedinAccountId).catch(() => false)) {
+      log("yielding to a waiting publish before the sequence", { agentId: ctx.agentId });
+      await touchRun(ctx);
+      return;
+    }
+
     // Watching mode ends the pass here, before anything can touch LinkedIn. It is deliberately a
     // hard stop rather than a flag threaded through the sequence: a condition checked in one place
     // cannot be forgotten in the tenth.
@@ -476,6 +487,14 @@ async function pass(): Promise<void> {
           await safely(ctx);
           // Even between two agents on one address, a pause.
           if (group.length > 1) await sleep(randInt(20_000, 60_000));
+          // And between two agents, the same courtesy as before the first: a
+          // person waiting on Publish is not made to wait for the next agent.
+          if (await publishingIsWaiting(first.linkedinAccountId).catch(() => false)) {
+            log("standing aside mid-pass, something is waiting to be published", {
+              linkedinAccountId: first.linkedinAccountId,
+            });
+            break;
+          }
         }
       } finally {
         // Released only here, after every agent on this account has finished
