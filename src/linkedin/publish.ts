@@ -599,7 +599,29 @@ async function waitForUpload(
   }
 
   // The screen, at the moment it gave up. Six attempts were spent guessing at
-  // the carousel flow on 2026-07-31 before anyone looked at it.
+  // the carousel flow on 2026-07-31 before anyone looked at it. The AX view
+  // goes to the journal too: on 2026-08-24 the composer was invisible to the
+  // DOM AND to the dialog-scoped AX scan, and only this dump can say what
+  // role the thing actually carries.
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("Accessibility.enable").catch(() => {});
+      const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as {
+        nodes: { role?: { value?: string }; name?: { value?: string } }[];
+      };
+      const named = nodes
+        .filter((n) => (n.name?.value ?? "").trim().length > 0)
+        .slice(0, 160)
+        .map((n) => `${n.role?.value ?? "?"}:${(n.name?.value ?? "").slice(0, 40)}`);
+      const roles = [...new Set(nodes.map((n) => n.role?.value ?? "?"))];
+      log("upload stalled, AX view", { roles: roles.join(","), named: named.join(" | ") });
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    // A diagnostic that fails must never mask the real error below.
+  }
   const says = await capturePage(page, "composer", `upload stalled (${mimeType ?? "no type"})`);
   throw new PublishError(
     says
