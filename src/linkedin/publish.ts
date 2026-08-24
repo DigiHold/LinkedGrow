@@ -109,9 +109,12 @@ export interface PublishResult {
 }
 
 export class PublishError extends Error {
-  constructor(message: string) {
+  /** True when retrying could not change the answer (a refused file, for one). */
+  readonly permanent: boolean;
+  constructor(message: string, options: { permanent?: boolean } = {}) {
     super(message);
     this.name = "PublishError";
+    this.permanent = options.permanent === true;
   }
 }
 
@@ -236,11 +239,32 @@ const SEL = {
  * is disclosed either way; keeping it on the same address simply means one
  * account's traffic still has one shape.
  */
+/** The image format the bytes actually carry, by signature; null when not an image. */
+export function sniffImage(
+  bytes: Buffer
+): "jpeg" | "png" | "gif" | "webp" | "avif" | "heic" | "bmp" | "tiff" | null {
+  if (bytes.length < 12) return null;
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpeg";
+  if (bytes[0] === 0x89 && bytes.toString("ascii", 1, 4) === "PNG") return "png";
+  if (bytes.toString("ascii", 0, 3) === "GIF") return "gif";
+  if (bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP") return "webp";
+  if (bytes.toString("ascii", 4, 8) === "ftyp") {
+    const brand = bytes.toString("ascii", 8, 12).toLowerCase();
+    if (brand.startsWith("avi")) return "avif";
+    if (brand.startsWith("hei") || brand.startsWith("mif") || brand.startsWith("msf")) return "heic";
+    return null;
+  }
+  if (bytes[0] === 0x42 && bytes[1] === 0x4d) return "bmp";
+  if ((bytes[0] === 0x49 && bytes[1] === 0x49 && bytes[2] === 0x2a) || (bytes[0] === 0x4d && bytes[1] === 0x4d && bytes[3] === 0x2a)) return "tiff";
+  return null;
+}
+
 export async function downloadAttachment(
   url: string,
   fileName: string,
-  proxy: { server: string; username: string; password: string } | null
-): Promise<{ path: string; cleanup: () => void }> {
+  proxy: { server: string; username: string; password: string } | null,
+  mimeType: string | null = null
+): Promise<{ path: string; mimeType: string | null; cleanup: () => void }> {
   const dispatcher = proxy
     ? new ProxyAgent({
         uri: proxy.server,
@@ -259,9 +283,34 @@ export async function downloadAttachment(
 
     const dir = mkdtempSync(join(tmpdir(), "lg-publish-"));
     const safeName = fileName.replace(/[^\w.-]/g, "_") || "attachment";
+    let realMime: string | null = null;
+
+    /**
+     * What the bytes are, not what the name says. Greg's "portland.jpeg" was
+     * an AVIF file: his browser labelled it from the extension, storage served
+     * it as image/jpeg, and LinkedIn, which reads the bytes, answered "This
+     * image format is not supported" and kept the composer open. The bytes are
+     * checked here against what LinkedIn takes (JPEG, PNG, GIF, and WebP,
+     * which it accepts in the composer), and anything else is refused with
+     * that list, permanently: retrying the same file cannot change the answer.
+     */
+    const declaredImage = /^image\//i.test(mimeType ?? "") || /\.(jpe?g|png|gif|webp|avif|heic|heif|bmp|tiff?)$/i.test(safeName);
+    if (declaredImage) {
+      const kind = sniffImage(bytes);
+      if (kind === "jpeg" || kind === "png" || kind === "gif" || kind === "webp") {
+        realMime = `image/${kind}`;
+      } else {
+        rmSync(dir, { recursive: true, force: true });
+        throw new PublishError(
+          `LinkedIn rejects this image format${kind ? ` (${kind.toUpperCase()})` : ""}. Accepted formats: JPEG, PNG, GIF, WebP. Please replace the image and publish again.`,
+          { permanent: true }
+        );
+      }
+    }
+
     const path = join(dir, safeName);
     writeFileSync(path, bytes);
-    return { path, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+    return { path, mimeType: realMime, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
   } finally {
     await dispatcher?.close().catch(() => {});
   }
@@ -573,6 +622,52 @@ async function logComposerSubtree(page: Page, contentSnippet: string): Promise<v
     }
   } catch {
     // A diagnostic that fails must never mask the real error.
+  }
+}
+
+/**
+ * What LinkedIn itself says is wrong, read off the composer. An `alert` role
+ * is the same in every language; its text is LinkedIn's, quoted as is. Empty
+ * when the composer shows no alert.
+ */
+async function composerAlertText(page: Page, contentSnippet: string): Promise<string> {
+  const norm = (t: string) => t.toLowerCase().replace(/\s+/g, " ").trim();
+  const needle = norm(contentSnippet).slice(0, 30);
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("Accessibility.enable").catch(() => {});
+      const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as {
+        nodes: {
+          nodeId: string;
+          childIds?: string[];
+          role?: { value?: string };
+          name?: { value?: string };
+        }[];
+      };
+      const byId = new Map(nodes.map((n) => [n.nodeId, n]));
+      for (const d of nodes.filter((n) => (n.role?.value ?? "") === "dialog")) {
+        let holds = needle.length < 8;
+        const alerts: string[] = [];
+        const walk = (id: string, insideAlert: boolean) => {
+          const n = byId.get(id);
+          if (!n) return;
+          const role = n.role?.value ?? "";
+          const name = (n.name?.value ?? "").trim();
+          if (!holds && norm(name).includes(needle)) holds = true;
+          const inAlert = insideAlert || role === "alert";
+          if (inAlert && role === "StaticText" && name) alerts.push(name);
+          (n.childIds ?? []).forEach((c) => walk(c, inAlert));
+        };
+        walk(d.nodeId, false);
+        if (holds && alerts.length) return alerts.join(" ").replace(/\s+/g, " ").trim().slice(0, 300);
+      }
+      return "";
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    return "";
   }
 }
 
@@ -1663,6 +1758,7 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
      change. What condemns is structure - the dialog still holding our own
      typed text, or the composer's primary-action class still on screen. */
   const composerStillOpen = guardPierced !== null || guardStructural.present;
+  let refusal = "";
   if (composerStillOpen) {
     log("open-composer guard tripped", {
       matches: guardMatches.map((b) => `${b.dialogName}::${b.name}${b.disabled ? "(off)" : ""}`).join(" | ").slice(0, 600),
@@ -1671,6 +1767,7 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
         ? `present, last enabled: ${guardStructural.lastEnabled?.name ?? "none"}`
         : "absent",
     });
+    refusal = await composerAlertText(page, body);
     await logComposerSubtree(page, body);
     await capturePage(page, "post-guard", "composer still open after the Post press").catch(
       () => ""
@@ -1680,7 +1777,9 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   if (!input.profileUrl) {
     if (composerStillOpen) {
       throw new PublishError(
-        "The composer stayed open after the Post click, so nothing was published."
+        refusal
+          ? `LinkedIn refused the post: ${refusal}`
+          : "The composer stayed open after the Post click, so nothing was published."
       );
     }
     return { url: null, verified: false, scheduled: false };
@@ -1697,7 +1796,9 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   if (composerStillOpen) {
     await logAxView(page, "composer still open after Post");
     throw new PublishError(
-      "The composer stayed open after the Post click and the post is not on the feed, so nothing was published."
+      refusal
+        ? `LinkedIn refused the post: ${refusal}`
+        : "The composer stayed open after the Post click and the post is not on the feed, so nothing was published."
     );
   }
   return { url: null, verified: false, scheduled: false };

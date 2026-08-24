@@ -121,16 +121,19 @@ async function writeOne(
 
   try {
     let filePath: string | null = null;
+    let realMime: string | null = null;
     if (media) {
-      const file = await downloadAttachment(media.url, media.fileName, address);
+      const file = await downloadAttachment(media.url, media.fileName, address, media.mimeType);
       filePath = file.path;
       cleanup = file.cleanup;
+      // The bytes decide the type, never the upload's label.
+      if (file.mimeType) realMime = file.mimeType;
     }
 
     const result = await publishPost(session.page, {
       text: post.content,
       filePath,
-      mimeType: media?.mimeType ?? null,
+      mimeType: realMime ?? media?.mimeType ?? null,
       profileUrl: account.profileUrl,
       scheduleFor:
         action === "prepare"
@@ -376,7 +379,15 @@ async function handleJobFailure(
     error instanceof PublishError
       ? error.message
       : "Something went wrong while publishing this post. It will try again shortly.";
-  const outcome = await failOrRequeue(post, message);
+  // A refused file fails once, with the reason, and never spends two more
+  // sessions on the account to hear the same answer.
+  let outcome: "failed" | "requeued";
+  if (error instanceof PublishError && error.permanent) {
+    await markFailed(post.id, message);
+    outcome = "failed";
+  } else {
+    outcome = await failOrRequeue(post, message);
+  }
   logError("publish attempt failed", error, { postId: post.id, action, outcome });
 }
 
