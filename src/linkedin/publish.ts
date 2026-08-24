@@ -280,8 +280,8 @@ export async function downloadAttachment(
  * the interface language follows the account.
  */
 const BUTTON_NAME = {
-  post: /^(post|publier|posten|publicar|pubblica|publiceren|publicera|opublikuj|发布|投稿する)$/i,
-  next: /^(next|done|confirm|confirmer|suivant|terminé|termine|weiter|fertig|siguiente|hecho|avanti|fatto|volgende|klaar)$/i,
+  post: /^(post|publier|posten|publicar|pubblica|publiceren|publicera|opublikuj|发布|投稿する|опубликовать|опублікувати|publikovat|zveřejnit|publiser|slå op|julkaise|공유|게시)$/i,
+  next: /^(next|done|confirm|confirmer|suivant|terminé|termine|weiter|fertig|siguiente|hecho|avanti|fatto|volgende|klaar|далее|готово|далі|avançar|concluído|neste|ferdig|næste|udfør|seuraava|valmis|další|hotovo|다음|완료)$/i,
   schedule: /^(schedule|programmer|planen|programar|pianifica|plannen|schemalägg)/i,
   discard: /^(discard|supprimer|verwerfen|descartar|elimina|weggooien|kasta)/i,
   /**
@@ -310,7 +310,7 @@ const BUTTON_NAME = {
  * "Next" carousel arrow can never be the target, and classic composers, which
  * have no such dialog, never trigger it.
  */
-type AxButton = { name: string; disabled: boolean; backendDOMNodeId: number };
+type AxButton = { name: string; disabled: boolean; backendDOMNodeId: number; dialogName: string };
 type AxDialogView = { hasDialog: boolean; hasProgress: boolean; buttons: AxButton[] };
 
 /**
@@ -341,6 +341,7 @@ async function scanDialogsAX(page: Page): Promise<AxDialogView> {
       const byId = new Map(nodes.map((n) => [n.nodeId, n]));
       for (const d of nodes.filter((n) => (n.role?.value ?? "") === "dialog")) {
         view.hasDialog = true;
+        const dialogName = (d.name?.value ?? "").trim();
         const stack = [...(d.childIds ?? [])];
         while (stack.length) {
           const n = byId.get(stack.pop()!);
@@ -354,6 +355,7 @@ async function scanDialogsAX(page: Page): Promise<AxDialogView> {
                 (p) => p.name === "disabled" && p.value?.value === true
               ),
               backendDOMNodeId: n.backendDOMNodeId,
+              dialogName,
             });
           }
           stack.push(...(n.childIds ?? []));
@@ -382,6 +384,43 @@ async function scanDialogsAX(page: Page): Promise<AxDialogView> {
  * "Next" carousel arrow can never be the target, and classic composers, which
  * have no such dialog, never trigger it. A disabled button is never pressed.
  */
+/**
+ * Clicks a CDP-addressed node at its real on-screen position.
+ *
+ * DOM.getBoxModel answers in absolute page coordinates while the mouse
+ * clicks in viewport coordinates. With the page scrolled even slightly, the
+ * raw click lands below the button it aimed at, which is how a press could
+ * "succeed" while nothing happened (2026-08-24). The scroll offsets are
+ * subtracted; if that puts the point outside the viewport the raw point is
+ * used, which covers overlays whose quads already read as on-screen.
+ */
+async function clickBackendNode(
+  page: Page,
+  cdp: Awaited<ReturnType<ReturnType<Page["context"]>["newCDPSession"]>>,
+  backendNodeId: number
+): Promise<boolean> {
+  const { model } = (await cdp.send("DOM.getBoxModel", { backendNodeId })) as {
+    model: { content: number[] };
+  };
+  const q = model.content;
+  if (!q || q.length < 8) return false;
+  const cx = (q[0]! + q[2]! + q[4]! + q[6]!) / 4;
+  const cy = (q[1]! + q[3]! + q[5]! + q[7]!) / 4;
+  const { result } = (await cdp.send("Runtime.evaluate", {
+    expression: "JSON.stringify([scrollX, scrollY, innerWidth, innerHeight])",
+    returnByValue: true,
+  })) as { result: { value: string } };
+  const [sx, sy, vw, vh] = JSON.parse(result.value) as [number, number, number, number];
+  let x = cx - sx;
+  let y = cy - sy;
+  if (x < 0 || y < 0 || x > vw || y > vh) {
+    x = cx;
+    y = cy;
+  }
+  await page.mouse.click(x, y);
+  return true;
+}
+
 async function pressAcrossClosedShadow(page: Page, name: RegExp): Promise<boolean> {
   try {
     const view = await scanDialogsAX(page);
@@ -390,24 +429,88 @@ async function pressAcrossClosedShadow(page: Page, name: RegExp): Promise<boolea
     const cdp = await page.context().newCDPSession(page);
     try {
       await cdp.send("DOM.enable").catch(() => {});
-      const { model } = (await cdp.send("DOM.getBoxModel", {
-        backendNodeId: hit.backendDOMNodeId,
-      })) as { model: { content: number[] } };
-      const q = model.content;
-      if (!q || q.length < 8) return false;
-      const [qx1, qy1, qx2, qy2, qx3, qy3, qx4, qy4] = q as [
-        number, number, number, number, number, number, number, number,
-      ];
-      const x = (qx1 + qx2 + qx3 + qx4) / 4;
-      const y = (qy1 + qy2 + qy3 + qy4) / 4;
-      await page.mouse.click(x, y);
-      return true;
+      await cdp.send("Runtime.enable").catch(() => {});
+      return await clickBackendNode(page, cdp, hit.backendDOMNodeId);
     } finally {
       await cdp.detach().catch(() => {});
     }
   } catch {
     return false;
   }
+}
+
+/**
+ * The language-proof layer: LinkedIn's own machine attributes, reached
+ * through the pierced DOM. CDP's DOM.getDocument with pierce walks straight
+ * through closed shadow roots, and the share composer's primary action has
+ * carried the share-actions__primary-action class across every redesign and
+ * every interface language. A Russian, Arabic or Korean account never
+ * matches a name list; it always matches this.
+ */
+async function findComposerPrimaryPierced(
+  page: Page
+): Promise<{ backendNodeId: number; disabled: boolean } | null> {
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("DOM.enable").catch(() => {});
+      const { root } = (await cdp.send("DOM.getDocument", { depth: -1, pierce: true })) as {
+        root: PiercedNode;
+      };
+      const hits: { backendNodeId: number; disabled: boolean }[] = [];
+      const walk = (n: PiercedNode) => {
+        const attrs = n.attributes ?? [];
+        let isPrimary = false;
+        let disabled = false;
+        for (let i = 0; i + 1 < attrs.length; i += 2) {
+          if (
+            attrs[i] === "class" &&
+            /share-actions__primary-action|share-box_actions__primary/.test(attrs[i + 1] ?? "")
+          ) {
+            isPrimary = true;
+          }
+          if (attrs[i] === "disabled" || attrs[i] === "aria-disabled") {
+            disabled = disabled || attrs[i + 1] !== "false";
+          }
+        }
+        if (isPrimary && n.backendNodeId) hits.push({ backendNodeId: n.backendNodeId, disabled });
+        (n.children ?? []).forEach(walk);
+        (n.shadowRoots ?? []).forEach(walk);
+        if (n.contentDocument) walk(n.contentDocument);
+      };
+      walk(root);
+      return hits[hits.length - 1] ?? null;
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    return null;
+  }
+}
+
+async function clickComposerPrimaryPierced(page: Page): Promise<boolean> {
+  const hit = await findComposerPrimaryPierced(page);
+  if (!hit || hit.disabled) return false;
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("DOM.enable").catch(() => {});
+      await cdp.send("Runtime.enable").catch(() => {});
+      return await clickBackendNode(page, cdp, hit.backendNodeId);
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    return false;
+  }
+}
+
+interface PiercedNode {
+  backendNodeId?: number;
+  attributes?: string[];
+  children?: PiercedNode[];
+  shadowRoots?: PiercedNode[];
+  contentDocument?: PiercedNode;
 }
 
 /**
@@ -560,6 +663,13 @@ async function waitForUpload(
        */
       const ax = await scanDialogsAX(page);
       if (ax.hasDialog) {
+        /* Language-free first: the progressbar ROLE and the primary-action
+           CLASS read the same on a Russian account as on an English one.
+           Button names only serve as the fallback below. */
+        if (!ax.hasProgress) {
+          const primary = await findComposerPrimaryPierced(page);
+          if (primary && !primary.disabled) return;
+        }
         const enabled = (name: RegExp) =>
           ax.buttons.some((b) => name.test(b.name) && !b.disabled);
         if (!ax.hasProgress && enabled(BUTTON_NAME.post)) return;
@@ -1286,16 +1396,30 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
    * have clicked. The DOM locator stays as the fallback for a tree that
    * failed to scan.
    */
-  if (!(await pressAcrossClosedShadow(page, BUTTON_NAME.post))) {
-    if (!postButton) {
-      // Nothing was pressed, so throwing cannot double-post.
-      throw new PublishError("The Post button was not there, so nothing was published.");
+  if (!(await clickComposerPrimaryPierced(page))) {
+    if (!(await pressAcrossClosedShadow(page, BUTTON_NAME.post))) {
+      if (!postButton) {
+        // Nothing was pressed, so throwing cannot double-post.
+        throw new PublishError("The Post button was not there, so nothing was published.");
+      }
+      await clickHumanLocator(page, postButton);
     }
-    await clickHumanLocator(page, postButton);
   }
   // The dialog closing is the first sign it went, and it is not proof.
   await dialog.waitFor({ state: "hidden", timeout: 60_000 }).catch(() => {});
   await dwell(2500, 4500);
+
+  /* One step short: when the press above landed on a sub-step's primary
+     action (the media editor's Next carries the same class in every
+     language), the real Post is now in front and still unpressed. One more
+     press, only while a primary action is present AND enabled: after a real
+     Post the class is gone with the composer, and during submission LinkedIn
+     disables it, so this cannot fire twice on the same Post button. */
+  const leftover = await findComposerPrimaryPierced(page);
+  if (leftover && !leftover.disabled) {
+    await clickComposerPrimaryPierced(page);
+    await dwell(2500, 4500);
+  }
 
   /**
    * The composer still being on screen means the click almost certainly did
@@ -1311,9 +1435,16 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
    * Scanned BEFORE the read-back navigates away from this page.
    */
   const after = await scanDialogsAX(page);
-  const composerStillOpen = after.buttons.some(
+  const guardMatches = after.buttons.filter(
     (b) => BUTTON_NAME.post.test(b.name) || BUTTON_NAME.next.test(b.name)
   );
+  const guardPierced = await findComposerPrimaryPierced(page);
+  const composerStillOpen = guardMatches.length > 0 || guardPierced !== null;
+  if (composerStillOpen) {
+    log("open-composer guard tripped", {
+      matches: guardMatches.map((b) => `${b.dialogName}::${b.name}`).join(" | ").slice(0, 600),
+    });
+  }
 
   if (!input.profileUrl) {
     if (composerStillOpen) {
