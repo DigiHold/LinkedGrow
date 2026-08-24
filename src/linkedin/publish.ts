@@ -1250,14 +1250,26 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   if (disabled) {
     throw new PublishError("LinkedIn kept the Post button disabled, so nothing was published.");
   }
-  if (postButton) {
+  /**
+   * The AX geometry press goes FIRST, on every variant. On the redesigned
+   * composer a DOM element named Post can be an inert ghost while the real
+   * button is only named in the accessibility tree: attempt 1 on 2026-08-24
+   * clicked such a ghost, the composer never moved, and only the open-composer
+   * guard saved it from a false "published". The AX press is a real mouse
+   * click at the rendered button's own box, which is also what a person does,
+   * and on the classic composer it lands on the same button the locator would
+   * have clicked. The DOM locator stays as the fallback for a tree that
+   * failed to scan.
+   */
+  if (!(await pressAcrossClosedShadow(page, BUTTON_NAME.post))) {
+    if (!postButton) {
+      // Nothing was pressed, so throwing cannot double-post.
+      throw new PublishError("The Post button was not there, so nothing was published.");
+    }
     await clickHumanLocator(page, postButton);
-    // The dialog closing is the first sign it went, and it is not proof.
-    await dialog.waitFor({ state: "hidden", timeout: 60_000 }).catch(() => {});
-  } else if (!(await pressAcrossClosedShadow(page, BUTTON_NAME.post))) {
-    // Nothing was pressed, so throwing cannot double-post.
-    throw new PublishError("The Post button was not there, so nothing was published.");
   }
+  // The dialog closing is the first sign it went, and it is not proof.
+  await dialog.waitFor({ state: "hidden", timeout: 60_000 }).catch(() => {});
   await dwell(2500, 4500);
 
   /**
