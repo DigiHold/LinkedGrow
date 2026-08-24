@@ -417,8 +417,123 @@ async function clickBackendNode(
     x = cx;
     y = cy;
   }
-  await page.mouse.click(x, y);
-  return true;
+  /**
+   * Focus + Enter, not a blind click. A coordinate click hits whatever is
+   * topmost at that point: on 2026-08-24 a docked Messaging window sat over
+   * the composer's corner and swallowed every press while the button
+   * underneath stayed untouched. DOM.focus reaches through closed shadow
+   * roots, and Enter on a focused button activates it no matter what
+   * overlaps it, exactly like a keyboard user. The mouse still travels to
+   * the button first so the motion stays human.
+   */
+  await page.mouse.move(x, y, { steps: 8 }).catch(() => {});
+  try {
+    await cdp.send("DOM.focus", { backendNodeId });
+    await page.keyboard.press("Enter");
+    return true;
+  } catch {
+    await page.mouse.click(x, y);
+    return true;
+  }
+}
+
+/**
+ * The one anchor LinkedIn cannot rename: our own text.
+ *
+ * Labels are product decisions ("Post" can become "Post now" in every
+ * language overnight, 2026-08-24, Nicolas's rule) and even machine classes
+ * can be refactored away. The dialog that contains the exact content we just
+ * typed IS the composer, in any language, under any wording, after any
+ * redesign. Its last enabled button, in reading order, is the primary
+ * action: LinkedIn has kept the submit at the end of the composer footer
+ * through every variant.
+ */
+async function findContentDialogAX(
+  page: Page,
+  contentSnippet: string
+): Promise<{ present: boolean; lastEnabled: AxButton | null }> {
+  const norm = (t: string) => t.toLowerCase().replace(/\s+/g, " ").trim();
+  const needle = norm(contentSnippet).slice(0, 30);
+  if (needle.length < 8) return { present: false, lastEnabled: null };
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("Accessibility.enable").catch(() => {});
+      const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as {
+        nodes: {
+          nodeId: string;
+          childIds?: string[];
+          backendDOMNodeId?: number;
+          role?: { value?: string };
+          name?: { value?: string };
+          properties?: { name: string; value?: { value?: unknown } }[];
+        }[];
+      };
+      const byId = new Map(nodes.map((n) => [n.nodeId, n]));
+      for (const d of nodes.filter((n) => (n.role?.value ?? "") === "dialog")) {
+        let holdsContent = false;
+        const buttons: AxButton[] = [];
+        const dialogName = (d.name?.value ?? "").trim();
+        const stack = [...(d.childIds ?? [])];
+        while (stack.length) {
+          const n = byId.get(stack.pop()!);
+          if (!n) continue;
+          if (norm(n.name?.value ?? "").includes(needle)) holdsContent = true;
+          if ((n.role?.value ?? "") === "button" && n.backendDOMNodeId) {
+            buttons.push({
+              name: (n.name?.value ?? "").trim(),
+              disabled: (n.properties ?? []).some(
+                (pr) => pr.name === "disabled" && pr.value?.value === true
+              ),
+              backendDOMNodeId: n.backendDOMNodeId,
+              dialogName,
+            });
+          }
+          stack.push(...(n.childIds ?? []));
+        }
+        if (holdsContent) {
+          /* The stack walk is depth-first from the end, so re-derive reading
+             order from the child lists: the LAST enabled button collected in
+             document order is the primary action. */
+          const ordered: AxButton[] = [];
+          const walk = (id: string) => {
+            const n = byId.get(id);
+            if (!n) return;
+            if ((n.role?.value ?? "") === "button" && n.backendDOMNodeId) {
+              const hit = buttons.find((b) => b.backendDOMNodeId === n.backendDOMNodeId);
+              if (hit) ordered.push(hit);
+            }
+            (n.childIds ?? []).forEach(walk);
+          };
+          (d.childIds ?? []).forEach(walk);
+          const enabled = ordered.filter((b) => !b.disabled);
+          return { present: true, lastEnabled: enabled[enabled.length - 1] ?? null };
+        }
+      }
+      return { present: false, lastEnabled: null };
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    return { present: false, lastEnabled: null };
+  }
+}
+
+async function pressStructuralPrimary(page: Page, contentSnippet: string): Promise<boolean> {
+  const found = await findContentDialogAX(page, contentSnippet);
+  if (!found.lastEnabled) return false;
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("DOM.enable").catch(() => {});
+      await cdp.send("Runtime.enable").catch(() => {});
+      return await clickBackendNode(page, cdp, found.lastEnabled.backendDOMNodeId);
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    return false;
+  }
 }
 
 async function pressAcrossClosedShadow(page: Page, name: RegExp): Promise<boolean> {
@@ -669,10 +784,11 @@ async function waitForUpload(
         if (!ax.hasProgress) {
           const primary = await findComposerPrimaryPierced(page);
           if (primary && !primary.disabled) return;
+          const structural = await findContentDialogAX(page, postText);
+          if (structural.lastEnabled) return;
         }
         const enabled = (name: RegExp) =>
           ax.buttons.some((b) => name.test(b.name) && !b.disabled);
-        if (!ax.hasProgress && enabled(BUTTON_NAME.post)) return;
         if (!ax.hasProgress && enabled(BUTTON_NAME.next) && !enabled(BUTTON_NAME.post)) {
           if (await pressAcrossClosedShadow(page, BUTTON_NAME.next)) {
             await dwell(1500, 3000);
@@ -1251,6 +1367,31 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
 
   await settleOnFeed(page);
 
+  /**
+   * Any docked chat window goes first. LinkedIn keeps conversation bubbles
+   * open across sessions, they sit above everything at the bottom of the
+   * viewport, and one of them cost the whole afternoon of 2026-08-24 by
+   * covering the composer. Machine classes only, the header's last control
+   * is the close cross in every language, and nothing is ever typed or sent.
+   */
+  try {
+    const bubbles = page.locator("div.msg-overlay-conversation-bubble");
+    const total = Math.min(await bubbles.count(), 4);
+    for (let i = total - 1; i >= 0; i--) {
+      const bubble = bubbles.nth(i);
+      if (!(await bubble.isVisible().catch(() => false))) continue;
+      const controls = bubble.locator("header button, .msg-overlay-bubble-header__controls button");
+      const n = await controls.count();
+      if (n > 0) {
+        await controls.nth(n - 1).click({ timeout: 3000 }).catch(() => {});
+        await sleep(600);
+      }
+    }
+    if (total > 0) log("closed docked chat windows", { count: total });
+  } catch {
+    // The composer flow decides success, never this tidy-up.
+  }
+
   const trigger = await firstVisible(page.locator(SEL.startPost));
   if (!trigger) {
     throw new PublishError("LinkedIn did not offer the post composer, so nothing was published.");
@@ -1397,12 +1538,14 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
    * failed to scan.
    */
   if (!(await clickComposerPrimaryPierced(page))) {
-    if (!(await pressAcrossClosedShadow(page, BUTTON_NAME.post))) {
-      if (!postButton) {
-        // Nothing was pressed, so throwing cannot double-post.
-        throw new PublishError("The Post button was not there, so nothing was published.");
+    if (!(await pressStructuralPrimary(page, body))) {
+      if (!(await pressAcrossClosedShadow(page, BUTTON_NAME.post))) {
+        if (!postButton) {
+          // Nothing was pressed, so throwing cannot double-post.
+          throw new PublishError("The Post button was not there, so nothing was published.");
+        }
+        await clickHumanLocator(page, postButton);
       }
-      await clickHumanLocator(page, postButton);
     }
   }
   // The dialog closing is the first sign it went, and it is not proof.
@@ -1439,7 +1582,11 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
     (b) => BUTTON_NAME.post.test(b.name) || BUTTON_NAME.next.test(b.name)
   );
   const guardPierced = await findComposerPrimaryPierced(page);
-  const composerStillOpen = guardMatches.length > 0 || guardPierced !== null;
+  const guardStructural = await findContentDialogAX(page, body);
+  /* Names never decide: they are wording, and wording is LinkedIn's to
+     change. What condemns is structure - the dialog still holding our own
+     typed text, or the composer's primary-action class still on screen. */
+  const composerStillOpen = guardPierced !== null || guardStructural.present;
   if (composerStillOpen) {
     log("open-composer guard tripped", {
       matches: guardMatches.map((b) => `${b.dialogName}::${b.name}`).join(" | ").slice(0, 600),
