@@ -410,6 +410,24 @@ async function pressAcrossClosedShadow(page: Page, name: RegExp): Promise<boolea
   }
 }
 
+/**
+ * The AX tree, summarized into the journal. Called at every giving-up point,
+ * because on the redesigned composer this is the only witness there is: the
+ * DOM shows the feed, the screenshots show the truth, and this names it.
+ */
+async function logAxView(page: Page, why: string): Promise<void> {
+  try {
+    const view = await scanDialogsAX(page);
+    log(`${why}, AX view`, {
+      hasDialog: view.hasDialog,
+      hasProgress: view.hasProgress,
+      buttons: view.buttons.map((b) => `${b.name}${b.disabled ? "(off)" : ""}`).join(" | ").slice(0, 1800),
+    });
+  } catch {
+    // A diagnostic that fails must never mask the real error.
+  }
+}
+
 function namedButton(scope: Page | Locator, name: RegExp): Locator {
   return scope.getByRole("button", { name });
 }
@@ -530,28 +548,32 @@ async function waitForUpload(
        The guard below keeps classic accounts safe: Next is only pressed
        when no Post button is visible anywhere. */
     if (mimeType?.startsWith("video/") || mimeType?.startsWith("image/")) {
+      /**
+       * The AX tree decides FIRST, on every iteration, whatever the DOM
+       * shows. Branching on "is a DOM dialog visible" was the trap of
+       * 2026-08-24: the Messaging pane is role=dialog too, so the loop
+       * believed it was watching the composer while the real one, named
+       * "Create post modal", lived in a closed shadow root and only ever
+       * appeared in the accessibility tree. The scan is dialog-scoped, so
+       * the feed's own carousel arrows and progressbars can never be read
+       * as composer state.
+       */
+      const ax = await scanDialogsAX(page);
+      if (ax.hasDialog) {
+        const enabled = (name: RegExp) =>
+          ax.buttons.some((b) => name.test(b.name) && !b.disabled);
+        if (!ax.hasProgress && enabled(BUTTON_NAME.post)) return;
+        if (!ax.hasProgress && enabled(BUTTON_NAME.next) && !enabled(BUTTON_NAME.post)) {
+          if (await pressAcrossClosedShadow(page, BUTTON_NAME.next)) {
+            await dwell(1500, 3000);
+          }
+        }
+      }
+
       const domComposer = await firstVisible(
         page.locator('div[role="dialog"], dialog[open]')
       );
-      if (!domComposer) {
-        /* The whole composer is behind a closed shadow root. Every DOM check
-           in this loop is blind here, and `dialog` fell back to body, where a
-           feed video's own progressbar reads as "still uploading" for ever:
-           that is what stalled the fleet on 2026-08-21. The AX tree is the
-           only witness, so in this mode it makes every decision alone. */
-        const ax = await scanDialogsAX(page);
-        if (ax.hasDialog) {
-          const enabled = (name: RegExp) =>
-            ax.buttons.some((b) => name.test(b.name) && !b.disabled);
-          if (!ax.hasProgress && enabled(BUTTON_NAME.post)) return;
-          if (!ax.hasProgress && enabled(BUTTON_NAME.next)) {
-            if (await pressAcrossClosedShadow(page, BUTTON_NAME.next)) {
-              await dwell(1500, 3000);
-            }
-          }
-          continue;
-        }
-      } else if (!(await firstVisible(domComposer.locator(SEL.uploadProgress)))) {
+      if (domComposer && !(await firstVisible(domComposer.locator(SEL.uploadProgress)))) {
         const alreadyPostable = await firstVisible(namedButton(page, BUTTON_NAME.post));
         if (!alreadyPostable) {
           /* The closed-shadow Editor first: on those accounts the DOM-visible
@@ -599,29 +621,9 @@ async function waitForUpload(
   }
 
   // The screen, at the moment it gave up. Six attempts were spent guessing at
-  // the carousel flow on 2026-07-31 before anyone looked at it. The AX view
-  // goes to the journal too: on 2026-08-24 the composer was invisible to the
-  // DOM AND to the dialog-scoped AX scan, and only this dump can say what
-  // role the thing actually carries.
-  try {
-    const cdp = await page.context().newCDPSession(page);
-    try {
-      await cdp.send("Accessibility.enable").catch(() => {});
-      const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as {
-        nodes: { role?: { value?: string }; name?: { value?: string } }[];
-      };
-      const named = nodes
-        .filter((n) => (n.name?.value ?? "").trim().length > 0)
-        .slice(0, 160)
-        .map((n) => `${n.role?.value ?? "?"}:${(n.name?.value ?? "").slice(0, 40)}`);
-      const roles = [...new Set(nodes.map((n) => n.role?.value ?? "?"))];
-      log("upload stalled, AX view", { roles: roles.join(","), named: named.join(" | ") });
-    } finally {
-      await cdp.detach().catch(() => {});
-    }
-  } catch {
-    // A diagnostic that fails must never mask the real error below.
-  }
+  // the carousel flow on 2026-07-31 before anyone looked at it; the AX dump
+  // of 2026-08-24 is what finally named the phantom composer.
+  await logAxView(page, "upload stalled");
   const says = await capturePage(page, "composer", `upload stalled (${mimeType ?? "no type"})`);
   throw new PublishError(
     says
@@ -1245,6 +1247,7 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
     const ax = await scanDialogsAX(page);
     axPost = ax.buttons.find((b) => BUTTON_NAME.post.test(b.name)) ?? null;
     if (!axPost) {
+      await logAxView(page, "post button missing");
       throw new PublishError("The Post button was not there, so nothing was published.");
     }
   }
@@ -1330,6 +1333,7 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   }
   if (url) return { url, verified: true, scheduled: false };
   if (composerStillOpen) {
+    await logAxView(page, "composer still open after Post");
     throw new PublishError(
       "The composer stayed open after the Post click and the post is not on the feed, so nothing was published."
     );
