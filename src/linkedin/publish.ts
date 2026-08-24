@@ -519,6 +519,60 @@ async function findContentDialogAX(
   }
 }
 
+/**
+ * Every node of the composer, to the journal. Roles, names, and the
+ * disabled / focusable / hidden flags of each button: what a press did not
+ * do is only explainable by what the button actually is.
+ */
+async function logComposerSubtree(page: Page, contentSnippet: string): Promise<void> {
+  const norm = (t: string) => t.toLowerCase().replace(/\s+/g, " ").trim();
+  const needle = norm(contentSnippet).slice(0, 30);
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("Accessibility.enable").catch(() => {});
+      const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as {
+        nodes: {
+          nodeId: string;
+          childIds?: string[];
+          ignored?: boolean;
+          role?: { value?: string };
+          name?: { value?: string };
+          properties?: { name: string; value?: { value?: unknown } }[];
+        }[];
+      };
+      const byId = new Map(nodes.map((n) => [n.nodeId, n]));
+      const lines: string[] = [];
+      for (const d of nodes.filter((n) => (n.role?.value ?? "") === "dialog")) {
+        const collected: string[] = [];
+        let holds = false;
+        const walk = (id: string, depth: number) => {
+          const n = byId.get(id);
+          if (!n) return;
+          const role = n.role?.value ?? "?";
+          const name = (n.name?.value ?? "").trim();
+          if (needle.length >= 8 && norm(name).includes(needle)) holds = true;
+          const flags = (n.properties ?? [])
+            .filter((pr) => ["disabled", "focusable", "hidden", "focused", "expanded", "pressed"].includes(pr.name))
+            .map((pr) => `${pr.name}=${String(pr.value?.value)}`)
+            .join(",");
+          if (role !== "InlineTextBox" && role !== "none" && role !== "generic") {
+            collected.push(`${" ".repeat(Math.min(depth, 6))}${role}:${name.slice(0, 50)}${flags ? `[${flags}]` : ""}${n.ignored ? "[ignored]" : ""}`);
+          }
+          (n.childIds ?? []).forEach((c) => walk(c, depth + 1));
+        };
+        walk(d.nodeId, 0);
+        if (holds) lines.push(...collected);
+      }
+      log("composer subtree", { nodes: lines.length, tree: lines.join(" | ").slice(0, 6000) });
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    // A diagnostic that fails must never mask the real error.
+  }
+}
+
 async function pressStructuralPrimary(page: Page, contentSnippet: string): Promise<boolean> {
   const found = await findContentDialogAX(page, contentSnippet);
   if (!found.lastEnabled) return false;
@@ -1537,17 +1591,22 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
    * have clicked. The DOM locator stays as the fallback for a tree that
    * failed to scan.
    */
+  let pressPath = "pierced-class";
   if (!(await clickComposerPrimaryPierced(page))) {
+    pressPath = "structural-last-enabled";
     if (!(await pressStructuralPrimary(page, body))) {
+      pressPath = "ax-name";
       if (!(await pressAcrossClosedShadow(page, BUTTON_NAME.post))) {
         if (!postButton) {
           // Nothing was pressed, so throwing cannot double-post.
           throw new PublishError("The Post button was not there, so nothing was published.");
         }
+        pressPath = "dom-locator";
         await clickHumanLocator(page, postButton);
       }
     }
   }
+  log("post press", { path: pressPath });
   // The dialog closing is the first sign it went, and it is not proof.
   await dialog.waitFor({ state: "hidden", timeout: 60_000 }).catch(() => {});
   await dwell(2500, 4500);
@@ -1589,8 +1648,16 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   const composerStillOpen = guardPierced !== null || guardStructural.present;
   if (composerStillOpen) {
     log("open-composer guard tripped", {
-      matches: guardMatches.map((b) => `${b.dialogName}::${b.name}`).join(" | ").slice(0, 600),
+      matches: guardMatches.map((b) => `${b.dialogName}::${b.name}${b.disabled ? "(off)" : ""}`).join(" | ").slice(0, 600),
+      pierced: guardPierced ? (guardPierced.disabled ? "disabled" : "enabled") : "none",
+      structural: guardStructural.present
+        ? `present, last enabled: ${guardStructural.lastEnabled?.name ?? "none"}`
+        : "absent",
     });
+    await logComposerSubtree(page, body);
+    await capturePage(page, "post-guard", "composer still open after the Post press").catch(
+      () => ""
+    );
   }
 
   if (!input.profileUrl) {
