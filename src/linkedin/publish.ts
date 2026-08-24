@@ -211,7 +211,9 @@ const SEL = {
     'button[aria-label*="video" i], button[aria-label*="photo" i], ' +
     'button[aria-label*="image" i]',
   /** Document and video hide behind this on the new composer. */
-  moreMediaTypes: '[aria-label*="Expand content types" i]',
+  moreMediaTypes:
+    'button.share-promoted-detour-button:has(svg[data-test-icon="add-medium"]), ' +
+    '[aria-label*="Expand content types" i]',
   /** The document screen's own picker, which is what creates the file input. */
   chooseFile:
     '[aria-label*="Choose file" i], button:has-text("Choose file"), ' +
@@ -926,7 +928,11 @@ async function waitForUpload(
        cannot exist until Next is taken (screenshot in the debug capture).
        The guard below keeps classic accounts safe: Next is only pressed
        when no Post button is visible anywhere. */
-    if (mimeType?.startsWith("video/") || mimeType?.startsWith("image/")) {
+    if (
+      mimeType?.startsWith("video/") ||
+      mimeType?.startsWith("image/") ||
+      mimeType === "application/pdf"
+    ) {
       /**
        * The AX tree decides FIRST, on every iteration, whatever the DOM
        * shows. Branching on "is a DOM dialog visible" was the trap of
@@ -1084,14 +1090,20 @@ async function attachMedia(
   const iconFor: Record<string, string> = {
     Photo: "image-medium",
     "Add media": "image-medium",
+    Media: "image-medium",
     Video: "video-medium",
+    Document: "document-medium",
   };
   const entry = async () => {
     for (const name of wantedNames) {
       const icon = iconFor[name];
       if (icon) {
         const byIcon = await firstVisible(
-          page.locator(`button.share-promoted-detour-button:has(svg[data-test-icon="${icon}"])`)
+          page.locator(
+            `button.share-promoted-detour-button:has(svg[data-test-icon="${icon}"]), ` +
+              `[role="menuitem"]:has(svg[data-test-icon="${icon}"]), ` +
+              `button:has(svg[data-test-icon="${icon}"])`
+          )
         );
         if (byIcon) return byIcon;
       }
@@ -1116,9 +1128,15 @@ async function attachMedia(
     }
   }
   // Whatever is offered, rather than nothing at all, for an older layout.
-  addMedia ??= await firstVisible(dialog.locator(SEL.addMedia));
+  // Except for a document: the generic fallback IS the photo picker, and a
+  // PDF fed to the image Editor dies on "File(s) not supported" with the
+  // document flow never reached (2026-08-24). No entry means the truth.
+  if (mimeType !== "application/pdf") {
+    addMedia ??= await firstVisible(dialog.locator(SEL.addMedia));
+  }
 
   if (!addMedia) {
+    await logAxView(page, `no ${wanted.toLowerCase()} entry`);
     throw new PublishError(
       `LinkedIn did not offer a way to attach a ${wanted.toLowerCase()} (looked for ${wantedNames.join(" or ")}), so nothing was posted.`
     );
