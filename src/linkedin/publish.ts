@@ -1078,7 +1078,7 @@ async function attachMedia(
    */
   const wantedNames: string[] =
     mimeType === "application/pdf"
-      ? ["Document"]
+      ? ["Document", "Add a document"]
       : mimeType?.startsWith("video/")
         ? ["Media", "Video"]
         : ["Media", "Photo"];
@@ -1092,7 +1092,11 @@ async function attachMedia(
     "Add media": "image-medium",
     Media: "image-medium",
     Video: "video-medium",
-    Document: "document-medium",
+    /* Read off Nicolas's own composer DOM on 2026-08-24: the Document entry
+       is aria-label "Add a document" with a sticky-note icon, in the same
+       detour carousel once More (the add icon) is open. */
+    Document: "sticky-note-medium",
+    "Add a document": "sticky-note-medium",
   };
   const entry = async () => {
     for (const name of wantedNames) {
