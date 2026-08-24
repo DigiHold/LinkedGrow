@@ -863,6 +863,15 @@ async function waitForUpload(
   const composer =
     (await firstVisible(page.locator('div[role="dialog"], dialog[open]'))) ?? dialog;
 
+  /* LinkedIn's own upload error screen, recognized by structure alone: a
+     dialog is up, nothing is progressing, and nothing is enabled that could
+     advance the flow. The PDF carousel of 2026-08-24 sat on exactly that
+     screen ("Something went wrong", a disabled Next) for the full two-minute
+     timeout. Twenty consecutive stuck reads (about 30 seconds) end the wait
+     with the truth instead; the next attempt re-walks the whole upload, which
+     is what the screen's own retry button would have done. */
+  let stuckRounds = 0;
+
   while (Date.now() < deadline) {
     await sleep(1500);
 
@@ -945,6 +954,23 @@ async function waitForUpload(
           if (await pressAcrossClosedShadow(page, BUTTON_NAME.next)) {
             await dwell(1500, 3000);
           }
+        }
+        if (
+          !ax.hasProgress &&
+          !enabled(BUTTON_NAME.next) &&
+          !enabled(BUTTON_NAME.post) &&
+          !(await findComposerPrimaryPierced(page).then((h) => h !== null && !h.disabled))
+        ) {
+          stuckRounds += 1;
+          if (stuckRounds >= 20) {
+            await logAxView(page, "upload screen stuck");
+            await capturePage(page, "composer", "upload screen stuck, nothing can advance").catch(() => "");
+            throw new PublishError(
+              "LinkedIn's upload screen reported an error and the file never finished uploading, so nothing was posted. It will be retried."
+            );
+          }
+        } else {
+          stuckRounds = 0;
         }
       }
 
