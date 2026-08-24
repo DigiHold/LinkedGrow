@@ -1244,6 +1244,23 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   }
   await dwell(2500, 4500);
 
+  /**
+   * The composer still being on screen is proof the click did not take, and
+   * it is the one failure the feed read-back cannot tell apart from a slow
+   * feed. Greg's post on 2026-08-24 was marked published with a
+   * check-your-profile note while the whole time nothing had left the
+   * composer: the click landed on nothing, the hidden-wait timed out
+   * silently, and the read-back's empty answer was read as "probably went".
+   * A dialog that still offers Post or Next means the post is still sitting
+   * in it, so failing here is safe: nothing can be double-posted.
+   */
+  const after = await scanDialogsAX(page);
+  if (after.buttons.some((b) => BUTTON_NAME.post.test(b.name) || BUTTON_NAME.next.test(b.name))) {
+    throw new PublishError(
+      "The composer stayed open after the Post click, so nothing was published."
+    );
+  }
+
   if (!input.profileUrl) return { url: null, verified: false, scheduled: false };
 
   // Read it back. Twice, because the feed lags the post by a few seconds and a
