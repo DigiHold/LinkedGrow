@@ -146,6 +146,7 @@ const SEL = {
    * element, which keeps it off the container wrapping half the page.
    */
   startPost:
+    '[role="button"]:has(#draft-text-replaceable-component), #draft-text-replaceable-component, ' +
     'button.share-box-feed-entry__trigger, button:has-text("Start a post"), ' +
     'button[aria-label*="Start a post" i], button[aria-label*="Create a post" i], ' +
     '[role="button"]:has-text("Start a post"), [role="button"]:has-text("Commencer un post"), ' +
@@ -200,6 +201,8 @@ const SEL = {
    * (document, video) sits behind "Expand content types".
    */
   addMedia:
+    'button.share-promoted-detour-button:has(svg[data-test-icon="image-medium"]), ' +
+    'button.share-promoted-detour-button:has(svg[data-test-icon="video-medium"]), ' +
     'button[aria-label="Photo" i], button[aria-label*="Add media" i], ' +
     'button[aria-label*="add a photo" i], button[aria-label*="Add a photo" i], ' +
     'button[aria-label*="video" i], button[aria-label*="photo" i], ' +
@@ -957,7 +960,21 @@ async function attachMedia(
   // Never by tag. Photo is a <button>, Document is not, and assuming the tag is
   // the single mistake that broke the Message link, the connect control, the
   // composer trigger and this, all on the same day.
+  const iconFor: Record<string, string> = {
+    Photo: "image-medium",
+    "Add media": "image-medium",
+    Video: "video-medium",
+  };
   const entry = async () => {
+    for (const name of wantedNames) {
+      const icon = iconFor[name];
+      if (icon) {
+        const byIcon = await firstVisible(
+          page.locator(`button.share-promoted-detour-button:has(svg[data-test-icon="${icon}"])`)
+        );
+        if (byIcon) return byIcon;
+      }
+    }
     for (const name of wantedNames) {
       const found =
         (await firstVisible(page.locator(`[aria-label="${name}" i]`))) ??
