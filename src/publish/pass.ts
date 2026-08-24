@@ -143,6 +143,9 @@ async function writeOne(
         action === "publish" && post.wasScheduled
           ? new Date(post.scheduledAt * 1000 + clickJitterMsFor(post.id))
           : undefined,
+      // Anything past its first try looks for itself on the feed before
+      // composing again: the claim counter is 1 on the first attempt.
+      checkExisting: post.attempts > 1,
     });
 
     if (result.scheduled) {

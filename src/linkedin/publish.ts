@@ -44,6 +44,14 @@ const UPLOAD_TIMEOUT_MS = { image: 90_000, document: 120_000, video: 600_000 };
 
 export interface PublishInput {
   text: string;
+  /**
+   * Retries only: look for this exact post on the profile BEFORE composing.
+   *
+   * The absolute belt against double posting. If a previous attempt clicked
+   * Post and died before confirming, the retry finds the post already on the
+   * feed and stops right there instead of publishing it a second time.
+   */
+  checkExisting?: boolean;
   /** A local path, already downloaded. Null for a text-only post. */
   filePath: string | null;
   mimeType: string | null;
@@ -1099,6 +1107,14 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   const body = input.text.trim();
   if (!body) throw new PublishError("This post has no text, so nothing was published.");
 
+  /* A retry that composes without looking first is how a post goes out
+     twice: attempt one may have clicked Post and died before confirming.
+     Finding the exact post already on the profile ends the job right here. */
+  if (input.checkExisting && input.profileUrl && !input.rehearse) {
+    const already = await findPublishedUrl(page, input.profileUrl, body);
+    if (already) return { url: already, verified: true, scheduled: false };
+  }
+
   await settleOnFeed(page);
 
   const trigger = await firstVisible(page.locator(SEL.startPost));
@@ -1245,23 +1261,31 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   await dwell(2500, 4500);
 
   /**
-   * The composer still being on screen is proof the click did not take, and
-   * it is the one failure the feed read-back cannot tell apart from a slow
-   * feed. Greg's post on 2026-08-24 was marked published with a
-   * check-your-profile note while the whole time nothing had left the
-   * composer: the click landed on nothing, the hidden-wait timed out
-   * silently, and the read-back's empty answer was read as "probably went".
-   * A dialog that still offers Post or Next means the post is still sitting
-   * in it, so failing here is safe: nothing can be double-posted.
+   * The composer still being on screen means the click almost certainly did
+   * not take: Greg's post on 2026-08-24 was marked published with a
+   * check-your-profile note while nothing had ever left the composer. But a
+   * dialog with a Post or Next in it is not, on its own, enough to condemn:
+   * an unrelated LinkedIn overlay after a SUCCESSFUL post would then cause a
+   * retry, and a retry after success is a double post, the one outcome worse
+   * than every other. So the scan only takes the decision together with the
+   * feed: post found on the feed wins over everything; composer open AND
+   * feed empty is a failed click, retried safely.
+   *
+   * Scanned BEFORE the read-back navigates away from this page.
    */
   const after = await scanDialogsAX(page);
-  if (after.buttons.some((b) => BUTTON_NAME.post.test(b.name) || BUTTON_NAME.next.test(b.name))) {
-    throw new PublishError(
-      "The composer stayed open after the Post click, so nothing was published."
-    );
-  }
+  const composerStillOpen = after.buttons.some(
+    (b) => BUTTON_NAME.post.test(b.name) || BUTTON_NAME.next.test(b.name)
+  );
 
-  if (!input.profileUrl) return { url: null, verified: false, scheduled: false };
+  if (!input.profileUrl) {
+    if (composerStillOpen) {
+      throw new PublishError(
+        "The composer stayed open after the Post click, so nothing was published."
+      );
+    }
+    return { url: null, verified: false, scheduled: false };
+  }
 
   // Read it back. Twice, because the feed lags the post by a few seconds and a
   // single miss would mark every post unconfirmed.
@@ -1270,7 +1294,13 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
     await sleep(8000);
     url = await findPublishedUrl(page, input.profileUrl, body);
   }
-  return { url, verified: url !== null, scheduled: false };
+  if (url) return { url, verified: true, scheduled: false };
+  if (composerStillOpen) {
+    throw new PublishError(
+      "The composer stayed open after the Post click and the post is not on the feed, so nothing was published."
+    );
+  }
+  return { url: null, verified: false, scheduled: false };
 }
 
 /**
