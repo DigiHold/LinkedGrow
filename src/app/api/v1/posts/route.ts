@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { db, posts, media } from "@/lib/db";
+import { db, posts, media, linkedinAccounts } from "@/lib/db";
+import { loadSessionUser } from "@/lib/auth-user";
 import { eq, desc, and, inArray, count, gte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import {
@@ -33,6 +34,7 @@ function serializePost(
     publishedAt: post.publishedAt?.toISOString() || null,
     linkedinPostId: post.linkedinPostId,
     linkedinPostUrl: post.linkedinPostUrl,
+    linkedinAccountId: post.linkedinAccountId || null,
     metadata: post.metadata ? JSON.parse(post.metadata) : null,
     media: postMedia.map((m) => ({
       id: m.id,
@@ -212,6 +214,7 @@ export async function POST(request: NextRequest) {
       metadata,
       mediaData, // { base64, mimeType? } - base64 image to upload
       firstComment, // Auto-comment after publication
+      linkedinAccountId, // Which connected LinkedIn account publishes this post
     } = body;
 
     // Validate required fields
@@ -258,6 +261,55 @@ export async function POST(request: NextRequest) {
       if (typeof mediaData !== "object" || typeof mediaData.base64 !== "string") {
         return apiErrorResponse("mediaData must be an object with a base64 string field", 400);
       }
+    }
+
+    // The account choice is checked against the workspace, the same rule the
+    // dashboard editor applies: an unknown or disconnected id is refused
+    // rather than silently publishing on whichever account is the default.
+    let chosenAccountId: string | null = null;
+    if (linkedinAccountId !== undefined && linkedinAccountId !== null) {
+      if (typeof linkedinAccountId !== "string" || linkedinAccountId.length > 64) {
+        return apiErrorResponse("Invalid linkedinAccountId", 400);
+      }
+      const sessionData = await loadSessionUser(auth.userId!);
+      const workspaceId = sessionData?.teamOwnerId ?? auth.userId!;
+      const [owned] = await db
+        .select({ id: linkedinAccounts.id })
+        .from(linkedinAccounts)
+        .where(
+          and(
+            eq(linkedinAccounts.id, linkedinAccountId),
+            eq(linkedinAccounts.workspaceId, workspaceId),
+            eq(linkedinAccounts.status, "active")
+          )
+        )
+        .limit(1);
+      if (!owned) {
+        return apiErrorResponse(
+          "That LinkedIn account is not connected to this workspace (list yours via GET /api/v1/accounts)",
+          400
+        );
+      }
+      chosenAccountId = owned.id;
+    }
+
+    // One connected account means no ambiguity: the post is pinned to it
+    // right away, so the editor and the API show the account it will
+    // publish from instead of a blank that resolves at publish time.
+    if (chosenAccountId === null) {
+      const sessionData = await loadSessionUser(auth.userId!);
+      const workspaceId = sessionData?.teamOwnerId ?? auth.userId!;
+      const active = await db
+        .select({ id: linkedinAccounts.id })
+        .from(linkedinAccounts)
+        .where(
+          and(
+            eq(linkedinAccounts.workspaceId, workspaceId),
+            eq(linkedinAccounts.status, "active")
+          )
+        )
+        .limit(2);
+      if (active.length === 1) chosenAccountId = active[0]!.id;
     }
 
     // Get user for plan checks
@@ -343,6 +395,7 @@ export async function POST(request: NextRequest) {
       status: status as "draft" | "scheduled",
       postType: postType as "text" | "image",
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      linkedinAccountId: chosenAccountId,
       metadata: metadata ? JSON.stringify(metadata) : null,
       createdAt: now,
       updatedAt: now,

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { db, posts, media } from "@/lib/db";
+import { db, posts, media, linkedinAccounts } from "@/lib/db";
+import { loadSessionUser } from "@/lib/auth-user";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import {
@@ -188,12 +189,44 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { content, status, scheduledAt, metadata, mediaData, firstComment } = body;
+    const { content, status, scheduledAt, metadata, mediaData, firstComment, linkedinAccountId } = body;
 
     // Build update object
     const updates: Partial<typeof posts.$inferInsert> = {
       updatedAt: new Date(),
     };
+
+    // Same workspace check as creation: the post moves to another connected
+    // account only when that account really is this workspace's.
+    if (linkedinAccountId !== undefined) {
+      if (linkedinAccountId === null) {
+        updates.linkedinAccountId = null;
+      } else {
+        if (typeof linkedinAccountId !== "string" || linkedinAccountId.length > 64) {
+          return apiErrorResponse("Invalid linkedinAccountId", 400);
+        }
+        const sessionData = await loadSessionUser(auth.userId!);
+        const workspaceId = sessionData?.teamOwnerId ?? auth.userId!;
+        const [owned] = await db
+          .select({ id: linkedinAccounts.id })
+          .from(linkedinAccounts)
+          .where(
+            and(
+              eq(linkedinAccounts.id, linkedinAccountId),
+              eq(linkedinAccounts.workspaceId, workspaceId),
+              eq(linkedinAccounts.status, "active")
+            )
+          )
+          .limit(1);
+        if (!owned) {
+          return apiErrorResponse(
+            "That LinkedIn account is not connected to this workspace (list yours via GET /api/v1/accounts)",
+            400
+          );
+        }
+        updates.linkedinAccountId = owned.id;
+      }
+    }
 
     if (content !== undefined) {
       if (typeof content !== "string" || content.trim().length === 0) {
