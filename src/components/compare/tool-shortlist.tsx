@@ -76,17 +76,21 @@ const TOOLS: Tool[] = [
   },
 ];
 
-export function ToolShortlist() {
+export function ToolShortlist({
+  heading = "The best LinkedIn automation tools, and who each one is for",
+  intro = "There is no single best tool here, only a best fit for the shape of your work. Prices were checked on 29 July 2026 and move often, so confirm on each vendor's own page before deciding anything.",
+}: {
+  heading?: string;
+  intro?: string;
+} = {}) {
   return (
     <section className="relative py-[clamp(48px,6vw,84px)]">
       <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <h2 className="m-0 font-v3-display! text-[clamp(26px,3.2vw,38px)] font-semibold! leading-[1.1]! tracking-[-.04em]! text-slate-900 dark:text-white">
-          The best LinkedIn automation tools, and who each one is for
+          {heading}
         </h2>
         <p className="mt-4 max-w-[62ch] text-[16.5px] leading-[1.65] text-slate-600 dark:text-slate-300">
-          There is no single best tool here, only a best fit for the shape of
-          your work. Prices were checked on 29 July 2026 and move often, so
-          confirm on each vendor&apos;s own page before deciding anything.
+          {intro}
         </p>
 
         <ul className="mt-7 space-y-4">

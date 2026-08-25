@@ -225,6 +225,11 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
             type: "page",
           },
           {
+            title: "LinkedIn prospecting tools",
+            href: "/linkedin-prospecting-tools",
+            type: "page",
+          },
+          {
             title: "LinkedIn AI agent",
             href: "/linkedin-ai-agent",
             type: "page",

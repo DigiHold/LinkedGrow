@@ -13,6 +13,7 @@ import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
 import { LandingRelatedContent } from "@/components/landing/landing-related-content";
+import { ToolShortlist } from "@/components/compare/tool-shortlist";
 import {
   Target,
   AlertTriangle,
@@ -20,7 +21,7 @@ import {
   Users,
   MessageSquare,
   Database,
-  Mail,
+  ShieldAlert,
   Unplug,
   Radar,
   Globe,
@@ -30,7 +31,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export function B2bLeadGenerationToolsContent({
+export function LinkedinProspectingToolsContent({
   faqs,
 }: {
   faqs: { question: string; answer: string }[];
@@ -40,13 +41,13 @@ export function B2bLeadGenerationToolsContent({
       <Header />
 
       <LandingHero
-        badge={{ icon: Target, text: "B2B Lead Generation Tools" }}
+        badge={{ icon: Target, text: "LinkedIn Prospecting Tools" }}
         headline={{
-          line1: "B2B lead generation tools",
-          gradient: "built on real buying signals",
+          line1: "LinkedIn prospecting tools",
+          gradient: "that start from real interest",
         }}
-        descriptionBold="LinkedGrow is a B2B lead generation tool that runs an AI agent on your own LinkedIn account to find and message the buyers already showing interest in what you sell."
-        description="Most B2B lead generation tools sell you the same thing: a database of contacts and a way to email all of them at once. That model is cheap to build and easy to ignore, which is why cold reply rates keep falling. It works the other end of the funnel. The agent reads your website, learns who you sell to, then watches LinkedIn for the people engaging with posts in your space. It writes each message from what that person actually wrote, sends it from your account at a human pace, and drops every reply into a single inbox so you answer the ones worth your time."
+        descriptionBold="LinkedGrow is a LinkedIn prospecting tool that runs an AI agent on your own account to find and message the buyers already active around what you sell."
+        description="Most LinkedIn prospecting tools do one of two things: they hand you a database to export, or they fire connection requests through a browser bot until your account gets flagged. Both start from a list instead of a person. LinkedGrow works the other way. The agent reads your website, learns who you sell to, then watches LinkedIn for the people engaging with posts in your space. It writes each message from what that person actually posted, sends it from your own account at a human pace, and drops every reply into one inbox so you answer the ones worth your time."
         valuePropBadges={[
           { icon: Users, text: "Finds buyers on LinkedIn" },
           { icon: MessageSquare, text: "Messages from real signals" },
@@ -69,42 +70,42 @@ export function B2bLeadGenerationToolsContent({
       />
 
       <QuickAnswer
-        question="What are B2B lead generation tools?"
-        answer="B2B lead generation tools are software that helps a business find and reach potential buyers, from contact databases and email sequencers to signal-based tools that act on live activity. LinkedGrow is the signal-based kind for LinkedIn: an AI agent that finds buyers by their real engagement and messages them from your own account, at a human pace."
+        question="What are LinkedIn prospecting tools?"
+        answer="LinkedIn prospecting tools help you find and reach potential buyers on LinkedIn. They fall into three groups by where the leads come from: data tools and Sales Navigator that sell filtered contacts, automation bots that fire connection requests through a browser, and signal-based agents that act on live engagement. LinkedGrow is the last kind, an AI agent that finds buyers by their real activity and messages them from your own account at a human pace."
       />
 
       <LandingPainPoints
-        badge={{ icon: AlertTriangle, text: "The cold-list problem" }}
+        badge={{ icon: AlertTriangle, text: "The list-first problem" }}
         badgeColor="red"
         headline={{
-          text: "Most B2B lead generation tools sell",
-          gradient: "the same cold list.",
+          text: "Most LinkedIn prospecting tools start from",
+          gradient: "a list, not a buyer.",
         }}
-        descriptionBold="Buy a database, export 10,000 contacts, email all of them. That is the model behind most B2B lead generation tools, and it is the reason your prospects stopped replying."
-        description="A purchased contact is a stranger who never asked to hear from you. The data is often stale, the message is the same one everyone else sends, and the volume is what gets your domain flagged. The tools that promise the biggest lists tend to produce the fewest real conversations. A better B2B lead generation tool starts from interest instead of a spreadsheet: it finds the people already active around your topic and reaches them while that interest is still fresh."
+        descriptionBold="Buy a database or point a bot at a search, then reach everyone on it. That is the model behind most LinkedIn prospecting tools, and it is why your connection requests get ignored."
+        description="A name pulled from a filter never signaled a need. The message is the same one everyone else sends, and the volume is what puts your account at risk. The tools that promise the longest lists tend to produce the fewest real conversations. A prospecting tool that starts from interest reaches people while that interest is still fresh, which is the difference between a reply and a silent decline."
         problems={[
           {
             icon: Database,
             stat: "Cold",
-            title: "A bought list is a list of strangers",
+            title: "A filtered list is still a list of strangers",
             description:
-              "Contact databases sell you names and emails, not intent. The person on row 4,000 never read your work, never visited your site, and never signaled a need. You become one more cold email in a full inbox, and the reply rate shows it. Bought data ages fast too, because people change jobs constantly and a large share of any list is wrong within a year.",
+              "Data tools and Sales Navigator filters give you names and titles, not intent. The person on row 4,000 never read your work and never signaled a need, so your note lands as one more cold pitch. Contact data ages fast too, because people change roles constantly and a large share of any export is wrong within a year.",
             color: "from-red-500 to-rose-600",
           },
           {
-            icon: Mail,
-            stat: "Blast",
-            title: "Volume email replaces the actual conversation",
+            icon: ShieldAlert,
+            stat: "Risky",
+            title: "Connection bots put your account on the line",
             description:
-              "Sequencer tools exist to send the same message to thousands of people with a few variable swaps. Send enough of it and email providers start marking your domain as spam, which quietly kills the campaigns you care about. More sends rarely means more meetings, and usually just brings more unsubscribes and a worse sender reputation that follows you around.",
+              "Browser extensions and cloud bots fire invitations and messages at machine speed to reach a daily number. LinkedIn reads that rhythm, and the result runs from a warning to a temporary restriction to a lost account. You are risking the network you spent years building to save a few minutes a day.",
             color: "from-orange-500 to-amber-600",
           },
           {
             icon: CircleDollarSign,
-            stat: "On request",
-            title: "Enterprise data platforms hide the real price",
+            stat: "Per seat",
+            title: "The bill grows with every seat and every credit",
             description:
-              "The largest B2B data tools like ZoomInfo, Cognism, and 6sense quote pricing on request, and the number lands in the thousands of dollars a year once seats and credits are added. For a solo founder or a small team, that is a lot to spend before a single lead replies. You pay for the size of the database whether or not it holds your buyers.",
+              "Most prospecting automation is priced per user, so the cost multiplies by headcount before anyone replies. Data platforms add credits that burn down whether or not the contacts convert, and enterprise tools quote on request into the thousands a year. You pay for the size of the list, not for the meetings it books.",
             color: "from-amber-500 to-yellow-600",
           },
           {
@@ -112,25 +113,25 @@ export function B2bLeadGenerationToolsContent({
             stat: "None",
             title: "No line from a reply back to what caused it",
             description:
-              "Most tools hand you a reply with no context, so you never learn which post or topic brought that person in. Without that signal you cannot tell which sources are worth repeating, and you keep buying more data instead of doubling down on the channel that already works. That blind spot is what keeps cost per lead high.",
+              "Most tools hand you a reply with no context, so you never learn which post or topic brought that person in. Without that signal you cannot tell which sources are worth repeating, and you keep buying more data instead of leaning into the channel that already works. That blind spot keeps your cost per lead high.",
             color: "from-rose-500 to-red-600",
           },
         ]}
       />
 
       <LandingFeatures
-        badge={{ icon: Sparkles, text: "Signal-based lead generation" }}
+        badge={{ icon: Sparkles, text: "Leads from buying signals" }}
         headline={{
-          text: "A B2B lead generation tool that",
+          text: "A LinkedIn prospecting tool that",
           gradient: "starts from interest",
         }}
-        description="LinkedGrow turns your own LinkedIn account into a B2B lead generation tool that works while you do other things. You point it at your website, and the agent handles the discovery and the follow-up from there."
+        description="LinkedGrow turns your own LinkedIn account into a prospecting tool that runs while you work. You point it at your website, and the agent handles the discovery and the follow-up from there."
         features={[
           {
             icon: Globe,
             title: "Reads your website and names your buyer",
             description:
-              "Give the agent your site and it learns what you sell, who buys it, and which competitors you sit next to. From that it builds an ideal customer profile and a list of buying signals to watch for, so you are not the one guessing which prospects deserve a message. The targeting is done for you and stays editable.",
+              "Give the agent your site and it learns what you sell, who buys it, and which competitors you sit beside. From that it builds an ideal customer profile and a list of buying signals to watch, so you are not the one guessing which prospects deserve a message. The targeting is done for you and stays yours to edit.",
             highlights: ["Site analysis", "ICP built for you", "Competitor mapping"],
             badge: "Targeting",
             color: "from-cyan-500 to-blue-600",
@@ -139,7 +140,7 @@ export function B2bLeadGenerationToolsContent({
             icon: Radar,
             title: "Mines LinkedIn engagement for warm prospects",
             description:
-              "Instead of a static database, the agent watches the posts and comments in your space and surfaces the people actively engaging there. Every lead is tied back to the exact post it came from, so a reply is never a mystery. That link between a lead and its signal is what lets you repeat what works instead of guessing.",
+              "Instead of a static export, the agent watches the posts and comments in your space and surfaces the people actively engaging there. Every lead is tied back to the exact post it came from, so a reply is never a mystery. That link between a lead and its signal is what lets you repeat what works instead of guessing.",
             highlights: ["Engagement mining", "Lead tied to its post", "Fresh, not stale"],
             badge: "Buying signals",
             color: "from-emerald-500 to-green-600",
@@ -149,13 +150,13 @@ export function B2bLeadGenerationToolsContent({
             title: "Writes each message from what they posted",
             description:
               "The agent drafts every connection note and DM from what that specific person actually wrote, not a template with a merge field. It sends from your own account, on an address reserved for it, at a human pace, so the outreach reads like you sat down and wrote it yourself. No two messages come out the same.",
-            highlights: ["Per-person copy", "Human pace", "Your own account"],
+            highlights: ["Written per person", "Human pace", "Your own account"],
             badge: "Outreach",
             color: "from-violet-500 to-purple-600",
           },
           {
             icon: Inbox,
-            title: "One inbox, with a handover when it matters",
+            title: "One inbox, with a handover when it counts",
             description:
               "Every reply lands in a single inbox. The agent keeps each conversation moving on its own, and the moment someone is worth your attention, it hands you the thread with the context already attached. You spend your time on live buyers rather than on chasing people who will never answer.",
             highlights: ["Unified inbox", "Automatic follow-up", "Human handover"],
@@ -166,17 +167,17 @@ export function B2bLeadGenerationToolsContent({
             icon: BarChart3,
             title: "Scores every source and drops what fails",
             description:
-              "The agent tracks which posts, topics, and audiences actually produce replies and meetings, then leans into the ones that pay off and quietly stops the ones that do not. Over a few weeks your B2B lead generation gets cheaper per lead, because the tool is learning where your buyers really spend their attention.",
+              "The agent tracks which posts, topics, and audiences actually produce replies and meetings, then leans into the ones that pay off and quietly stops the ones that do not. Over a few weeks your prospecting gets cheaper per lead, because the tool is learning where your buyers really spend their attention.",
             highlights: ["Source scoring", "Cost per lead falls", "Self-correcting"],
             badge: "Analytics",
             color: "from-blue-500 to-indigo-600",
           },
           {
             icon: PenTool,
-            title: "A content engine feeding the top of funnel",
+            title: "Content that feeds the top of the funnel",
             description:
-              "Because inbound and outbound work best together, it also writes posts in your voice from a blog, a video, or a raw idea. Consistent content gives the agent more warm signals to act on, so the two halves of the tool compound instead of competing. The content side runs on your own AI key for a few dollars a month.",
-            highlights: ["Voice-trained posts", "Repurposing", "Feeds the agent"],
+              "Because inbound and outbound work best together, it also writes posts in your voice from a blog, a video, or a raw idea. Steady content gives the agent more warm signals to act on, so the two halves of the tool compound instead of competing. The content side runs on your own AI key for a few dollars a month.",
+            highlights: ["Posts in your voice", "Repurposing", "Feeds the agent"],
             badge: "Content",
             color: "from-teal-500 to-cyan-600",
           },
@@ -185,9 +186,14 @@ export function B2bLeadGenerationToolsContent({
         ctaHref="/sign-up"
       />
 
+      <ToolShortlist
+        heading="The best LinkedIn prospecting tools, and who each one is for"
+        intro="There is no single best LinkedIn prospecting tool, only a best fit for the shape of your work. Prices were checked on 29 July 2026 and move often, so confirm on each vendor's own page before you decide."
+      />
+
       <LandingHowItWorks
         headline={{
-          text: "Put a lead generation agent to work",
+          text: "Put a prospecting agent to work",
           gradient: "in 4 steps",
         }}
         description="The agent handles the full path from setup to warm reply. You approve the direction, and it does the daily work."
@@ -223,7 +229,7 @@ export function B2bLeadGenerationToolsContent({
             number: "04",
             title: "Answer the replies that matter",
             description:
-              "Replies collect in a single inbox. The agent keeps threads warm and hands you the ones ready for a real conversation, with the history attached. You step in only when there is a genuine buyer on the other end, which is the only part that needs you.",
+              "Replies collect in a single inbox. The agent keeps threads warm and hands you the ones ready for a real conversation, with the history attached. You step in only when there is a genuine buyer on the other end, which is the only step that needs you.",
             icon: Inbox,
             color: "from-amber-500 to-yellow-500",
             time: "Ongoing",
@@ -235,18 +241,18 @@ export function B2bLeadGenerationToolsContent({
       <LandingBYOK
         badge={{ icon: CircleDollarSign, text: "What it costs" }}
         headline={{
-          text: "B2B lead generation that costs less than",
-          gradient: "a data subscription",
+          text: "LinkedIn prospecting that costs less than",
+          gradient: "a data and outreach stack",
         }}
-        description="Enterprise data platforms price on request and run into the thousands of dollars a year. The Pro plan is $99 a month for one agent, and the agent's AI is included in that price rather than billed on top."
+        description="A data source plus a per seat outreach tool adds up fast, and neither one writes the message for you. The Pro plan is $99 a month for one agent, and the agent's AI is included in that price rather than billed on top."
         competitor={{
-          name: "A typical data + email stack",
-          price: "$1,000s / year",
+          name: "Sales Navigator plus a sequencer",
+          price: "$150+ / seat a month",
           issues: [
-            { text: "Contact database priced on request, often thousands a year" },
-            { text: "A separate email sequencer on top, billed per seat" },
-            { text: "Credits burn down whether or not the contacts convert" },
-            { text: "Cold data ages, so you re-buy much of the same list next year" },
+            { text: "Sales Navigator runs $89.99 to $159.99 a seat and sends nothing itself" },
+            { text: "A separate outreach tool on top, billed per seat" },
+            { text: "Automation bots add account risk for volume you may not need" },
+            { text: "Credits and mailboxes billed as extras every cycle" },
             { text: "No link from a reply back to the signal that caused it" },
           ],
         }}
@@ -261,39 +267,38 @@ export function B2bLeadGenerationToolsContent({
             { text: "The optional content side runs on your own key for about $2 to $4 a month" },
           ],
         }}
-        savingsText="Replace a bought database with an agent that works live signals, and watch the cost per real reply fall."
+        savingsText="Replace a data subscription and a per seat bot with one agent that works live signals, and watch the cost per real reply fall."
       />
 
       <LandingFAQ
         headline={{
-          text: "B2B Lead Generation Tools",
+          text: "LinkedIn Prospecting Tools",
           gradient: "FAQ",
         }}
-        description="Common questions about choosing and pricing B2B lead generation tools"
+        description="Common questions about choosing, pricing, and safely using LinkedIn prospecting tools"
         faqs={faqs}
       />
 
       <LandingRelatedContent
         headline="Related Resources"
         links={[
+          { title: "LinkedIn Prospecting", href: "/features/linkedin-prospecting", type: "feature" },
           { title: "AI SDR Software", href: "/ai-sdr-software", type: "page" },
-          { title: "AI Sales Tools", href: "/ai-sales-tools", type: "page" },
-          { title: "LinkedIn Prospecting Tools", href: "/linkedin-prospecting-tools", type: "page" },
           { title: "LinkedIn Lead Generation Tools", href: "/linkedin-lead-generation-tools", type: "page" },
           { title: "Buying Signals", href: "/features/buying-signals", type: "feature" },
           { title: "Lead Generation Use Case", href: "/use-cases/lead-generation", type: "page" },
-          { title: "Cost Per Lead Calculator", href: "/free-tools/cost-per-lead-calculator", type: "tool" },
+          { title: "Cold Message Template", href: "/free-tools/linkedin-cold-message-template", type: "tool" },
           { title: "Book a Demo", href: "/book-demo", type: "page" },
         ]}
       />
 
       <LandingCTA
-        badge="B2B lead generation tools"
+        badge="LinkedIn prospecting tools"
         headline={{
           line1: "Ready to trade a cold list",
           gradient: "for real LinkedIn buyers?",
         }}
-        description="LinkedGrow points an AI agent at your own LinkedIn account, finds the buyers already active in your space, and messages them from what they actually posted. One tool for the whole path from signal to reply."
+        description="LinkedGrow points an AI agent at your own LinkedIn account, finds the buyers already active in your space, and messages them from what they actually posted. One prospecting tool for the whole path from signal to reply."
         primaryCta={{ text: "Start your 7-day trial", href: "/sign-up" }}
         trustIndicators={[
           "7-day trial, card required",

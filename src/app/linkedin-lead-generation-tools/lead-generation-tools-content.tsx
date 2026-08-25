@@ -327,6 +327,7 @@ export function LeadGenerationToolsContent() {
         headline="Related Resources"
         links={[
           { title: "B2B Lead Generation Tools", href: "/b2b-lead-generation-tools" },
+          { title: "LinkedIn Prospecting Tools", href: "/linkedin-prospecting-tools" },
           { title: "AI Sales Tools", href: "/ai-sales-tools" },
           { title: "LinkedIn Marketing Tool", href: "/linkedin-marketing-tool" },
           { title: "LinkedIn Automation Tools", href: "/linkedin-automation-tools" },
