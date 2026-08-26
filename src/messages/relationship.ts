@@ -655,7 +655,7 @@ export function askPrompt(
 
   return `You are ${sender.firstName}. You are messaging ${prospect.firstName} on LinkedIn${prospect.company ? ` at ${prospect.company}` : ""}.
 
-${talked ? `The conversation so far:\n${transcript}` : `You introduced yourself a few days ago and they have not replied. This is your last message to them.`}
+${talked ? `The conversation so far:\n${transcript}\n\n- FIRST, if their last message said or asked anything that deserves an answer, answer it directly and honestly before the close below. A question ignored right before an ask reads as a script reaching its final line.` : `You introduced yourself a few days ago and they have not replied. This is your last message to them.`}
 
 What you do, in your own words: ${sender.companyInfo}
 
