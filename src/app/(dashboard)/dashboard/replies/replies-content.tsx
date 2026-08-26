@@ -266,14 +266,14 @@ export function RepliesContent() {
   const byMember = new Map(members.map((m) => [m.id, m]));
   const all = threads ?? [];
   const shown = !isTeam
-  const manyAccounts =
-    new Set(threads.map((th) => th.accountId).filter(Boolean)).size > 1;
     ? all
     : scope === "mine"
       ? all.filter((t) => t.assignedTo === me)
       : scope === "free"
         ? all.filter((t) => !t.assignedTo)
         : all;
+  const manyAccounts =
+    new Set(all.map((th) => th.accountId).filter(Boolean)).size > 1;
 
   const unread = (threads ?? []).filter((t) => t.unread).length;
   const takingOverThread = (threads ?? []).find((t) => t.leadId === takingOver) ?? null;
