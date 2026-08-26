@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { agentLeads, agentMessages, agents } from "@/lib/db/schema";
+import { agentLeads, agentMessages, agents, linkedinAccounts } from "@/lib/db/schema";
 import { loadSessionUser } from "@/lib/auth-user";
 import { workspaceMembers } from "@/lib/team-utils";
 
@@ -110,14 +110,34 @@ export async function GET() {
         )
         .orderBy(asc(agentMessages.sentAt)),
       db
-        .select({ id: agents.id, name: agents.name })
+        .select({
+          id: agents.id,
+          name: agents.name,
+          linkedinAccountId: agents.linkedinAccountId,
+        })
         .from(agents)
         .where(eq(agents.workspaceId, workspaceId)),
       workspaceMembers(workspaceId),
     ]);
 
+    /* Which LinkedIn profile each conversation lives on. With one connected
+       account there is nothing to say; with two, a reply answered from the
+       wrong identity reads as a stranger barging into a conversation, so the
+       page needs to show the account at a glance. */
+    const accountRows = await db
+      .select({
+        id: linkedinAccounts.id,
+        fullName: linkedinAccounts.fullName,
+        email: linkedinAccounts.email,
+        avatarUrl: linkedinAccounts.avatarUrl,
+      })
+      .from(linkedinAccounts)
+      .where(eq(linkedinAccounts.workspaceId, workspaceId));
+    const accountById = new Map(accountRows.map((a) => [a.id, a]));
+
     const person = new Map(people.map((p) => [p.id, p]));
     const agentName = new Map(mine.map((a) => [a.id, a.name]));
+    const agentAccount = new Map(mine.map((a) => [a.id, a.linkedinAccountId]));
 
     const threads = leadIds.flatMap((leadId) => {
       const who = person.get(leadId);
@@ -130,6 +150,13 @@ export async function GET() {
           // keyed on the agent, and ownership lives in its WHERE clause.
           agentId: last.agentId,
           agentName: agentName.get(last.agentId) ?? "Agent",
+          accountId: agentAccount.get(last.agentId) ?? null,
+          accountName: (() => {
+            const acc = accountById.get(agentAccount.get(last.agentId) ?? "");
+            return acc ? acc.fullName || acc.email : null;
+          })(),
+          accountAvatarUrl:
+            accountById.get(agentAccount.get(last.agentId) ?? "")?.avatarUrl ?? null,
           unread: last.readAt === null,
           repliedAt: last.sentAt,
           lastReply: last.body,

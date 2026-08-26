@@ -46,6 +46,9 @@ type Thread = {
   signalText: string | null;
   sequenceStatus: string | null;
   assignedTo: string | null;
+  accountId: string | null;
+  accountName: string | null;
+  accountAvatarUrl: string | null;
   messages: Message[];
 };
 
@@ -263,6 +266,8 @@ export function RepliesContent() {
   const byMember = new Map(members.map((m) => [m.id, m]));
   const all = threads ?? [];
   const shown = !isTeam
+  const manyAccounts =
+    new Set(threads.map((th) => th.accountId).filter(Boolean)).size > 1;
     ? all
     : scope === "mine"
       ? all.filter((t) => t.assignedTo === me)
@@ -351,7 +356,24 @@ export function RepliesContent() {
                 onClick={() => openThread(thread.leadId)}
                 className="flex w-full items-start gap-3 p-4 text-left hover:bg-slate-50 dark:hover:bg-white/[0.03]"
               >
-                <Avatar src={thread.avatarUrl} name={thread.fullName} size={40} />
+                {/* The lead's face, and on multi-account workspaces the
+                    connected account this conversation belongs to, pinned to
+                    its corner so one glance says which profile is talking. */}
+                <span className="relative inline-block flex-none">
+                  <Avatar src={thread.avatarUrl} name={thread.fullName} size={40} />
+                  {manyAccounts && thread.accountId && (
+                    <span
+                      className="absolute -bottom-1 -right-1 rounded-full ring-2 ring-white dark:ring-slate-900"
+                      title={`via ${thread.accountName ?? "connected account"}`}
+                    >
+                      <Avatar
+                        src={thread.accountAvatarUrl}
+                        name={thread.accountName ?? "?"}
+                        size={18}
+                      />
+                    </span>
+                  )}
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-white">
