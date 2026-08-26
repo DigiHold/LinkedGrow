@@ -489,13 +489,32 @@ Write it.
 export function introMessage(
   ctx: AgentContext,
   sender: Sender,
-  prospect: Prospect
+  prospect: Prospect,
+  thread: Turn[] = []
 ): Promise<string> {
+  /**
+   * What they already wrote, which this step used to be blind to.
+   *
+   * The intro is scheduled by status, so when the hello's answer carried a
+   * real question ("How has building been going?"), the intro shipped its
+   * prepared substance and ignored the question outright: Miracle Ohama,
+   * 2026-08-26, and it read exactly like a bot changing the subject. The
+   * thread rides along now, and answering it comes before everything else.
+   */
+  const theirs = thread.filter((t) => t.from === "them");
+  const transcript =
+    theirs.length > 0
+      ? thread
+          .map((t) => `${t.from === "us" ? sender.firstName : prospect.firstName}: ${t.body}`)
+          .join("\n")
+      : "";
+
   return write(
     ctx,
     sender,
     prospect,
     `You are ${sender.firstName}. You said hello to ${prospect.firstName} on LinkedIn after they accepted your invitation. This is your second message, and the first one with any substance in it.
+${transcript ? `\nThe conversation so far:\n${transcript}\n\n- FIRST, before anything else in your message: answer what ${prospect.firstName} actually said or asked in their last messages, directly, honestly and specifically. If they asked about you, your work or what you are building, answer it plainly from what this prompt tells you about yourself; never change the subject past a direct question, that is what a bot does.` : ""}
 
 ${prospect.signalText ? `Context you know and never mention: they recently wrote "${prospect.signalText}". Use it only to know which world to speak to.` : ""}
 ${prospect.headline ? `Context you know and never mention: their headline reads "${prospect.headline}".` : ""}

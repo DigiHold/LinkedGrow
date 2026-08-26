@@ -284,7 +284,7 @@ async function runAgent(ctx: AgentContext): Promise<void> {
             step === RELATIONSHIP_STEPS.hello
               ? await helloMessage(ctx, ctx.sender, to)
               : step === RELATIONSHIP_STEPS.intro
-              ? await introMessage(ctx, ctx.sender, to)
+              ? await introMessage(ctx, ctx.sender, to, thread)
               : step === RELATIONSHIP_STEPS.converse
                 ? await converseMessage(ctx, ctx.sender, to, thread)
                 : await askMessage(ctx, ctx.sender, to, thread);
