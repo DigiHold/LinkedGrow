@@ -438,6 +438,7 @@ Score from 0 to 100. What they were doing when they were found is real evidence 
          * sit in the same list of names.
          */
         "If the prospect builds, sells, co-founds or leads a product that does the same job as what our customer sells, they are a competitor and the score is 0, whatever they were doing when they were found and however well their title reads. A rival founder engaging with a competitor is watching their market, not shopping. Somebody who merely works in the same industry, or uses tools like this, is not a competitor and is often the right person.\n\n" +
+        "Somebody whose profile reads as looking for a job scores 0 to 10 whatever else matches: open to work, seeking opportunities, aspiring anything, a recent graduate, between roles, or no current company to buy for. People buy tools for a business they run or a job they hold, not while hunting for one.\n\n" +
         "When the agent's own learning is given, it outranks the written profile: it is what happened rather than what somebody hoped would happen. Somebody matching a shape that has been contacted and ignored scores low however good the title reads.\n\n" +
         "Reply with one line and nothing else, a number then a pipe then the reason, like this: 72|Founder at a small SaaS, buys their own tools.",
     }

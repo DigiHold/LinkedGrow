@@ -136,7 +136,13 @@ export async function mineProfileViewers(ctx: DB, page: Page, cfg: Config, opts:
     const leads: Engager[] = [];
     for (const r of rows) {
       const lead = toViewer(r);
-      if (lead && matchesIcp(cfg.leads.icpKeywords, lead.headline ?? "", lead.context ?? "")) {
+      if (
+        lead &&
+        matchesIcp(cfg.leads.icpKeywords, lead.headline ?? "", lead.context ?? "") &&
+        // A profile visit is warm, and warmth changes nothing about a job
+        // hunter: they are not buying tools while looking for a paycheck.
+        !NEVER_BUYS.test(`${lead.headline ?? ""} ${lead.context ?? ""}`)
+      ) {
         leads.push({ ...lead, avatarUrl: r.photo || undefined });
       }
     }
@@ -522,7 +528,20 @@ export async function toSignalLead(
 
 // Roles that own a website budget, and the ones that never do however senior they sound.
 const DECIDES = /\b(founder|co-?founder|owner|ceo|cto|coo|cmo|president|partner|head of|vp\b|chief|director|lead\b|manager|marketer|marketing|growth|seo|agency|freelance|consultant|developer|engineer|ecommerce|e-commerce)\b/i;
-const NEVER_BUYS = /\b(recruit|talent acquisition|human resources|\bhr\b|staffing|headhunt|student|intern\b|internship|junior|trainee|apprentice|assistant|open to work|seeking opportunities|job seeker)\b/i;
+/**
+ * Widened on 2026-08-26 after a lead with an #OpenToWork badge was messaged:
+ * the hashtag form has no spaces, so "open to work" never matched it, and the
+ * French shapes were absent entirely. The photo-frame-only case stays
+ * invisible to text (nothing of it is in the headline or About); the scorer
+ * and the ICP judge carry that rule in prose.
+ */
+const NEVER_BUYS =
+  /\b(recruit|talent acquisition|human resources|\bhr\b|staffing|headhunt|student|intern\b|internship|junior|trainee|apprentice|assistant|open to work|opentowork|open to new opportunit|seeking opportunit|seeking a? ?(new )?(job|role|position)|looking for a? ?(new )?(job|role|position)|actively looking|job ?seeker|job ?hunting|between (jobs|roles)|unemployed|aspiring|recent graduate|fresh graduate|à l'écoute d|en recherche (active )?d'emploi|recherche d'emploi)\b/i;
+
+/** True when a headline or bio reads like somebody hunting for a job rather than running one. */
+export function readsAsJobSeeker(text: string): boolean {
+  return NEVER_BUYS.test(text);
+}
 
 /** True when the headline reads like someone who could actually approve buying a tool for their site. */
 export function looksLikeBuyer(headline: string): boolean {

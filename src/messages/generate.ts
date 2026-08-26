@@ -88,6 +88,9 @@ export async function judgeIcpFit(
     "Answer SKIP when they are junior, when their field is unrelated to what we sell, or when they",
     "work somewhere so large that this purchase belongs to a whole department rather than to any",
     "one person they could be.",
+    "Answer SKIP when they appear to be looking for a job themselves (open to work, seeking",
+    "opportunities, aspiring, recent graduate, between roles): a job seeker does not buy business",
+    "tools, however good the rest of the profile reads.",
     "Answer FIT mainly for people close enough to the problem to own the decision: founders,",
     "operators, owners, and the person who would use it themselves.",
     ctx.matchLevel === "precision"
