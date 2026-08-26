@@ -191,6 +191,10 @@ function EditorContent() {
   const [liAccounts, setLiAccounts] = useState<
     { id: string; fullName: string | null; email: string }[]
   >([]);
+  /* Only a CONFIRMED empty list may show the connect nudge: an editor that
+     flashes "connect your account" at every paying customer while the fetch
+     is in flight teaches people to ignore it. */
+  const [liAccountsLoaded, setLiAccountsLoaded] = useState(false);
   const [postAccountId, setPostAccountId] = useState<string | null>(null);
   const [hasImageApiKey, setHasImageApiKey] = useState(false);
   const [hasTextApiKey, setHasTextApiKey] = useState(false);
@@ -238,6 +242,7 @@ function EditorContent() {
           (a: { status: string }) => a.status === "active"
         );
         setLiAccounts(active);
+        setLiAccountsLoaded(true);
         if (active.length > 0) {
           setPostAccountId((prev) => prev ?? active[0].id);
         }
@@ -957,6 +962,23 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
                 {isVideoMedia(attachedImage) && (
                   <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
                     Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
+                  </div>
+                )}
+                {/* Publishing needs a connected account, and connecting is
+                    where the trial card comes in. Drafts, carousels and AI
+                    keys stay free; this is the one door with a toll. */}
+                {liAccountsLoaded && liAccounts.length === 0 && (
+                  <div className="p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 text-sm">
+                    <p className="text-cyan-800 dark:text-cyan-200">
+                      To publish or schedule, connect the LinkedIn account this
+                      post goes out from. Your drafts are saved either way.
+                    </p>
+                    <Link
+                      className="mt-2 inline-block font-medium text-cyan-700 underline underline-offset-2 dark:text-cyan-300"
+                      href="/dashboard/settings/linkedin-accounts"
+                    >
+                      Connect your LinkedIn account
+                    </Link>
                   </div>
                 )}
                 {/* With 2+ connected accounts the post must say which profile

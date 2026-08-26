@@ -69,7 +69,15 @@ export async function GET() {
       .groupBy(linkedinAccounts.id)
       .orderBy(asc(linkedinAccounts.createdAt));
 
+    // Whether connecting is even open to this workspace, so the panel can
+    // route a cardless user to the trial checkout instead of a dead form.
+    // Same condition as the POST below, one exception included (lifetime).
+    const owner = data.owner ?? data.user;
+    const subscribed =
+      !!data.user.isAdmin || !!owner.isLifetimeDeal || !!owner.stripeSubscriptionId;
+
     return NextResponse.json({
+      subscribed,
       accounts: rows.map((r) => ({
         id: r.id,
         // Selected above for a reason and then dropped here, which took the

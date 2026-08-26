@@ -30,7 +30,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSession } from "next-auth/react";
+
 import { PROXY_COUNTRIES, countryName } from "@/lib/proxy-countries";
+import { redirectToCheckout } from "@/lib/checkout";
 import { EXTRA_AGENT_PRICE } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { ChallengePrompt } from "./challenge-prompt";
@@ -126,6 +129,9 @@ const STATUS: Record<string, { label: string; className: string }> = {
 /** Loads the accounts and the plan's account allowance in one place. */
 export function useLinkedInAccounts() {
   const [accounts, setAccounts] = useState<LinkedInAccount[] | null>(null);
+  /* null while loading: the connect button must not promise a trial to a
+     paying customer, nor open the credentials form to a cardless one. */
+  const [subscribed, setSubscribed] = useState<boolean | null>(null);
   const [quota, setQuota] = useState(0);
   const [extraAgents, setExtraAgents] = useState(0);
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
@@ -140,6 +146,7 @@ export function useLinkedInAccounts() {
       if (!accountsRes.ok) throw new Error("Could not load your accounts");
       const data = await accountsRes.json();
       setAccounts(data.accounts ?? []);
+      setSubscribed(data.subscribed !== false);
       if (agentsRes.ok) {
         const agentData = await agentsRes.json();
         setQuota(agentData.quota?.limit ?? 0);
@@ -156,7 +163,7 @@ export function useLinkedInAccounts() {
     load();
   }, [load]);
 
-  return { accounts, quota, extraAgents, billingInterval, error, reload: load };
+  return { accounts, subscribed, quota, extraAgents, billingInterval, error, reload: load };
 }
 
 /** The name a person recognises, which is the address until LinkedIn answers. */
@@ -207,7 +214,38 @@ export function LinkedInAccountsPanel({
   onChanged?: () => void;
   emptyHint?: string;
 }) {
-  const { accounts, quota, extraAgents, billingInterval, error, reload } = useLinkedInAccounts();
+  const { accounts, subscribed, quota, extraAgents, billingInterval, error, reload } =
+    useLinkedInAccounts();
+  const { data: session } = useSession();
+  const [startingTrial, setStartingTrial] = useState(false);
+
+  /* Connecting an account is the moment LinkedGrow starts costing money (a
+     dedicated address, a real browser), so it is the moment the card comes
+     in: the same gate the agent wizard applies. Stripe brings them back here
+     with ?resume=1 and the credentials form opens by itself. */
+  const startTrialThenConnect = async () => {
+    setStartingTrial(true);
+    const went = await redirectToCheckout(
+      "pro",
+      session?.user?.email ?? "",
+      () => setStartingTrial(false),
+      "month",
+      undefined,
+      "/dashboard/settings/linkedin-accounts?resume=1"
+    );
+    if (!went) setStartingTrial(false);
+  };
+
+  useEffect(() => {
+    if (
+      subscribed === true &&
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("resume")
+    ) {
+      setConnecting(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subscribed]);
   const [connecting, setConnecting] = useState(false);
   const [upselling, setUpselling] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
@@ -423,14 +461,31 @@ export function LinkedInAccountsPanel({
 
       <div className="flex flex-wrap items-center gap-3">
         <Button
-          onClick={() => (atQuota ? setUpselling(true) : setConnecting(true))}
+          disabled={startingTrial}
+          onClick={() =>
+            atQuota
+              ? setUpselling(true)
+              : subscribed === false
+                ? startTrialThenConnect()
+                : setConnecting(true)
+          }
           size="sm"
           type="button"
           variant={accounts && accounts.length > 0 ? "outline" : "default"}
         >
-          <Plus className="mr-2 h-4 w-4" />
+          {startingTrial ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="mr-2 h-4 w-4" />
+          )}
           Connect an account
         </Button>
+        {subscribed === false && (
+          <span className="text-[13px] text-slate-500 dark:text-slate-400">
+            Starts your 7-day trial: $0 today, then your card is charged unless
+            you cancel first.
+          </span>
+        )}
         {quota > 0 && (
           <span className="text-[13px] text-slate-500 dark:text-slate-400">
             {used} of {quota} on your plan
