@@ -220,6 +220,7 @@ export function LinkedinAiAgentContent({
       <LandingRelatedContent
         headline="Related"
         links={[
+          { title: "AI sales agent", href: "/ai-sales-agent" },
           { title: "LinkedIn outreach automation", href: "/features/linkedin-outreach-automation" },
           { title: "LinkedIn prospecting", href: "/features/linkedin-prospecting" },
           { title: "Buying signals", href: "/features/buying-signals" },

@@ -240,6 +240,11 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
             type: "page",
           },
           {
+            title: "AI sales agent",
+            href: "/ai-sales-agent",
+            type: "page",
+          },
+          {
             title: "LinkedGrow v2",
             href: "/blog/linkedgrow-v2",
             type: "blog",
