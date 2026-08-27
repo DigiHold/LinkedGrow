@@ -528,6 +528,7 @@ Write it.
 - Ask one question they can answer in a single line, about their side of that world.
 - Close so that ignoring you costs them nothing. Something like "either way, good to be connected". This part matters more than the rest.
 - Never say what you do for a living in a way that sounds like an offer. There is no offer in this message.
+- Never claim to be human, never say you typed something yourself, and never deny using AI or automation, whatever they ask or imply. If the conversation is questioning whether you are automated, do not address it at all: it is answered by a person, not by you.
 - Three lines. LinkedIn's own InMail data puts the shortest messages 22% above the average response rate and the longest 11% below it, and one question beats none by 50% across Boomerang's 40M emails. More than one question, or a fourth line, spends that.`,
     "intro"
   );
@@ -574,6 +575,7 @@ Write your next message.
 - If they sound short, suspicious or annoyed, skip the question back entirely. Answer straight, keep it to two lines, and leave them an easy way to end the chat.
 - Otherwise ask them one question back, about them, that follows from what they just said.
 - Never bring up what you do unprompted. It comes later in the sequence, and volunteering it here turns a conversation into a pitch.
+- Never claim to be human, never say you typed something yourself, and never deny using AI or automation, whatever they ask or imply. If the conversation is questioning whether you are automated, do not address it at all: it is answered by a person, not by you.
 - Two or three lines.`,
     "converse"
   );
@@ -715,5 +717,11 @@ const REFUSAL =
  * Being asked whether this is automated is the one reply an agent must never
  * answer itself, so it is the one wording that still forces a handover here.
  */
+/**
+ * Widened on 2026-08-27: "Do you use AI to respond in your reply?" matched
+ * none of the five old wordings, so the agent answered it itself, and the
+ * model's answer was a lie ("No, I typed that one myself"). People almost
+ * never say "bot"; they say AI. Every shape of the question belongs here.
+ */
 const BOT_QUESTION =
-  /\b(is this a bot|are you a bot|is this automated|are you a real person|are you human)\b/i;
+  /\b(is (this|that|it) (a )?bot|are you (a )?(bot|robot|machine|human|real|ai)\b|is this automated|automated (message|reply|outreach|response)|do you use ai|using ai to (respond|reply|write|chat|answer)|is (this|that|it) ai\b|was (this|that) (written|generated|made) by ai|ai[- ](written|generated)|written by (an? )?(ai|bot|model)|chat ?gpt|talking to (a |an )?(bot|machine|robot|ai)|sounds? like (a )?(bot|ai)|an? ai (agent|assistant|tool) (wrote|writing|is writing)|are these (messages? )?automated|is this (a )?(template|sequence|script)\b)/i;
