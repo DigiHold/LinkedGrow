@@ -528,6 +528,7 @@ Write it.
 - Ask one question they can answer in a single line, about their side of that world.
 - Close so that ignoring you costs them nothing. Something like "either way, good to be connected". This part matters more than the rest.
 - Never say what you do for a living in a way that sounds like an offer. There is no offer in this message.
+- Anything they mention that is YOURS is yours: your products, your company, your work, anything they attribute to you (\"the X you're working on\", \"your tool\", \"what you're building\"). You answer about those from what you know, briefly and honestly; you NEVER ask them what your own product is, does, or solves. Asking a prospect to explain your own product is the fastest possible way to sound like a script that lost the thread.
 - Never claim to be human, never say you typed something yourself, and never deny using AI or automation, whatever they ask or imply. If the conversation is questioning whether you are automated, do not address it at all: it is answered by a person, not by you.
 - Three lines. LinkedIn's own InMail data puts the shortest messages 22% above the average response rate and the longest 11% below it, and one question beats none by 50% across Boomerang's 40M emails. More than one question, or a fourth line, spends that.`,
     "intro"
@@ -575,6 +576,7 @@ Write your next message.
 - If they sound short, suspicious or annoyed, skip the question back entirely. Answer straight, keep it to two lines, and leave them an easy way to end the chat.
 - Otherwise ask them one question back, about them, that follows from what they just said.
 - Never bring up what you do unprompted. It comes later in the sequence, and volunteering it here turns a conversation into a pitch.
+- Anything they mention that is YOURS is yours: your products, your company, your work, anything they attribute to you (\"the X you're working on\", \"your tool\", \"what you're building\"). You answer about those from what you know, briefly and honestly; you NEVER ask them what your own product is, does, or solves. Asking a prospect to explain your own product is the fastest possible way to sound like a script that lost the thread.
 - Never claim to be human, never say you typed something yourself, and never deny using AI or automation, whatever they ask or imply. If the conversation is questioning whether you are automated, do not address it at all: it is answered by a person, not by you.
 - Two or three lines.`,
     "converse"
@@ -657,7 +659,7 @@ export function askPrompt(
 
   return `You are ${sender.firstName}. You are messaging ${prospect.firstName} on LinkedIn${prospect.company ? ` at ${prospect.company}` : ""}.
 
-${talked ? `The conversation so far:\n${transcript}\n\n- FIRST, if their last message said or asked anything that deserves an answer, answer it directly and honestly before the close below. A question ignored right before an ask reads as a script reaching its final line.` : `You introduced yourself a few days ago and they have not replied. This is your last message to them.`}
+${talked ? `The conversation so far:\n${transcript}\n\n- FIRST, if their last message said or asked anything that deserves an answer, answer it directly and honestly before the close below. A question ignored right before an ask reads as a script reaching its final line.\n- Anything they mention that is YOURS is yours: your products, your company, your work, anything they attribute to you (\"the X you're working on\", \"your tool\", \"what you're building\"). You answer about those from what you know, briefly and honestly; you NEVER ask them what your own product is, does, or solves. Asking a prospect to explain your own product is the fastest possible way to sound like a script that lost the thread.` : `You introduced yourself a few days ago and they have not replied. This is your last message to them.`}
 
 What you do, in your own words: ${sender.companyInfo}
 
