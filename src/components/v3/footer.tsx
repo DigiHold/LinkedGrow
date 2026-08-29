@@ -90,6 +90,7 @@ const FILL_SM =
  */
 const FEATURED: { name: string; href: string; icon: string }[] = [
   { name: "Divvlaunches", href: "https://www.divvlaunches.com/product/linkedgrow", icon: "/featured/divvlaunches.webp" },
+  { name: "StartupBase", href: "https://startupbase.io/products/linkedgrow", icon: "/featured/startupbase.svg" },
 ];
 
 function FeaturedOn() {
