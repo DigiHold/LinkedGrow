@@ -282,6 +282,7 @@ export function AiSalesAgentContent({
         headline="Keep reading"
         links={[
           { title: "AI SDR software", href: "/ai-sdr-software", type: "page" },
+          { title: "AI BDR software", href: "/ai-bdr", type: "page" },
           { title: "AI sales tools", href: "/ai-sales-tools", type: "page" },
           { title: "LinkedIn AI agent", href: "/linkedin-ai-agent", type: "page" },
           { title: "B2B lead generation tools", href: "/b2b-lead-generation-tools", type: "page" },

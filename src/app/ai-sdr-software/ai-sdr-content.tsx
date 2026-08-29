@@ -230,6 +230,11 @@ export function AiSdrContent({ faqs }: { faqs: Array<{ question: string; answer:
             type: "page",
           },
           {
+            title: "AI BDR software",
+            href: "/ai-bdr",
+            type: "page",
+          },
+          {
             title: "LinkedIn AI agent",
             href: "/linkedin-ai-agent",
             type: "page",
