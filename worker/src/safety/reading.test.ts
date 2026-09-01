@@ -1,0 +1,148 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { budgetFor, dayAllowance, tierOf } from "./reading.ts";
+
+/**
+ * The numbers, and the two times they were wrong.
+ *
+ * First a flat 60 profiles a day, from the "80 a day on a free account" that
+ * automation blogs copy from each other. Then 200 a month, roughly 16 a day,
+ * after reading the shape of LinkedIn's commercial use limit correctly and then
+ * picking a figure from the same blogs anyway. Both were refuted by evidence we
+ * already had: a free account has opened 60-plus profiles by hand in a day
+ * without a word from LinkedIn, and a free account on a competing tool has run
+ * far above 16 a day for months.
+ *
+ * What LinkedIn does publish is that it publishes nothing: "We are not able to
+ * display the exact number of searches or views you have left." So the shape is
+ * what these tests hold, plus the one hard product constraint underneath it.
+ */
+
+test("a free account reads enough to actually find people", () => {
+  /**
+   * The number has been wrong three times, each time from the wrong evidence.
+   *
+   * 60 a day and 200 a month both came from automation blogs. 2,400 a month was
+   * my own estimate and it came out at 77 on a running day, which the sourcing
+   * shape then cut into visits, sources and posts until the agent was reading
+   * TWO reactions from a post carrying hundreds. It found four leads in a day.
+   *
+   * This one comes from a measurement Nicolas has: a free LinkedIn account on a
+   * competing tool returning more than thirty leads a day, sustained, never
+   * restricted. Most of what is counted here is names read out of one reactions
+   * modal, which is a handful of requests rather than hundreds of page loads,
+   * and the commercial use limit does not count it at all.
+   */
+  const mature = dayAllowance("free", "profiles", 0, 365, "established");
+  assert.ok(mature >= 400, `a free account reads ${mature} a day, which cannot produce 30 leads`);
+  assert.ok(mature <= 800, `a free account reads ${mature} a day, which is past anything observed`);
+});
+
+test("what is counted is names in a list, never profile views", () => {
+  /**
+   * LinkedIn's own page, "Data security limits on profile views": the limit is
+   * "calculated based on your profile viewing activity on a daily basis" and
+   * hitting it makes you "temporarily unable to view profiles of members who
+   * are not your connections".
+   *
+   * The discovery path opens a company's posts page, a post, a search results
+   * page and the profile-views analytics page, and not one member profile.
+   * Profiles are opened only by warmUp, sendConnect and canMessageNow, all
+   * outreach, all already bounded by the invitation allowance at sixteen a day.
+   *
+   * So the pool below is far larger than any published profile-view figure, on
+   * purpose, and the guard against the documented limit is the invitation cap
+   * rather than this number.
+   */
+  const namesADay = dayAllowance("free", "profiles", 0, 365, "established");
+  const mostQuotedProfileViewCap = 80;
+  assert.ok(
+    namesADay > mostQuotedProfileViewCap * 3,
+    "capping list reads at a profile-view figure is what held this at four leads a day"
+  );
+});
+
+test("searches stay tight, because that is the limit LinkedIn admits exists", () => {
+  // The commercial use limit is monthly and pooled, and the industry puts a
+  // free account somewhere around 250 to 300 searches in it.
+  assert.ok(budgetFor("free").searchesPerMonth <= 300);
+  const daily = dayAllowance("free", "searches", 0, 365);
+  assert.ok(daily > 0 && daily <= 12, `${daily} searches a day is not a person browsing`);
+});
+
+test("running out of searches is far cheaper than running out of profiles", () => {
+  for (const tier of ["free", "premium", "sales_navigator"] as const) {
+    const b = budgetFor(tier);
+    assert.ok(
+      b.profilesPerMonth > b.searchesPerMonth * 2,
+      `${tier} should read far more people than it searches`
+    );
+  }
+});
+
+test("a month cannot be emptied in a day, whatever the tier", () => {
+  for (const tier of ["free", "premium", "sales_navigator"] as const) {
+    const month = budgetFor(tier).profilesPerMonth;
+    const firstDay = dayAllowance(tier, "profiles", 0, 365);
+    assert.ok(firstDay < month / 4, `${tier} could spend ${firstDay} of its ${month} on day one`);
+  }
+});
+
+test("the pace is flat, so the 28th reads like the 2nd", () => {
+  const early = dayAllowance("free", "profiles", 100, 365);
+  const late = dayAllowance("free", "profiles", 1_800, 365);
+  assert.equal(early, late, "a share-of-what-is-left model starves the end of the month");
+});
+
+test("a spent month reads nothing rather than a little", () => {
+  assert.equal(dayAllowance("free", "profiles", budgetFor("free").profilesPerMonth, 365), 0);
+  assert.equal(dayAllowance("premium", "profiles", 99_999, 365), 0);
+  assert.equal(dayAllowance("free", "searches", 240, 365), 0);
+});
+
+test("what is left caps the day, even when the pace would allow more", () => {
+  const budget = budgetFor("free").profilesPerMonth;
+  assert.equal(dayAllowance("free", "profiles", budget - 7, 365), 7);
+});
+
+test("the searches did not move, because that limit is the published one", () => {
+  // The profile pool tripled on measured evidence. The commercial use limit is
+  // the one ceiling LinkedIn admits exists, and nothing measured says move it.
+  assert.equal(budgetFor("free").searchesPerMonth, 240);
+  assert.ok(dayAllowance("free", "searches", 0, 365, "established") <= 12);
+});
+
+test("a new account reads less than an established one", () => {
+  assert.ok(
+    dayAllowance("free", "profiles", 0, 0) < dayAllowance("free", "profiles", 0, 60),
+    "a profile that started yesterday is read differently from one that did not"
+  );
+});
+
+test("each tier reads and searches more than the one below it", () => {
+  assert.ok(budgetFor("premium").profilesPerMonth > budgetFor("free").profilesPerMonth);
+  assert.ok(budgetFor("premium").searchesPerMonth > budgetFor("free").searchesPerMonth);
+  assert.ok(
+    budgetFor("sales_navigator").profilesPerMonth > budgetFor("premium").profilesPerMonth
+  );
+  assert.ok(
+    budgetFor("sales_navigator").searchesPerMonth > budgetFor("premium").searchesPerMonth
+  );
+});
+
+test("an unknown or missing tier is treated as the tightest one", () => {
+  assert.equal(tierOf(null), "free");
+  assert.equal(tierOf("something else"), "free");
+  assert.equal(tierOf("premium"), "premium");
+  assert.equal(tierOf("sales_navigator"), "sales_navigator");
+});
+
+/**
+ * The day this replaces. Sourcing ran 56 to 75 passes on the days before the
+ * restriction, two sources each, which is over a hundred searches a day before
+ * counting a single person read.
+ */
+test("a free account now runs fewer searches in a month than it used to run in a day", () => {
+  const whatOneDayUsedToCost = 112;
+  assert.ok(dayAllowance("free", "searches", 0, 365) < whatOneDayUsedToCost / 8);
+});

@@ -1,0 +1,225 @@
+import "dotenv/config";
+
+/**
+ * One agent's configuration, assembled from the database.
+ *
+ * Plan section 7g: the shape is the outreach-agent's own Config, deliberately,
+ * because every ported file already reads these field names. Keeping them means
+ * envelope.ts, sequence.ts, miner.ts and actions.ts port with no edits to their
+ * interiors, which is the whole point of the port map. What changes is where
+ * the values come from: a row per agent instead of one JSON file per machine.
+ */
+export interface Config {
+  /** Per-agent kill switch, checked before every sending action. */
+  enabled: boolean;
+  account: {
+    label: string;
+    /** The persistent Chrome profile for the LinkedIn account this agent sends from. */
+    chromeProfileDir: string;
+    timezone: string;
+  };
+  business: { url: string; description?: string };
+  businessHours: { startHour: number; endHour: number; days: number[] };
+  warmup: { startPerDay: number; incrementPerWeek: number; weeks: number };
+  limits: { connectPerWeekMax: number; dmPerDayMax: number; dmPerWeekMax: number };
+  delaysMs: { minAction: number; maxAction: number };
+  sequence: { waitBetweenDmsDays: number };
+  /** False lets the agent prospect people the account is already connected to. */
+  skipConnected: boolean;
+  leads: {
+    topics: string[];
+    competitors: string[];
+    hashtags: string[];
+    icp: string;
+    /**
+     * What this audience calls ITSELF, matched against a headline as words.
+     *
+     * Roles only. Industries live below and never qualify a person on their
+     * own, because an industry describes the company and a headline describes
+     * the person.
+     */
+    icpKeywords: string[];
+    /** The markets the customer sells into. Context for scoring, never a filter. */
+    industries: string[];
+    /**
+     * Where the customer wants their buyers. Empty means anywhere.
+     *
+     * Matched against what LinkedIn prints on a card, which is a place name and
+     * not a country code, so the check is deliberately loose: a card saying
+     * "Lyon, Auvergne-Rhone-Alpes, France" matches "France".
+     */
+    locations: string[];
+    intentQueries: string[];
+    jobChangeQueries?: string[];
+    hiringQueries?: string[];
+  };
+  product: { name: string; senderName: string; valueProps: string[] };
+}
+
+/**
+ * The identity behind a Config, which the single-tenant original had no need
+ * for. Every query the worker runs carries both, per plan section 8e.
+ */
+export interface AgentContext {
+  agentId: string;
+  workspaceId: string;
+  linkedinAccountId: string;
+  /**
+   * The signed-in account's own LinkedIn profile address.
+   *
+   * Read once at sign-in and stored, so mining the customer's own posts costs
+   * no extra page load to find out where they are.
+   */
+  ownProfileUrl: string;
+  /** Country of the address this account is pinned to. Never the address itself. */
+  country: string;
+  /** free, premium or sales_navigator. Decides how much the account may read. */
+  tier: string;
+  /**
+   * new, young or established: how long the LinkedIn account itself has existed.
+   *
+   * Read off its own profile, and separate from tier. It decides where the
+   * reading ramp starts, because a profile with years of history behind it is
+   * only new to us and the ramp used to treat it as new to LinkedIn.
+   */
+  maturity: string;
+  /** The account's own timezone, so a daily reading budget resets where it lives. */
+  timezone: string;
+  /** The ceiling belongs to the account, and its agents divide it. Section 5c. */
+  accountDailyInviteCap: number;
+  /** How many agents send from this account, so the split can be computed. */
+  agentsOnAccount: number;
+  /** Null when the agent has never run, which is the pass the customer watches. */
+  lastRunAt: Date | null;
+  warmupStartedAt: Date | null;
+  reviewMode: boolean;
+  /**
+   * Read LinkedIn, write nothing to it.
+   *
+   * The agent signs in, mines, scores and queues leads, and fills the activity feed exactly as it
+   * normally would. It never likes a post, never sends an invitation, never sends a message.
+   *
+   * This exists because the only honest way to find out whether the automation works is to run it
+   * against the live site, and the only safe way to do that is with the writes switched off.
+   * reviewMode does not cover it: that queues messages for approval and still sends invitations.
+   */
+  /**
+   * How strictly a lead has to fit before the agent takes it.
+   *
+   * precision keeps only people the model agrees are a fit, volume keeps anyone whose headline
+   * matches the roles, balanced sits between. It was offered in the wizard from the start and read
+   * by nothing, so every agent ran at balanced whatever the customer chose.
+   */
+  matchLevel: "precision" | "balanced" | "volume";
+  /** How the messages should sound. Same story: asked for, stored, and never reaching the writer. */
+  tone: "professional" | "conversational" | "direct";
+  /** Whether existing connections stay out of the campaign. */
+  skipConnected: boolean;
+  /** Company sizes the customer named, used by the fit judge rather than as a hard filter. */
+  companySizes: string[];
+  observeOnly: boolean;
+  /**
+   * Messages the customer wrote by hand, keyed by relationship step.
+   *
+   * Present means sent word for word with {name}, {company} and {jobTitle}
+   * filled in, and no model call for that step. Absent means the agent writes
+   * that one itself, for each person, as it always has.
+   */
+  templates: Record<string, string>;
+  /**
+   * When set, the only profiles this agent may like, invite or message.
+   *
+   * Everything else runs normally and every other lead is queued and visible, simply never
+   * contacted. It is how the messages get proven on a real account without a stranger receiving
+   * one, and it is the honest alternative to testing from a fabricated profile.
+   *
+   * Empty means no restriction, which is the normal state.
+   */
+  testRecipients: string[];
+  /**
+   * Who the messages are from. The relationship steps write as a named person
+   * rather than as a company, so the first name is not optional: a message
+   * signed with nothing reads as software.
+   */
+  sender: {
+    firstName: string;
+    /** Only used at the ask step. */
+    companyInfo: string;
+    /** So small talk can be answered honestly rather than dodged. */
+    location: string;
+  };
+  /**
+   * What the customer picked in the wizard, and the only thing that changes
+   * between the two: how the last message closes.
+   *
+   * Everything before the ask is identical on purpose. Gong scored 304,174
+   * emails on meetings booked within ten days, and at the cold stage an
+   * interest close won 47% against 27% for one naming a day and time. So an
+   * agent told to book calls must not ask for one earlier; it has to earn the
+   * reply first, exactly like the other one, and spend it differently at the
+   * end.
+   */
+  goal: "conversations" | "meetings";
+  /** Their site, read once to work out what to search for when they did not say. */
+  website: string;
+  /**
+   * The wizard toggle reading "Keep looking when the topics run dry", hinted with "Without this
+   * the agent runs out of people and looks broken". On by default, and unread until now.
+   */
+  smartLeadFinder: boolean;
+  cfg: Config;
+}
+
+export function optionalEnv(name: string): string | null {
+  const v = process.env[name];
+  return v && v.length > 0 ? v : null;
+}
+
+export function requireEnv(name: string): string {
+  const v = optionalEnv(name);
+  if (!v) throw new Error(`Missing env var ${name}`);
+  return v;
+}
+
+/**
+ * Defaults for anything the dashboard does not ask a customer about.
+ *
+ * The originals were tuned against the live site over months, so they are
+ * copied rather than re-derived. connectPerWeekMax is the one number the
+ * account's detected LinkedIn tier overrides.
+ */
+export const DEFAULTS = {
+  // Monday to Saturday: plenty of the people this sells to work then, and an agent idle two
+  // days out of seven reads as broken to somebody paying by the month.
+  businessHours: { startHour: 9, endHour: 18, days: [1, 2, 3, 4, 5, 6] },
+  /**
+   * The ramp, from what LinkedIn actually tolerates in 2026 rather than from
+   * caution.
+   *
+   * Checked 2026-08-01 against PhantomBuster, Linkedify and LeadLoft, which
+   * agree: 100 invitations a week on free and Premium, a daily soft cap around
+   * 20 before throttling, and a cold account starting at 10 to 20 a day and
+   * ramping over about two weeks. The old 5 a day climbing by 5 over a month
+   * was ours, invented, and roughly half the pace and twice the duration of
+   * what the platform allows. It cost a customer two weeks of their first
+   * month for nothing.
+   *
+   * Week 1 is 15 a day, the middle of that 10-to-20 range rather than the
+   * bottom of it: an established profile that is only new to automation does
+   * not need the most cautious setting available. After week 1 the weekly
+   * ceiling of 100 binds before the ramp does, and over six working days that
+   * is 16 a day, which the envelope works out on its own by taking the
+   * smallest of the three limits.
+   */
+  warmup: { startPerDay: 15, incrementPerWeek: 5, weeks: 2 },
+  /**
+   * Invitations had a daily and a weekly ceiling. Messages only had a daily
+   * one, and 20 a day over six working days is 120 a week against LinkedIn's
+   * 100 for a free or Premium account (checked 2026-08-01). An agent at full
+   * pace would have gone 20% over every week, on the one limit nobody was
+   * counting.
+   */
+  limits: { connectPerWeekMax: 100, dmPerDayMax: 20, dmPerWeekMax: 100 },
+  delaysMs: { minAction: 40_000, maxAction: 120_000 },
+  sequence: { waitBetweenDmsDays: 3 },
+} as const;
