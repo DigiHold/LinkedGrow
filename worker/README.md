@@ -3,13 +3,15 @@
 The worker plane. One persistent browser per LinkedIn account, driven through
 that account's own dedicated address.
 
-It lives outside the Next.js repo on purpose: Vercel functions are ephemeral and
-cannot hold a logged-in Chrome, and shipping Patchright into that build would
-slow it down for nothing. The control plane enqueues work and reads state; this
+It lives in `worker/` of the LinkedGrow repo and deploys on its own: Vercel functions
+are ephemeral and cannot hold a logged in Chrome, so the worker runs on a box of its
+own (systemd on the VPS for the cloud, the `worker` service of the Docker Compose stack
+for a self hosted install). The control plane enqueues work and reads state; this
 never serves user traffic.
 
 ## Running it
 
+    cd worker
     npm install
     npx patchright install chrome
     cp .env.example .env      # then fill it in

@@ -8,7 +8,7 @@
 # Run once, as root, on a fresh Netcup RS server:
 #     curl -fsSL <this file> | bash
 #   or, from a checkout:
-#     bash deploy/bootstrap.sh
+#     bash worker/deploy/bootstrap.sh
 #
 # What it installs and why, since every line here is a decision from the plan:
 #
@@ -131,7 +131,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=${WORKER_USER}
-WorkingDirectory=${WORKER_HOME}/app
+WorkingDirectory=${WORKER_HOME}/cloud/worker
 Environment=DISPLAY=:99
 # Inside ReadWritePaths, because Chrome needs a writable home and the sandbox
 # below takes the real one away. See BROWSER_HOME at the top of this script.
