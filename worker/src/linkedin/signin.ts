@@ -115,6 +115,26 @@ const APP_APPROVAL =
 const REMEMBER_DEVICE =
   /^(remember|recognize|recognise|reconna(î|i)tre|erkennen|recordar|ricorda|onthouden).*/i;
 
+/**
+ * Which login page this is, from the fields it is showing.
+ *
+ * Pulled out of signIn so the decision can be tested without a browser. The
+ * bug it exists to hold: "no email field" was read as "broken page", which is
+ * true of a redesign and false of the page LinkedIn shows a browser it
+ * remembers, where the email is printed as text and only the password is
+ * asked for. Every re-sign-in on a persistent profile meets that page.
+ */
+export type LoginShape = "full" | "password-only" | "unknown";
+
+export function loginPageShape(fields: {
+  hasEmailField: boolean;
+  hasPasswordField: boolean;
+}): LoginShape {
+  if (fields.hasEmailField) return "full";
+  if (fields.hasPasswordField) return "password-only";
+  return "unknown";
+}
+
 export class SignInFailed extends Error {
   /** Same reason as RunStalled in worker.ts: strip-only TypeScript cannot rewrite a parameter property. */
   readonly permanent: boolean;
@@ -386,7 +406,19 @@ export async function signIn(input: SignInInput): Promise<void> {
   }
 
   const emailField = page.locator(SEL.email).first();
-  if (!(await emailField.isVisible().catch(() => false))) {
+  const hasEmailField = await emailField.isVisible().catch(() => false);
+
+  /**
+   * Which fields this page is actually asking for.
+   *
+   * Two shapes reach the typing below. The full form wants an email and a
+   * password. The "Welcome back" page wants only a password, and it is the one
+   * a returning profile meets, so it is not an edge case here: it is the normal
+   * case for every re-sign-in this product ever does.
+   */
+  let fields: ReadonlyArray<readonly [string, string]>;
+
+  if (!hasEmailField) {
     // LinkedIn already knows this browser and is signing it in by itself.
     //
     // The page carries the account's name, a masked email and a countdown:
@@ -397,75 +429,109 @@ export async function signIn(input: SignInInput): Promise<void> {
     // red for two days telling the customer to check their password.
     if (await waitOutAutoSignIn(page, accountId)) return markSignedIn(accountId);
 
-    // Anything else it might be showing, on disk. A restriction notice, a
-    // checkpoint and a redesigned form all reach this line and each needs a
-    // different answer.
-    const says = await capturePage(page, accountId, "signin-no-form").catch(() => null);
-
     /**
-     * Three different pages used to arrive here and get the same answer.
+     * "Welcome back": the page for a browser LinkedIn remembers.
      *
-     * A redesigned form deserves another try in ten minutes. A security
-     * checkpoint and a restriction notice deserve the opposite: LinkedIn is
-     * already unhappy with this account, and knocking on the door every two
-     * minutes with the same credentials is the single worst thing the worker
-     * can do to it. On 2026-08-08 that is exactly what happened to a restricted
-     * account, for as long as the attempts lasted.
+     * It carries the account's name and a masked email as text, one password
+     * field, and a "Sign in using another account" link. There is no email
+     * input because none is being asked for, so the check above reads it as a
+     * broken page.
      *
-     * Both are permanent as far as the worker is concerned. Only a person can
-     * clear them, and the account says so until they do.
+     * This is the page a persistent Chrome profile lands on every time its
+     * session expires, which is to say it is the page EVERY re-sign-in in this
+     * product meets. It was never handled, so no session was ever renewed: the
+     * sign-in threw "the login form did not appear" three times and the account
+     * went red asking the customer to reconnect it by hand. Disconnecting and
+     * reconnecting worked only because that clears the profile and brings back
+     * the full form. Found on Mohamed Elmelegey's account, 2026-09-02, from the
+     * capture the failure had been writing to /opt/linkedgrow/debug all along.
+     *
+     * The password alone is the right answer: LinkedIn is not asking who this
+     * is, only for proof. Everything after the submit, the checkpoint and the
+     * code and the approval, is shared with the full form below.
      */
-    const url = page.url();
-    const text = says ?? "";
-    if (CHECKPOINT_URL.test(url) || RESTRICTED_NOTICE.test(text)) {
-      const restricted = RESTRICTED_NOTICE.test(text);
-      await db().execute({
-        sql: `UPDATE linkedin_accounts
-                 SET status = 'challenged', challenge_state = 'failed',
-                     status_reason = ?, last_challenge_at = ?, updated_at = ?
-               WHERE id = ?`,
-        args: [
-          restricted
-            ? "LinkedIn has restricted this account. Nothing will run on it until you sign in on linkedin.com yourself and the restriction is lifted."
-            : "LinkedIn is asking this account to verify itself. Nothing will be retried until you finish that on linkedin.com.",
-          Math.floor(Date.now() / 1000),
-          Math.floor(Date.now() / 1000),
+    const hasPasswordField = await page
+      .locator(SEL.password)
+      .first()
+      .isVisible()
+      .catch(() => false);
+    if (loginPageShape({ hasEmailField, hasPasswordField }) === "password-only") {
+      log("LinkedIn remembers this profile and is asking only for the password", { accountId });
+      await typeHuman(page, SEL.password, input.password);
+      await dwell(600, 1600);
+      fields = [[SEL.password, input.password]] as const;
+    } else {
+      // Anything else it might be showing, on disk. A restriction notice, a
+      // checkpoint and a redesigned form all reach this line and each needs a
+      // different answer.
+      const says = await capturePage(page, accountId, "signin-no-form").catch(() => null);
+
+      /**
+       * Three different pages used to arrive here and get the same answer.
+       *
+       * A redesigned form deserves another try in ten minutes. A security
+       * checkpoint and a restriction notice deserve the opposite: LinkedIn is
+       * already unhappy with this account, and knocking on the door every two
+       * minutes with the same credentials is the single worst thing the worker
+       * can do to it. On 2026-08-08 that is exactly what happened to a restricted
+       * account, for as long as the attempts lasted.
+       *
+       * Both are permanent as far as the worker is concerned. Only a person can
+       * clear them, and the account says so until they do.
+       */
+      const url = page.url();
+      const text = says ?? "";
+      if (CHECKPOINT_URL.test(url) || RESTRICTED_NOTICE.test(text)) {
+        const restricted = RESTRICTED_NOTICE.test(text);
+        await db().execute({
+          sql: `UPDATE linkedin_accounts
+                   SET status = 'challenged', challenge_state = 'failed',
+                       status_reason = ?, last_challenge_at = ?, updated_at = ?
+                 WHERE id = ?`,
+          args: [
+            restricted
+              ? "LinkedIn has restricted this account. Nothing will run on it until you sign in on linkedin.com yourself and the restriction is lifted."
+              : "LinkedIn is asking this account to verify itself. Nothing will be retried until you finish that on linkedin.com.",
+            Math.floor(Date.now() / 1000),
+            Math.floor(Date.now() / 1000),
+            accountId,
+          ],
+        });
+        log(restricted ? "account restricted by LinkedIn, everything stopped" : "checkpoint, everything stopped", {
           accountId,
-        ],
-      });
-      log(restricted ? "account restricted by LinkedIn, everything stopped" : "checkpoint, everything stopped", {
-        accountId,
-        url,
-      });
+          url,
+        });
+        throw new SignInFailed(
+          restricted
+            ? "LinkedIn has restricted this account. Nothing was retried."
+            : "LinkedIn is asking this account to verify itself. Nothing was retried.",
+          true
+        );
+      }
+
       throw new SignInFailed(
-        restricted
-          ? "LinkedIn has restricted this account. Nothing was retried."
-          : "LinkedIn is asking this account to verify itself. Nothing was retried.",
-        true
+        `The login form did not appear and the session is not signed in.${
+          says ? ` The page says: "${says}".` : ""
+        } The capture is in /opt/linkedgrow/debug.`
       );
     }
-
-    throw new SignInFailed(
-      `The login form did not appear and the session is not signed in.${
-        says ? ` The page says: "${says}".` : ""
-      } The capture is in /opt/linkedgrow/debug.`
-    );
+  } else {
+    await typeHuman(page, SEL.email, input.email);
+    await dwell(400, 1100);
+    await typeHuman(page, SEL.password, input.password);
+    await dwell(600, 1600);
+    fields = [
+      [SEL.email, input.email],
+      [SEL.password, input.password],
+    ] as const;
   }
-
-  await typeHuman(page, SEL.email, input.email);
-  await dwell(400, 1100);
-  await typeHuman(page, SEL.password, input.password);
-  await dwell(600, 1600);
 
   // Read both fields back before submitting. The login page can finish
   // hydrating after the typing starts and reset what was already typed:
   // that exact race submitted an empty email with a filled password on
   // launch morning (2026-08-19) and burned a sign-in attempt on a real
   // account. Same defence as the composer's typeBody.
-  for (const [selector, wanted] of [
-    [SEL.email, input.email],
-    [SEL.password, input.password],
-  ] as const) {
+  for (const [selector, wanted] of fields) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const field = page.locator(selector).first();
       const current = await field.inputValue().catch(() => "");
