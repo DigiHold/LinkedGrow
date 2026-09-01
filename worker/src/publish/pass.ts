@@ -8,7 +8,7 @@ import { currentRun } from "../safety/run-context.ts";
 import { withAddress, groupKey } from "../safety/ip-lock.ts";
 import { dwell, randInt, sleep } from "../browser/human.ts";
 import { ensureProfileCaptured } from "../linkedin/profile.ts";
-import { db } from "../db.ts";
+import { db, requestReSignIn } from "../db.ts";
 import {
   downloadAttachment,
   findPublishedUrl,
@@ -28,6 +28,7 @@ import {
   loadDuePosts,
   markFailed,
   markFirstCommentPosted,
+  noteWaitingForAccount,
   markHandedToScheduler,
   releaseVideo,
   markPublished,
@@ -85,7 +86,15 @@ const FIRST_COMMENT_DELAY_MS = { min: 60_000, max: 210_000 };
 const MAX_POSTS_PER_SESSION = 3;
 
 const SIGNED_OUT_MESSAGE =
-  "Your LinkedIn session has expired. Sign in once from the dashboard and this post goes out on its own.";
+  "Your LinkedIn session has expired. We are signing back in now, and this post goes out on its own once we are through.";
+
+/** What the account itself says while the sign-in pass has it back. */
+const SIGNED_OUT_REASON =
+  "The session ended, so we are signing back in on this account's own address.";
+
+/** Said on a post whose owner has no LinkedIn account connected at all. */
+const NO_ACCOUNT_MESSAGE =
+  "This post is waiting for a connected LinkedIn account. Connect one and it goes out on its own.";
 
 const UNVERIFIED_NOTE =
   "This went to LinkedIn but we could not find it on your feed afterwards. Check your profile before posting it again.";
@@ -296,6 +305,17 @@ async function runAccount(work: AccountWork, address: Address): Promise<void> {
         if (post.wasScheduled) await releaseScheduled(post.id, SIGNED_OUT_MESSAGE);
         else await unclaim(post.id, SIGNED_OUT_MESSAGE);
       }
+      // And ask for the session back, which is the half that was missing.
+      //
+      // Releasing the posts told the customer something was wrong and left the
+      // account exactly as it was: `active`, so the sign-in pass (which reads
+      // only `pending`) never looked at it, and this same block ran again sixty
+      // seconds later. For an account with an agent the agent pass broke the
+      // loop; for a content-only customer nothing did, and the post sat queued
+      // behind a green "Signed in and working" badge until somebody
+      // disconnected the account by hand.
+      const asked = await requestReSignIn(account.id, SIGNED_OUT_REASON);
+      if (asked) log("session had ended, sign-in requested", { accountId: account.id });
       return;
     }
 
@@ -415,7 +435,12 @@ export async function publishPass(): Promise<void> {
       // to reconnect, so the row stays scheduled and a later pass, possibly
       // days from now, finds the account and publishes at the slot. Failing
       // it here would kill a post whose slot has not even arrived.
+      //
+      // It waits with a sentence on it now. Until 2026-09-02 the only trace
+      // was the count logged below, so the customer saw a post sitting in
+      // Scheduled hours past its time with nothing said anywhere.
       waitingForAccount += 1;
+      await noteWaitingForAccount(post.id, NO_ACCOUNT_MESSAGE).catch(() => {});
       continue;
     }
     // The account's own clock decides whether now is a reasonable hour to be

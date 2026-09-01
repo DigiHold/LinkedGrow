@@ -810,14 +810,43 @@ export async function pauseAgent(ctx: AgentContext, reason: string) {
  * to notice and restart them by hand after a sign-out they never saw.
  */
 export async function requestSignIn(ctx: AgentContext, reason: string) {
-  const now = Math.floor(Date.now() / 1000);
-  await db().execute({
-    sql: `UPDATE linkedin_accounts
-             SET status = 'pending', status_reason = ?, updated_at = ?
-           WHERE id = ? AND workspace_id = ? AND challenge_state = 'none'`,
-    args: [reason, now, ctx.linkedinAccountId, ctx.workspaceId],
-  });
+  await requestReSignIn(ctx.linkedinAccountId, reason);
   await recordEvent(ctx, "signin", reason);
+}
+
+/**
+ * The same recovery, for the loops that have no agent behind them.
+ *
+ * `requestSignIn` needs an AgentContext, so for a year only the agent pass could
+ * ask for a fresh sign-in. Publishing and insights hit the identical dead
+ * session and had nothing to call: publishing wrote a sentence onto the post and
+ * insights returned silently on the belief, written into its own comment, that
+ * "publishing already tells the customer". Neither touched the account.
+ *
+ * A customer running agents therefore recovered on his own within five minutes,
+ * and a customer who only publishes posts never recovered at all. His account
+ * kept reading "Signed in and working" while every post queued behind a session
+ * that no loop was allowed to renew, and the publish pass opened a real Chrome
+ * on his residential address once a minute, for ever, to rediscover it. That is
+ * how Mohamed Elmelegey lost 2026-09-01: no agent, so no path back.
+ *
+ * `sign_in_attempts` is reset because this account is not mid-failure. It was
+ * signed in a moment ago and LinkedIn ended the session, so it gets the full
+ * budget of three tries rather than whatever a sign-in months ago left behind.
+ *
+ * Guarded on `active` so it can never pull an account out of a challenge that a
+ * human is answering, and never restart the counter on one already retrying.
+ */
+export async function requestReSignIn(accountId: string, reason: string) {
+  const now = Math.floor(Date.now() / 1000);
+  const result = await db().execute({
+    sql: `UPDATE linkedin_accounts
+             SET status = 'pending', status_reason = ?, sign_in_attempts = 0,
+                 last_check_at = NULL, updated_at = ?
+           WHERE id = ? AND status = 'active' AND challenge_state = 'none'`,
+    args: [reason, now, accountId],
+  });
+  return Number(result.rowsAffected ?? 0) === 1;
 }
 
 export async function flagAccount(

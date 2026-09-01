@@ -1,4 +1,5 @@
 import { log, logError } from "../logger.ts";
+import { requestReSignIn } from "../db.ts";
 import { closeSession, isSignedIn, openSession } from "../browser/driver.ts";
 import type { Session } from "../browser/driver.ts";
 import { allocationFor, isProduction } from "../proxy/allocation.ts";
@@ -109,8 +110,15 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
 
   try {
     if (!(await isSignedIn(session.context))) {
-      // Nothing to record and nothing to complain about. Publishing already
-      // tells the customer their session needs a sign-in.
+      // This used to return silently, on the belief that "publishing already
+      // tells the customer". Publishing only ever wrote a line onto a post, so
+      // an account with nothing queued was told nothing at all and its numbers
+      // simply stopped moving. Ask for the session back here too: this loop
+      // often meets the dead session first, hours before the next post is due.
+      await requestReSignIn(
+        account.id,
+        "The session ended, so we are signing back in on this account's own address."
+      );
       return;
     }
 

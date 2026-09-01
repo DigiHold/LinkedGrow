@@ -729,3 +729,28 @@ export async function markFailed(postId: string, message: string): Promise<void>
     args: [message, now, postId],
   });
 }
+
+/**
+ * Says on the post itself that it is waiting for a LinkedIn account.
+ *
+ * The post deliberately stays `scheduled` and keeps its slot: the promise made
+ * at the v2 cutover is that a scheduled post waits for its owner to reconnect
+ * rather than failing. But waiting was all it did. The worker logged "posts
+ * waiting for a LinkedIn reconnection" to a file only Nicolas can read, and the
+ * customer saw a post sitting in Scheduled, hours past its time, with nothing
+ * on it at all. Two accounts were in exactly that state on 2026-09-02, one of
+ * them for six days.
+ *
+ * Only writes when the line would change, so a post waiting a week costs one
+ * UPDATE rather than ten thousand.
+ */
+export async function noteWaitingForAccount(postId: string, message: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE posts
+             SET error_message = ?, updated_at = ?
+           WHERE id = ?
+             AND status IN ('queued', 'scheduled')
+             AND (error_message IS NULL OR error_message <> ?)`,
+    args: [message, nowSeconds(), postId, message],
+  });
+}

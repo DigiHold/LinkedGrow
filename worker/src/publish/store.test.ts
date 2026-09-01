@@ -20,6 +20,7 @@ import {
   markHandedToScheduler,
   markPublished,
   mediaForPost,
+  noteWaitingForAccount,
   releaseScheduled,
   releaseStaleClaims,
   unclaim,
@@ -597,4 +598,49 @@ test("a post we could not find afterwards is published with the doubt written do
   await markPublished("post-1", "https://www.linkedin.com/feed/update/urn:li:activity:1/");
   const after = await db().execute(`SELECT error_message FROM posts WHERE id = 'post-1'`);
   assert.equal(after.rows[0]?.error_message, null);
+});
+
+/**
+ * A post whose owner has no connected account waits, and says so.
+ *
+ * It deliberately keeps its slot rather than failing, which was right and was
+ * the whole of it: nothing was written anywhere the customer could see, so two
+ * accounts sat with posts hours and days past their time showing "Scheduled"
+ * and no reason at all.
+ */
+test("a post waiting for an account is told so, without losing its slot", async () => {
+  await freshDb();
+  await addUser("user-1");
+  await addPost("post-1", "user-1", { status: "scheduled", scheduled_at: seconds(-60) });
+
+  await noteWaitingForAccount("post-1", "Connect an account.");
+
+  const { rows } = await db().execute("SELECT status, error_message, publish_attempts FROM posts WHERE id = 'post-1'");
+  assert.equal(rows[0]?.status, "scheduled");
+  assert.equal(rows[0]?.error_message, "Connect an account.");
+  assert.equal(Number(rows[0]?.publish_attempts), 0);
+});
+
+test("the same line is not rewritten every minute", async () => {
+  await freshDb();
+  await addUser("user-1");
+  await addPost("post-1", "user-1", { status: "scheduled", scheduled_at: seconds(-60) });
+
+  await noteWaitingForAccount("post-1", "Connect an account.");
+  const { rows: first } = await db().execute("SELECT updated_at FROM posts WHERE id = 'post-1'");
+  await noteWaitingForAccount("post-1", "Connect an account.");
+  const { rows: second } = await db().execute("SELECT updated_at FROM posts WHERE id = 'post-1'");
+
+  assert.equal(Number(first[0]?.updated_at), Number(second[0]?.updated_at));
+});
+
+test("a published post is never annotated after the fact", async () => {
+  await freshDb();
+  await addUser("user-1");
+  await addPost("post-1", "user-1", { status: "published" });
+
+  await noteWaitingForAccount("post-1", "Connect an account.");
+
+  const { rows } = await db().execute("SELECT error_message FROM posts WHERE id = 'post-1'");
+  assert.equal(rows[0]?.error_message, null);
 });

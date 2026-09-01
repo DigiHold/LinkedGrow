@@ -42,6 +42,7 @@ import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { FirstComment } from "@/components/dashboard/first-comment";
 import { localToUTC, resolveTimezone } from "@/lib/timezone";
 import { queuePost } from "@/lib/publish-client";
+import { scorePost } from "@/lib/post-score";
 
 const GENERATOR_STEPS = [
   { num: 1, label: "Type" },
@@ -176,68 +177,17 @@ function LimitReachedOverlay() {
   );
 }
 
-// Calculate algorithm score for a post
+/**
+ * The score and the checklist both come from src/lib/post-score.ts now.
+ *
+ * They used to be two blocks written here, and they contradicted the writing
+ * rules the same page generates against: points for emoji and for a "what do
+ * you think?" close, both of which POST_STYLE_RULES bans and stripSlop deletes
+ * on the way out. The result was a ceiling in the 70s that no rewrite could
+ * pass. See the comment at the top of post-score.ts.
+ */
 function calculateScore(content: string): number {
-  if (!content.trim()) return 0;
-
-  const lines = content.split("\n").filter((l) => l.trim());
-  const firstLine = lines[0] || "";
-
-  // Hook strength: first line should be compelling (10-100 chars ideal)
-  let hookStrength = 40;
-  if (firstLine.length >= 10 && firstLine.length <= 100) {
-    hookStrength = 85;
-  } else if (firstLine.length > 100 && firstLine.length <= 150) {
-    hookStrength = 70;
-  } else if (firstLine.length < 10 && firstLine.length > 0) {
-    hookStrength = 50;
-  }
-
-  // Length score: 800-1500 chars is optimal for LinkedIn
-  let lengthScore = 30;
-  if (content.length >= 800 && content.length <= 1500) {
-    lengthScore = 90;
-  } else if (content.length >= 500 && content.length < 800) {
-    lengthScore = 75;
-  } else if (content.length > 1500 && content.length <= 2500) {
-    lengthScore = 70;
-  } else if (content.length >= 200 && content.length < 500) {
-    lengthScore = 55;
-  }
-
-  // Formatting score: check for bullet points, line breaks, etc.
-  const hasBullets = content.includes("•") || content.includes("-");
-  const hasLineBreaks = (content.match(/\n\n/g) || []).length >= 2;
-  const hasSpecialChars = content.includes("→") || content.includes("✓") || content.includes("✔");
-  let formattingScore = 40;
-  if (hasBullets && hasLineBreaks) {
-    formattingScore = 85;
-  } else if (hasBullets || hasLineBreaks) {
-    formattingScore = 65;
-  } else if (hasSpecialChars) {
-    formattingScore = 55;
-  }
-
-  // Engagement score: questions and CTAs boost engagement
-  const hasQuestion = content.includes("?");
-  const hasCTA =
-    content.toLowerCase().includes("follow") ||
-    content.toLowerCase().includes("repost") ||
-    content.toLowerCase().includes("share") ||
-    content.toLowerCase().includes("comment") ||
-    content.toLowerCase().includes("let me know") ||
-    content.toLowerCase().includes("what do you think");
-  const hasEmoji = /[\u{1F600}-\u{1F64F}|\u{1F300}-\u{1F5FF}|\u{1F680}-\u{1F6FF}|\u{2600}-\u{26FF}]/u.test(content);
-
-  let engagementScore = 20;
-  if (hasQuestion) engagementScore += 35;
-  if (hasCTA) engagementScore += 35;
-  if (hasEmoji) engagementScore += 10;
-  engagementScore = Math.min(engagementScore, 100);
-
-  return Math.round(
-    (hookStrength + lengthScore + formattingScore + engagementScore) / 4
-  );
+  return scorePost(content).score;
 }
 
 // AI Quick Edit Actions
@@ -279,6 +229,8 @@ export default function GeneratorPage() {
   const [topic, setTopic] = useState("");
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [isGeneratingPost, setIsGeneratingPost] = useState(false);
+  const [isGeneratingVariations, setIsGeneratingVariations] = useState(false);
+  const [variations, setVariations] = useState<string[]>([]);
   const [generatedIdeas, setGeneratedIdeas] = useState<string[]>([]);
   const [selectedIdea, setSelectedIdea] = useState<number | null>(null);
   const [generatedPost, setGeneratedPost] = useState("");
@@ -478,6 +430,79 @@ showToast(error instanceof Error ? error.message : "Failed to generate post");
     } finally {
       setIsGeneratingPost(false);
     }
+  };
+
+  /**
+   * Three takes on the same idea, side by side.
+   *
+   * The button for this shipped with no onClick at all, so it did nothing at
+   * all, which is what "zero functionality" in Mohamed's ticket meant on
+   * 2026-09-01. Three calls rather than one prompt asking for three, because
+   * the model returns a better third draft when it is not also trying to make
+   * it different from two it has already written, and because one variation
+   * failing then costs one variation instead of the whole set.
+   *
+   * `action: "generate"` does not count against the monthly cycle limit (only
+   * "ideas" does), so this costs the customer three calls on their own key and
+   * nothing from their allowance.
+   */
+  const handleThreeVariations = async () => {
+    if (selectedIdea === null) return;
+
+    setIsGeneratingVariations(true);
+    setVariations([]);
+    try {
+      const results = await Promise.allSettled(
+        [0, 1, 2].map(async () => {
+          const response = await fetch("/api/ai/generate-post", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "generate",
+              idea: generatedIdeas[selectedIdea],
+              postType: selectedType || "actionable",
+              postCategory: selectedCategory || "auto",
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "That variation could not be written");
+          return String(data.post || "");
+        })
+      );
+
+      const written = results
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === "fulfilled")
+        .map((r) => r.value)
+        .filter((text) => text.trim().length > 0);
+
+      if (written.length === 0) {
+        const reason = results.find((r) => r.status === "rejected");
+        throw new Error(
+          reason && reason.status === "rejected" && reason.reason instanceof Error
+            ? reason.reason.message
+            : "None of the variations could be written"
+        );
+      }
+
+      setVariations(written);
+      // Two out of three is still worth showing, and saying so beats a silent
+      // list that is shorter than the button promised.
+      if (written.length < 3) {
+        showToast(`${written.length} of 3 variations came back`, "success");
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to write variations");
+    } finally {
+      setIsGeneratingVariations(false);
+    }
+  };
+
+  /** Takes one variation into the editor and puts the rest away. */
+  const handleUseVariation = (text: string) => {
+    setGeneratedPost(text);
+    setEditedPost("");
+    setIsEditing(false);
+    setVariations([]);
   };
 
   const handleCopy = () => {
@@ -1533,6 +1558,53 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
               </CardContent>
             </Card>
 
+            {/* The three variations, once they are back. */}
+            {variations.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
+                  <CardTitle className="text-base">
+                    Pick a variation
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-4">
+                  {variations.map((variation, index) => (
+                    <div
+                      key={index}
+                      className="rounded-lg border border-slate-200 p-3 dark:border-slate-800"
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                          Variation {index + 1}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {variation.length} characters
+                        </span>
+                      </div>
+                      <p className="mb-3 line-clamp-6 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                        {variation}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleUseVariation(variation)}
+                      >
+                        Use this one
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setVariations([])}
+                  >
+                    Keep the one I have
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Regenerate Options */}
             <Card>
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
@@ -1547,40 +1619,28 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Write it again
                 </Button>
-                <Button variant="outline" className="w-full">
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Three variations
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleThreeVariations}
+                  disabled={isGeneratingVariations || isGeneratingPost}
+                >
+                  {isGeneratingVariations ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-4 h-4 mr-2" />
+                  )}
+                  {isGeneratingVariations ? "Writing three..." : "Three variations"}
                 </Button>
               </CardContent>
             </Card>
 
             {/* Algorithm Tips */}
             {(() => {
-              const post = currentPost;
-              const lines = post.split("\n").filter((l) => l.trim());
-              const firstLine = lines[0] || "";
-
-              // Check hook strength (first line 10-100 chars)
-              const hasStrongHook = firstLine.length >= 10 && firstLine.length <= 100;
-
-              // Check formatting (bullets, line breaks, special chars)
-              const hasBullets = post.includes("•") || post.includes("-") || post.includes("→");
-              const hasLineBreaks = (post.match(/\n\n/g) || []).length >= 2;
-              const hasFormatting = hasBullets || hasLineBreaks;
-
-              // Check for question at end
-              const lastLines = post.trim().split("\n").slice(-3).join(" ");
-              const endsWithQuestion = lastLines.includes("?");
-
-              // Check optimal length
-              const optimalLength = post.length >= 800 && post.length <= 1500;
-
-              const checks = [
-                { label: "Strong hook in first 2 lines", passed: hasStrongHook },
-                { label: "Good use of formatting", passed: hasFormatting },
-                { label: "Ends with question (engagement)", passed: endsWithQuestion },
-                { label: `Optimal length (800-1500 chars)`, passed: optimalLength },
-              ];
+              // One source of truth with the score above it. These were two
+              // separate lists that disagreed with each other and with the
+              // writing rules, which is what made two of them unpassable.
+              const { checks } = scorePost(currentPost);
 
               const passedCount = checks.filter(c => c.passed).length;
               const allPassed = passedCount === checks.length;
@@ -1611,6 +1671,14 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                             )}
                           >
                             {check.label}
+                            {/* A check that names what to change is worth
+                                reading. One that only goes red sends people
+                                back to Write it again, twelve times. */}
+                            {!check.passed && check.hint && (
+                              <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                                {check.hint}
+                              </span>
+                            )}
                           </span>
                         </li>
                       ))}

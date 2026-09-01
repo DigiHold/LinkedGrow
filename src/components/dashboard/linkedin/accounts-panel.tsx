@@ -108,7 +108,13 @@ export interface LinkedInAccount {
 
 const STATUS: Record<string, { label: string; className: string }> = {
   pending: {
-    label: "Waiting for its first sign-in",
+    // Not "first" any more. LinkedIn ends sessions on its own, and since
+    // 2026-09-02 the publish and insights loops put an account back here to be
+    // signed in again, so this state is reached far more often by a working
+    // account than by a new one. Mohamed Elmelegey read "Waiting for its first
+    // sign-in" on an account he had used for weeks and wrote in to ask what he
+    // was supposed to do about it, which was nothing.
+    label: "Signing in",
     className: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
   },
   active: {
@@ -123,6 +129,12 @@ const STATUS: Record<string, { label: string; className: string }> = {
   restricted: {
     label: "Restricted by LinkedIn",
     className: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300",
+  },
+  // A real value of the column that had no entry here, so it rendered as the
+  // bare word "disconnected" in the fallback style.
+  disconnected: {
+    label: "Disconnected",
+    className: "bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300",
   },
 };
 
@@ -369,11 +381,13 @@ export function LinkedInAccountsPanel({
                     // Two support tickets on launch day came from this state
                     // saying nothing: people read "waiting" as something THEY
                     // had to do, deleted the account and wrote in.
+                    //
+                    // The reason line comes first when there is one, because on
+                    // a re-sign-in it is the answer ("the session ended") and
+                    // the generic paragraph below is about a first connection.
                     <p className="mt-1.5 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">
-                      Nothing to do here: we prepare a dedicated connection and
-                      sign in for you, which takes a few minutes. If LinkedIn
-                      wants a verification, a prompt appears right here on this
-                      page.
+                      {account.statusReason ??
+                        `Nothing to do here: we prepare a dedicated connection and sign in for you, which takes a few minutes. If LinkedIn wants a verification, a prompt appears right here on this page.`}
                     </p>
                   )}
                 </div>

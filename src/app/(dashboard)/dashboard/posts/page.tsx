@@ -56,7 +56,18 @@ function PostsHeaderActions() {
   );
 }
 
-type PostStatus = "all" | "draft" | "scheduled" | "published" | "failed";
+/**
+ * The tabs, which are not simply the post statuses.
+ *
+ * `publishing` covers both `queued` and `publishing`, because the difference
+ * between waiting for a session and being typed into the composer is the
+ * worker's business, not the reader's. It exists at all because it was missing:
+ * a queued post matched no tab and the filter is an equality test, so it showed
+ * under All and nowhere else. Mohamed Elmelegey screenshotted exactly that on
+ * 2026-09-01, having looked in Published, Failed, Scheduled and Drafts for a
+ * post the app was still holding.
+ */
+type PostStatus = "all" | "draft" | "scheduled" | "publishing" | "published" | "failed";
 
 interface Post {
   id: string;
@@ -239,6 +250,7 @@ export default function PostsPage() {
     all: posts.length,
     draft: posts.filter((p) => p.status === "draft").length,
     scheduled: posts.filter((p) => p.status === "scheduled").length,
+    publishing: posts.filter((p) => isInFlight(p.status)).length,
     published: posts.filter((p) => p.status === "published").length,
     failed: posts.filter((p) => p.status === "failed").length,
   };
@@ -247,6 +259,12 @@ export default function PostsPage() {
     { id: "all", label: "All", count: counts.all },
     { id: "draft", label: "Drafts", count: counts.draft },
     { id: "scheduled", label: "Scheduled", count: counts.scheduled },
+    // Shown only while something is actually in flight, the same way Failed is:
+    // a permanently empty tab is noise. When it is there it is the answer to
+    // "where did my post go", which is the question that made it necessary.
+    ...(counts.publishing > 0
+      ? [{ id: "publishing" as const, label: "Publishing", count: counts.publishing }]
+      : []),
     { id: "published", label: "Published", count: counts.published },
     // Only when something actually failed: a post that vanishes from Scheduled
     // without appearing anywhere is how Ahmed lost one on 2026-08-22. An empty
@@ -256,8 +274,19 @@ export default function PostsPage() {
       : []),
   ];
 
+  // Publishing and Failed come and go, and the tab the reader is standing on
+  // can be the one that goes: the post finishes, the count drops to zero, the
+  // tab is gone and the page shows an empty list under no selected tab at all.
+  // Watching your own post publish is exactly when that happens.
+  const tabExists = tabs.some((tab) => tab.id === activeTab);
+  useEffect(() => {
+    if (!tabExists) setActiveTab("all");
+  }, [tabExists]);
+
   const filteredPosts = posts.filter((post) => {
-    const matchesTab = activeTab === "all" || post.status === activeTab;
+    const matchesTab =
+      activeTab === "all" ||
+      (activeTab === "publishing" ? isInFlight(post.status) : post.status === activeTab);
     const matchesSearch = post.content
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
