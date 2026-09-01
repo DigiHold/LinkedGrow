@@ -79,6 +79,8 @@ interface Post {
   createdAt: string;
   updatedAt: string;
   firstComment?: string | null;
+  /** Why this post is where it is. Written by the worker, and until now shown nowhere. */
+  errorMessage?: string | null;
   metadata?: Record<string, unknown> | null;
   media?: Array<{
     id: string;
@@ -631,6 +633,28 @@ export default function PostsPage() {
                       </span>
                     )}
                   </div>
+
+                  {/* Why this post is where it is.
+                      The worker has always written a sentence onto the post
+                      saying what happened: the session expired, the account is
+                      not connected, LinkedIn refused the attachment. None of it
+                      was ever rendered, so a post that stopped moving looked
+                      identical to one nobody had touched, and the customer had
+                      to open a support ticket to find out which. Amber rather
+                      than red unless it actually failed, because most of these
+                      are "still working on it" rather than "this is over". */}
+                  {post.errorMessage && post.status !== "published" && (
+                    <p
+                      className={cn(
+                        "mt-2 text-xs leading-relaxed",
+                        post.status === "failed"
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-amber-700 dark:text-amber-400"
+                      )}
+                    >
+                      {post.errorMessage}
+                    </p>
+                  )}
                 </div>
 
                 {/* Actions */}
