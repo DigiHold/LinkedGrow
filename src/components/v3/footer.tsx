@@ -89,8 +89,21 @@ const FILL_SM =
  * dark, like every other footer text.
  */
 const FEATURED: { name: string; href: string; icon: string }[] = [
-  { name: "Divvlaunches", href: "https://www.divvlaunches.com/product/linkedgrow", icon: "/featured/divvlaunches.webp" },
+  { name: "G2", href: "https://www.g2.com/products/linkedgrow/", icon: "/featured/g2.png" },
+  { name: "SourceForge", href: "https://sourceforge.net/software/product/LinkedGrow", icon: "/featured/sourceforge.png" },
+  { name: "There's An AI For That", href: "https://theresanaiforthat.com/ai/linkedgrow/", icon: "/featured/theresanaiforthat.png" },
+  { name: "Indie Hackers", href: "https://www.indiehackers.com/product/linkedgrow", icon: "/featured/indiehackers.svg" },
+  { name: "SaaSHub", href: "https://www.saashub.com/linkedgrow", icon: "/featured/saashub.png" },
+  { name: "SideProjectors", href: "https://www.sideprojectors.com/project/78525/linkedgrow", icon: "/featured/sideprojectors.png" },
+  { name: "StartupInspire", href: "https://www.startupinspire.com/startup/linkedgrow", icon: "/featured/startupinspire.png" },
+  { name: "PeerPush", href: "https://peerpush.com/p/linkedgrow-vjqm", icon: "/featured/peerpush.svg" },
   { name: "StartupBase", href: "https://startupbase.io/products/linkedgrow", icon: "/featured/startupbase.svg" },
+  { name: "IndieHunt", href: "https://indiehunt.io/project/linkedgrow-v2", icon: "/featured/indiehunt.svg" },
+  { name: "FoundrList", href: "https://www.foundrlist.com/product/linkedgrow", icon: "/featured/foundrlist.png" },
+  { name: "ProductBurst", href: "https://productburst.com/product/linkedgrow-v2", icon: "/featured/productburst.png" },
+  { name: "Nick Launches", href: "https://nicklaunches.com/products/linkedgrow/", icon: "/featured/nicklaunches.png" },
+  { name: "AIDirs", href: "https://aidirs.org/item/linkedgrow", icon: "/featured/aidirs.png" },
+  { name: "Divvlaunches", href: "https://www.divvlaunches.com/product/linkedgrow", icon: "/featured/divvlaunches.webp" },
 ];
 
 function FeaturedOn() {
