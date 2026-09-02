@@ -127,6 +127,11 @@ export const AUTH_RATE_LIMITS = {
     maxRequests: 3,
     windowMs: 15 * 60 * 1000,
   },
+  // Setup wizard and instance settings: 30 a minute per admin, every save and test counted
+  setup: {
+    maxRequests: 30,
+    windowMs: 60 * 1000,
+  },
   // Blog comments: 5 per 15 minutes per IP
   blogComment: {
     maxRequests: 5,

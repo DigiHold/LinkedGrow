@@ -104,3 +104,7 @@ redemption-codes-out/
 # Package manager locks (keep package-lock.json, ignore others if not using)
 # yarn.lock
 # pnpm-lock.yaml
+
+# Playwright output
+/test-results/
+/playwright-report/

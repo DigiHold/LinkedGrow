@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { MAINTENANCE_MODE, MAINTENANCE_ALLOWED_ROUTES } from "@/lib/maintenance";
 import { isSelfHosted } from "@/lib/edition";
+import { getInstanceSettings } from "@/lib/instance-settings";
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -93,6 +94,24 @@ const authProxy = auth(async (req) => {
     // for signed-out users (2026-08-19).
     signInUrl.searchParams.set("callbackUrl", nextUrl.pathname + nextUrl.search);
     return NextResponse.redirect(signInUrl);
+  }
+
+  // Self hosted: nothing in the dashboard opens before the setup wizard has
+  // run, and the wizard closes once it has. A non admin lands on the wizard
+  // page too, where it shows the waiting card rather than a redirect. Read
+  // fresh: the proxy is its own bundle, so the cache the routes invalidate
+  // when the wizard finishes is not this one.
+  if (isSelfHosted() && isLoggedIn) {
+    const isSetupRoute = nextUrl.pathname === "/setup";
+    if (isProtectedRoute || isSetupRoute) {
+      const { setupCompleted } = await getInstanceSettings(true);
+      if (isProtectedRoute && !setupCompleted) {
+        return NextResponse.redirect(new URL("/setup", nextUrl));
+      }
+      if (isSetupRoute && setupCompleted) {
+        return NextResponse.redirect(new URL("/dashboard", nextUrl));
+      }
+    }
   }
 
   // The paywall: an account on the free plan that has used its trial and is

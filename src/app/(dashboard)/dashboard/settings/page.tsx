@@ -57,7 +57,7 @@ import { FieldActions } from "@/components/dashboard/ui/page";
 import { LinkedInAccountsPanel } from "@/components/dashboard/linkedin/accounts-panel";
 import { CONTENT_LANGUAGES } from "@/lib/content-languages";
 import { hasAgentSubscription, UPGRADE_PATH } from "@/lib/plans";
-import { isCloud } from "@/lib/edition";
+import { isCloud, isSelfHosted } from "@/lib/edition";
 
 // Common timezones grouped by region with abbreviations and UTC offsets
 const timezones = [
@@ -112,7 +112,22 @@ const timezones = [
   { value: "Africa/Lagos", label: "Lagos (WAT, UTC+1)", region: "Africa" },
 ];
 
-const SETTINGS_TABS = [
+type SettingsTab =
+  | "linkedin"
+  | "publishing"
+  | "account"
+  | "timezone"
+  | "security"
+  | "appearance"
+  | "voice"
+  | "business";
+
+/** A panel switched in place, or a page of its own reached by a link. */
+type SettingsTabEntry =
+  | { id: SettingsTab; label: string; adminOnly?: boolean; href?: undefined }
+  | { id: "instance"; label: string; adminOnly: true; href: string };
+
+const SETTINGS_TABS: readonly SettingsTabEntry[] = [
   { id: "linkedin", label: "LinkedIn" },
   { id: "publishing", label: "Publishing" },
   { id: "account", label: "Account" },
@@ -121,12 +136,15 @@ const SETTINGS_TABS = [
   { id: "appearance", label: "Appearance" },
   { id: "voice", label: "Voice" },
   { id: "business", label: "Business" },
-] as const;
-
-type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
+  // Self hosted only: the instance page belongs to the administrator and
+  // lives at its own address, so its tab is a link rather than a panel.
+  ...(isSelfHosted()
+    ? [{ id: "instance" as const, label: "Instance", adminOnly: true as const, href: "/dashboard/settings/instance" }]
+    : []),
+];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
-  return SETTINGS_TABS.some((t) => t.id === value);
+  return SETTINGS_TABS.some((t) => t.id === value && !t.href);
 }
 
 function SettingsContent() {
@@ -673,22 +691,33 @@ function SettingsContent() {
           hidden sections stay mounted so a half-filled form survives a tab
           switch. */}
       <nav className="scroll-fade-x sticky top-16 z-20 -mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 py-2 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        {SETTINGS_TABS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => selectTab(id)}
-            aria-current={tab === id ? "page" : undefined}
-            className={cn(
-              "shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-              tab === id
-                ? "bg-white text-slate-900 shadow-xs dark:bg-white/10 dark:text-white"
-                : "text-slate-500 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-            )}
-          >
-            {label}
-          </button>
-        ))}
+        {SETTINGS_TABS.map((entry) => {
+          if (entry.adminOnly && !session?.user?.isAdmin) return null;
+          const className = cn(
+            "shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+            tab === entry.id
+              ? "bg-white text-slate-900 shadow-xs dark:bg-white/10 dark:text-white"
+              : "text-slate-500 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+          );
+          if (entry.id === "instance") {
+            return (
+              <Link key={entry.id} href={entry.href} className={className}>
+                {entry.label}
+              </Link>
+            );
+          }
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => selectTab(entry.id)}
+              aria-current={tab === entry.id ? "page" : undefined}
+              className={className}
+            >
+              {entry.label}
+            </button>
+          );
+        })}
       </nav>
 
       <div className={tab === "linkedin" ? "space-y-6" : "hidden"}>

@@ -88,6 +88,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/bcryptjs": "^2.4.6",
     "@types/dompurify": "^3.0.5",
