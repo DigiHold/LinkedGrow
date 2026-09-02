@@ -6,8 +6,7 @@ import { and, asc, count, eq } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 import { encryptApiKey, EncryptionNotConfiguredError } from "@/lib/encryption";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
-import { agentQuotaFor } from "@/lib/plans";
-import { effectivePlan } from "@/lib/plans";
+import { agentQuotaFor, effectivePlan, hasAgentSubscription } from "@/lib/plans";
 
 /**
  * The connected LinkedIn accounts in this workspace, for the agent wizard's
@@ -74,7 +73,8 @@ export async function GET() {
     // Same condition as the POST below, one exception included (lifetime).
     const owner = data.owner ?? data.user;
     const subscribed =
-      !!data.user.isAdmin || !!owner.isLifetimeDeal || !!owner.stripeSubscriptionId;
+      hasAgentSubscription({ stripeSubscriptionId: owner.stripeSubscriptionId, isAdmin: data.user.isAdmin }) ||
+      !!owner.isLifetimeDeal;
 
     return NextResponse.json({
       subscribed,
@@ -151,7 +151,8 @@ export async function POST(request: NextRequest) {
      */
     const owner = data.owner ?? data.user;
     const mayConnect =
-      !!data.user.isAdmin || !!owner.isLifetimeDeal || !!owner.stripeSubscriptionId;
+      hasAgentSubscription({ stripeSubscriptionId: owner.stripeSubscriptionId, isAdmin: data.user.isAdmin }) ||
+      !!owner.isLifetimeDeal;
     if (!mayConnect) {
       return NextResponse.json(
         { error: "Pick a plan before connecting an account.", needsCheckout: true },

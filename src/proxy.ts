@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { MAINTENANCE_MODE, MAINTENANCE_ALLOWED_ROUTES } from "@/lib/maintenance";
+import { isSelfHosted } from "@/lib/edition";
 import { db } from "@/lib/db";
 import { affiliates } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -57,7 +58,7 @@ const authProxy = auth(async (req) => {
 
   // Affiliate referral tracking: set a 30-day cookie when ?ref= is present
   const refCode = nextUrl.searchParams.get("ref");
-  if (refCode) {
+  if (!isSelfHosted() && refCode) {
     // Track the click on the affiliate record
     try {
       await db
@@ -98,7 +99,7 @@ const authProxy = auth(async (req) => {
    * at checkout time, so a made-up value in the URL buys nothing.
    */
   const couponCode = nextUrl.searchParams.get("coupon");
-  if (couponCode && /^[A-Za-z0-9_-]{3,40}$/.test(couponCode)) {
+  if (!isSelfHosted() && couponCode && /^[A-Za-z0-9_-]{3,40}$/.test(couponCode)) {
     const cleanUrl = new URL(nextUrl);
     cleanUrl.searchParams.delete("coupon");
     const response = NextResponse.redirect(cleanUrl);
@@ -165,7 +166,7 @@ const authProxy = auth(async (req) => {
   // It covers the API as well as the pages. Guarding only /dashboard would
   // leave every AI endpoint callable directly by a cancelled account, and in
   // v2 the AI is billed to us rather than to the user's own key.
-  if ((isProtectedRoute || isApiRoute) && isLoggedIn) {
+  if (!isSelfHosted() && (isProtectedRoute || isApiRoute) && isLoggedIn) {
     const user = req.auth?.user;
     // hasUsedTrial is deliberately not part of this. From v2 the trial is
     // granted by Stripe against a card, so an account that has never trialled

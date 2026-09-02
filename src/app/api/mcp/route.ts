@@ -26,6 +26,10 @@ import { generateImageWebP, resolveImageSettings } from "@/app/api/ai/generate-i
 import { uploadToR2 } from "@/lib/storage/r2";
 import { buildCarouselSlides } from "@/lib/carousel-fabric";
 
+/** The self hosted edition has no agent ceiling, and a 16 digit number reads as a bug. */
+const quotaLabel = (q: number): string =>
+  q >= Number.MAX_SAFE_INTEGER ? "an unlimited number of" : String(q);
+
 /**
  * The LinkedGrow MCP server (plan section 12b).
  *
@@ -851,14 +855,14 @@ export async function POST(request: NextRequest) {
           return rpc(
             id,
             toolText(
-              `No LinkedIn account is connected. The user connects one at Dashboard, LinkedIn accounts; it is done there rather than here because credentials never travel through an assistant. Their plan covers ${quota} account${quota === 1 ? "" : "s"}.`
+              `No LinkedIn account is connected. The user connects one at Dashboard, LinkedIn accounts; it is done there rather than here because credentials never travel through an assistant. Their plan covers ${quotaLabel(quota)} ${quota === 1 ? "account" : "accounts"}.`
             )
           );
         }
         return rpc(
           id,
           toolText(
-            `${rows.length} of ${quota} connected. Each account sends up to its own daily number of invitations, and any agents on it share that one budget.\n\n${rows
+            `${rows.length} connected, plan covers ${quotaLabel(quota)} ${quota === 1 ? "account" : "accounts"}. Each account sends up to its own daily number of invitations, and any agents on it share that one budget.\n\n${rows
               .map(
                 (r) =>
                   `id: ${r.id}\nname: ${r.fullName ?? "not signed in yet"}\ncountry: ${r.country}\nstatus: ${r.status}\ndaily invitations: ${r.dailyInviteCap}\nagents on it: ${r.agentCount}`

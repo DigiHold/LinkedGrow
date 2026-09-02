@@ -1,3 +1,5 @@
+import { EDITION, type Edition } from "./edition";
+
 export type PlanId = "free" | "pro" | "business";
 
 /**
@@ -121,6 +123,14 @@ export const UNCARDED_DELETE_DAYS = 14;
 /** Price per extra agent, monthly, on either plan and either billing period. */
 export const EXTRA_AGENT_PRICE = 49;
 
+/**
+ * The ceiling on add-on agents.
+ *
+ * Each one is a real LinkedIn account behind its own residential address, so a
+ * runaway quantity is a bill we pay before the customer does.
+ */
+export const MAX_EXTRA_AGENTS = 10;
+
 export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; description: string; icon: string }> = {
   abTesting: {
     name: "A/B testing",
@@ -148,20 +158,35 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
  * would answer "pro" while the UI showed Business, which is how A/B testing
  * 403'd for an admin on 2026-07-26.
  */
-export function effectivePlan(user: {
-  plan?: string | null;
-  isAdmin?: boolean | null;
-}): PlanId {
+export function effectivePlanFor(
+  edition: Edition,
+  user: { plan?: string | null; isAdmin?: boolean | null }
+): PlanId {
+  if (edition === "self-hosted") return "business";
   if (user.isAdmin) return "business";
   const plan = user.plan;
   return plan === "pro" || plan === "business" ? plan : "free";
 }
+export function effectivePlan(user: {
+  plan?: string | null;
+  isAdmin?: boolean | null;
+}): PlanId {
+  return effectivePlanFor(EDITION, user);
+}
 
+export function canAccessFeatureFor(
+  edition: Edition,
+  userPlan: PlanId,
+  feature: keyof PlanFeatures
+): boolean {
+  if (edition === "self-hosted") return true;
+  return PLANS[userPlan].limits.features[feature];
+}
 export function canAccessFeature(
   userPlan: PlanId,
   feature: keyof PlanFeatures
 ): boolean {
-  return PLANS[userPlan].limits.features[feature];
+  return canAccessFeatureFor(EDITION, userPlan, feature);
 }
 
 export function getRequiredPlanForFeature(
@@ -181,9 +206,13 @@ export function isWithinLimit(
   return currentUsage < limit;
 }
 
-/** Agents included before the $49 add-on. */
-export function agentQuotaFor(plan: PlanId): number {
+/** Agents included before the $49 add-on. Self hosted has no ceiling. */
+export function agentQuotaForEdition(edition: Edition, plan: PlanId): number {
+  if (edition === "self-hosted") return Number.MAX_SAFE_INTEGER;
   return PLANS[plan].limits.agents;
+}
+export function agentQuotaFor(plan: PlanId): number {
+  return agentQuotaForEdition(EDITION, plan);
 }
 
 /**
@@ -196,30 +225,37 @@ export function agentQuotaFor(plan: PlanId): number {
  * to them exactly as before; this gate guards the agent surface only.
  * Admins bypass: they run the house accounts.
  */
+export function hasAgentSubscriptionFor(
+  edition: Edition,
+  user: { stripeSubscriptionId?: string | null; isAdmin?: boolean | null }
+): boolean {
+  if (edition === "self-hosted") return true;
+  if (user.isAdmin) return true;
+  return typeof user.stripeSubscriptionId === "string" && user.stripeSubscriptionId.length > 0;
+}
 export function hasAgentSubscription(user: {
   stripeSubscriptionId?: string | null;
   isAdmin?: boolean | null;
 }): boolean {
-  if (user.isAdmin) return true;
-  return typeof user.stripeSubscriptionId === "string" && user.stripeSubscriptionId.length > 0;
+  return hasAgentSubscriptionFor(EDITION, user);
 }
 
 /** How many agents may run in total: the plan, plus whatever was bought on top. */
-export function effectiveAgentQuota(plan: PlanId, extraAgents = 0): number {
+export function effectiveAgentQuotaFor(
+  edition: Edition,
+  plan: PlanId,
+  extraAgents = 0
+): number {
+  if (edition === "self-hosted") return Number.MAX_SAFE_INTEGER;
   // A cancelled account keeps nothing, whatever it once paid for as an add-on:
   // the add-on item dies with the subscription it hangs off.
   if (plan === "free") return 0;
   const extra = Number.isFinite(extraAgents) ? Math.max(0, Math.trunc(extraAgents)) : 0;
-  return agentQuotaFor(plan) + Math.min(extra, MAX_EXTRA_AGENTS);
+  return agentQuotaForEdition(edition, plan) + Math.min(extra, MAX_EXTRA_AGENTS);
 }
-
-/**
- * The ceiling on add-on agents.
- *
- * Each one is a real LinkedIn account behind its own residential address, so a
- * runaway quantity is a bill we pay before the customer does.
- */
-export const MAX_EXTRA_AGENTS = 10;
+export function effectiveAgentQuota(plan: PlanId, extraAgents = 0): number {
+  return effectiveAgentQuotaFor(EDITION, plan, extraAgents);
+}
 
 export function getUpgradePath(currentPlan: PlanId): PlanId | null {
   const order: PlanId[] = ["free", "pro", "business"];
