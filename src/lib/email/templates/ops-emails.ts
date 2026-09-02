@@ -28,11 +28,13 @@ export function selectorAlertEmailTemplate(params: {
   agentFailures: number;
   /** The distinct things the composer could not find. */
   missing: string[];
+  instanceName?: string;
 }): string {
   const rate =
     params.rate === null ? "too few attempts to say" : `${Math.round(params.rate * 100)}%`;
 
   return baseEmailTemplate({
+    instanceName: params.instanceName,
     preheader: `${params.failed} publishes failed in the last ${params.windowHours} hours.`,
     content: `
 ${p("Hello Nicolas,")}

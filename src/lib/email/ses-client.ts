@@ -104,9 +104,3 @@ export async function opsRecipient(): Promise<string> {
   const settings = await getInstanceSettings();
   return settings.adminEmail || settings.emailFromAddress || "";
 }
-
-/** Whether a send could go anywhere at all, for callers that would rather not try. */
-export async function isEmailConfigured(): Promise<boolean> {
-  if (isCloud()) return !!process.env.BREVO_API_KEY;
-  return (await getInstanceSettings()).emailProvider !== "none";
-}

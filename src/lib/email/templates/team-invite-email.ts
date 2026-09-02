@@ -1,13 +1,16 @@
 import { policyLinksHtml, policyLinksText } from "./policy-links";
+import { foundersHtml, logoHtml } from "./brand";
 // Team invite email template - transactional email sent via Brevo
 interface TeamInviteEmailParams {
+  /** Typed where the logo goes on a self hosted instance. */
+  instanceName?: string;
   inviterName: string;
   teamName: string;
   role: "admin" | "member";
   inviteUrl: string;
 }
 
-export function teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl }: TeamInviteEmailParams): string {
+export function teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl, instanceName }: TeamInviteEmailParams): string {
   const roleLabel = role === "admin" ? "an Admin" : "a Member";
 
   return `<!DOCTYPE html>
@@ -89,7 +92,7 @@ export function teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl
                                     </tr>
                                     <tr>
                                         <td class="row" align="center" style="padding: 0 50px;">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
+                                            ${logoHtml(238, instanceName)}
                                         </td>
                                     </tr>
                                     <tr>
@@ -228,29 +231,7 @@ export function teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl
                                     </tr>
                                 </table>
 
-                                <!-- Photos -->
-                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
-                                    <tr>
-                                        <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
-                                    </tr>
-                                </table>
-
-                                <!-- Signature - Nicolas & Maria -->
-                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
-                                    <tr>
-                                        <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
-                                    </tr>
-                                </table>
+${foundersHtml()}
 
                                 <!-- Divider 2 -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
@@ -281,7 +262,7 @@ export function teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl
                                             <table align="center" width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <tr>
                                                     <td align="center">
-                                                        <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
+                                                        ${logoHtml(180, instanceName)}
                                                     </td>
                                                 </tr>
                                                 <tr>

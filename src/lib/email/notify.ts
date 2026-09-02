@@ -7,6 +7,7 @@
  */
 
 import { sendEmail, opsRecipient } from "./ses-client";
+import { instanceBrandName } from "./brand-name";
 import {
   type Lead,
   leadsDigestSubject,
@@ -47,10 +48,11 @@ export async function sendLeadsDigestEmail(params: {
   agentId: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: leadsDigestSubject(params.count),
-    html: leadsDigestEmailTemplate({ ...params, firstName }),
+    html: leadsDigestEmailTemplate({ ...params, firstName, instanceName }),
     text: leadsDigestEmailText({ ...params, firstName }),
   });
 }
@@ -62,10 +64,11 @@ export async function sendVerificationNeededEmail(params: {
   agentId: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: verificationSubject,
-    html: verificationEmailTemplate({ ...params, firstName }),
+    html: verificationEmailTemplate({ ...params, firstName, instanceName }),
     text: verificationEmailText({ ...params, firstName }),
   });
 }
@@ -78,10 +81,11 @@ export async function sendAgentStoppedEmail(params: {
   agentId: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: agentStoppedSubject,
-    html: agentStoppedEmailTemplate({ ...params, firstName }),
+    html: agentStoppedEmailTemplate({ ...params, firstName, instanceName }),
     text: agentStoppedEmailText({ ...params, firstName }),
   });
 }
@@ -94,10 +98,11 @@ export async function sendReplyEmail(params: {
   agentContinues: boolean;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: replySubject(params.from),
-    html: replyEmailTemplate({ ...params, firstName }),
+    html: replyEmailTemplate({ ...params, firstName, instanceName }),
     text: replyEmailText({ ...params, firstName }),
   });
 }
@@ -111,10 +116,11 @@ export async function sendFirstDayEmail(params: {
   agentId: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: firstDaySubject,
-    html: firstDayEmailTemplate({ ...params, firstName }),
+    html: firstDayEmailTemplate({ ...params, firstName, instanceName }),
     text: firstDayEmailText({ ...params, firstName }),
   });
 }
@@ -133,10 +139,11 @@ export async function sendSelectorAlertEmail(params: {
 }) {
   const to = await opsRecipient();
   if (!to) return { success: true, skipped: true as const, messageId: null };
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to,
     subject: selectorAlertSubject,
-    html: selectorAlertEmailTemplate(params),
+    html: selectorAlertEmailTemplate({ ...params, instanceName }),
     text: selectorAlertEmailText(params),
   });
 }

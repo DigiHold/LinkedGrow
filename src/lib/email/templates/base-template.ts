@@ -12,13 +12,16 @@
  */
 
 import { policyLinksHtml } from "./policy-links";
+import { foundersHtml, logoHtml } from "./brand";
 
 interface BaseTemplateParams {
+  /** Typed where the logo goes on a self hosted instance. */
+  instanceName?: string;
   preheader?: string;
   content: string;
 }
 
-export function baseEmailTemplate({ preheader, content }: BaseTemplateParams): string {
+export function baseEmailTemplate({ preheader, content, instanceName }: BaseTemplateParams): string {
   return `<!DOCTYPE html>
 <html lang="en" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -98,7 +101,7 @@ export function baseEmailTemplate({ preheader, content }: BaseTemplateParams): s
                                     </tr>
                                     <tr>
                                         <td class="row" align="center" style="padding: 0 50px;">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
+                                            ${logoHtml(238, instanceName)}
                                         </td>
                                     </tr>
                                     <tr>
@@ -111,29 +114,7 @@ ${content}
                                     <tr><td height="36" style="line-height: 36px;"></td></tr>
                                 </table>
 
-                                <!-- Photos -->
-                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
-                                    <tr>
-                                        <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
-                                    </tr>
-                                </table>
-
-                                <!-- Signature - Nicolas & Maria -->
-                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
-                                    <tr>
-                                        <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
-                                    </tr>
-                                </table>
+${foundersHtml()}
 
                                 <!-- Divider 2 -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
@@ -164,7 +145,7 @@ ${content}
                                             <table align="center" width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <tr>
                                                     <td align="center">
-                                                        <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
+                                                        ${logoHtml(180, instanceName)}
                                                     </td>
                                                 </tr>
                                                 <tr>

@@ -33,6 +33,7 @@ export {
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";
 import { getAppUrl } from "@/lib/app-url";
+import { instanceBrandName } from "./brand-name";
 import {
   resetPasswordEmailTemplate,
   resetPasswordEmailText,
@@ -63,10 +64,11 @@ export async function sendPasswordResetEmail({
 }: SendPasswordResetEmailParams) {
   const resetUrl = `${getAppUrl()}/reset-password?token=${resetToken}`;
 
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to,
     subject: "Reset your LinkedGrow password",
-    html: resetPasswordEmailTemplate({ name, resetUrl }),
+    html: resetPasswordEmailTemplate({ name, resetUrl, instanceName }),
     text: resetPasswordEmailText({ name, resetUrl }),
   });
 }
@@ -88,10 +90,11 @@ export async function sendTeamInviteEmail({
 }: SendTeamInviteEmailParams) {
   const inviteUrl = `${getAppUrl()}/team/invite?token=${inviteToken}`;
 
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to,
     subject: `${inviterName} invited you to join ${teamName} on LinkedGrow`,
-    html: teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl }),
+    html: teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl, instanceName }),
     text: teamInviteEmailText({ inviterName, teamName, role, inviteUrl }),
   });
 }
@@ -111,10 +114,11 @@ export async function sendNetworkNotificationInviteEmail({
 }: SendNetworkNotificationInviteEmailParams) {
   const inviteUrl = `${getAppUrl()}/network-notifications/invite?token=${inviteToken}`;
 
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to,
     subject: `${inviterName} invited you to a Network Notifications group on LinkedGrow`,
-    html: networkNotificationInviteEmailTemplate({ inviterName, groupName, inviteUrl }),
+    html: networkNotificationInviteEmailTemplate({ inviterName, groupName, inviteUrl, instanceName }),
     text: networkNotificationInviteEmailText({ inviterName, groupName, inviteUrl }),
   });
 }
@@ -134,10 +138,11 @@ export async function sendNetworkNotificationNotifyEmail({
   postPreview,
   linkedinUrl,
 }: SendNetworkNotificationNotifyEmailParams) {
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to,
     subject: `${publisherName} just published a new post`,
-    html: networkNotificationNotifyEmailTemplate({ publisherName, groupName, postPreview, linkedinUrl }),
+    html: networkNotificationNotifyEmailTemplate({ publisherName, groupName, postPreview, linkedinUrl, instanceName }),
     text: networkNotificationNotifyEmailText({ publisherName, groupName, postPreview, linkedinUrl }),
   });
 }
