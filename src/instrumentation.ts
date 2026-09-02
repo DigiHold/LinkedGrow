@@ -2,8 +2,15 @@ export async function register() {
   // Only run in Node.js runtime, not Edge
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
+  // Fail closed: a rejected instrumentation hook leaves Next serving 500s for ever,
+  // so the process ends itself instead.
   const { assertEditionConsistency } = await import("@/lib/edition");
-  assertEditionConsistency(process.env);
+  try {
+    assertEditionConsistency(process.env);
+  } catch (error) {
+    process.stderr.write(`linkedgrow: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(1);
+  }
 
   if (!process.env.QSTASH_TOKEN) return;
 
