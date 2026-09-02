@@ -1,0 +1,6 @@
+{
+  "title": "Self hosting",
+  "description": "Install LinkedGrow on your own server with Docker Compose, run the setup wizard, put it behind https, update it and back it up.",
+  "order": 0,
+  "icon": "server"
+}

@@ -11,6 +11,7 @@ import {
   Shield,
   Building2,
   HelpCircle,
+  Server,
 } from "lucide-react";
 import { getAllCategories, getAllArticleMetas } from "@/lib/docs";
 import { getAppUrl } from "@/lib/app-url";
@@ -53,6 +54,7 @@ export const metadata: Metadata = {
 };
 
 const categoryIcons: Record<string, React.ReactNode> = {
+  "self-hosting": <Server className="w-6 h-6" />,
   "getting-started": <Rocket className="w-6 h-6" />,
   "content-creation": <PenTool className="w-6 h-6" />,
   carousel: <Layers className="w-6 h-6" />,
