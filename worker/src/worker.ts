@@ -43,6 +43,7 @@ import { getStyleSamples } from "./linkedin/style.ts";
 import { announce, stopAnnouncing } from "./store.ts";
 import { sleep, randInt } from "./browser/human.ts";
 import { EDITION } from "./edition.ts";
+import { cronLoop } from "./cron/pass.ts";
 
 if (EDITION !== "cloud" && (process.env.STRIPE_SECRET_KEY || process.env.QSTASH_TOKEN)) {
   throw new Error("cloud secrets present but LINKEDGROW_EDITION is not cloud");
@@ -634,7 +635,7 @@ async function main(): Promise<void> {
   // No loop ever returns, and none may take the others down: a thrown error
   // inside one is already handled per pass, and Promise.all here only keeps the
   // process alive.
-  await Promise.all([agentLoop(), connectLoop(), publishLoop(), insightsLoop()]);
+  await Promise.all([agentLoop(), connectLoop(), publishLoop(), insightsLoop(), cronLoop(sleep, shuttingDown)]);
 }
 
 if (import.meta.filename === process.argv[1]) {

@@ -13,17 +13,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { Receiver } from "@upstash/qstash";
-import { auth } from "@/lib/auth";
+import { verifyCronRequest } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { posts, agentEvents, workerFlags, linkedinAccounts } from "@/lib/db/schema";
 import { and, eq, gte, inArray } from "drizzle-orm";
 import { sendSelectorAlertEmail } from "@/lib/email";
-
-const receiver = new Receiver({
-  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
-  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
-});
 
 /** How far back each pass looks. */
 const WINDOW_HOURS = 24;
@@ -202,21 +196,8 @@ async function alertOnce(health: Health): Promise<boolean> {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.text();
-    const signature = request.headers.get("upstash-signature") || "";
-    const isValid = await receiver.verify({
-      body,
-      signature,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/cron/selector-health`,
-    });
-    if (!isValid) return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-  } catch {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const verified = await verifyCronRequest(request, "/api/cron/selector-health");
+  if (!verified.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const health = await measure();

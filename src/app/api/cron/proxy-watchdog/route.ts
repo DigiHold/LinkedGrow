@@ -18,17 +18,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { Receiver } from "@upstash/qstash";
 import { and, eq, isNotNull, lt, sql } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { verifyCronRequest } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { linkedinAccounts, proxyAllocations, users, workerFlags } from "@/lib/db/schema";
 import { sendEmail, opsRecipient } from "@/lib/email/ses-client";
-
-const receiver = new Receiver({
-  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
-  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
-});
 
 const HEARTBEAT_STALE_MS = 36 * 60 * 60 * 1000;
 const DANGER_DAYS = 7;
@@ -97,23 +91,8 @@ async function runWatchdog() {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.text();
-    const signature = request.headers.get("upstash-signature") || "";
-    const isValid = await receiver.verify({
-      body,
-      signature,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/cron/proxy-watchdog`,
-    });
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
-  } catch {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const verified = await verifyCronRequest(request, "/api/cron/proxy-watchdog");
+  if (!verified.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const result = await runWatchdog();

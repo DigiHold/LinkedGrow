@@ -13,8 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { Receiver } from "@upstash/qstash";
-import { auth } from "@/lib/auth";
+import { verifyCronRequest } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import {
   users,
@@ -29,11 +28,6 @@ import {
   sendAgentStoppedEmail,
   sendReplyEmail,
 } from "@/lib/email/notify";
-
-const receiver = new Receiver({
-  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
-  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
-});
 
 /** Types that earn an immediate email. Everything else is dashboard-only. */
 const ALERTING = ["challenged", "error", "paused", "budget", "reply"] as const;
@@ -232,25 +226,8 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.text();
-    const signature = request.headers.get("upstash-signature") || "";
-
-    const isValid = await receiver.verify({
-      body,
-      signature,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/cron/agent-alerts`,
-    });
-
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
-  } catch {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const verified = await verifyCronRequest(request, "/api/cron/agent-alerts");
+  if (!verified.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const result = await runAgentAlerts();

@@ -142,6 +142,8 @@ const authProxy = auth(async (req) => {
       "/api/google/", "/api/linkedin/",
       "/api/team/invite/validate",
       "/api/mcp",
+      // Authenticates itself with the instance cron secret (src/lib/cron-auth.ts).
+      "/api/internal/",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {

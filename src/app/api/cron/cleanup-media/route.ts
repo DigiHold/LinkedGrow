@@ -16,8 +16,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { Receiver } from "@upstash/qstash";
-import { auth } from "@/lib/auth";
+import { verifyCronRequest } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { media, posts, savedCarousels, userTemplates } from "@/lib/db/schema";
 import { eq, and, isNull, isNotNull, lt, inArray, notInArray } from "drizzle-orm";
@@ -26,11 +25,6 @@ import { getStorage, type StorageDriver } from "@/lib/storage";
 
 const BATCH_SIZE = 50;
 const BATCH_DELAY_MS = 500;
-
-const receiver = new Receiver({
-  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
-  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
-});
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -241,27 +235,8 @@ function extractKeyFromUrl(url: string, storage: StorageDriver): string | null {
 }
 
 export async function POST(request: NextRequest) {
-  // Verify QStash signature
-  try {
-    const body = await request.text();
-    const signature = request.headers.get("upstash-signature") || "";
-
-    const isValid = await receiver.verify({
-      body,
-      signature,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/cron/cleanup-media`,
-    });
-
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
-  } catch {
-    // If QStash verification fails, check for admin session
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const verified = await verifyCronRequest(request, "/api/cron/cleanup-media");
+  if (!verified.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const result = await runCleanup();

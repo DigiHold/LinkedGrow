@@ -1,7 +1,8 @@
 import { db } from "../db.ts";
 import { log, logError } from "../logger.ts";
 import { decryptSecret } from "../crypto.ts";
-import { requireEnv, optionalEnv } from "../config.ts";
+import { requireEnv } from "../config.ts";
+import { instance } from "../instance.ts";
 
 /**
  * Buying the addresses the dashboard asked for.
@@ -54,7 +55,8 @@ async function ipv4(): Promise<unknown> {
 }
 
 export async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
-  const key = requireEnv("PROXY_SELLER_API_KEY");
+  const key = (await instance()).proxySellerKey;
+  if (!key) throw new Error("No proxy supplier key is configured");
   const agent = await ipv4();
   const response = await fetch(`${BASE}/${key}/${path}`, {
     method,
@@ -465,7 +467,7 @@ async function fulfil(row: { id: string; country: string; providerRef: string })
  * minute ago has its address by the time its first session would open.
  */
 export async function fulfilPendingAllocations(): Promise<void> {
-  if (!optionalEnv("PROXY_SELLER_API_KEY")) return;
+  if (!(await instance()).proxySellerKey) return;
 
   const { rows } = await db().execute(
     `SELECT id, country, COALESCE(provider_ref, '') AS provider_ref

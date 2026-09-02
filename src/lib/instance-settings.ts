@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { instanceSettings } from "@/lib/db/schema";
@@ -75,4 +76,21 @@ export async function instanceSecrets(): Promise<Secrets> {
 export async function resolveInstanceSecret(name: SecretName): Promise<string | null> {
   if (EDITION === "cloud") return resolveSecretFrom("cloud", name, EMPTY, process.env);
   return resolveSecretFrom("self-hosted", name, await instanceSecrets(), process.env);
+}
+
+/**
+ * The secret the worker sends on every scheduled call to the app (src/lib/cron-auth.ts).
+ * Generated here, stored encrypted, read back by the worker from the same row.
+ * Always makes a new one: rotating it is the only reason to call this directly.
+ */
+export async function rotateCronSecret(): Promise<string> {
+  const secret = randomBytes(32).toString("hex");
+  await updateInstanceSettings({ cronSecretEncrypted: encryptSecret(secret) });
+  return secret;
+}
+
+/** The existing cron secret, or a fresh one when the row has none yet. */
+export async function ensureCronSecret(): Promise<string> {
+  const existing = (await instanceSecrets()).cronSecret;
+  return existing ?? rotateCronSecret();
 }

@@ -1,7 +1,7 @@
 import { db } from "../db.ts";
 import { log } from "../logger.ts";
 import { call } from "../proxy/fulfil.ts";
-import { optionalEnv } from "../config.ts";
+import { notifyOps } from "../notify.ts";
 
 /**
  * The daily renewal of the dedicated addresses, and the only thing in the
@@ -65,21 +65,6 @@ async function heartbeat(summary: unknown): Promise<void> {
           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
     args: [JSON.stringify(summary), Math.floor(Date.now() / 1000)],
   });
-}
-
-async function alertEmail(subject: string, lines: string[]): Promise<void> {
-  const brevo = optionalEnv("BREVO_API_KEY");
-  if (!brevo) return;
-  await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
-    headers: { "api-key": brevo, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sender: { name: "LinkedGrow worker", email: "contact@linkedgrow.ai" },
-      to: [{ email: "contact@linkedgrow.ai" }],
-      subject,
-      htmlContent: `<p>${lines.join("</p><p>")}</p>`,
-    }),
-  }).catch((error) => log("the alert email did not go out", { error: String(error) }));
 }
 
 async function main(): Promise<void> {
@@ -232,7 +217,7 @@ async function main(): Promise<void> {
 
   if (alerts.length) {
     log("ALERTS", { alerts });
-    await alertEmail(
+    await notifyOps(
       `Proxy renewal: ${alerts.length} thing${alerts.length === 1 ? "" : "s"} need${alerts.length === 1 ? "s" : ""} you`,
       alerts
     );
@@ -245,6 +230,6 @@ main().then(
   (error) => {
     log("proxy renewal pass failed", { error: String(error) });
     // The pass itself failing must not stay quiet either.
-    alertEmail("Proxy renewal pass CRASHED", [String(error)]).finally(() => process.exit(1));
+    notifyOps("Proxy renewal pass CRASHED", [String(error)]).finally(() => process.exit(1));
   }
 );
