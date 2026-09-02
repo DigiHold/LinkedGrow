@@ -24,6 +24,13 @@ export interface S3StorageOptions {
 
 const R2_HOST = "r2.cloudflarestorage.com";
 
+/** A missing key is NoSuchKey on S3 and R2, and a bare 404 on some compatible stores. */
+function isMissingKey(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+  return error.name === "NoSuchKey" || status === 404;
+}
+
 /**
  * Any S3 compatible bucket. Cloudflare R2 in the cloud, and whatever the self
  * hosted instance points at: MinIO, Wasabi, Backblaze, AWS itself.
@@ -120,6 +127,20 @@ export class S3Storage implements StorageDriver {
       })
     );
     return { key: destinationKey, url: this.publicUrl(destinationKey) };
+  }
+
+  async read(key: string): Promise<{ body: Buffer; contentType: string } | null> {
+    try {
+      const object = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+      if (!object.Body) return null;
+      return {
+        body: Buffer.from(await object.Body.transformToByteArray()),
+        contentType: object.ContentType || "application/octet-stream",
+      };
+    } catch (error) {
+      if (isMissingKey(error)) return null;
+      throw error;
+    }
   }
 
   publicUrl(key: string): string {

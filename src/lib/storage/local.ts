@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs";
 import type { Readable } from "node:stream";
-import { copyFile, mkdir, readdir, rm, rmdir, stat, writeFile } from "node:fs/promises";
-import { dirname, join, posix, relative, resolve, sep } from "node:path";
+import { copyFile, mkdir, readdir, readFile, rm, rmdir, stat, writeFile } from "node:fs/promises";
+import { dirname, extname, join, posix, relative, resolve, sep } from "node:path";
 import type { PutResult, StorageDriver } from "./index";
 
 /** Where the local driver keeps its files. The Docker volume is mounted here. */
@@ -11,15 +11,37 @@ export function storageRoot(): string {
 
 /**
  * The absolute path of a key under the root, or a throw when the key would land
- * anywhere else. Every read and write on disk goes through this one check.
+ * anywhere else. Every read and write on disk goes through this one check. A
+ * null byte is refused with the rest: the filesystem would cut the path there.
  */
 export function resolveUnderRoot(root: string, key: string): string {
   const base = resolve(root);
   const target = resolve(base, key);
-  if (!key || target === base || !target.startsWith(base + sep)) {
+  if (!key || key.includes("\0") || target === base || !target.startsWith(base + sep)) {
     throw new Error("key resolves outside the storage root");
   }
   return target;
+}
+
+const CONTENT_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  avif: "image/avif",
+  svg: "image/svg+xml",
+  pdf: "application/pdf",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+  txt: "text/plain; charset=utf-8",
+  json: "application/json",
+};
+
+/** The type a key is served as, read off its extension; an opaque blob when unknown. */
+export function contentTypeForKey(key: string): string {
+  return CONTENT_TYPES[extname(key).slice(1).toLowerCase()] ?? "application/octet-stream";
 }
 
 /**
@@ -102,6 +124,15 @@ export class LocalStorage implements StorageDriver {
     await mkdir(dirname(target), { recursive: true });
     await copyFile(this.pathFor(sourceKey), target);
     return { key: destinationKey, url: this.publicUrl(destinationKey) };
+  }
+
+  async read(key: string): Promise<{ body: Buffer; contentType: string } | null> {
+    const file = this.pathFor(key);
+    try {
+      return { body: await readFile(file), contentType: contentTypeForKey(key) };
+    } catch {
+      return null;
+    }
   }
 
   publicUrl(key: string): string {

@@ -1,26 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Readable } from "node:stream";
-import { extname } from "node:path";
 import { getAppUrl } from "@/lib/app-url";
 import { isCloud } from "@/lib/edition";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
-import { LocalStorage, storageRoot } from "@/lib/storage/local";
-
-const CONTENT_TYPES: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  webp: "image/webp",
-  avif: "image/avif",
-  svg: "image/svg+xml",
-  pdf: "application/pdf",
-  mp4: "video/mp4",
-  webm: "video/webm",
-  mov: "video/quicktime",
-  txt: "text/plain; charset=utf-8",
-  json: "application/json",
-};
+import { contentTypeForKey, LocalStorage, storageRoot } from "@/lib/storage/local";
 
 function notFound(): NextResponse {
   return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -65,7 +48,7 @@ export async function GET(
     }
     if (!file) return notFound();
 
-    const type = CONTENT_TYPES[extname(key).slice(1).toLowerCase()] ?? "application/octet-stream";
+    const type = contentTypeForKey(key);
     const headers: Record<string, string> = {
       "Content-Type": type,
       "Content-Length": String(file.size),

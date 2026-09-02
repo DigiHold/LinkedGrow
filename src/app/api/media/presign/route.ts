@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { rateLimit } from "@/lib/rate-limit";
 import { getPresignedUploadUrl, isR2Configured, DIRECT_UPLOAD_UNAVAILABLE } from "@/lib/storage/r2";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -19,6 +20,18 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // A presigned URL is an upload the bucket will accept, so it counts as one.
+    const uploadLimit = rateLimit(`media-upload:${session.user.id}`, {
+      maxRequests: 60,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!uploadLimit.success) {
+      return NextResponse.json(
+        { error: "Too many uploads. Try again later." },
+        { status: 429 }
+      );
     }
 
     if (!(await isR2Configured())) {

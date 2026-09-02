@@ -88,8 +88,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Clean up R2 images that were removed from the canvas
     if (canvasJson && existingTemplate.canvasJson) {
-      const oldKeys = extractR2KeysFromCanvasJson(existingTemplate.canvasJson);
-      const newKeys = extractR2KeysFromCanvasJson(canvasJson);
+      const oldKeys = await extractR2KeysFromCanvasJson(existingTemplate.canvasJson);
+      const newKeys = await extractR2KeysFromCanvasJson(canvasJson);
       cleanupRemovedR2Keys(oldKeys, newKeys);
     }
 
@@ -134,7 +134,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Clean up R2 images from canvas in the background
     if (existingTemplate.canvasJson) {
-      const keys = extractR2KeysFromCanvasJson(existingTemplate.canvasJson);
+      const keys = await extractR2KeysFromCanvasJson(existingTemplate.canvasJson);
       if (keys.length > 0) {
         cleanupR2Keys(keys);
       }

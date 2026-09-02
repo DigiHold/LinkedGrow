@@ -15,6 +15,14 @@ test("local driver writes, serves a url, and deletes", async () => {
   assert.equal(s.keyFromUrl("http://localhost:3000/uploads/users/u1/uploads/a.txt"), "users/u1/uploads/a.txt");
   assert.equal(s.keyFromUrl("https://elsewhere.test/x"), null);
   await assert.rejects(s.put("../escape", Buffer.from("x"), "text/plain"), /outside/);
+  await assert.rejects(s.put("users/../../x", Buffer.from("x"), "text/plain"), /outside/);
+  await assert.rejects(s.put("/etc/passwd", Buffer.from("x"), "text/plain"), /outside/);
+  await assert.rejects(s.put("users/u1/uploads/a\0.txt", Buffer.from("x"), "text/plain"), /outside/);
+  const read = await s.read("users/u1/uploads/a.txt");
+  assert.equal(read?.body.toString(), "hi");
+  assert.equal(read?.contentType, "text/plain; charset=utf-8");
+  assert.equal(await s.read("users/u1/uploads/missing.txt"), null);
+  await assert.rejects(s.read("../escape"), /outside/);
   const copied = await s.copy("users/u1/uploads/a.txt", "users/u2/uploads/b.txt");
   assert.equal(copied.url, "http://localhost:3000/uploads/users/u2/uploads/b.txt");
   assert.equal(await s.deleteByPrefix("users/u2/"), 1);

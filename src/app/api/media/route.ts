@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { media, users, posts } from "@/lib/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   uploadToR2,
   uploadBase64ToR2,
@@ -118,6 +119,18 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Every upload costs disk or bucket space, so it is limited per user.
+    const uploadLimit = rateLimit(`media-upload:${session.user.id}`, {
+      maxRequests: 60,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!uploadLimit.success) {
+      return NextResponse.json(
+        { error: "Too many uploads. Try again later." },
+        { status: 429 }
+      );
     }
 
     if (!(await isR2Configured())) {

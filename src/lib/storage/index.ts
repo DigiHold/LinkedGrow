@@ -17,6 +17,8 @@ export interface StorageDriver {
   deleteMany(keys: string[]): Promise<void>;
   deleteByPrefix(prefix: string): Promise<number>;
   copy(sourceKey: string, destinationKey: string): Promise<{ key: string; url: string }>;
+  /** The stored bytes and their type, or null when the key is not there. */
+  read(key: string): Promise<{ body: Buffer; contentType: string } | null>;
   publicUrl(key: string): string;
   /** The storage key behind one of our own URLs, or null for a foreign URL. */
   keyFromUrl(url: string): string | null;

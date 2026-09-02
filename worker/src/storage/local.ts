@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { optionalEnv } from "../config.ts";
 import { instance } from "../instance.ts";
@@ -17,11 +17,14 @@ export function storageRoot(): string {
   return optionalEnv("STORAGE_ROOT") ?? "/data/uploads";
 }
 
-/** The absolute path of a key, or a throw when it would land outside the root. */
+/**
+ * The absolute path of a key, or a throw when it would land outside the root.
+ * A null byte is refused with the rest: the filesystem would cut the path there.
+ */
 function pathFor(key: string): string {
   const root = resolve(storageRoot());
   const target = resolve(root, key);
-  if (!key || target === root || !target.startsWith(root + sep)) {
+  if (!key || key.includes("\0") || target === root || !target.startsWith(root + sep)) {
     throw new Error("key resolves outside the storage root");
   }
   return target;
@@ -30,6 +33,36 @@ function pathFor(key: string): string {
 async function appUrl(): Promise<string | null> {
   const url = (await instance()).appUrl ?? optionalEnv("APP_URL");
   return url ? url.replace(/\/+$/, "") : null;
+}
+
+/**
+ * The key behind one of the app's own `/uploads/` URLs, when this instance
+ * keeps its files on the disk this worker shares with it. Null for every other
+ * URL, and for every URL when the files live in a bucket.
+ */
+export async function localKeyFromUrl(url: string): Promise<string | null> {
+  if ((await instance()).storageProvider !== "local") return null;
+  const base = await appUrl();
+  if (!base) return null;
+  const prefix = `${base}/uploads/`;
+  if (!url.startsWith(prefix)) return null;
+  const key = url.slice(prefix.length).split(/[?#]/)[0] ?? "";
+  return key ? key : null;
+}
+
+/**
+ * The bytes under a key, or null when there is no such file. A key that would
+ * leave the root throws, the same way a write would.
+ */
+export async function readObject(key: string): Promise<Buffer | null> {
+  const file = pathFor(key);
+  try {
+    return await readFile(file);
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (code === "ENOENT" || code === "EISDIR" || code === "ENOTDIR") return null;
+    throw error;
+  }
 }
 
 /** Writes one file and returns the URL the app serves it at, or null. */
