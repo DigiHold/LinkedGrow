@@ -1,6 +1,10 @@
 export async function register() {
   // Only run in Node.js runtime, not Edge
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  const { assertEditionConsistency } = await import("@/lib/edition");
+  assertEditionConsistency(process.env);
+
   if (!process.env.QSTASH_TOKEN) return;
 
   try {

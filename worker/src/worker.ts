@@ -42,6 +42,11 @@ import {
 import { getStyleSamples } from "./linkedin/style.ts";
 import { announce, stopAnnouncing } from "./store.ts";
 import { sleep, randInt } from "./browser/human.ts";
+import { EDITION } from "./edition.ts";
+
+if (EDITION !== "cloud" && (process.env.STRIPE_SECRET_KEY || process.env.QSTASH_TOKEN)) {
+  throw new Error("cloud secrets present but LINKEDGROW_EDITION is not cloud");
+}
 
 /**
  * The worker plane's run loop.
