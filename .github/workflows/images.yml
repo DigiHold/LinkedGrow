@@ -1,0 +1,140 @@
+name: images
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: app
+            dockerfile: docker/Dockerfile.app
+            image: ghcr.io/digihold/linkedgrow
+          - name: worker
+            dockerfile: docker/Dockerfile.worker
+            image: ghcr.io/digihold/linkedgrow-worker
+    steps:
+      - uses: actions/checkout@v4
+
+      # arm64 is emulated on the runner and the Next build under emulation takes
+      # far too long for every push, so only a release tag pays that price.
+      - name: Pick the platforms
+        id: platforms
+        run: |
+          if [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+            echo "list=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
+          else
+            echo "list=linux/amd64" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up QEMU
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ steps.platforms.outputs.list }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  smoke:
+    name: smoke
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write the env file
+        run: |
+          {
+            echo "LINKEDGROW_VERSION=sha-$(echo "${GITHUB_SHA}" | cut -c1-7)"
+            echo "APP_URL=http://localhost:3000"
+            echo "AUTH_SECRET=$(openssl rand -hex 32)"
+            echo "ENCRYPTION_KEY=$(openssl rand -hex 32)"
+            echo "APP_BIND=127.0.0.1"
+            echo "APP_PORT=3000"
+            echo "WORKER_SLOTS=1"
+          } > .env
+
+      - name: Start the stack
+        run: docker compose up -d
+
+      - name: Wait for the health check
+        run: |
+          i=0
+          while [ "$i" -lt 90 ]; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/health || true)
+            if [ "$code" = "200" ]; then
+              echo "the app answered 200 after $((i * 2)) seconds"
+              exit 0
+            fi
+            i=$((i + 1))
+            sleep 2
+          done
+          echo "the app never answered 200 on /api/health"
+          exit 1
+
+      - name: The sign up page answers
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/sign-up)
+          echo "sign-up: $code"
+          [ "$code" = "200" ]
+
+      - name: Logs
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
