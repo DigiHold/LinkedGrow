@@ -44,21 +44,29 @@ export function contentTypeForKey(key: string): string {
   return CONTENT_TYPES[extname(key).slice(1).toLowerCase()] ?? "application/octet-stream";
 }
 
+/** The path the app serves local files under. A stored URL is this plus the key. */
+const UPLOADS_PATH = "/uploads/";
+
 /**
- * Files on the disk the app serves itself, at `${appUrl}/uploads/<key>`.
+ * Files on the disk the app serves itself, at `/uploads/<key>`.
  *
  * The self hosted default: nothing to sign up for, and the worker writes to
  * the same directory through the shared volume. No presigned URLs exist here,
  * so the browser uploads through the app instead of straight to the bucket.
+ *
+ * The URL is relative on purpose. The dashboard renders it against its own
+ * origin, so the public address never has to be known when a file is stored,
+ * and never has to be baked into the image at build time. URLs written before
+ * this, `${appUrl}/uploads/<key>`, are still recognised on the way back in.
  */
 export class LocalStorage implements StorageDriver {
   readonly isConfigured = true;
   private readonly root: string;
-  private readonly base: string;
+  private readonly absoluteBase: string;
 
   constructor(root: string, appUrl: string) {
     this.root = resolve(root);
-    this.base = `${appUrl.replace(/\/+$/, "")}/uploads/`;
+    this.absoluteBase = `${appUrl.replace(/\/+$/, "")}${UPLOADS_PATH}`;
   }
 
   private pathFor(key: string): string {
@@ -136,12 +144,19 @@ export class LocalStorage implements StorageDriver {
   }
 
   publicUrl(key: string): string {
-    return `${this.base}${key}`;
+    return `${UPLOADS_PATH}${key}`;
   }
 
   keyFromUrl(url: string): string | null {
-    if (!url.startsWith(this.base)) return null;
-    const key = url.slice(this.base.length).split(/[?#]/)[0];
+    let rest: string;
+    if (url.startsWith(UPLOADS_PATH)) {
+      rest = url.slice(UPLOADS_PATH.length);
+    } else if (url.startsWith(this.absoluteBase)) {
+      rest = url.slice(this.absoluteBase.length);
+    } else {
+      return null;
+    }
+    const key = rest.split(/[?#]/)[0];
     return key ? key : null;
   }
 

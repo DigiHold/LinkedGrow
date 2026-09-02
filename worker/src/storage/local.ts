@@ -8,10 +8,15 @@ import { log } from "../logger.ts";
  * The disk the app serves, written from this side of the shared volume.
  *
  * A self hosted instance keeps its files under `STORAGE_ROOT` and the app
- * answers for them at `${appUrl}/uploads/<key>`. The worker mounts the same
- * directory, so an avatar it stores is readable by the dashboard the moment
- * the write returns, with nothing to sign and nothing to upload.
+ * answers for them at `/uploads/<key>`. The worker mounts the same directory,
+ * so an avatar it stores is readable by the dashboard the moment the write
+ * returns, with nothing to sign and nothing to upload. The URL is relative,
+ * the dashboard resolves it against its own origin; the older absolute form,
+ * `${appUrl}/uploads/<key>`, is still read back.
  */
+
+/** The path the app serves local files under. A stored URL is this plus the key. */
+const UPLOADS_PATH = "/uploads/";
 
 export function storageRoot(): string {
   return optionalEnv("STORAGE_ROOT") ?? "/data/uploads";
@@ -36,17 +41,22 @@ async function appUrl(): Promise<string | null> {
 }
 
 /**
- * The key behind one of the app's own `/uploads/` URLs, when this instance
- * keeps its files on the disk this worker shares with it. Null for every other
- * URL, and for every URL when the files live in a bucket.
+ * The key behind one of the app's own `/uploads/` URLs, relative or absolute,
+ * when this instance keeps its files on the disk this worker shares with it.
+ * Null for every other URL, and for every URL when the files live in a bucket.
  */
 export async function localKeyFromUrl(url: string): Promise<string | null> {
   if ((await instance()).storageProvider !== "local") return null;
-  const base = await appUrl();
-  if (!base) return null;
-  const prefix = `${base}/uploads/`;
-  if (!url.startsWith(prefix)) return null;
-  const key = url.slice(prefix.length).split(/[?#]/)[0] ?? "";
+  let rest: string | null = null;
+  if (url.startsWith(UPLOADS_PATH)) {
+    rest = url.slice(UPLOADS_PATH.length);
+  } else {
+    const base = await appUrl();
+    const prefix = base ? `${base}${UPLOADS_PATH}` : null;
+    if (prefix && url.startsWith(prefix)) rest = url.slice(prefix.length);
+  }
+  if (rest === null) return null;
+  const key = rest.split(/[?#]/)[0] ?? "";
   return key ? key : null;
 }
 
@@ -71,11 +81,6 @@ export async function putObject(
   body: Buffer,
   _contentType: string
 ): Promise<string | null> {
-  const base = await appUrl();
-  if (!base) {
-    log("could not store a file: no app url to serve it from", { key });
-    return null;
-  }
   try {
     const file = pathFor(key);
     await mkdir(dirname(file), { recursive: true });
@@ -84,7 +89,7 @@ export async function putObject(
     log("could not store a file", { key, reason: error instanceof Error ? error.message : String(error) });
     return null;
   }
-  return `${base}/uploads/${key}`;
+  return `${UPLOADS_PATH}${key}`;
 }
 
 /** Removes one file. A key that was never there counts as gone. */

@@ -1,13 +1,7 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
-import { getAppUrl } from "./src/lib/app-url";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
-
-// The self hosted edition serves its own uploads from the app origin, and
-// next/image only optimises hosts it was told about.
-const appUrl = new URL(getAppUrl());
-const appProtocol: "http" | "https" = appUrl.protocol === "http:" ? "http" : "https";
 
 // The self hosted image runs the traced standalone server (docker/Dockerfile.app).
 const selfHosted = (process.env.LINKEDGROW_EDITION ?? "self-hosted") !== "cloud";
@@ -59,11 +53,6 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "*.r2.cloudflarestorage.com",
-      },
-      {
-        protocol: appProtocol,
-        hostname: appUrl.hostname,
-        port: appUrl.port,
       },
     ],
   },

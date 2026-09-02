@@ -5,10 +5,10 @@ RUN npm ci --no-audit --no-fund
 
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
-# The public origin is baked into the browser bundle and into next/image's
-# allowed hosts, so the build has to know it. Compose passes APP_URL from .env.
-ARG APP_URL=http://localhost:3000
-ENV LINKEDGROW_EDITION=self-hosted NEXT_TELEMETRY_DISABLED=1 APP_URL=$APP_URL NEXT_PUBLIC_APP_URL=$APP_URL
+# The public address is not known here, and nothing in the build needs it:
+# local files are served at relative URLs, and the entrypoint reads APP_URL
+# at start. One image runs at any address.
+ENV LINKEDGROW_EDITION=self-hosted NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx next build

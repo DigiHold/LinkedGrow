@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
       "pub-86332bae77404495924b3ef7d4cbe7db.r2.dev",
     ];
 
-    const urlObj = new URL(url);
+    // A local file's URL is relative, and parses only against this instance.
+    const urlObj = new URL(url, getAppUrl());
     const storage = await getStorage();
     const key = storage.keyFromUrl(url);
     const isAllowed =

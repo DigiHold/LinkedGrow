@@ -269,7 +269,9 @@ const UNREADABLE_ATTACHMENT =
  * The attachment's bytes. A file on this instance's own disk is read off the
  * shared volume, because the app's public name is not always reachable from
  * inside the worker's container. Everything else is fetched, through the
- * account's own address when it has one.
+ * account's own address when it has one. A relative URL is only ever one of
+ * the local driver's, so when it is not readable as a file there is nothing
+ * to fetch: it never goes to the network.
  */
 async function attachmentBytes(
   url: string,
@@ -286,6 +288,7 @@ async function attachmentBytes(
     if (!bytes) throw new PublishError(UNREADABLE_ATTACHMENT);
     return bytes;
   }
+  if (url.startsWith("/")) throw new PublishError(UNREADABLE_ATTACHMENT);
 
   const dispatcher = proxy
     ? new ProxyAgent({
