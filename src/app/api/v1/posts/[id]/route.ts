@@ -57,7 +57,7 @@ async function processAndUploadImage(
   base64Input: string,
   userId: string
 ): Promise<{ storageUrl: string; storageKey: string; mimeType: string; fileSize: number; width: number | null; height: number | null } | { error: string; status: number }> {
-  if (!isR2Configured()) {
+  if (!(await isR2Configured())) {
     return { error: "Storage not configured", status: 503 };
   }
 

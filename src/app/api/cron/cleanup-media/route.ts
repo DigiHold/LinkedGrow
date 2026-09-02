@@ -1,5 +1,5 @@
 /**
- * Cron job to clean up orphaned R2 media files.
+ * Cron job to clean up orphaned media files.
  * Runs daily via QStash. Processes in batches of 50 with delays
  * between batches to avoid R2 rate limits and Vercel timeouts.
  *
@@ -22,6 +22,7 @@ import { db } from "@/lib/db";
 import { media, posts, savedCarousels, userTemplates } from "@/lib/db/schema";
 import { eq, and, isNull, isNotNull, lt, inArray, notInArray } from "drizzle-orm";
 import { deleteFromR2 } from "@/lib/storage/r2";
+import { getStorage, type StorageDriver } from "@/lib/storage";
 
 const BATCH_SIZE = 50;
 const BATCH_DELAY_MS = 500;
@@ -42,6 +43,7 @@ async function runCleanup(): Promise<{
   batches: number;
 }> {
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const storage = await getStorage();
 
   // Find media records with no postId, older than 24 hours
   const orphanCandidates = await db
@@ -75,7 +77,7 @@ async function runCleanup(): Promise<{
           const slides = JSON.parse(carousel.slidesJson);
           for (const slide of slides) {
             if (slide.canvasJSON) {
-              extractKeysFromCanvas(slide.canvasJSON, referencedKeys);
+              extractKeysFromCanvas(slide.canvasJSON, referencedKeys, storage);
             }
           }
         } catch {
@@ -91,7 +93,7 @@ async function runCleanup(): Promise<{
 
     for (const template of templates) {
       if (template.canvasJson) {
-        extractKeysFromCanvas(template.canvasJson, referencedKeys);
+        extractKeysFromCanvas(template.canvasJson, referencedKeys, storage);
       }
     }
   }
@@ -216,14 +218,14 @@ async function releaseVideos(): Promise<{ freed: number; failed: number; scanned
   return { freed, failed, scanned };
 }
 
-function extractKeysFromCanvas(canvasJson: string, keysSet: Set<string>): void {
+function extractKeysFromCanvas(canvasJson: string, keysSet: Set<string>, storage: StorageDriver): void {
   try {
     const canvas = JSON.parse(canvasJson);
     const objects = canvas.objects || [];
     for (const obj of objects) {
       if (obj.type === "image") {
         const src = obj.originalSrc || obj.src || "";
-        const key = extractKeyFromUrl(src);
+        const key = extractKeyFromUrl(src, storage);
         if (key) keysSet.add(key);
       }
     }
@@ -232,18 +234,10 @@ function extractKeysFromCanvas(canvasJson: string, keysSet: Set<string>): void {
   }
 }
 
-function extractKeyFromUrl(url: string): string | null {
-  if (!url || (!url.includes("r2.dev") && !url.includes("r2.cloudflarestorage.com"))) {
-    return null;
-  }
-  try {
-    const urlObj = new URL(url);
-    const key = urlObj.pathname.slice(1);
-    return key.startsWith("users/") ? key : null;
-  } catch {
-    const match = url.match(/r2\.(?:dev|cloudflarestorage\.com)\/(users\/[^?#]+)/);
-    return match ? match[1] : null;
-  }
+function extractKeyFromUrl(url: string, storage: StorageDriver): string | null {
+  if (!url) return null;
+  const key = storage.keyFromUrl(url);
+  return key && key.startsWith("users/") ? key : null;
 }
 
 export async function POST(request: NextRequest) {

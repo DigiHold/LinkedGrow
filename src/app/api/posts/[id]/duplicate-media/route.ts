@@ -21,7 +21,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!isR2Configured()) {
+    if (!(await isR2Configured())) {
       return NextResponse.json({ error: "Storage not configured" }, { status: 503 });
     }
 

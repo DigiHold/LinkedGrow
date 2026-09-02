@@ -6,7 +6,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 import { canUserAccessPost } from "@/lib/post-access";
 import { rateLimit } from "@/lib/rate-limit";
-import { getPublicUrl } from "@/lib/storage/r2";
+import { getStorage } from "@/lib/storage/r2";
 
 /**
  * Hands a post to the worker, and returns before it is published.
@@ -40,16 +40,14 @@ interface PublishBody {
 }
 
 /**
- * Videos never reach the media table: they live in R2 as a transient pipe and
- * arrive here as a URL. The worker downloads whatever this says, so it is only
- * ever allowed to be our own bucket.
+ * Videos never reach the media table: they live in storage as a transient pipe
+ * and arrive here as a URL. The worker downloads whatever this says, so it is
+ * only ever allowed to be our own storage.
  */
-function isOwnStorageUrl(value: string): boolean {
+async function isOwnStorageUrl(value: string): Promise<boolean> {
   try {
-    const url = new URL(value);
-    if (url.protocol !== "https:") return false;
-    const base = new URL(getPublicUrl("probe"));
-    return url.hostname === base.hostname;
+    const storage = await getStorage();
+    return storage.keyFromUrl(value) !== null;
   } catch {
     return false;
   }
@@ -157,7 +155,7 @@ export async function POST(request: NextRequest) {
     }
 
     const videoUrl = typeof body?.videoUrl === "string" ? body.videoUrl : null;
-    if (videoUrl && !isOwnStorageUrl(videoUrl)) {
+    if (videoUrl && !(await isOwnStorageUrl(videoUrl))) {
       return NextResponse.json({ error: "That video is not one of ours" }, { status: 400 });
     }
 

@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { media } from "@/lib/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { deleteFromR2 } from "@/lib/storage/r2";
+import { getAppUrl } from "@/lib/app-url";
 
 /**
  * Extract R2 storage key from a URL.
@@ -15,6 +16,13 @@ import { deleteFromR2 } from "@/lib/storage/r2";
  */
 export function extractR2KeyFromUrl(url: string): string | null {
   if (!url) return null;
+
+  // The local driver serves its files from the app itself.
+  const local = `${getAppUrl()}/uploads/`;
+  if (url.startsWith(local)) {
+    const key = url.slice(local.length).split(/[?#]/)[0];
+    return key.startsWith("users/") ? key : null;
+  }
 
   if (!url.includes("r2.dev") && !url.includes("r2.cloudflarestorage.com")) {
     return null;

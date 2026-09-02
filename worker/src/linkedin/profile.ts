@@ -2,7 +2,7 @@ import type { Page } from "patchright";
 import { createHash } from "node:crypto";
 import { log, logError } from "../logger.ts";
 import { dwell } from "../browser/human.ts";
-import { putObject, bucketConfig } from "../storage/r2.ts";
+import { putObject, storageConfigured } from "../storage/r2.ts";
 import { db } from "../db.ts";
 import {
   accountMaturity,
@@ -68,7 +68,7 @@ export async function storeAvatar(
   remoteUrl: string,
   keyPrefix: string
 ): Promise<string | null> {
-  if (!bucketConfig()) return null;
+  if (!(await storageConfigured())) return null;
   try {
     const encoded = await page.evaluate(async (url) => {
       const res = await fetch(url, { cache: "no-store" });

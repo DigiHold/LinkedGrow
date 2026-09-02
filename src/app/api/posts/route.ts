@@ -370,7 +370,7 @@ export async function POST(request: NextRequest) {
     // This supports Reddit/Generator pages that send base64 images directly
     let processedMediaInfo = mediaInfo;
     if (mediaData?.base64 && !mediaInfo?.storageUrl) {
-      if (!isR2Configured()) {
+      if (!(await isR2Configured())) {
         return NextResponse.json(
           { error: "Storage not configured" },
           { status: 503 }

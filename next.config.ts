@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { getAppUrl } from "./src/lib/app-url";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+// The self hosted edition serves its own uploads from the app origin, and
+// next/image only optimises hosts it was told about.
+const appUrl = new URL(getAppUrl());
+const appProtocol: "http" | "https" = appUrl.protocol === "http:" ? "http" : "https";
 
 const nextConfig: NextConfig = {
   // Inlined into the server and browser bundles alike, so a client component
@@ -49,6 +55,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "*.r2.cloudflarestorage.com",
+      },
+      {
+        protocol: appProtocol,
+        hostname: appUrl.hostname,
+        port: appUrl.port,
       },
     ],
   },
@@ -110,7 +121,7 @@ const nextConfig: NextConfig = {
       },
       {
         // Public marketing pages only (logged-out) - CDN cache 1 hour, stale-while-revalidate
-        source: "/:path(about|privacy|terms|cookies|beta|sign-in|sign-up|pricing|blog|blog/.*|docs|docs/.*|help|for/.*|features/.*|free-tools/.*|use-cases/.*|industries/.*|compare/.*|affiliate|affiliate/.*|free-linkedin-course|switch-to-claude|linkedin-profile-views-guide|linkedin-analytics-tool|linkedin-new-job-announcement|linkedin-automation-tools|linkedin-marketing-tool|linkedin-lead-generation-tools|linkedin-prospecting-tools|b2b-lead-generation-tools|linkedin-scraper|linkedin-ai-agent|ai-bdr|ai-sdr-software|ai-sales-tools|ai-sales-agent|book-demo)",
+        source: "/:path(about|privacy|terms|cookies|beta|sign-in|sign-up|pricing|blog|blog/.*|docs|docs/.*|help|for/.*|features/.*|free-tools/.*|use-cases/.*|industries/.*|compare/.*|affiliate|affiliate/.*|free-linkedin-course|switch-to-claude|linkedin-profile-views-guide|linkedin-analytics-tool|linkedin-new-job-announcement|linkedin-automation-tools|linkedin-marketing-tool|linkedin-lead-generation-tools|linkedin-prospecting-tools|b2b-lead-generation-tools|linkedin-scraper|linkedin-ai-agent|ai-bdr|ai-sdr-software|ai-sales-tools|ai-sales-agent|book-demo|uploads/.*)",
         headers: [
           {
             key: "Cache-Control",

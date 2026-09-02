@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAppUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
+import { isCloud } from "@/lib/edition";
+import { getStorage } from "@/lib/storage";
 
-// Proxy for R2 images to avoid CORS issues
+// Proxy for stored images to avoid CORS issues
 // This fetches images server-side and returns them with proper headers
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +18,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "URL parameter required" }, { status: 400 });
     }
 
-    // Only allow proxying R2 URLs for security
+    // Only our own storage is proxied. The cloud also keeps its R2 hosts, for
+    // the files that predate the current public URL.
     const allowedDomains = [
       "r2.dev",
       "r2.cloudflarestorage.com",
@@ -24,7 +27,10 @@ export async function GET(request: NextRequest) {
     ];
 
     const urlObj = new URL(url);
-    const isAllowed = allowedDomains.some(domain => urlObj.hostname.includes(domain));
+    const storage = await getStorage();
+    const isAllowed =
+      storage.keyFromUrl(url) !== null ||
+      (isCloud() && allowedDomains.some((domain) => urlObj.hostname.includes(domain)));
 
     if (!isAllowed) {
       return NextResponse.json({ error: "URL not allowed" }, { status: 403 });

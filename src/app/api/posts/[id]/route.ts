@@ -256,7 +256,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Handle mediaData (base64) by uploading to R2 first, then treat as mediaInfo
     let processedMediaInfo = mediaInfo;
     if (mediaData?.base64 && !mediaInfo?.storageUrl) {
-      if (!isR2Configured()) {
+      if (!(await isR2Configured())) {
         return NextResponse.json(
           { error: "Storage not configured" },
           { status: 503 }
