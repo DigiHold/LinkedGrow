@@ -9,7 +9,7 @@ import {
   apiErrorResponse,
   apiSuccessResponse,
 } from "@/lib/api-auth";
-import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
+import { uploadToR2, isR2Configured, absoluteMediaUrl } from "@/lib/storage/r2";
 import { PLANS, effectivePlan } from "@/lib/plans";
 import { users } from "@/lib/db/schema";
 import sharp from "sharp";
@@ -38,7 +38,7 @@ function serializePost(
     metadata: post.metadata ? JSON.parse(post.metadata) : null,
     media: postMedia.map((m) => ({
       id: m.id,
-      storageUrl: m.storageUrl,
+      storageUrl: absoluteMediaUrl(m.storageUrl),
       mimeType: m.mimeType,
       fileSize: m.fileSize,
       width: m.width,

@@ -187,3 +187,13 @@ export async function getPublicUrl(key: string): Promise<string> {
   const storage = await getStorage();
   return storage.publicUrl(key);
 }
+
+/**
+ * A stored media URL as a client outside the instance can fetch it. The local
+ * driver stores relative URLs (`/uploads/<key>`) so one image works at any
+ * address; the public API and the MCP server put the instance origin in front
+ * at response time. Bucket URLs are already absolute and pass through.
+ */
+export function absoluteMediaUrl(url: string): string {
+  return url.startsWith("/") ? `${getAppUrl()}${url}` : url;
+}

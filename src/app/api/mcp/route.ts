@@ -23,7 +23,7 @@ import { getAISettingsUser } from "@/lib/team-utils";
 import { decryptApiKey } from "@/lib/encryption";
 import { generatePost, generateCarouselSlides } from "@/app/api/ai/generate-post/route";
 import { generateImageWebP, resolveImageSettings } from "@/app/api/ai/generate-image/route";
-import { uploadToR2 } from "@/lib/storage/r2";
+import { uploadToR2, absoluteMediaUrl } from "@/lib/storage/r2";
 import { buildCarouselSlides } from "@/lib/carousel-fabric";
 
 /** The self hosted edition has no agent ceiling, and a 16 digit number reads as a bug. */
@@ -1949,7 +1949,7 @@ export async function POST(request: NextRequest) {
           toolText(
             [
               `Generated with ${imageProvider} (${settings.model}), ${optimized.sizeKB} KB.`,
-              `url: ${upload.url}`,
+              `url: ${absoluteMediaUrl(upload.url)}`,
               postId
                 ? "Attached to the post; it goes out with it when the post publishes."
                 : "Not attached to anything. Pass postId to put it on a post.",
