@@ -21,6 +21,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, eq, isNotNull, lt, sql } from "drizzle-orm";
 import { verifyCronRequest } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
+import { isSelfHosted } from "@/lib/edition";
+import { getInstanceSettings } from "@/lib/instance-settings";
 import { linkedinAccounts, proxyAllocations, users, workerFlags } from "@/lib/db/schema";
 import { sendEmail, opsRecipient } from "@/lib/email/ses-client";
 
@@ -30,19 +32,25 @@ const DANGER_DAYS = 7;
 async function runWatchdog() {
   const problems: string[] = [];
 
+  // A self hosted install without a supplier key never runs the renewal
+  // pass (the worker skips it), so there is no heartbeat to miss there.
+  const expectsHeartbeat = !isSelfHosted() || !!(await getInstanceSettings(true)).proxySellerKeyEncrypted;
   const [beat] = await db
     .select()
     .from(workerFlags)
     .where(eq(workerFlags.key, "proxy-renew-last-run"))
     .limit(1);
-  if (!beat) {
+  if (!expectsHeartbeat) {
+    // Nothing to watch until a supplier key is saved in Settings, Instance.
+  } else if (!beat) {
     problems.push(
       "The proxy renewal pass has never left a heartbeat. Either it has never run, or it cannot reach the database."
     );
   } else if (Date.now() - beat.updatedAt.getTime() > HEARTBEAT_STALE_MS) {
-    problems.push(
-      `The proxy renewal pass last ran ${beat.updatedAt.toISOString()}. Check the VPS: cron /etc/cron.d/linkedgrow-proxy-renew, log /opt/linkedgrow/proxy-renew.log.`
-    );
+    const where = isSelfHosted()
+      ? "Check the worker container: docker compose logs worker."
+      : "Check the VPS: cron /etc/cron.d/linkedgrow-proxy-renew, log /opt/linkedgrow/proxy-renew.log.";
+    problems.push(`The proxy renewal pass last ran ${beat.updatedAt.toISOString()}. ${where}`);
   }
 
   // Bound to a paying workspace and ending inside the danger window. The
