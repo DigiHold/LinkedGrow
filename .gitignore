@@ -98,10 +98,9 @@ redemption-codes-out/
 # __snapshots__/
 
 # Local migrations (if using local dev db)
-migrations/
+/migrations/
 
 
 # Package manager locks (keep package-lock.json, ignore others if not using)
 # yarn.lock
 # pnpm-lock.yaml
-.env*
