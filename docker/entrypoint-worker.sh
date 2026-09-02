@@ -3,6 +3,9 @@ set -eu
 if [ -z "${CHROME_PATH:-}" ] && [ "$(uname -m)" != "x86_64" ]; then
   export CHROME_PATH=/usr/bin/chromium
 fi
+for d in "${PROFILE_ROOT:-/data/profiles}" "${STORAGE_ROOT:-/data/uploads}"; do
+  [ -w "$d" ] || { echo "worker: $d is not writable by uid $(id -u). Fix the volume once: docker compose run --rm --user root --entrypoint chown worker -R 10001:10001 $d" >&2; exit 1; }
+done
 Xvfb :99 -screen 0 "${SCREEN_SIZE:-1920x1080}x24" -nolisten tcp -dpi 96 >/dev/null 2>&1 &
 sleep 1
 until curl -sf "${APP_INTERNAL_URL:-http://app:3000}/api/health" >/dev/null; do

@@ -21,7 +21,8 @@ RUN npm ci --no-audit --no-fund
 COPY shared /app/shared
 COPY worker .
 COPY docker/entrypoint-worker.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh && groupadd -r linkedgrow && useradd -r -g linkedgrow -m -d /home/linkedgrow linkedgrow \
+# The same fixed uid and gid as the app image, for the shared uploads volume.
+RUN chmod +x /app/entrypoint.sh && groupadd -g 10001 linkedgrow && useradd -u 10001 -g linkedgrow -m -d /home/linkedgrow linkedgrow \
     && mkdir -p /data/profiles /data/uploads && chown -R linkedgrow:linkedgrow /app /data
 USER linkedgrow
 ENV DISPLAY=:99 SCREEN_SIZE=1920x1080 PROFILE_ROOT=/data/profiles STORAGE_ROOT=/data/uploads HOME=/home/linkedgrow WORKER_ENV=production LINKEDGROW_EDITION=self-hosted

@@ -4,6 +4,7 @@ fail() { echo "linkedgrow: $1" >&2; exit 1; }
 [ "${AUTH_SECRET:-change-me}" != "change-me" ] || fail "AUTH_SECRET is not set. Put the output of 'openssl rand -hex 32' in .env"
 echo "${ENCRYPTION_KEY:-}" | grep -Eq '^[0-9a-fA-F]{64}$' || fail "ENCRYPTION_KEY must be exactly 64 hex characters. Put the output of 'openssl rand -hex 32' in .env"
 [ -n "${APP_URL:-}" ] || fail "APP_URL is not set"
+[ -w "${STORAGE_ROOT:-/data/uploads}" ] || fail "${STORAGE_ROOT:-/data/uploads} is not writable by uid $(id -u). Fix the volume once: docker compose run --rm --user root --entrypoint chown app -R 10001:10001 ${STORAGE_ROOT:-/data/uploads}"
 export NEXT_PUBLIC_APP_URL="$APP_URL" AUTH_URL="$APP_URL" AUTH_TRUST_HOST=true
 echo "linkedgrow: applying migrations"
 node docker/migrate.mjs docker/migrations
