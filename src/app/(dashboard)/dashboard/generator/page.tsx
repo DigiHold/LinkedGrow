@@ -35,7 +35,7 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { VideoModal } from "@/components/dashboard/video-modal";
-import { PlanId, PLANS, isWithinLimit, canAccessFeature } from "@/lib/plans";
+import { PlanId, PLANS, isWithinLimit, canAccessFeature, UPGRADE_PATH } from "@/lib/plans";
 import { Progress } from "@/components/ui/progress";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
@@ -128,7 +128,7 @@ function UsageLimitBanner({
             )}
           </div>
           {(isLimitReached || isNearLimit) && (
-            <a href="/dashboard/upgrade">
+            <a href={UPGRADE_PATH}>
               <Button
                 size="sm"
                 className={cn(
@@ -167,7 +167,7 @@ function LimitReachedOverlay() {
           drafts and settings are exactly where you left them.
         </p>
 
-        <a href="/dashboard/upgrade" className="mt-6 block w-full">
+        <a href={UPGRADE_PATH} className="mt-6 block w-full">
           <Button size="lg" className="w-full">
             See the plans
           </Button>

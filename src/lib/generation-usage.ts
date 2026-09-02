@@ -1,6 +1,6 @@
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { PLANS, type PlanId } from "@/lib/plans";
+import { PLANS, effectivePlan, type PlanId } from "@/lib/plans";
 
 function currentPeriod(): string {
   return new Date().toISOString().slice(0, 7); // "2026-04"
@@ -30,7 +30,8 @@ export async function checkGenerationLimit(
   const period = currentPeriod();
   const sameMonth = user?.generationsPeriod === period;
   const used = sameMonth ? user?.generationsUsed ?? 0 : 0;
-  const limit = PLANS[plan].limits.postsPerMonth;
+  // Self hosted has no cap; the cloud keeps the plan it was given.
+  const limit = PLANS[effectivePlan({ plan })].limits.postsPerMonth;
 
   if (limit === -1) {
     return { allowed: true, used, limit, remaining: -1, period };

@@ -98,10 +98,16 @@ redemption-codes-out/
 # __snapshots__/
 
 # Local migrations (if using local dev db)
-migrations/
+/migrations/
+
+# Per machine compose tweaks (platform overrides, port changes)
+docker-compose.override.yml
 
 
 # Package manager locks (keep package-lock.json, ignore others if not using)
 # yarn.lock
 # pnpm-lock.yaml
-.env*
+
+# Playwright output
+/test-results/
+/playwright-report/

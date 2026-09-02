@@ -1,5 +1,5 @@
 import type { AgentContext } from "../config.ts";
-import { generate, MODELS } from "../ai.ts";
+import { generate, models } from "../ai.ts";
 import { db } from "../db.ts";
 import { log } from "../logger.ts";
 
@@ -60,12 +60,13 @@ export async function ensureTargeting(ctx: AgentContext): Promise<Targeting> {
   if (cached) return cached;
 
   const site = await siteText(ctx.website);
+  const m = await models();
   let raw: string;
   try {
     raw = await generate(ctx, prompt(ctx, site), {
       purpose: "derive-targeting",
       maxTokens: 900,
-      model: MODELS.writer,
+      model: m.writer,
     });
   } catch (error) {
     // A failed derivation must never stop a run. The agent keeps working from whatever the

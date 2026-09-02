@@ -32,9 +32,9 @@ import {
   type LinkedInAccount as PanelAccount,
 } from "@/components/dashboard/linkedin/accounts-panel";
 import { useSession } from "next-auth/react";
-import { redirectToCheckout } from "@/lib/checkout";
 import { cn } from "@/lib/utils";
 import { RAMP } from "@/lib/agent-pace";
+import { UPGRADE_PATH } from "@/lib/plans";
 
 const STEPS = [
   { num: 1, label: "Your site" },
@@ -453,9 +453,9 @@ export function NewAgentWizard() {
     setSaving(true);
     setError(null);
 
-    /* No subscription yet: the work is saved, then Stripe. The trial costs
-       nothing today; Stripe brings them back here with ?resume=1 and the
-       wizard reopens on the connect step with everything intact. */
+    /* No subscription yet: the work is saved, then the plan picker. The
+       cloud brings them back here with ?resume=1 and the wizard reopens on
+       the connect step with everything intact. */
     if (agentSub === false) {
       try {
         const saved = await fetch("/api/agents/drafts", {
@@ -464,15 +464,7 @@ export function NewAgentWizard() {
           body: JSON.stringify(draftPayload()),
         });
         if (!saved.ok) throw new Error("Could not save your agent");
-        const went = await redirectToCheckout(
-          "pro",
-          session?.user?.email ?? "",
-          (msg) => setError(msg),
-          "month",
-          undefined,
-          "/dashboard/agents/new?resume=1"
-        );
-        if (!went) setSaving(false);
+        router.push(UPGRADE_PATH);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Could not save your agent");
         setSaving(false);
@@ -540,7 +532,7 @@ export function NewAgentWizard() {
       if (!res.ok) {
         // No subscription: the first step is the checkout, not an error.
         if (data?.needsCheckout) {
-          router.push("/dashboard/upgrade");
+          router.push(UPGRADE_PATH);
           return;
         }
         throw new Error(data.error || "Could not create the agent");

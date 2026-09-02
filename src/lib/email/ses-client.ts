@@ -1,8 +1,18 @@
-// Brevo API Client for transactional emails
-
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@linkedgrow.ai";
-const FROM_NAME = "LinkedGrow";
+// Transactional email: one seam, the provider chosen by the edition.
+//
+// The cloud keeps sending through Brevo from its environment. A self hosted
+// instance sends through whatever its settings name: Brevo, Resend, an SMTP
+// server, or nothing at all, which is the default and stays silent.
+import { isCloud } from "@/lib/edition";
+import { getInstanceSettings, instanceSecrets } from "@/lib/instance-settings";
+import {
+  buildBrevoRequest,
+  buildResendRequest,
+  sendViaHttp,
+  sendViaSmtp,
+  type From,
+  type SmtpConfig,
+} from "./providers";
 
 interface SendEmailParams {
   to: string;
@@ -11,6 +21,11 @@ interface SendEmailParams {
   text?: string;
   replyTo?: string;
 }
+
+type Transport =
+  | { kind: "none" }
+  | { kind: "brevo" | "resend"; apiKey: string; from: From }
+  | { kind: "smtp"; smtp: SmtpConfig; from: From };
 
 /**
  * Addresses no mail server will ever accept.
@@ -24,44 +39,68 @@ interface SendEmailParams {
  */
 const UNDELIVERABLE = /@(?:[^@]+\.)?(?:test|example|invalid|localhost)$/i;
 
-export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailParams) {
-  if (!BREVO_API_KEY) {
-    throw new Error("BREVO_API_KEY is not configured");
+function skipped() {
+  return { success: true, skipped: true as const, messageId: null };
+}
+
+async function resolveTransport(): Promise<Transport> {
+  if (isCloud()) {
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) throw new Error("BREVO_API_KEY is not configured");
+    const address = process.env.FROM_EMAIL || "noreply@linkedgrow.ai";
+    return { kind: "brevo", apiKey, from: { name: "LinkedGrow", address } };
   }
 
-  if (UNDELIVERABLE.test(to.trim())) {
-    return { success: true, skipped: true as const, messageId: null };
-  }
+  const settings = await getInstanceSettings();
+  if (settings.emailProvider === "none") return { kind: "none" };
 
-  try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "api-key": BREVO_API_KEY,
+  const from: From = {
+    name: settings.emailFromName || settings.instanceName || "LinkedGrow",
+    address: settings.emailFromAddress ?? "",
+  };
+  if (!from.address) throw new Error("The sender address is not configured");
+
+  const secrets = await instanceSecrets();
+  if (settings.emailProvider === "smtp") {
+    if (!settings.smtpHost) throw new Error("The SMTP host is not configured");
+    return {
+      kind: "smtp",
+      from,
+      smtp: {
+        host: settings.smtpHost,
+        port: settings.smtpPort ?? 587,
+        user: settings.smtpUser ?? "",
+        password: secrets.smtpPassword ?? "",
+        tls: settings.smtpTls,
       },
-      body: JSON.stringify({
-        sender: {
-          name: FROM_NAME,
-          email: FROM_EMAIL,
-        },
-        to: [{ email: to }],
-        ...(replyTo ? { replyTo: { email: replyTo } } : {}),
-        subject,
-        htmlContent: html,
-        textContent: text,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, messageId: data.messageId };
-    }
-
-throw new Error(data.message || "Failed to send email");
-  } catch (error) {
-throw error;
+    };
   }
+
+  if (!secrets.emailKey) throw new Error(`The ${settings.emailProvider} API key is not configured`);
+  return { kind: settings.emailProvider, apiKey: secrets.emailKey, from };
+}
+
+export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailParams) {
+  if (UNDELIVERABLE.test(to.trim())) return skipped();
+
+  const transport = await resolveTransport();
+  if (transport.kind === "none") return skipped();
+
+  const mail = { to, subject, html, text, replyTo };
+  const { messageId } =
+    transport.kind === "smtp"
+      ? await sendViaSmtp(transport.smtp, transport.from, mail)
+      : await sendViaHttp(
+          transport.kind === "resend"
+            ? buildResendRequest({ ...mail, apiKey: transport.apiKey, from: transport.from })
+            : buildBrevoRequest({ ...mail, apiKey: transport.apiKey, from: transport.from })
+        );
+  return { success: true, messageId };
+}
+
+/** Where operations mail goes: us in the cloud, the instance admin at home. Empty means nobody. */
+export async function opsRecipient(): Promise<string> {
+  if (isCloud()) return "contact@linkedgrow.ai";
+  const settings = await getInstanceSettings();
+  return settings.adminEmail || settings.emailFromAddress || "";
 }

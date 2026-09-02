@@ -53,7 +53,7 @@ export const users = sqliteTable("users", {
   linkedinMemberId: text("linkedin_member_id"),
   linkedinProfileName: text("linkedin_profile_name"),
   linkedinHeadline: text("linkedin_headline"), // User's headline from r_basicprofile
-  linkedinVanityName: text("linkedin_vanity_name"), // User's vanity name (e.g., "nicolas-lecocq")
+  linkedinVanityName: text("linkedin_vanity_name"), // User's vanity name (e.g., "jane-doe-1a2b")
 
   // LinkedIn posting target selection
   linkedinPostingTarget: text("linkedin_posting_target", { enum: ["profile", "organization"] }).default("profile"),
@@ -1673,4 +1673,42 @@ export const agentDrafts = sqliteTable("agent_drafts", {
   config: text("config").notNull(),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
+});
+
+// The single settings row of a self hosted instance. See docker/migrations/002_instance_settings.sql.
+export const instanceSettings = sqliteTable("instance_settings", {
+  id: integer("id").primaryKey(),
+  setupCompleted: integer("setup_completed", { mode: "boolean" }).notNull().default(false),
+  instanceName: text("instance_name"),
+  appUrl: text("app_url"),
+  timezone: text("timezone"),
+  adminEmail: text("admin_email"),
+  allowSignups: integer("allow_signups", { mode: "boolean" }).notNull().default(false),
+  agentAiProvider: text("agent_ai_provider"),
+  agentAiKeyEncrypted: text("agent_ai_key_encrypted"),
+  agentAiModelFast: text("agent_ai_model_fast"),
+  agentAiModelWriter: text("agent_ai_model_writer"),
+  agentDailyCapUsd: real("agent_daily_cap_usd").notNull().default(1.0),
+  accountMonthlyCapUsd: real("account_monthly_cap_usd").notNull().default(12.0),
+  proxyProvider: text("proxy_provider", { enum: ["none", "proxy-seller"] }).notNull().default("none"),
+  proxySellerKeyEncrypted: text("proxy_seller_key_encrypted"),
+  emailProvider: text("email_provider", { enum: ["none", "resend", "smtp", "brevo"] }).notNull().default("none"),
+  emailKeyEncrypted: text("email_key_encrypted"),
+  smtpHost: text("smtp_host"),
+  smtpPort: integer("smtp_port"),
+  smtpUser: text("smtp_user"),
+  smtpPasswordEncrypted: text("smtp_password_encrypted"),
+  smtpTls: integer("smtp_tls", { mode: "boolean" }).notNull().default(true),
+  emailFromName: text("email_from_name"),
+  emailFromAddress: text("email_from_address"),
+  storageProvider: text("storage_provider", { enum: ["local", "s3"] }).notNull().default("local"),
+  s3Endpoint: text("s3_endpoint"),
+  s3Region: text("s3_region"),
+  s3Bucket: text("s3_bucket"),
+  s3AccessKeyEncrypted: text("s3_access_key_encrypted"),
+  s3SecretEncrypted: text("s3_secret_encrypted"),
+  s3PublicUrl: text("s3_public_url"),
+  cronSecretEncrypted: text("cron_secret_encrypted"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

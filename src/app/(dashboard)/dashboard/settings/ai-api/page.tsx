@@ -26,62 +26,20 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { canAccessFeature, PlanId } from "@/lib/plans";
+import { canAccessFeature, PlanId, UPGRADE_PATH } from "@/lib/plans";
 import { ImageIcon, Sparkles, Crown, ExternalLink, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { VideoModal } from "@/components/dashboard/video-modal";
 
-// SVG icons for AI providers
-const OpenAIIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
-  </svg>
-);
-
-const AnthropicIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-7.258 0h3.767L16.906 20h-3.674l-1.343-3.461H5.017l-1.344 3.46H0L6.57 3.522zm4.132 9.959L8.453 7.687 6.205 13.48H10.7z"/>
-  </svg>
-);
-
-const GeminiIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 65 65" className="w-5 h-5">
-    <defs>
-      <linearGradient id="gemini-gradient" x1="18.447" y1="43.42" x2="52.153" y2="15.004" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#4893FC"/>
-        <stop offset=".27" stopColor="#4893FC"/>
-        <stop offset=".777" stopColor="#969DFF"/>
-        <stop offset="1" stopColor="#BD99FE"/>
-      </linearGradient>
-    </defs>
-    <path fill="url(#gemini-gradient)" d="M32.447 0c.68 0 1.273.465 1.439 1.125a38.904 38.904 0 001.999 5.905c2.152 5 5.105 9.376 8.854 13.125 3.751 3.75 8.126 6.703 13.125 8.855a38.98 38.98 0 005.906 1.999c.66.166 1.124.758 1.124 1.438 0 .68-.464 1.273-1.125 1.439a38.902 38.902 0 00-5.905 1.999c-5 2.152-9.375 5.105-13.125 8.854-3.749 3.751-6.702 8.126-8.854 13.125a38.973 38.973 0 00-2 5.906 1.485 1.485 0 01-1.438 1.124c-.68 0-1.272-.464-1.438-1.125a38.913 38.913 0 00-2-5.905c-2.151-5-5.103-9.375-8.854-13.125-3.75-3.749-8.125-6.702-13.125-8.854a38.973 38.973 0 00-5.905-2A1.485 1.485 0 010 32.448c0-.68.465-1.272 1.125-1.438a38.903 38.903 0 005.905-2c5-2.151 9.376-5.104 13.125-8.854 3.75-3.749 6.703-8.125 8.855-13.125a38.972 38.972 0 001.999-5.905A1.485 1.485 0 0132.447 0z"/>
-  </svg>
-);
-
-const GrokIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 492" className="w-5 h-5" fill="currentColor">
-    <path fillRule="evenodd" clipRule="evenodd" d="M197.76 315.52l170.197-125.803c8.342-6.186 20.267-3.776 24.256 5.803 20.907 50.539 11.563 111.253-30.08 152.939-41.621 41.685-99.562 50.816-152.512 29.994l-57.834 26.816c82.965 56.768 183.701 42.731 246.656-20.33 49.941-50.006 65.408-118.166 50.944-179.627l.128.149c-20.971-90.282 5.162-126.378 58.666-200.17 1.28-1.75 2.56-3.499 3.819-5.291l-70.421 70.507v-.214l-243.883 245.27m-35.072 30.528c-59.563-56.96-49.28-145.088 1.515-195.926 37.568-37.61 99.136-52.97 152.874-30.4l57.707-26.666a166.554 166.554 0 00-39.019-21.334 191.467 191.467 0 00-208.042 41.942c-54.038 54.101-71.04 137.301-41.856 208.298 21.802 53.056-13.931 90.582-49.92 128.47C23.104 463.915 10.304 477.333 0 491.541l162.56-145.386"/>
-  </svg>
-);
-
-const PerplexityIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M19.785 0v7.272H22.5V17.62h-2.935V24l-7.037-6.194v6.145h-1.091v-6.152L4.392 24v-6.465H1.5V7.188h2.884V0l7.053 6.494V.19h1.09v6.49L19.786 0zm-7.257 9.044v7.319l5.946 5.234V14.44l-5.946-5.397zm-1.099-.08l-5.946 5.398v7.235l5.946-5.234V8.965zm8.136 7.58h1.844V8.349H13.46l6.105 5.54v2.655zm-8.982-8.28H2.59v8.195h1.8v-2.576l6.192-5.62zM5.475 2.476v4.71h5.115l-5.115-4.71zm13.219 0l-5.115 4.71h5.115v-4.71z"/>
-  </svg>
-);
-
-const KimiIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-5 h-5" fill="currentColor">
-    <path d="M415.6348,125.5545c3.7139-4.7655,6.973-9.1175,10.4152-13.3317,1.5951-1.983,1.4572-3.4875-.0906-5.5611-14.9267-19.6233-16.3406-41.4089-7.7489-63.5154,6.4492-16.636,20.7162-24.4302,38.1498-26.0923,10.8701-1.026,21.5355.0906,31.4269,5.376,12.989,6.9514,20.5548,17.5498,23.0163,32.1791,1.9594,11.6696,1.5951,23.0636-1.7093,34.3669-5.8565,20.0093-20.2378,30.3793-39.9497,33.0003-16.3643,2.1858-32.9531,2.4615-49.4532,3.5781-1.2761.0906-2.5758,0-4.0566,0h0Z" fill="#027aff" fillRule="evenodd"/>
-    <path d="M375.1613,35.9448h-98.5873l-78.0542,177.9866h-110.3476V36.7207H0v458.5698h88.1958v-193.187h155.5157c26.7775,0,51.2295-15.6101,62.5111-39.8808v233.0678h88.1957v-193.187c0-45.9657-35.9167-84.6177-81.7682-87.9673v-.2284h-48.4292c23.5903-8.0538,42.7687-25.5557,52.9407-48.313l57.9996-129.6499Z" fillRule="evenodd"/>
-  </svg>
-);
-
-const ReplicateIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" fillRule="evenodd" viewBox="0 0 24 24" className="w-5 h-5">
-    <path d="M22 10.552v2.26h-7.932V22H11.54V10.552H22zM22 2v2.264H4.528V22H2V2h20zm0 4.276V8.54H9.296V22H6.768V6.276H22z"/>
-  </svg>
-);
+import {
+  OpenAIIcon,
+  AnthropicIcon,
+  GeminiIcon,
+  GrokIcon,
+  PerplexityIcon,
+  KimiIcon,
+  ReplicateIcon,
+} from "@/components/dashboard/provider-icons";
 
 const providerHelpUrls: Record<string, string> = {
   openai: "/docs/byok/openai-setup",
@@ -110,63 +68,68 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-5.2, Terra, Luna, GPT-5.5, GPT-5.4 mini",
+    description: "GPT-5.6 Sol, Terra, Luna, GPT-5.5, GPT-5.4",
     placeholder: "sk-...",
     icon: OpenAIIcon,
     apiKeyUrl: "https://platform.openai.com/api-keys",
     models: [
-      { id: "gpt-5.6-sol", name: "GPT-5.2", tag: "Most Capable", price: "$0.06/post", monthly: "~$1.80/mo" },
-      { id: "gpt-5.6-terra", name: "GPT-5.2", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
-      { id: "gpt-5.6-luna", name: "GPT-5 Nano", tag: "Fastest", price: "$0.012/post", monthly: "~$0.36/mo" },
-      { id: "gpt-5.5", name: "GPT-5.5", tag: "Legacy", price: "$0.06/post", monthly: "~$1.80/mo" },
-      { id: "gpt-5.4", name: "GPT-5.4", tag: "Legacy", price: "$0.03/post", monthly: "~$0.90/mo" },
-      { id: "gpt-5.4-mini", name: "GPT-5.4 mini", tag: "Recommended", price: "$0.008/post", monthly: "~$0.25/mo" },
-      { id: "gpt-5.4-nano", name: "GPT-5.4 nano", tag: "Cheapest", price: "$0.002/post", monthly: "~$0.07/mo" },
+      { id: "gpt-5.6-sol", name: "GPT-5.6 Sol", tag: "Most Capable", price: "$0.04/post", monthly: "~$1.20/mo" },
+      { id: "gpt-5.6-terra", name: "GPT-5.6 Terra", tag: "Recommended", price: "$0.02/post", monthly: "~$0.66/mo" },
+      { id: "gpt-5.6-luna", name: "GPT-5.6 Luna", tag: "Fastest", price: "$0.002/post", monthly: "~$0.07/mo" },
+      { id: "gpt-5.5", name: "GPT-5.5", tag: "Previous Generation", price: "$0.06/post", monthly: "~$1.80/mo" },
+      { id: "gpt-5.4", name: "GPT-5.4", tag: "Previous Generation", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "gpt-5.4-mini", name: "GPT-5.4 mini", tag: "Previous Generation", price: "$0.008/post", monthly: "~$0.25/mo" },
+      { id: "gpt-5.4-nano", name: "GPT-5.4 nano", tag: "Previous Generation", price: "$0.002/post", monthly: "~$0.07/mo" },
     ],
   },
   {
     id: "anthropic",
     name: "Anthropic",
-    description: "Claude Opus 4.7, Opus 4.8, Sonnet 5, Haiku 4.5",
+    description: "Claude Fable 5.1, Opus 5, Sonnet 5, Haiku 4.5",
     placeholder: "sk-ant-...",
     icon: AnthropicIcon,
     apiKeyUrl: "https://console.anthropic.com/settings/keys",
     models: [
-      { id: "claude-fable-5", name: "Claude Opus 4.7", tag: "Most Capable", price: "$0.10/post", monthly: "~$3.00/mo" },
-      { id: "claude-opus-4-8", name: "Claude Opus 4.8", tag: "Powerful", price: "$0.05/post", monthly: "~$1.50/mo" },
-      { id: "claude-sonnet-5", name: "Claude Sonnet 5", tag: "Recommended", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "claude-fable-5-1", name: "Claude Fable 5.1", tag: "Most Capable", price: "$0.10/post", monthly: "~$3.00/mo" },
+      { id: "claude-opus-5", name: "Claude Opus 5", tag: "Recommended", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "claude-sonnet-5", name: "Claude Sonnet 5", tag: "Best Value", price: "$0.02/post", monthly: "~$0.60/mo" },
       { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", tag: "Fastest", price: "$0.01/post", monthly: "~$0.30/mo" },
-      { id: "claude-opus-4-7", name: "Claude Opus 4.7", tag: "Legacy", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "claude-opus-4-8", name: "Claude Opus 4.8", tag: "Legacy", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "claude-fable-5", name: "Claude Fable 5", tag: "Legacy", price: "$0.10/post", monthly: "~$3.00/mo" },
       { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", tag: "Legacy", price: "$0.03/post", monthly: "~$0.90/mo" },
     ],
   },
   {
     id: "google",
     name: "Gemini",
-    description: "Gemini 3 Pro, 3.5 Flash, 3 Flash, 2.5 Pro",
+    description: "Gemini 3.7 Flash, 3.5 Flash, 3.1 Pro, 2.5 Pro",
     placeholder: "AIza...",
     icon: GeminiIcon,
     apiKeyUrl: "https://aistudio.google.com/apikey",
     models: [
-      { id: "gemini-3.1-pro-preview", name: "Gemini 3 Pro", tag: "Most Capable", price: "$0.02/post", monthly: "~$0.66/mo" },
+      { id: "gemini-3.7-flash", name: "Gemini 3.7 Flash", tag: "Recommended", price: "$0.007/post", monthly: "~$0.21/mo" },
+      { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash", tag: "Balanced", price: "$0.007/post", monthly: "~$0.21/mo" },
       { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", tag: "Powerful", price: "$0.017/post", monthly: "~$0.50/mo" },
-      { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", tag: "Recommended", price: "$0.006/post", monthly: "~$0.18/mo" },
-      { id: "gemini-3.1-flash-lite", name: "Gemini 3 Flash", tag: "Faster", price: "$0.003/post", monthly: "~$0.09/mo" },
-      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tag: "Reasoning", price: "$0.018/post", monthly: "~$0.53/mo" },
-      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tag: "Balanced", price: "$0.005/post", monthly: "~$0.15/mo" },
+      { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash Lite", tag: "Faster", price: "$0.004/post", monthly: "~$0.12/mo" },
+      { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", tag: "Most Capable", price: "$0.02/post", monthly: "~$0.66/mo" },
+      { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", tag: "Fastest", price: "$0.003/post", monthly: "~$0.09/mo" },
+      { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", tag: "Previous Generation", price: "$0.006/post", monthly: "~$0.18/mo" },
+      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tag: "Previous Generation", price: "$0.018/post", monthly: "~$0.53/mo" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tag: "Previous Generation", price: "$0.004/post", monthly: "~$0.12/mo" },
       { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", tag: "Cheapest", price: "$0.001/post", monthly: "~$0.03/mo" },
     ],
   },
   {
     id: "grok",
     name: "Grok",
-    description: "Grok 4, Grok 4.3, Grok 4.20",
+    description: "Grok 4.6, Grok 4.5, Grok 4.3, Grok 4.20",
     placeholder: "xai-...",
     icon: GrokIcon,
     apiKeyUrl: "https://console.x.ai/team/default/api-keys",
     models: [
-      { id: "grok-4.5", name: "Grok 4", tag: "Most Capable", price: "$0.013/post", monthly: "~$0.39/mo" },
-      { id: "grok-4.3", name: "Grok 4.3", tag: "Recommended", price: "$0.006/post", monthly: "~$0.19/mo" },
+      { id: "grok-4.6", name: "Grok 4.6", tag: "Recommended", price: "$0.013/post", monthly: "~$0.39/mo" },
+      { id: "grok-4.5", name: "Grok 4.5", tag: "Powerful", price: "$0.013/post", monthly: "~$0.39/mo" },
+      { id: "grok-4.3", name: "Grok 4.3", tag: "Fastest", price: "$0.006/post", monthly: "~$0.19/mo" },
       { id: "grok-4.20-0309-reasoning", name: "Grok 4.20 Reasoning", tag: "Reasoning", price: "$0.006/post", monthly: "~$0.19/mo" },
     ],
   },
@@ -187,14 +150,14 @@ const aiProviders = [
   {
     id: "kimi",
     name: "Kimi",
-    description: "Kimi K3, K2.6, K2.7 Code by Moonshot AI",
+    description: "Kimi K3, K2.7 Code, K2.6 by Moonshot AI",
     placeholder: "sk-...",
     icon: KimiIcon,
     apiKeyUrl: "https://platform.kimi.ai/console/api-keys",
     models: [
       { id: "kimi-k3", name: "Kimi K3", tag: "Most Capable", price: "$0.03/post", monthly: "~$0.90/mo" },
-      { id: "kimi-k2.6", name: "Kimi K2.6", tag: "Recommended", price: "$0.008/post", monthly: "~$0.24/mo" },
       { id: "kimi-k2.7-code", name: "Kimi K2.7 Code", tag: "Coding", price: "$0.008/post", monthly: "~$0.24/mo" },
+      { id: "kimi-k2.6", name: "Kimi K2.6", tag: "Recommended", price: "$0.008/post", monthly: "~$0.24/mo" },
     ],
   },
 ];
@@ -238,7 +201,7 @@ const imageProviders = [
   {
     id: "google",
     name: "Google AI",
-    description: "Nano Banana Pro, Nano Banana 2, Nano Banana",
+    description: "Nano Banana Pro, Nano Banana 2, Nano Banana 2 Lite",
     placeholder: "AIza...",
     icon: GeminiIcon,
     apiKeyUrl: "https://aistudio.google.com/apikey",
@@ -250,14 +213,13 @@ const imageProviders = [
     models: [
       { id: "gemini-3-pro-image", name: "Nano Banana Pro", tag: "Best Quality ($0.13-0.24)" },
       { id: "gemini-3.1-flash-image", name: "Nano Banana 2", tag: "Balanced ($0.07-0.15)" },
-      { id: "gemini-3.1-flash-lite-image", name: "Nano Banana Lite", tag: "Cheapest ($0.03)" },
-      { id: "gemini-2.5-flash-image", name: "Nano Banana", tag: "Fast ($0.04)" },
+      { id: "gemini-3.1-flash-lite-image", name: "Nano Banana 2 Lite", tag: "Cheapest ($0.03)" },
     ],
   },
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT Image 1.5, GPT Image 1.5",
+    description: "GPT Image 2, GPT Image 1.5, GPT Image 1",
     placeholder: "sk-...",
     icon: OpenAIIcon,
     apiKeyUrl: "https://platform.openai.com/api-keys",
@@ -267,8 +229,10 @@ const imageProviders = [
     hasResolution: true,
     hasQuality: true,
     models: [
-      { id: "gpt-image-2", name: "GPT Image 1.5", tag: "Best Quality ($0.006-0.21)" },
-      { id: "gpt-image-1.5", name: "GPT Image 1.5", tag: "Standard ($0.009-0.13)" },
+      { id: "gpt-image-2", name: "GPT Image 2", tag: "Recommended" },
+      { id: "gpt-image-1.5", name: "GPT Image 1.5", tag: "Legacy" },
+      { id: "gpt-image-1", name: "GPT Image 1", tag: "Legacy" },
+      { id: "gpt-image-1-mini", name: "GPT Image 1 Mini", tag: "Legacy" },
     ],
   },
   {
@@ -1097,7 +1061,7 @@ export default function AIAPISettingsPage() {
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                 Image models is available on the Pro plan and above
               </p>
-              <a href="/dashboard/upgrade">
+              <a href={UPGRADE_PATH}>
                 <Button
                                   >
                   <Sparkles className="w-4 h-4 mr-2" />

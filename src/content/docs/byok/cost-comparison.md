@@ -1,22 +1,25 @@
 ---
 title: "Cost Comparison"
-description: "Compare LinkedGrow's BYOK costs against competitor subscription pricing to understand your total monthly expense."
+description: Compare what a self hosted LinkedGrow instance costs to run against competitor pricing to understand your total monthly expense
 category: "byok"
 order: 8
 ---
 
 ## LinkedGrow vs competitors
 
-Most LinkedIn content tools charge a flat monthly fee that includes limited AI generations. LinkedGrow's BYOK model separates platform features from AI costs, which gives you much lower total costs with no generation limits.
+Most LinkedIn content tools charge a flat monthly fee that includes limited AI generations. The self hosted edition of LinkedGrow charges nothing for the software and lets you pay your own AI provider for what you use, which gives you much lower total costs with no generation limits.
 
 ### What you actually pay
 
-| | Monthly price | AI for the agents | AI for your posts |
-|---|---|---|---|
-| **LinkedGrow Pro** | **$99** | **Included** | **Your own key, $2-4** |
-| **LinkedGrow Business** | **$179** | **Included** | **Your own key, $2-4** |
+| | What it costs |
+|---|---|
+| **LinkedGrow itself** | **Nothing, the self hosted edition is licensed under the AGPL-3.0** |
+| **The server** | **Your hosting bill** |
+| **AI for the agents** | **The instance key from the setup wizard, billed by that provider** |
+| **AI for your posts** | **Your own key, $2-4 a month for most people** |
+| **Dedicated addresses** | **Bought through Proxy-Seller from the instance, or proxies you already own** |
 
-The comparison people usually want is against a lead-generation stack rather than a writing tool: a prospecting tool, a data provider and a sequencer bought separately land well past $99 a month before anybody writes a message, and none of them post for you.
+The comparison people usually want is against a lead generation stack rather than a writing tool: a prospecting tool, a data provider and a sequencer bought separately are 3 monthly bills before anybody writes a message, and none of them post for you.
 
 Against writing tools, the difference is the cap. They bundle AI and meter it. LinkedGrow does not meter the content side at all, because you are paying your own provider for exactly what you use and you pick the model.
 

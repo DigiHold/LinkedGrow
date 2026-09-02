@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createClient } from "@libsql/client";
-import { setDbForTests, db } from "../db.ts";
+import { setDbForTests, db, payingClause, paywallClause, renewClause } from "../db.ts";
 import {
   AWAKE_HOURS,
   LEAD_MAX_MS,
@@ -47,7 +47,7 @@ async function freshDb(): Promise<void> {
     `CREATE TABLE users (
        id TEXT PRIMARY KEY, email TEXT, plan TEXT NOT NULL DEFAULT 'pro',
        has_used_trial INTEGER NOT NULL DEFAULT 0, stripe_subscription_id TEXT,
-       is_lifetime_deal INTEGER NOT NULL DEFAULT 0,
+       is_lifetime_deal INTEGER NOT NULL DEFAULT 0, is_admin INTEGER NOT NULL DEFAULT 0,
        auto_like_after_publish INTEGER DEFAULT 1)`,
     `CREATE TABLE teams (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL)`,
     `CREATE TABLE team_members (id TEXT PRIMARY KEY, team_id TEXT NOT NULL, user_id TEXT NOT NULL)`,
@@ -130,7 +130,7 @@ async function addAccount(
       id,
       workspaceId,
       String(overrides.country ?? "FR"),
-      (overrides.profile_url as string | null) ?? "https://www.linkedin.com/in/maria/",
+      (overrides.profile_url as string | null) ?? "https://www.linkedin.com/in/jane-doe-1a2b/",
       String(overrides.status ?? "active"),
       Number(overrides.created_at ?? seconds(-HOUR)),
     ],
@@ -465,7 +465,12 @@ test("a post left claimed by a dead worker is freed, a fresh claim is left alone
   assert.equal(rows[0]?.publish_claimed_at, null, "the scheduled post kept its stale lock");
 });
 
-test("a post from an expired trial is never published", async () => {
+/**
+ * The paywall is a cloud concern. The test runner sets no LINKEDGROW_EDITION,
+ * which makes the default self hosted, so the cloud case names its edition and
+ * the self hosted case proves the same rows go through untouched.
+ */
+async function seedPaywallUsers(): Promise<void> {
   await freshDb();
   await addUser("paying");
   await addUser("expired", { plan: "free", has_used_trial: 1 });
@@ -479,13 +484,67 @@ test("a post from an expired trial is never published", async () => {
   await addPost("post-expired", "expired");
   await addPost("post-subscriber", "subscriber");
   await addPost("post-lifetime", "lifetime");
+}
 
-  const due = (await loadDuePosts()).map((p) => p.id).sort();
+test("in the cloud, a post from an expired trial is never published", async () => {
+  await seedPaywallUsers();
+
+  const due = (await loadDuePosts(25, "cloud")).map((p) => p.id).sort();
   assert.deepEqual(
     due,
     ["post-lifetime", "post-paying", "post-subscriber"],
     "the paywall let the wrong set of posts through"
   );
+});
+
+test("self hosted has no paywall, so a post from a user on no plan is due", async () => {
+  await seedPaywallUsers();
+
+  const due = (await loadDuePosts(25, "self-hosted")).map((p) => p.id).sort();
+  assert.deepEqual(
+    due,
+    ["post-expired", "post-lifetime", "post-paying", "post-subscriber"],
+    "a self hosted instance held a post back over a plan it does not bill"
+  );
+});
+
+test("the paying clauses are empty when self hosted and the cloud SQL otherwise", () => {
+  assert.equal(payingClause("self-hosted"), "");
+  assert.equal(paywallClause("self-hosted"), "");
+  assert.equal(payingClause("cloud"), "AND (u.plan IN ('pro', 'business') OR u.is_admin = 1)");
+  assert.match(paywallClause("cloud"), /^AND NOT \(/);
+  assert.match(paywallClause("cloud"), /u\.plan = 'free'/);
+  assert.match(paywallClause("cloud"), /u\.stripe_subscription_id IS NULL OR u\.stripe_subscription_id = ''/);
+  assert.match(paywallClause("cloud"), /COALESCE\(u\.is_lifetime_deal, 0\) = 0/);
+});
+
+test("the renewal clause renews every bound address when self hosted and the cloud's payers otherwise", async () => {
+  await freshDb();
+  assert.equal(renewClause("self-hosted"), "");
+  assert.equal(
+    renewClause("cloud"),
+    "AND (u.is_admin = 1 OR u.is_lifetime_deal = 1 OR (u.stripe_subscription_id IS NOT NULL AND u.stripe_subscription_id != ''))"
+  );
+  // The renewal pass anchors the fragment on a true literal to read it as a
+  // column; with no user row the cloud text must come out as not paying.
+  const paying = async (edition: "self-hosted" | "cloud", user: string | null): Promise<number> => {
+    const { rows } = await db().execute({
+      sql: `SELECT CASE WHEN 1 ${renewClause(edition)} THEN 1 ELSE 0 END AS paying
+              FROM (SELECT ? AS uid) x LEFT JOIN users u ON u.id = x.uid`,
+      args: [user],
+    });
+    return Number(rows[0]?.paying);
+  };
+  await db().execute({
+    sql: `INSERT INTO users (id, email, plan, stripe_subscription_id, is_lifetime_deal, is_admin)
+          VALUES ('renew-free', 'free@example.com', 'free', NULL, 0, 0), ('renew-sub', 'sub@example.com', 'pro', 'sub_1', 0, 0)`,
+    args: [],
+  });
+  assert.equal(await paying("self-hosted", "renew-free"), 1);
+  assert.equal(await paying("self-hosted", null), 1);
+  assert.equal(await paying("cloud", "renew-sub"), 1);
+  assert.equal(await paying("cloud", "renew-free"), 0);
+  assert.equal(await paying("cloud", null), 0);
 });
 
 test("the horizon reaches forward far enough to prepare, and no further", async () => {

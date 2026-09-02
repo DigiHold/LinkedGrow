@@ -1,6 +1,6 @@
 ---
 title: "Connecting Your LinkedIn Account"
-description: "Step-by-step guide to connecting your LinkedIn account for publishing and scheduling posts from LinkedGrow."
+description: Step-by-step guide to connecting your LinkedIn account for publishing and scheduling posts from LinkedGrow.
 category: "linkedin-integration"
 order: 1
 ---
@@ -16,27 +16,27 @@ Once connected, you can:
 - Post to company pages you manage
 - See your LinkedIn profile name and avatar in post previews
 
-## Step-by-step connection
+## Connecting, step by step
 
-### 1. Open LinkedIn settings
+### 1. Open LinkedIn accounts
 
-Go to **Settings** from the sidebar and find the **Connect LinkedIn** card.
+Open **LinkedIn accounts** in the dashboard sidebar and click **Connect an account**. The same button sits in every agent's settings, so you can also connect from there.
 
-### 2. Click Connect LinkedIn
+### 2. Enter the account's email and password
 
-Click the **Connect LinkedIn** button. A new window or tab opens with LinkedIn's authorization page.
-
-### 3. Authorize on LinkedIn
-
-Give LinkedGrow the email address and password of the LinkedIn account, plus your 2FA secret if the account has two-factor switched on. Both are encrypted before they are stored and decrypted only in memory on the machine that runs the browser.
+Give LinkedGrow the email address and password of the LinkedIn account. Both are encrypted before they are stored and decrypted only in memory on the machine that runs the browser.
 
 There is no LinkedIn app to authorise and no permission screen, because LinkedGrow does not use LinkedIn's API. Your agent signs in to a real Chrome browser the way you would, from an address in your own country that is reserved for your account alone.
 
-### 4. Wait for the first sign-in
+### 3. Choose where it signs in from
 
-The first sign-in takes a minute or two. LinkedGrow opens the browser, signs in, and reads your profile back to confirm it worked. If LinkedIn asks for a code, you are asked for it once and the agent continues.
+Pick the country you are actually in. LinkedIn compares it against where the account has always signed in from, and LinkedGrow reserves a dedicated address there for this one account through the instance's proxy supplier. If you already own good proxies, open **Use my own proxy** and enter the host, port, username and password instead; the country above is then ignored and the reputation of that address is yours.
 
-The account shows as connected with your profile name once that has happened.
+### 4. Wait for the first sign in
+
+The first sign in takes a minute or two. The worker opens the browser, signs in, and reads your profile back to confirm it worked. If LinkedIn asks for a verification, the prompt appears in the same dialog: type the code it sent, or approve the sign in from the LinkedIn app. If a code is needed again later, the prompt waits on the LinkedIn accounts page and the agent pauses until you answer it.
+
+The account shows as **Signed in and working** with your profile name once that has happened.
 
 ## When the connection stops
 
@@ -46,13 +46,13 @@ Your leads, your conversations and your scheduled posts are untouched while it w
 
 ## Disconnecting LinkedIn
 
-To remove your LinkedIn connection, go to **Settings > LinkedIn** and click **Disconnect**. This immediately revokes LinkedGrow's posting ability. Scheduled posts will remain in your calendar but will not publish until you reconnect.
+To remove a LinkedIn connection, open **LinkedIn accounts** and click **Disconnect** next to the account. The password and the signed in session are deleted, nothing changes on LinkedIn itself, and the dedicated address goes back to your pool for the next account. Scheduled posts will remain in your calendar but will not publish until you reconnect.
 
 ## Troubleshooting
 
-- **Connection failed** - Disable popup blockers for linkedgrow.ai and try in a fresh browser tab
-- **Wrong account connected** - Disconnect, log into the correct LinkedIn account in your browser, then reconnect
-- **Posts failing after connection** - Check if your token has expired in Settings
-- **"Insufficient permissions" error** - Disconnect and reconnect, making sure to accept all permissions
+- **The account stays on "Signing in":** check that the worker container is running with `docker compose ps`, then read `docker compose logs worker`
+- **Wrong account connected:** disconnect it, then connect again with the right email and password
+- **Posts failing after connection:** check the account's status on the LinkedIn accounts page and reconnect it if it shows "Disconnected"
+- **"LinkedIn asked for a verification":** answer the prompt on the LinkedIn accounts page; a code expires quickly, so do it while the prompt is open
 
-Contact us at contact@linkedgrow.ai if issues persist.
+If the problem persists, read the [troubleshooting](/docs/self-hosting/troubleshooting) page for the stack itself, then open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues).

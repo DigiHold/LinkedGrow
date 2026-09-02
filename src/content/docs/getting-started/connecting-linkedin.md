@@ -1,6 +1,6 @@
 ---
 title: "Connecting Your LinkedIn Account"
-description: "Step-by-step guide to connecting your LinkedIn account to LinkedGrow for publishing and scheduling posts."
+description: Step-by-step guide to connecting your LinkedIn account to LinkedGrow for publishing and scheduling posts.
 category: "getting-started"
 order: 2
 ---
@@ -18,14 +18,13 @@ Without connecting LinkedIn, you can still generate and draft posts, but you wil
 
 ## How to connect
 
-1. Go to **Settings** from the dashboard sidebar
-2. Find the **Connect LinkedIn** card at the top of the page
-3. Click **Connect LinkedIn**
-4. A popup window opens with LinkedIn's authorization page
-5. Review the permissions and click **Allow**
-6. You are redirected back to LinkedGrow
+1. Open **LinkedIn accounts** in the dashboard sidebar (the same button sits in every agent's settings)
+2. Click **Connect an account**
+3. Enter the email and password of the LinkedIn account; they are encrypted the moment they arrive and never shown again
+4. Choose the country you are actually in, and LinkedGrow reserves a dedicated address there for this one account through the instance's proxy supplier; if you already own good proxies, open **Use my own proxy** and enter the host, port, username and password instead
+5. Stay on the dialog while the worker signs in, which takes a minute or two; if LinkedIn asks for a verification, the prompt appears in the same dialog, so type the code it sent or approve the sign in from the LinkedIn app
 
-Once connected, you will see your LinkedIn profile name and a green "Connected" status indicator.
+Once the worker has read your profile back, the account shows as **Signed in and working** with your profile name and country.
 
 ## How the connection works
 
@@ -54,22 +53,20 @@ LinkedIn sometimes asks for a security check, or the password changes on your si
 
 ## Troubleshooting
 
-**"Connection failed" error:**
-- Make sure popup blockers are disabled for linkedgrow.ai
-- Try using a different browser (Chrome or Firefox recommended)
-- Clear your browser cookies for linkedin.com and try again
+**The account stays on "Signing in":**
+- Check that the worker container is running with `docker compose ps`, and read its output with `docker compose logs worker`
+- On a proxy you supplied yourself, check the host, port, username and password you entered
 
-**"Authorization denied" message:**
-- You must click "Allow" on LinkedIn's authorization page
-- If you clicked "Cancel", try connecting again
+**"LinkedIn asked for a verification":**
+- Open the LinkedIn accounts page and answer the prompt: type the code LinkedIn sent, or approve the sign in from the LinkedIn app
+- A code expires quickly, so answer it while the prompt is open
 
 **Posts failing after connection:**
-- Check if your token has expired in Settings
-- Reconnect your account if the status shows "Disconnected"
+- Check the account's status on the LinkedIn accounts page and reconnect it if it shows "Disconnected"
 - Make sure you are posting to the correct profile (personal vs. company page)
 
 **Profile picture not showing:**
-- Your LinkedIn avatar syncs when you first connect
-- If it is not appearing, disconnect and reconnect your account
+- Your LinkedIn avatar syncs when the worker first signs in
+- If it is not appearing, disconnect and reconnect the account
 
-If you continue to experience issues, contact us at contact@linkedgrow.ai.
+If you are still stuck, read the [troubleshooting](/docs/self-hosting/troubleshooting) page for the stack itself, then open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues).

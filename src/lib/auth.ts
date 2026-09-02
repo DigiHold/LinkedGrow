@@ -6,6 +6,8 @@ import { loadSessionUser, invalidateSessionUser } from "./auth-user";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { verifyTOTP } from "./totp";
+import { effectivePlan } from "./plans";
+import { isSecureAppUrl } from "./app-url";
 
 // Custom error classes for better error messages
 class InvalidCredentialsError extends CredentialsSignin {
@@ -22,6 +24,9 @@ class InvalidTwoFactorError extends CredentialsSignin {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db),
+  // The Secure flag and the __Secure- cookie prefix follow the public url, not
+  // NODE_ENV, so a self hosted instance on plain http can sign in.
+  useSecureCookies: isSecureAppUrl(),
   session: {
     strategy: "jwt",
   },
@@ -148,7 +153,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.email = dbUser.email;
           token.name = dbUser.name;
           token.image = dbUser.image;
-          token.plan = dbUser.plan;
           token.billingInterval = dbUser.billingInterval;
           token.isLifetimeDeal = dbUser.isLifetimeDeal;
           token.twoFactorEnabled = dbUser.twoFactorEnabled;
@@ -165,17 +169,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.teamRole = data.teamRole;
           token.teamOwnerId = data.teamOwnerId;
           // Team members inherit the owner's plan so they keep feature access.
-          if (data.isTeamMember && data.owner?.plan) {
-            token.plan = data.owner.plan;
-          }
           // An admin gets the top plan, whatever the billing row says. They
           // have to be able to open every screen to support customers on it,
           // and the paywall must never lock them out of their own product.
           // The database keeps what they actually pay for; this only changes
-          // what the session grants.
-          if (dbUser.isAdmin) {
-            token.plan = "business";
-          }
+          // what the session grants. Self hosted: business for everyone.
+          token.plan = effectivePlan({
+            plan: data.isTeamMember && data.owner?.plan ? data.owner.plan : dbUser.plan,
+            isAdmin: dbUser.isAdmin,
+          });
         }
       }
 

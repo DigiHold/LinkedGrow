@@ -1,6 +1,6 @@
 ---
 title: "Content Calendar"
-description: "Use the visual content calendar to plan, view, and manage your scheduled LinkedIn posts."
+description: Use the visual content calendar to plan, view, and manage your scheduled LinkedIn posts.
 category: "scheduling"
 order: 2
 ---
@@ -35,7 +35,7 @@ Click on any date to open a dropdown menu with the following options:
 - **Schedule a post** - Opens the scheduling flow for that date
 - **Insert an idea** - Saves a content idea for that date
 
-Choosing "Create a post" opens a side panel directly on the calendar page. It does not navigate you away to a separate editor page.
+Choosing "Create a post" opens a side panel directly on the calendar page. It does not send you away to a separate editor page.
 
 ### Editing scheduled posts
 
@@ -60,7 +60,3 @@ If you have a product launch, webinar, or industry event coming up, use the cale
 ### Batch content creation
 
 Many users find it most efficient to set aside one session per week for content creation. Use the calendar to plan topics for the week, generate all posts at once, and schedule them across the week.
-
-## Plan availability
-
-The Content Calendar is available on Pro and Business plans.

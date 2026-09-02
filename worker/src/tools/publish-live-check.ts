@@ -300,7 +300,7 @@ async function inspect(accountId: string, urls: string[]): Promise<void> {
  * Walks the carousel flow one step at a time and photographs each one.
  *
  * The carousel failed three times on 2026-08-08 with "the attachment did not
- * finish uploading, the composer says: Maria LECOCQ", while an image published
+ * finish uploading, the composer says: <the account's own name>", while an image published
  * fine two minutes earlier and the PDF is a valid two-page document. The same
  * file's own comments record six attempts spent guessing at this flow, so this
  * looks instead: every step is photographed and every button in the dialog is

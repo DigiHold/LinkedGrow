@@ -5,6 +5,7 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { canAccessFeature, effectivePlan, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { getCaptionTrack, fetchCaptionSegments } from "@/lib/youtube-captions";
 
 function extractVideoId(url: string): string | null {
   const patterns = [
@@ -16,9 +17,6 @@ function extractVideoId(url: string): string | null {
   }
   return null;
 }
-
-const WORKER_URL = process.env.YOUTUBE_WORKER_URL;
-const WORKER_SECRET = process.env.YOUTUBE_WORKER_SECRET;
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,52 +61,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!WORKER_URL || !WORKER_SECRET) {
-return NextResponse.json(
-        { error: "YouTube extraction is not configured. Please contact support." },
-        { status: 500 }
+    // The caption track: the edge worker when one is configured, YouTube
+    // itself otherwise. Then the transcript behind it, read here.
+    let track: Awaited<ReturnType<typeof getCaptionTrack>>;
+    try {
+      track = await getCaptionTrack(videoId);
+    } catch (e) {
+      const debugInfo = e instanceof Error ? e.message : "";
+      return NextResponse.json(
+        {
+          error: session.user.isAdmin
+            ? `Caption extraction failed. Debug: ${debugInfo}`
+            : "This video doesn't have captions. YouTube auto-generates captions for most videos, but some (music, very short clips, non-speech content) may not have them. Try a different video.",
+        },
+        { status: 400 }
       );
     }
 
-    // Call Cloudflare Worker to extract captions (uses Cloudflare IPs, not Vercel)
-    const workerResponse = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Worker-Secret": WORKER_SECRET,
-      },
-      body: JSON.stringify({ videoId }),
-      signal: AbortSignal.timeout(30000),
-    });
-
-    if (!workerResponse.ok) {
-      const workerData = await workerResponse.json().catch(() => null);
-      const debugInfo = workerData?.debug || "";
-
-      if (workerResponse.status === 404 && workerData?.error === "NO_CAPTIONS") {
-        const isAdmin = session.user.isAdmin;
-        return NextResponse.json(
-          {
-            error: isAdmin
-              ? `Caption extraction failed. Debug: ${debugInfo}`
-              : "This video doesn't have captions. YouTube auto-generates captions for most videos, but some (music, very short clips, non-speech content) may not have them. Try a different video.",
-          },
-          { status: 400 }
-        );
-      }
-
-return NextResponse.json(
-        { error: "Failed to extract captions from this video. Please try again." },
-        { status: 500 }
+    const captions = await fetchCaptionSegments(track.trackUrl);
+    if (captions.length === 0) {
+      return NextResponse.json(
+        { error: "Could not parse the transcript of this video. Try a different video." },
+        { status: 400 }
       );
     }
-
-    const { captions, title: videoTitle } = await workerResponse.json();
 
     // Combine caption text into a single transcript
-    const transcript = captions
-      .map((c: { text: string }) => c.text)
-      .join(" ");
+    const transcript = captions.map((c) => c.text).join(" ");
 
     // Estimate video duration from last caption
     const lastCaption = captions[captions.length - 1];
@@ -128,7 +107,7 @@ return NextResponse.json(
 
     return NextResponse.json({
       source: "youtube",
-      title: videoTitle,
+      title: track.title,
       content: trimmedTranscript,
       wordCount: words.length,
       metadata: {

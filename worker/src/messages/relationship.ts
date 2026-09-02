@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { AgentContext } from "../config.ts";
-import { generate, MODELS } from "../ai.ts";
+import { generate, models } from "../ai.ts";
 import { validateMessage } from "./validate.ts";
 
 /**
@@ -354,12 +354,13 @@ async function write(
   // fails it is rewritten rather than sent. Bounded, because a pathological
   // prompt can fail forever.
   let failures: string[] = [];
+  const m = await models();
   for (let attempt = 1; attempt <= 4; attempt++) {
     const body = (
       await generate(ctx, prompt + toneNote(ctx.tone) + failureNote(failures), {
         purpose,
         maxTokens: 220,
-        model: MODELS.writer,
+        model: m.writer,
         systemPrompt: VOICE,
       })
     )

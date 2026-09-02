@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { media, users, posts } from "@/lib/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   uploadToR2,
   uploadBase64ToR2,
@@ -15,6 +16,56 @@ import sharp from "sharp";
 // Max file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+// What a detached upload takes: the presign route's types and LinkedIn's caps.
+const DETACHED_LIMITS: Record<string, number> = {
+  "image/jpeg": 5 * 1024 * 1024,
+  "image/png": 5 * 1024 * 1024,
+  "image/gif": 5 * 1024 * 1024,
+  "image/webp": 5 * 1024 * 1024,
+  "video/mp4": 200 * 1024 * 1024,
+  "video/quicktime": 200 * 1024 * 1024,
+  "application/pdf": 100 * 1024 * 1024,
+};
+
+/**
+ * Stores a file without a media row, the way a presigned upload does. The
+ * browser lands here when the storage cannot presign (the local disk of a
+ * self hosted instance); the post links the file when it is saved, and a
+ * second row here would be swept as an orphan a day later, file included.
+ */
+async function detachedUpload(file: File, userId: string): Promise<NextResponse> {
+  const limit = DETACHED_LIMITS[file.type];
+  if (!limit) {
+    return NextResponse.json(
+      { error: "Unsupported file type. Allowed: JPG, PNG, GIF, WebP, MP4, MOV, PDF" },
+      { status: 400 }
+    );
+  }
+  if (file.size > limit) {
+    return NextResponse.json(
+      { error: `File must be less than ${Math.round(limit / (1024 * 1024))}MB (LinkedIn limit)` },
+      { status: 400 }
+    );
+  }
+
+  let buffer: Buffer = Buffer.from(await file.arrayBuffer());
+  let mimeType = file.type;
+  let fileName = file.name;
+  if (mimeType.startsWith("image/")) {
+    buffer = await sharp(buffer)
+      .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+    mimeType = "image/webp";
+    fileName = fileName.replace(/\.[^.]+$/, ".webp");
+  }
+
+  const stored = await uploadToR2(buffer, { fileName, contentType: mimeType, userId });
+  return NextResponse.json({
+    upload: { key: stored.key, url: stored.url, size: stored.size, mimeType },
+  });
+}
 
 // GET /api/media - Get all media for current user (or specific post)
 export async function GET(request: NextRequest) {
@@ -70,7 +121,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!isR2Configured()) {
+    // Every upload costs disk or bucket space, so it is limited per user.
+    const uploadLimit = rateLimit(`media-upload:${session.user.id}`, {
+      maxRequests: 60,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!uploadLimit.success) {
+      return NextResponse.json(
+        { error: "Too many uploads. Try again later." },
+        { status: 429 }
+      );
+    }
+
+    if (!(await isR2Configured())) {
       return NextResponse.json(
         { error: "Storage not configured" },
         { status: 503 }
@@ -105,6 +168,10 @@ export async function POST(request: NextRequest) {
 
       if (!file) {
         return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      }
+
+      if (formData.get("detached") === "1") {
+        return detachedUpload(file, user.id);
       }
 
       if (file.size > MAX_FILE_SIZE) {

@@ -1,6 +1,6 @@
 ---
 title: "General FAQ"
-description: "Answers to frequently asked questions about LinkedGrow, AI costs, LinkedIn integration, security, and more."
+description: Answers to frequently asked questions about LinkedGrow, AI costs, LinkedIn integration, security, and more.
 category: "faq"
 order: 1
 ---
@@ -11,7 +11,7 @@ LinkedGrow is an AI-powered LinkedIn content creation and scheduling platform. I
 
 ## What is BYOK (Bring Your Own Key)?
 
-BYOK stands for Bring Your Own Key. Instead of charging you a premium for built-in AI, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google, or others. This gives you full control over your AI costs, model selection, and usage. You pay the AI provider directly at their standard rates, which is significantly cheaper than platforms that bundle AI costs into their subscription.
+BYOK stands for Bring Your Own Key. Instead of charging you a premium for built-in AI, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google, or others. This gives you full control over your AI costs, model selection, and usage. You pay the AI provider directly at their standard rates, which is significantly cheaper than platforms that bundle AI costs into their monthly price.
 
 For setup instructions, see the [BYOK documentation](/docs/byok).
 
@@ -20,10 +20,6 @@ For setup instructions, see the [BYOK documentation](/docs/byok).
 With the BYOK model, most users spend between $2 and $4 per month on AI usage. The exact cost depends on how much content you generate and which AI model you use. For comparison, platforms that bundle AI into their pricing often charge $30 to $50 per month or more for similar functionality.
 
 You can monitor your AI spending directly through your AI provider's dashboard (such as the OpenAI usage page or Anthropic console).
-
-## Can I cancel my subscription anytime?
-
-Yes. LinkedGrow has no long-term contracts or commitments. You can cancel your subscription at any time from your billing settings. When you cancel, your paid plan stays active until the end of your current billing period, then your account reverts to the 7-day Pro trial. See [Refunds and Cancellation](/docs/billing/refunds-and-cancellation) for full details.
 
 ## Do I need LinkedIn Premium to use LinkedGrow?
 
@@ -35,7 +31,7 @@ No, not if you use the voice training feature. LinkedGrow's voice training analy
 
 ## What is the Algorithm Score?
 
-The Algorithm Score is a real-time rating (available on Pro and Business plans) that evaluates how well your post is optimized for LinkedIn's algorithm. It analyzes factors like post length, formatting, hook strength, call to action, hashtag usage, and readability. The score updates as you edit, giving you instant feedback to improve your post's potential reach before publishing.
+The Algorithm Score is a real-time rating that evaluates how well your post is optimized for LinkedIn's algorithm. It analyzes factors like post length, formatting, hook strength, call to action, hashtag usage, and readability. The score updates as you edit, giving you instant feedback to improve your post's potential reach before publishing.
 
 ## How is LinkedGrow different from competitors?
 
@@ -45,11 +41,7 @@ LinkedGrow stands apart in several key ways:
 - **Voice training** - the AI learns to write in your voice, not a generic tone
 - **Algorithm optimizer** - real-time scoring tells you how well your post will perform before you publish
 - **All-in-one platform** - content creation, scheduling, carousel generation, analytics, and team collaboration in one tool
-- **Transparent pricing** - no hidden AI fees, you see exactly what you pay for
-
-## Do you offer refunds?
-
-Yes. LinkedGrow offers a 14-day money-back guarantee on all paid plans. If you are not satisfied within 14 days of your initial purchase, email [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai) for a full refund. After 14 days, you can cancel anytime to prevent future charges, but refunds for the current billing period are not available. See [Refunds and Cancellation](/docs/billing/refunds-and-cancellation) for details.
+- **Transparent AI costs** - the AI bill comes from your own provider, so you see exactly what you pay for
 
 ## Can I use multiple AI providers?
 
@@ -57,26 +49,11 @@ Yes. LinkedGrow supports multiple AI providers, and you can switch between them 
 
 ## Is my API key secure?
 
-Yes. Your API key is encrypted at rest and in transit. It is never stored in plain text, never shared with other users, and never accessible to LinkedGrow staff. The key is only used to make API calls to your AI provider on your behalf. You can rotate or revoke your key at any time from your settings.
+Yes. Your API key is encrypted at rest and in transit. It is never stored in plain text and never shared with other users of the instance. The key is only used to make API calls to your AI provider on your behalf. You can rotate or revoke your key at any time from your settings.
 
-## What happens if I downgrade my plan?
+## How do I get help?
 
-When you downgrade to a lower plan, your current plan stays active until the end of the billing period. After that:
-
-- Features exclusive to your previous plan become unavailable
-- If you have more scheduled posts than your new plan allows, excess posts are unscheduled
-- Your existing posts, drafts, and content are preserved
-- Analytics data is retained (though some views may be limited)
-- Team members lose access if downgrading from Business
-- API tokens are deactivated if downgrading from Business
-
-You can always upgrade again later to regain access to those features.
-
-## How do I get support?
-
-You can reach our support team by emailing [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai). Business plan users receive priority support with faster response times. We aim to respond to all support requests within 24 hours on business days.
-
-You can also browse this documentation for guides on every LinkedGrow feature.
+Start with this documentation, which has a guide for every LinkedGrow feature. If something is broken, open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues) and describe what you did and what happened instead.
 
 ## What AI models are supported?
 
@@ -97,4 +74,4 @@ Yes. When you connect your LinkedIn account, you can choose to post to your pers
 
 ## I have a question that is not listed here
 
-If your question is not covered in this FAQ or elsewhere in the documentation, please email us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai). We are happy to help and may add your question to this page for others.
+If your question is not covered in this FAQ or elsewhere in the documentation, open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues). Questions that come up often are added to this page for everyone.

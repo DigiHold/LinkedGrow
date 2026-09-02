@@ -1,6 +1,6 @@
 ---
 title: "Templates and Branding"
-description: "Use carousel templates and customize branding settings to create professional, on-brand LinkedIn carousels."
+description: Use carousel templates and customize branding settings to create professional, on-brand LinkedIn carousels.
 category: "carousel"
 order: 2
 ---
@@ -25,7 +25,7 @@ The branding panel lets you apply your brand identity across all carousel slides
 
 ### Logo toggle
 
-A toggle to show or hide your logo on carousel slides. The logo itself is set in your account-level branding settings (available on the Business plan). The carousel branding panel does not have a file upload -- it simply controls whether your account logo appears on slides.
+A toggle to show or hide your logo on carousel slides. The logo itself is set in your account level branding settings. The carousel branding panel does not have a file upload, it simply controls whether your account logo appears on slides.
 
 ### Profile Picture (Avatar)
 
@@ -77,7 +77,3 @@ This is useful for creating a library of reusable templates specific to your bra
 - **Keep branding consistent** - Use the same colors and fonts across all your carousels for brand recognition
 - **Test readability** - Preview your carousel at mobile size to make sure text is readable on small screens
 - **Use high-contrast colors** - Light text on dark backgrounds (or vice versa) ensures readability in LinkedIn's feed
-
-## Plan availability
-
-Carousel templates and branding settings are available on the Business plan.

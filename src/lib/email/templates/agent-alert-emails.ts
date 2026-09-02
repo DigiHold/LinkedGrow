@@ -1,4 +1,5 @@
 import { baseEmailTemplate } from "./base-template";
+import { getAppUrl } from "@/lib/app-url";
 import { p, lead, small, button, quote, personRow, figures } from "./parts";
 
 /**
@@ -16,7 +17,7 @@ import { p, lead, small, button, quote, personRow, figures } from "./parts";
  * three that genuinely cannot wait.
  */
 
-const APP = "https://linkedgrow.ai";
+const APP = getAppUrl();
 
 export type Lead = {
   name: string;
@@ -41,9 +42,11 @@ export function leadsDigestEmailTemplate(params: {
   best: Lead[];
   queuedNext: number;
   agentId: string;
+  instanceName?: string;
 }): string {
   const { firstName, count, best, queuedNext, agentId } = params;
   return baseEmailTemplate({
+    instanceName: params.instanceName,
     preheader: `${count} people your agent found this week, scored against your audience.`,
     content: `
 ${p(`Hello ${firstName},`)}
@@ -84,9 +87,11 @@ export function verificationEmailTemplate(params: {
   firstName: string;
   accountName: string;
   agentId: string;
+  instanceName?: string;
 }): string {
   const { firstName, accountName, agentId } = params;
   return baseEmailTemplate({
+    instanceName: params.instanceName,
     preheader: "Your agent is paused until LinkedIn is answered. It takes two minutes.",
     content: `
 ${p(`Hello ${firstName},`)}
@@ -121,9 +126,11 @@ export function agentStoppedEmailTemplate(params: {
   reason: string;
   retrying: boolean;
   agentId: string;
+  instanceName?: string;
 }): string {
   const { firstName, reason, retrying, agentId } = params;
   return baseEmailTemplate({
+    instanceName: params.instanceName,
     preheader: retrying
       ? "It is already trying to start itself again."
       : "It needs you before it can carry on.",
@@ -161,9 +168,11 @@ export function replyEmailTemplate(params: {
   from: string;
   body: string;
   agentContinues: boolean;
+  instanceName?: string;
 }): string {
   const { firstName, from, body, agentContinues } = params;
   return baseEmailTemplate({
+    instanceName: params.instanceName,
     preheader: `${from} answered your agent.`,
     content: `
 ${p(`Hello ${firstName},`)}
@@ -198,9 +207,11 @@ export function firstDayEmailTemplate(params: {
   sources: number;
   perDay: number;
   agentId: string;
+  instanceName?: string;
 }): string {
   const { firstName, found, sources, perDay, agentId } = params;
   return baseEmailTemplate({
+    instanceName: params.instanceName,
     preheader: "It signed in and went to work.",
     content: `
 ${p(`Hello ${firstName},`)}

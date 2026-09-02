@@ -159,6 +159,29 @@ return null;
 // Max HTML size: 2MB - keeps memory usage reasonable in serverless
 const MAX_HTML_SIZE = 2 * 1024 * 1024;
 
+// Block private/internal hosts so the route can't be abused as an open proxy.
+function isBlockedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return (
+    h === "localhost" ||
+    h.endsWith(".local") ||
+    h.endsWith(".internal") ||
+    h === "[::1]" ||
+    h === "[::]" ||
+    h.startsWith("[fc") ||
+    h.startsWith("[fd") ||
+    h.startsWith("[fe80:") ||
+    h.startsWith("[::ffff:") ||
+    /^127\./.test(h) ||
+    /^10\./.test(h) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+    /^192\.168\./.test(h) ||
+    /^169\.254\./.test(h) ||
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h) ||
+    /^0\./.test(h)
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -181,8 +204,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const url = body?.url;
-    // The browser may pre-fetch the page HTML via the Cloudflare proxy worker and
-    // pass it here. That bypasses host firewalls that block Vercel datacenter IPs.
+    // The browser may pre-fetch the page HTML through an edge proxy
+    // (NEXT_PUBLIC_WEBPAGE_PROXY_URL) and pass it here, for hosts whose
+    // firewalls block the server's own address.
     const providedHtml =
       typeof body?.html === "string" && body.html.length > 0 ? (body.html as string) : null;
 
@@ -202,31 +226,15 @@ export async function POST(request: NextRequest) {
     if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
       return NextResponse.json({ error: "Only HTTP and HTTPS URLs are supported." }, { status: 400 });
     }
-    const hostname = parsedUrl.hostname.toLowerCase();
-    const blockedPatterns = [
-      /^localhost$/i,
-      /^127\./,
-      /^10\./,
-      /^172\.(1[6-9]|2\d|3[01])\./,
-      /^192\.168\./,
-      /^169\.254\./,
-      /^0\./,
-      /^\[::1\]$/,
-      /^\[fc/i,
-      /^\[fd/i,
-      /^\[fe80:/i,
-      /\.local$/i,
-      /\.internal$/i,
-    ];
-    if (blockedPatterns.some(p => p.test(hostname))) {
+    if (isBlockedHost(parsedUrl.hostname)) {
       return NextResponse.json({ error: "This URL is not allowed." }, { status: 400 });
     }
 
     // The HTML can arrive two ways:
-    //  1. Pre-fetched by the browser via the Cloudflare proxy worker (preferred -
-    //     Cloudflare edge IPs are far less likely to be firewall-blocked than
-    //     Vercel's datacenter IPs).
-    //  2. Fetched here server-side as a fallback when the worker is unavailable.
+    //  1. Pre-fetched by the browser through the edge proxy, when one is
+    //     configured.
+    //  2. Fetched here server side, which is the default: a 2 MB cap and a
+    //     15 second timeout, behind the private host block list above.
     let html: string;
 
     if (providedHtml) {
@@ -235,31 +243,67 @@ export async function POST(request: NextRequest) {
           ? providedHtml.slice(0, MAX_HTML_SIZE)
           : providedHtml;
     } else {
-      // Fallback: fetch the page server-side with browser-like headers. Some hosts
-      // block Vercel datacenter IPs at this step - that is why the worker exists.
+      // Fetch the page server side with browser-like headers. Redirects are
+      // followed manually, one hop at a time, so every hop lands back through
+      // the same protocol and private-host checks the original URL passed.
+      // Without this a public URL could 302 to an internal address and the
+      // block list above would never see it.
       let response: Response;
-      try {
-        response = await fetch(parsedUrl.toString(), {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Cache-Control": "no-cache",
-          },
-          signal: AbortSignal.timeout(15000),
-          redirect: "follow",
-        });
-      } catch (error) {
-        if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      let currentUrl = parsedUrl;
+      let redirectCount = 0;
+
+      for (;;) {
+        try {
+          response = await fetch(currentUrl.toString(), {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+              "Accept-Language": "en-US,en;q=0.9",
+              "Cache-Control": "no-cache",
+            },
+            signal: AbortSignal.timeout(15000),
+            redirect: "manual",
+          });
+        } catch (error) {
+          if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+            return NextResponse.json(
+              { error: "This page took too long to load. Please check the URL and try again." },
+              { status: 408 }
+            );
+          }
           return NextResponse.json(
-            { error: "This page took too long to load. Please check the URL and try again." },
-            { status: 408 }
+            { error: "Failed to fetch the page. Please check the URL and try again." },
+            { status: 502 }
           );
         }
-        return NextResponse.json(
-          { error: "Failed to fetch the page. Please check the URL and try again." },
-          { status: 502 }
-        );
+
+        if (![301, 302, 303, 307, 308].includes(response.status)) break;
+
+        redirectCount++;
+        if (redirectCount > 3) {
+          return NextResponse.json({ error: "Too many redirects" }, { status: 400 });
+        }
+
+        const location = response.headers.get("location");
+        let nextUrl: URL;
+        try {
+          if (!location) throw new Error("missing location header");
+          nextUrl = new URL(location, currentUrl);
+        } catch {
+          return NextResponse.json(
+            { error: "Failed to fetch the page. Please check the URL and try again." },
+            { status: 502 }
+          );
+        }
+
+        if (nextUrl.protocol !== "https:" && nextUrl.protocol !== "http:") {
+          return NextResponse.json({ error: "Only HTTP and HTTPS URLs are supported." }, { status: 400 });
+        }
+        if (isBlockedHost(nextUrl.hostname)) {
+          return NextResponse.json({ error: "This URL is not allowed." }, { status: 400 });
+        }
+
+        currentUrl = nextUrl;
       }
 
       if (!response.ok) {
@@ -286,6 +330,17 @@ export async function POST(request: NextRequest) {
       if (!contentType.includes("text/html") && !contentType.includes("application/xhtml") && !contentType.includes("text/plain")) {
         return NextResponse.json(
           { error: "This URL doesn't point to a web page. Make sure it's a blog post or article URL." },
+          { status: 400 }
+        );
+      }
+
+      // A declared size above the cap is rejected before it is buffered at
+      // all; the slice-after-download fallback below still catches a host
+      // that lies about content-length.
+      const contentLength = response.headers.get("content-length");
+      if (contentLength && Number(contentLength) > MAX_HTML_SIZE) {
+        return NextResponse.json(
+          { error: "This page is too large to process. Please try a different URL." },
           { status: 400 }
         );
       }

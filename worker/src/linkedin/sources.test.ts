@@ -260,8 +260,8 @@ test("word matching survives the punctuation headlines are made of", () => {
 /**
  * The locations the wizard asks for, which filtered nobody.
  *
- * `a.locations` was read in exactly one place: to write "You are Maria, based
- * in Montreux" into the message prompts. That is the SENDER's location. No
+ * `a.locations` was read in exactly one place: to write "You are Jane, based
+ * in Lisbon" into the message prompts. That is the SENDER's location. No
  * prospect was ever dropped for being on the wrong continent, so an agent aimed
  * at France claimed founders in Bangalore and Sofia, and the customer read that
  * as bad targeting because it is.

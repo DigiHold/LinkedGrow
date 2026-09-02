@@ -5,7 +5,8 @@
  * API only answers that box. This cron is the leg that stands somewhere else:
  * if the VPS dies, the worker crashes, or the renewal pass silently stops
  * running, nothing over there can say so. This runs on Vercel, reads only our
- * own database, and mails contact@ when either of two things is true:
+ * own database, and mails the operations address (contact@ in the cloud, the
+ * instance admin on a self hosted install) when either of two things is true:
  *
  *  1. The renewal pass has not left its heartbeat for over 36 hours.
  *  2. An address bound to a paying customer ends within 7 days, which the
@@ -17,17 +18,13 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { Receiver } from "@upstash/qstash";
 import { and, eq, isNotNull, lt, sql } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { verifyCronRequest } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
+import { isSelfHosted } from "@/lib/edition";
+import { getInstanceSettings } from "@/lib/instance-settings";
 import { linkedinAccounts, proxyAllocations, users, workerFlags } from "@/lib/db/schema";
-import { sendEmail } from "@/lib/email/ses-client";
-
-const receiver = new Receiver({
-  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
-  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
-});
+import { sendEmail, opsRecipient } from "@/lib/email/ses-client";
 
 const HEARTBEAT_STALE_MS = 36 * 60 * 60 * 1000;
 const DANGER_DAYS = 7;
@@ -35,19 +32,25 @@ const DANGER_DAYS = 7;
 async function runWatchdog() {
   const problems: string[] = [];
 
+  // A self hosted install without a supplier key never runs the renewal
+  // pass (the worker skips it), so there is no heartbeat to miss there.
+  const expectsHeartbeat = !isSelfHosted() || !!(await getInstanceSettings(true)).proxySellerKeyEncrypted;
   const [beat] = await db
     .select()
     .from(workerFlags)
     .where(eq(workerFlags.key, "proxy-renew-last-run"))
     .limit(1);
-  if (!beat) {
+  if (!expectsHeartbeat) {
+    // Nothing to watch until a supplier key is saved in Settings, Instance.
+  } else if (!beat) {
     problems.push(
       "The proxy renewal pass has never left a heartbeat. Either it has never run, or it cannot reach the database."
     );
   } else if (Date.now() - beat.updatedAt.getTime() > HEARTBEAT_STALE_MS) {
-    problems.push(
-      `The proxy renewal pass last ran ${beat.updatedAt.toISOString()}. Check the VPS: cron /etc/cron.d/linkedgrow-proxy-renew, log /opt/linkedgrow/proxy-renew.log.`
-    );
+    const where = isSelfHosted()
+      ? "Check the worker container: docker compose logs worker."
+      : "Check the VPS: cron /etc/cron.d/linkedgrow-proxy-renew, log /opt/linkedgrow/proxy-renew.log.";
+    problems.push(`The proxy renewal pass last ran ${beat.updatedAt.toISOString()}. ${where}`);
   }
 
   // Bound to a paying workspace and ending inside the danger window. The
@@ -81,36 +84,23 @@ async function runWatchdog() {
     );
   }
 
-  if (problems.length) {
+  // No recipient means nobody is listening; the summary still says so.
+  const to = problems.length ? await opsRecipient() : "";
+  if (to) {
     await sendEmail({
-      to: "contact@linkedgrow.ai",
+      to,
       subject: `Proxy watchdog: ${problems.length} problem${problems.length === 1 ? "" : "s"}`,
       html: `<p>${problems.join("</p><p>")}</p><p>An expired address cannot be recovered, so act while there are days left.</p>`,
       text: problems.join("\n\n"),
     });
   }
 
-  return { problems: problems.length, checked: closeRows.length, heartbeat: beat?.updatedAt ?? null };
+  return { problems: problems.length, checked: closeRows.length, heartbeat: beat?.updatedAt ?? null, notified: to !== "" };
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.text();
-    const signature = request.headers.get("upstash-signature") || "";
-    const isValid = await receiver.verify({
-      body,
-      signature,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/cron/proxy-watchdog`,
-    });
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
-  } catch {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const verified = await verifyCronRequest(request, "/api/cron/proxy-watchdog");
+  if (!verified.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const result = await runWatchdog();

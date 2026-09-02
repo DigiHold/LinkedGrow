@@ -3,7 +3,16 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+// The self hosted image runs the traced standalone server (docker/Dockerfile.app).
+const selfHosted = (process.env.LINKEDGROW_EDITION ?? "self-hosted") !== "cloud";
+
 const nextConfig: NextConfig = {
+  ...(selfHosted ? { output: "standalone" } : {}),
+  // Inlined into the server and browser bundles alike, so a client component
+  // gating on the edition answers the same as the route behind it.
+  env: {
+    LINKEDGROW_EDITION: process.env.LINKEDGROW_EDITION ?? "self-hosted",
+  },
   // Performance optimizations
   experimental: {
     // Optimize package imports for smaller bundles
@@ -94,6 +103,17 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Files the local storage driver serves. A key is minted once per upload
+        // and never rewritten, so the file behind it never changes either.
+        source: "/uploads/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
         // Favicon and other root static files
         source: "/:path(favicon.ico|icon.svg|robots.txt|sitemap.xml)",
         headers: [
@@ -124,52 +144,6 @@ const nextConfig: NextConfig = {
         source: "/docs/business-features/api-access",
         destination: "/docs/integrations/api-access",
         permanent: true,
-      },
-      {
-        // ai-post-generator consolidated into the homepage
-        source: "/features/ai-post-generator",
-        destination: "/",
-        permanent: true,
-      },
-      {
-        // best-time-to-post blog post consolidated into the free tool
-        source: "/blog/best-time-to-post-linkedin",
-        destination: "/free-tools/linkedin-best-time-to-post",
-        permanent: true,
-      },
-      {
-        // the v1 lifetime deal page dies at the v2 cutover, but its links
-        // live on in the LTD emails and in buyers' history
-        source: "/last-lifetime-deal",
-        destination: "/pricing",
-        permanent: false,
-      },
-      {
-        // carousel-guide consolidated into the carousel-templates guide
-        source: "/blog/linkedin-carousel-guide",
-        destination: "/blog/linkedin-carousel-templates",
-        permanent: true,
-      },
-      {
-        // byok-explained consolidated into the AI API cost comparison
-        source: "/blog/byok-bring-your-own-key-explained",
-        destination: "/blog/ai-api-cost-comparison-linkedin-tools",
-        permanent: true,
-      },
-      {
-        // off-topic news article removed
-        source: "/blog/claude-refused-pentagon-switch",
-        destination: "/blog",
-        permanent: true,
-      },
-    ];
-  },
-  // Rewrite IndexNow key files to the API route
-  async rewrites() {
-    return [
-      {
-        source: "/:key.txt",
-        destination: "/api/indexnow?key=:key",
       },
     ];
   },

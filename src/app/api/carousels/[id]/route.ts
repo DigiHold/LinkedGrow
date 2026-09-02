@@ -105,8 +105,8 @@ export async function PUT(
     // Clean up R2 images that were removed from slides
     if (slidesJson !== undefined && existing.slidesJson) {
       const newSlidesStr = typeof slidesJson === "string" ? slidesJson : JSON.stringify(slidesJson);
-      const oldKeys = extractR2KeysFromSlidesJson(existing.slidesJson);
-      const newKeys = extractR2KeysFromSlidesJson(newSlidesStr);
+      const oldKeys = await extractR2KeysFromSlidesJson(existing.slidesJson);
+      const newKeys = await extractR2KeysFromSlidesJson(newSlidesStr);
       // Fire and forget - don't block the response
       cleanupRemovedR2Keys(oldKeys, newKeys);
     }
@@ -153,7 +153,7 @@ export async function DELETE(
 
     // Extract all R2 image keys from the slides
     const imageKeysToDelete = carousel.slidesJson
-      ? extractR2KeysFromSlidesJson(carousel.slidesJson)
+      ? await extractR2KeysFromSlidesJson(carousel.slidesJson)
       : [];
 
     // Delete the carousel from database first

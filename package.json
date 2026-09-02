@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "db:seed-admin": "npx tsx src/lib/db/seed-admin.ts",
-    "embed-docs": "npx tsx scripts/embed-docs.ts"
+    "db:migrate": "node --import tsx src/lib/db/migrate-cli.ts",
+    "test": "node --import tsx --test 'src/**/*.test.ts' 'shared/**/*.test.ts'",
+    "test:e2e": "playwright test --reporter=line"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.37",
@@ -87,6 +89,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/bcryptjs": "^2.4.6",
     "@types/dompurify": "^3.0.5",

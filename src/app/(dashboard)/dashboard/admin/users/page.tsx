@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { isCloud } from "@/lib/edition";
 import {
   Users,
   Search,
@@ -131,6 +132,8 @@ function UserAvatar({ user, size }: { user: Pick<UserData, "name" | "email" | "a
 
 function displayPlan(user: UserData): string {
   if (user.isLifetimeDeal) return user.plan;
+  // There is no billing on a self hosted instance: the plan column is the plan.
+  if (!isCloud()) return user.plan;
   return user.hasSubscription ? user.plan : "trial";
 }
 
@@ -725,7 +728,8 @@ export default function AdminUsersPage() {
                 )}
               </div>
 
-              {/* Stripe */}
+              {/* Stripe, on the cloud only */}
+              {isCloud() && (
               <div className="flex flex-wrap gap-3 border-t border-border pt-4">
                 {detailsUser.stripeCustomerId ? (
                   <a
@@ -761,6 +765,7 @@ export default function AdminUsersPage() {
                   </a>
                 )}
               </div>
+              )}
 
               {/* LinkedIn accounts and their dedicated addresses */}
               <div className="border-t border-border pt-4">

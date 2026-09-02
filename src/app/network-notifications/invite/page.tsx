@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Share2, Loader2, CheckCircle, XCircle, LogIn, UserPlus, Crown } from "lucide-react";
-import { canAccessFeature } from "@/lib/plans";
+import { canAccessFeature, UPGRADE_PATH } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -168,7 +168,7 @@ function InviteContent() {
             but Network Notifications requires a Pro plan or higher.
             Upgrade to start boosting each other's LinkedIn posts.
           </p>
-          <Link href="/dashboard/upgrade" className="block">
+          <Link href={UPGRADE_PATH} className="block">
             <Button className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
               <Crown className="w-4 h-4 mr-2" />
               Upgrade to Pro

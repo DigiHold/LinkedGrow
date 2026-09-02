@@ -34,9 +34,7 @@ import {
   betaUsers,
   verificationTokens,
 } from "@/lib/db";
-import { stripe } from "@/lib/stripe";
 import { deleteR2ByPrefix } from "@/lib/storage/r2";
-import { cancelScheduledPost } from "@/lib/qstash";
 
 /**
  * Delete a user and every piece of data tied to that user.
@@ -49,8 +47,6 @@ import { cancelScheduledPost } from "@/lib/qstash";
  *
  * Side effects handled best-effort (errors are swallowed so a third-party
  * outage can't prevent GDPR erasure):
- *   - Cancel active Stripe subscription
- *   - Cancel pending QStash messages (scheduled posts, team/cross-promo jobs)
  *   - Delete R2 objects under `users/{userId}/`
  */
 export async function deleteUserData(userId: string): Promise<void> {
@@ -60,24 +56,6 @@ export async function deleteUserData(userId: string): Promise<void> {
   if (!user) throw new Error("User not found");
 
   // --- Side-effect cleanups (best effort) -----------------------------------
-
-  if (user.stripeSubscriptionId) {
-    try {
-      await stripe.subscriptions.cancel(user.stripeSubscriptionId);
-    } catch {}
-  }
-
-  // Cancel QStash messages tied to this user's rows.
-  try {
-    const scheduledPosts = await db
-      .select({ id: posts.id, qstashMessageId: posts.qstashMessageId })
-      .from(posts)
-      .where(eq(posts.userId, userId));
-    for (const p of scheduledPosts) {
-      if (p.qstashMessageId) await cancelScheduledPost(p.qstashMessageId);
-    }
-
-  } catch {}
 
   // R2 object cleanup - all user uploads live under users/{userId}/
   try {

@@ -1,6 +1,6 @@
 ---
 title: "Blog to LinkedIn"
-description: "Repurpose blog articles from Medium, Substack, and other platforms into native LinkedIn posts."
+description: Repurpose blog articles from Medium, Substack, and other platforms into native LinkedIn posts.
 category: "content-creation"
 order: 8
 ---
@@ -52,7 +52,3 @@ The post opens in the editor where you can refine, add images, save as draft, sc
 - **Don't just summarize.** The best LinkedIn posts from blog articles extract one specific insight and expand on it with your personal experience or opinion.
 - **Drop the link in the first comment.** If you want to drive traffic to the original article, put the URL in a comment after publishing rather than in the post body. Links in the body reduce reach.
 - **One article, multiple posts.** A long article can become a contrarian take, a how-to list, a personal story, and a framework post - each reaching a different segment of your audience.
-
-## Plan availability
-
-Blog to LinkedIn is available on Pro and Business plans.

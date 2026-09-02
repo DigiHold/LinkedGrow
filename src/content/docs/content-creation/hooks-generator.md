@@ -1,6 +1,6 @@
 ---
 title: "Hooks Generator"
-description: "Generate scroll-stopping opening lines for your LinkedIn posts with the AI-powered Hooks Generator."
+description: Generate scroll-stopping opening lines for your LinkedIn posts with the AI-powered Hooks Generator.
 category: "content-creation"
 order: 3
 ---
@@ -54,7 +54,3 @@ Avoid hooks that are:
 **Test different styles.** Some audiences respond better to questions, others to bold statements, others to stories. Experiment and track which hooks drive the most engagement.
 
 **Pair hooks with the Algorithm Score.** After loading a hook into the editor, check the Hook Strength component of the Algorithm Score to see how it rates.
-
-## Plan availability
-
-The Hooks Generator is available on Pro and Business, and on the 7-day trial that starts every account.

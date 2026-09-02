@@ -4,14 +4,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Header } from "@/components/marketing/header";
-import { Footer } from "@/components/marketing/footer";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col pt-20">
-      <Header />
-
       {/* Background decoration */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-linear-to-br from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl" />
@@ -78,17 +74,12 @@ export default function NotFound() {
             className="mt-12 text-sm text-slate-500 dark:text-slate-500"
           >
             Need help?{" "}
-            <a
-              href="mailto:contact@linkedgrow.ai"
-              className="text-cyan-600 dark:text-cyan-400 hover:underline"
-            >
-              Contact us
-            </a>
+            <Link href="/docs" className="text-cyan-600 dark:text-cyan-400 hover:underline">
+              Read the docs
+            </Link>
           </motion.p>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

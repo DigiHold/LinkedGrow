@@ -1,10 +1,9 @@
 import { MetadataRoute } from "next";
 import fs from "fs";
 import path from "path";
-import { getAllPostsWithStatus } from "@/lib/blog";
 import { getAllCategories, getArticlesForCategory } from "@/lib/docs";
-
-const BASE_URL = "https://linkedgrow.ai";
+import { isSelfHosted } from "@/lib/edition";
+import { getAppUrl } from "@/lib/app-url";
 
 // Pages to exclude from sitemap (private, utility pages)
 const EXCLUDED_PATHS = [
@@ -93,6 +92,11 @@ function findAllPages(dir: string, basePath: string = ""): string[] {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // A self hosted instance is not a site to index: robots disallows
+  // everything and the sitemap is empty to match.
+  if (isSelfHosted()) return [];
+
+  const BASE_URL = getAppUrl();
   const currentDate = new Date().toISOString();
 
   // Get the app directory path
@@ -101,7 +105,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Find all pages automatically
   const allPages = findAllPages(appDir);
 
-  // Filter out excluded paths and blog article pages (blog posts are added from DB below)
+  // Filter out excluded paths and blog article pages (the cloud adds published
+  // articles from its own registry)
   const sitemapEntries: MetadataRoute.Sitemap = allPages
     .filter((pagePath) => {
       // Check if this path should be excluded
@@ -124,17 +129,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
     // Sort by priority (highest first)
     .sort((a, b) => (b.priority || 0) - (a.priority || 0));
-
-  // Add blog post entries (published only)
-  const blogPosts = await getAllPostsWithStatus(false);
-  for (const post of blogPosts) {
-    sitemapEntries.push({
-      url: `${BASE_URL}/blog/${post.slug}`,
-      lastModified: post.updatedAt || post.publishedAt,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    });
-  }
 
   // Add docs entries
   const docsCategories = getAllCategories();

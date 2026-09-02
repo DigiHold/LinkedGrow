@@ -1,5 +1,9 @@
+import { policyLinksHtml, policyLinksText } from "./policy-links";
+import { foundersHtml, logoHtml } from "./brand";
 // Password reset email template - transactional email sent via Brevo
 interface ResetPasswordEmailParams {
+  /** Typed where the logo goes on a self hosted instance. */
+  instanceName?: string;
   name?: string;
   resetUrl: string;
   expiresIn?: string;
@@ -9,6 +13,7 @@ export function resetPasswordEmailTemplate({
   name,
   resetUrl,
   expiresIn = "1 hour",
+  instanceName,
 }: ResetPasswordEmailParams): string {
   const greeting = name ? `Hey ${name}!` : "Hey there!";
 
@@ -91,7 +96,7 @@ export function resetPasswordEmailTemplate({
                                     </tr>
                                     <tr>
                                         <td class="row" align="center" style="padding: 0 50px;">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
+                                            ${logoHtml(238, instanceName)}
                                         </td>
                                     </tr>
                                     <tr>
@@ -230,29 +235,7 @@ export function resetPasswordEmailTemplate({
                                     </tr>
                                 </table>
 
-                                <!-- Photos -->
-                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
-                                    <tr>
-                                        <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
-                                    </tr>
-                                </table>
-
-                                <!-- Signature - Nicolas & Maria -->
-                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
-                                    <tr>
-                                        <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
-                                    </tr>
-                                </table>
+${foundersHtml()}
 
                                 <!-- Divider 2 -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
@@ -283,7 +266,7 @@ export function resetPasswordEmailTemplate({
                                             <table align="center" width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <tr>
                                                     <td align="center">
-                                                        <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
+                                                        ${logoHtml(180, instanceName)}
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -294,18 +277,7 @@ export function resetPasswordEmailTemplate({
                                                         <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 14px; line-height: 150%; margin-bottom: 0;">LinkedGrow - AI-Powered LinkedIn Content Platform<br>78 Avenue des Champs-Elysees, Paris, France</p>
                                                     </td>
                                                 </tr>
-                                                <tr>
-                                                    <td height="16" style="line-height: 16px;"></td>
-                                                </tr>
-                                                <tr>
-                                                    <td align="center">
-                                                        <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 14px; line-height: 150%; margin-bottom: 0;">
-                                                            <a href="https://linkedgrow.ai/privacy" style="color: #45556C; text-decoration: underline;">Privacy Policy</a>
-                                                            <span style="color: #45556C;"> | </span>
-                                                            <a href="https://linkedgrow.ai/cookies" style="color: #45556C; text-decoration: underline;">Cookie Policy</a>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+${policyLinksHtml()}
                                             </table>
                                         </td>
                                     </tr>
@@ -360,7 +332,6 @@ Founders of LinkedGrow
 LinkedGrow - AI-Powered LinkedIn Content Platform
 78 Avenue des Champs-Elysees, Paris, France
 
-Privacy Policy: https://linkedgrow.ai/privacy
-Cookie Policy: https://linkedgrow.ai/cookies
+${policyLinksText()}
 `;
 }

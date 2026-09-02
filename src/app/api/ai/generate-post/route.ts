@@ -7,7 +7,7 @@ import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoni
 import { buildLanguageInstruction } from "@/lib/content-languages";
 import { checkGenerationLimit, incrementGenerationUsage } from "@/lib/generation-usage";
 import { HOOK_RULES, POST_STYLE_RULES, stripSlop } from "@/lib/post-style";
-import type { PlanId } from "@/lib/plans";
+import { effectivePlan } from "@/lib/plans";
 
 export const maxDuration = 120;
 
@@ -191,7 +191,7 @@ Return ONLY the post text. No quotes, no explanations.`;
   let post = "";
 
   if (provider === "openai") {
-    const openaiModel = model || "gpt-5.4-mini";
+    const openaiModel = model || "gpt-5.6-terra";
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
@@ -421,7 +421,7 @@ Return ONLY a JSON array of 5 strings. Example:
   let ideas: string[] = [];
 
   if (provider === "openai") {
-    const openaiModel = model || "gpt-5.4-mini";
+    const openaiModel = model || "gpt-5.6-terra";
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
@@ -650,7 +650,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
   let editedPost = "";
 
   if (provider === "openai") {
-    const openaiModel = model || "gpt-5.4-mini";
+    const openaiModel = model || "gpt-5.6-terra";
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
@@ -851,7 +851,7 @@ export async function POST(request: NextRequest) {
     // (action === "generate") and refinements (action === "edit") do NOT count;
     // they're part of the same cycle. Carousel is Business-only so irrelevant.
     const countableAction = action === "ideas";
-    const userPlan = (session.user.plan || "free") as PlanId;
+    const userPlan = effectivePlan({ plan: session.user.plan, isAdmin: session.user.isAdmin });
     let limitCheck: Awaited<ReturnType<typeof checkGenerationLimit>> | null = null;
     if (countableAction) {
       limitCheck = await checkGenerationLimit(session.user.id, userPlan);
@@ -910,12 +910,12 @@ export async function POST(request: NextRequest) {
       kimi: aiSettingsUser.kimiModel,
     };
 
-    const defaultModel = provider === "openai" ? "gpt-5.4-mini" :
+    const defaultModel = provider === "openai" ? "gpt-5.6-terra" :
                          provider === "anthropic" ? "claude-sonnet-5" :
                          provider === "google" ? "gemini-3-flash-preview" :
                          provider === "grok" ? "grok-4.3" :
                          provider === "perplexity" ? "sonar-pro" :
-                         provider === "kimi" ? "kimi-k2.6" : "gpt-5.4-mini";
+                         provider === "kimi" ? "kimi-k2.6" : "gpt-5.6-terra";
     const model = providerModelMap[provider] || defaultModel;
 
     let samplePosts: string[] | undefined;
@@ -1065,7 +1065,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
     let slides: CarouselSlide[] = [];
 
     if (provider === "openai") {
-      const openaiModel = model || "gpt-5.4-mini";
+      const openaiModel = model || "gpt-5.6-terra";
       const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
       const isGPT5 = openaiModel.startsWith("gpt-5");
 

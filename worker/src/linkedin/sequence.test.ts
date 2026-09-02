@@ -70,7 +70,7 @@ async function freshDb(): Promise<DB> {
     agentsOnAccount: 1,
     warmupStartedAt: null,
     reviewMode: false,
-    sender: { firstName: "Maria", companyInfo: "website security scans", location: "Montreux" },
+    sender: { firstName: "Nora", companyInfo: "website security scans", location: "Lisbon" },
     cfg: baseCfg(),
   } as AgentContext;
 }
@@ -151,7 +151,7 @@ function deps(
     notify,
     pauseMs: () => 0,
     ...(readReply ? { readReply } : {}),
-    writeMessage: async (_p, step) => ({ body: `Quick question for you about your work. Maria (${step})`, angle: step }),
+    writeMessage: async (_p, step) => ({ body: `Quick question for you about your work. Nora (${step})`, angle: step }),
   };
 }
 
@@ -259,7 +259,7 @@ test("the hello goes out before anything with substance in it", async () => {
   const d = deps(fakeActions());
   d.writeMessage = async (_p, step) => {
     steps.push(step);
-    return { body: "Good to be connected Jane. Maria", angle: step };
+    return { body: "Good to be connected Jane. Nora", angle: step };
   };
   await seed(db, STATUS.connected, daysAgo(3));
   await runSequence(baseCfg(), db, d);
@@ -351,7 +351,7 @@ test("small talk is answered by the agent, not handed over", async () => {
   const actions = fakeActions({
     inboxRepliers: async () => ["Jane Doe"],
     readThread: async () => [
-      { from: "them", body: "Thanks Maria, nice meeting you. What made you look for solo SaaS founders?" },
+      { from: "them", body: "Thanks Nora, nice meeting you. What made you look for solo SaaS founders?" },
     ],
   });
   await runSequence(

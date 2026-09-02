@@ -1,6 +1,6 @@
 ---
 title: "Reddit to LinkedIn"
-description: "Turn viral Reddit discussions into engaging LinkedIn content ideas and posts."
+description: Turn viral Reddit discussions into engaging LinkedIn content ideas and posts.
 category: "content-creation"
 order: 6
 ---
@@ -61,7 +61,3 @@ Popular subreddits for business content include r/entrepreneur, r/startups, r/ma
 **Credit the source when appropriate.** If you are directly referencing a specific Reddit post or user's insight, mentioning that you "saw an interesting discussion on Reddit" adds authenticity without needing to link directly.
 
 **Use it for inspiration, not copying.** The goal is to take ideas that are trending in communities and bring your professional expertise to the conversation.
-
-## Plan availability
-
-Reddit importing is available on Pro and Business plans as part of the content repurposing feature.

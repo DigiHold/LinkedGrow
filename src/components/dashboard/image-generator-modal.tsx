@@ -1,5 +1,6 @@
 "use client";
 
+import { uploadFileToStorage } from "@/lib/upload-client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +21,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { PlanId, canAccessFeature } from "@/lib/plans";
+import { PlanId, canAccessFeature, UPGRADE_PATH } from "@/lib/plans";
 
 interface ImageGeneratorModalProps {
   open: boolean;
@@ -180,7 +181,7 @@ export function ImageGeneratorModal({
 
     setIsUploading(true);
     try {
-      // Convert base64 to blob for R2 upload
+      // Convert base64 to blob for the upload
       const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -189,42 +190,15 @@ export function ImageGeneratorModal({
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: mimeType });
 
-      // Get presigned URL for R2 upload
       const filename = generatedFilename || `ai-image-${Date.now().toString(36)}.webp`;
-      const presignRes = await fetch("/api/media/presign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: filename,
-          contentType: mimeType,
-          fileSize: blob.size,
-        }),
-      });
-
-      if (!presignRes.ok) {
-        const err = await presignRes.json().catch(() => null);
-        throw new Error(err?.error || "Failed to prepare upload");
-      }
-
-      const { uploadUrl, key, publicUrl } = await presignRes.json();
-
-      // Upload to R2
-      const uploadRes = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": mimeType },
-        body: blob,
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload image to storage");
-      }
+      const stored = await uploadFileToStorage(blob, filename, mimeType, "image to storage");
 
       onImageGenerated({
         base64: base64Data,
-        mimeType,
+        mimeType: stored.mimeType,
         preview: generatedImage,
-        storageUrl: publicUrl,
-        storageKey: key,
+        storageUrl: stored.publicUrl,
+        storageKey: stored.key,
       });
       onOpenChange(false);
     } catch (err) {
@@ -305,7 +279,7 @@ export function ImageGeneratorModal({
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               AI image generation is available on the Pro plan and above. Upgrade to create stunning visuals for your LinkedIn posts.
             </p>
-            <a href="/dashboard/upgrade">
+            <a href={UPGRADE_PATH}>
               <Button variant="linkedin">
                 Upgrade to Pro
               </Button>

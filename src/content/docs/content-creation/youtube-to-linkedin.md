@@ -1,6 +1,6 @@
 ---
 title: "YouTube to LinkedIn"
-description: "Turn any YouTube video into engaging LinkedIn posts by extracting key insights from the transcript."
+description: Turn any YouTube video into engaging LinkedIn posts by extracting key insights from the transcript.
 category: "content-creation"
 order: 7
 ---
@@ -42,6 +42,6 @@ The selected post opens in the editor where you can refine the text, attach imag
 - **Credit the creator.** Mention the video creator in your post - it builds goodwill and they might engage with your post.
 - **Works with any video that has a transcript.** The AI needs a transcript to work with, so videos without captions or auto-generated subtitles may not produce results.
 
-## Plan availability
+## Availability
 
-YouTube to LinkedIn is available on Pro and Business plans. It uses the same repurposing tool as Reddit, Blog, and Web page sources.
+YouTube to LinkedIn is available to every user of the instance and uses the same repurposing tool as the Reddit, blog and web page sources.

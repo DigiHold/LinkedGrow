@@ -1,5 +1,5 @@
 import type { AgentContext } from "../config.ts";
-import { generate, MODELS } from "../ai.ts";
+import { generate, models } from "../ai.ts";
 
 /**
  * The two model calls that decide whether a person is worth contacting at all.
@@ -37,7 +37,8 @@ export async function judgeAsking(ctx: AgentContext, postText: string): Promise<
     "When it is not clearly someone with the problem, answer SHARING.",
   ].join("\n");
   try {
-    const raw = await generate(ctx, prompt, { maxTokens: 8, purpose: "judge", model: MODELS.fast });
+    const m = await models();
+    const raw = await generate(ctx, prompt, { maxTokens: 8, purpose: "judge", model: m.fast });
     return /^\s*asking/i.test(cleanOutput(raw));
   } catch {
     return false; // never contact someone on a failed judgement
@@ -100,7 +101,8 @@ export async function judgeIcpFit(
     .filter(Boolean)
     .join("\n");
   try {
-    const raw = await generate(ctx, prompt, { maxTokens: 8, purpose: "judge", model: MODELS.fast });
+    const m = await models();
+    const raw = await generate(ctx, prompt, { maxTokens: 8, purpose: "judge", model: m.fast });
     return /^\s*fit/i.test(cleanOutput(raw));
   } catch {
     return false;

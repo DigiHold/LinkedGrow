@@ -56,7 +56,7 @@ test("the greeting guard catches the name the model invented", () => {
     namesSomebodyElse(
       "Glad we connected, Marija. Running a summit sounds like a lot on your plate.",
       "Mr Happiness - Sasho Jovanovski",
-      "Maria"
+      "Jane"
     ),
     "Marija"
   );
@@ -67,7 +67,7 @@ test("the guard passes the prospect's own name in any position", () => {
     namesSomebodyElse(
       "Glad we connected, Sasho. Running a summit sounds like a lot on your plate.",
       "Mr Happiness - Sasho Jovanovski",
-      "Maria"
+      "Jane"
     ),
     null
   );
@@ -75,7 +75,7 @@ test("the guard passes the prospect's own name in any position", () => {
 
 test("the guard ignores a message with no greeting name at all", () => {
   assert.equal(
-    namesSomebodyElse("Running a summit sounds like a lot on your plate.", "Sasho Jovanovski", "Maria"),
+    namesSomebodyElse("Running a summit sounds like a lot on your plate.", "Sasho Jovanovski", "Jane"),
     null
   );
 });

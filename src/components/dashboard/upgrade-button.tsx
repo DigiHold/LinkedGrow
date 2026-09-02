@@ -2,6 +2,7 @@
 
 import { Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UPGRADE_PATH } from "@/lib/plans";
 
 interface UpgradeButtonProps {
   planName: string;
@@ -14,7 +15,7 @@ export function UpgradeButton({
 }: UpgradeButtonProps) {
   if (variant === "inline") {
     return (
-      <a href="/dashboard/upgrade">
+      <a href={UPGRADE_PATH}>
         <Button
           size="sm"
           className="bg-amber-600 hover:bg-amber-700 text-white"
@@ -27,7 +28,7 @@ export function UpgradeButton({
   }
 
   return (
-    <a href="/dashboard/upgrade">
+    <a href={UPGRADE_PATH}>
       <Button
         variant="linkedin"
         size="xl"

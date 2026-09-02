@@ -1,6 +1,7 @@
 node_modules/
 .env
 .env.*
+!.env.example
 profiles/
 *.log
 .DS_Store

@@ -2,9 +2,9 @@
   "title": "FAQ",
   "description": "Answers to frequently asked questions about LinkedGrow, AI costs, LinkedIn integration, and more.",
   "overview": [
-    "This section answers the questions people ask before and after they create an account: what LinkedGrow does, how the BYOK model changes what you pay for AI, which LinkedIn permissions are involved, and how billing and cancellation work.",
-    "The short version is that LinkedGrow writes, schedules, and publishes your LinkedIn content, and you connect your own AI provider key instead of paying a bundled AI markup. Most people spend $2 to $4 per month on AI usage on top of their plan. Every new account starts with a 7-day trial. A card is taken at signup and charged when the trial ends, and you can cancel any time before then.",
-    "If the answer you need is not below, the rest of the documentation goes deeper on each feature, or you can email contact@linkedgrow.ai and we will help you directly."
+    "This section answers the questions people ask before and after they create an account: what LinkedGrow does, how the BYOK model changes what you pay for AI, and how the LinkedIn connection works.",
+    "The short version is that LinkedGrow writes, schedules, and publishes your LinkedIn content, and you connect your own AI provider key instead of paying a bundled AI markup. Most people spend $2 to $4 per month on AI usage.",
+    "If the answer you need is not below, the rest of the documentation goes deeper on each feature, and the issue tracker on GitHub is the place to report what is broken."
   ],
   "order": 12,
   "icon": "help-circle"

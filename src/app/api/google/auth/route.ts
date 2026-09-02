@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleAuthUrl, isGoogleConfigured } from '@/lib/google';
 import { randomBytes } from 'crypto';
+import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
 
 function sanitizeCallbackUrl(url: string | null): string | null {
   if (!url) return null;
@@ -16,11 +17,17 @@ export async function GET(request: NextRequest) {
   const popup = searchParams.get('popup') === 'true';
   const callbackUrl = sanitizeCallbackUrl(searchParams.get('callbackUrl'));
 
+  // The pages hide the button unless NEXT_PUBLIC_GOOGLE_SIGNIN is set; a direct
+  // request to an instance without Google gets a plain answer.
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return NextResponse.json({ error: 'Google sign in is not configured' }, { status: 404 });
+  }
+
   // Check if Google credentials are configured
   if (!isGoogleConfigured()) {
     const errorMessage = 'Google login is not configured';
     if (popup) {
-      const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
+      const appOrigin = getAppUrl();
       return new NextResponse(
         `<!DOCTYPE html>
         <html>
@@ -40,14 +47,14 @@ export async function GET(request: NextRequest) {
       );
     }
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent(errorMessage)}`
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent(errorMessage)}`
     );
   }
 
   // Generate a random state to prevent CSRF attacks
   const state = randomBytes(16).toString('hex');
 
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/google/callback`;
+  const redirectUri = `${getAppUrl()}/api/google/callback`;
   const authUrl = getGoogleAuthUrl(redirectUri, state);
 
   const response = NextResponse.redirect(authUrl);
@@ -55,7 +62,7 @@ export async function GET(request: NextRequest) {
   // Set state cookie for verification
   response.cookies.set('google_oauth_state', state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureAppUrl(),
     sameSite: 'lax',
     maxAge: 60 * 10, // 10 minutes
     path: '/',
@@ -64,7 +71,7 @@ export async function GET(request: NextRequest) {
   // Store mode (login or register) for callback
   response.cookies.set('google_oauth_mode', mode, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureAppUrl(),
     sameSite: 'lax',
     maxAge: 60 * 10, // 10 minutes
     path: '/',
@@ -74,7 +81,7 @@ export async function GET(request: NextRequest) {
   if (newsletter) {
     response.cookies.set('google_newsletter', 'true', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureAppUrl(),
       sameSite: 'lax',
       maxAge: 60 * 10, // 10 minutes
       path: '/',
@@ -85,7 +92,7 @@ export async function GET(request: NextRequest) {
   if (popup) {
     response.cookies.set('google_popup', 'true', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureAppUrl(),
       sameSite: 'lax',
       maxAge: 60 * 10, // 10 minutes
       path: '/',
@@ -96,7 +103,7 @@ export async function GET(request: NextRequest) {
   if (callbackUrl) {
     response.cookies.set('google_callback_url', callbackUrl, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureAppUrl(),
       sameSite: 'lax',
       maxAge: 60 * 10, // 10 minutes
       path: '/',

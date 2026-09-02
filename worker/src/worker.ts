@@ -4,7 +4,7 @@ import { db, loadRunnableAgents, touchRun, pauseAgent, flagAccount, requestSignI
 import type { AgentContext } from "./config.ts";
 import { log, logError } from "./logger.ts";
 import { assertCanSend, HaltedError } from "./guards.ts";
-import { BudgetExceededError, classifyReply } from "./ai.ts";
+import { BudgetExceededError, NO_AI_KEY_MESSAGE, NoAiKeyError, classifyReply, models } from "./ai.ts";
 import {
   openSession,
   closeSession,
@@ -42,6 +42,12 @@ import {
 import { getStyleSamples } from "./linkedin/style.ts";
 import { announce, stopAnnouncing } from "./store.ts";
 import { sleep, randInt } from "./browser/human.ts";
+import { EDITION } from "./edition.ts";
+import { cronLoop } from "./cron/pass.ts";
+
+if (EDITION !== "cloud" && (process.env.STRIPE_SECRET_KEY || process.env.QSTASH_TOKEN)) {
+  throw new Error("cloud secrets present but LINKEDGROW_EDITION is not cloud");
+}
 
 /**
  * The worker plane's run loop.
@@ -122,6 +128,13 @@ async function runAgent(ctx: AgentContext): Promise<void> {
   const canWrite = isWithinBusinessHours(ctx.cfg);
 
   await assertCanSend(ctx);
+
+  // No key, no pass, and the reason goes on the agent itself: the owner of a
+  // self hosted instance reads the dashboard, not the journal.
+  if (!(await models()).apiKey) {
+    await pauseAgent(ctx, NO_AI_KEY_MESSAGE);
+    return;
+  }
 
   const proxy = await allocationFor(ctx.linkedinAccountId);
   if (!proxy && isProduction()) {
@@ -412,6 +425,10 @@ async function safely(ctx: AgentContext): Promise<void> {
       await recordEvent(ctx, "budget", error.message);
       return;
     }
+    if (error instanceof NoAiKeyError) {
+      await pauseAgent(ctx, error.message);
+      return;
+    }
     if (error instanceof ProxyMismatchError) {
       await pauseAgent(
         ctx,
@@ -618,7 +635,7 @@ async function main(): Promise<void> {
   // No loop ever returns, and none may take the others down: a thrown error
   // inside one is already handled per pass, and Promise.all here only keeps the
   // process alive.
-  await Promise.all([agentLoop(), connectLoop(), publishLoop(), insightsLoop()]);
+  await Promise.all([agentLoop(), connectLoop(), publishLoop(), insightsLoop(), cronLoop(sleep, shuttingDown)]);
 }
 
 if (import.meta.filename === process.argv[1]) {

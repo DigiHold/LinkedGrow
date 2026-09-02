@@ -9,7 +9,7 @@ import { HELLO_SHAPES, pickHelloShape } from "./relationship.ts";
  * On 2026-07-31 Nicolas received one that read as pure AI:
  *
  *   "Owning a site end to end, from AEO diagnosis to the WordPress fix, is why
- *    I hit connect. Really good to meet you, Jonathan. Maria Lecocq"
+ *    I hit connect. Really good to meet you, Jonathan. Jane Doe"
  *
  * Three faults, and the prompt was asking for all three: a template that forced
  * an inverted clause nobody says out loud, a required name at the bottom that
@@ -22,14 +22,14 @@ import { HELLO_SHAPES, pickHelloShape } from "./relationship.ts";
  */
 
 const ctx = {
-  senderName: "Maria",
+  senderName: "Jane",
   headline: "Head of Talent at Northwind",
   step: "hello" as const,
 };
 
 test("the exact message that started this is refused", () => {
   const result = validateMessage(
-    "Owning a site end to end, from AEO diagnosis to the WordPress fix, is why I hit connect.\nReally good to meet you, Jonathan.\nMaria",
+    "Owning a site end to end, from AEO diagnosis to the WordPress fix, is why I hit connect.\nReally good to meet you, Jonathan.\nJane",
     ctx
   );
   assert.equal(result.ok, false);
@@ -51,7 +51,7 @@ test("claiming to have met them is refused", () => {
 
 test("signing the message is refused, because LinkedIn already shows the name", () => {
   const result = validateMessage(
-    "Glad we connected, Jonathan. That client site going down right before a launch is the kind of week nobody deserves.\nMaria",
+    "Glad we connected, Jonathan. That client site going down right before a launch is the kind of week nobody deserves.\nJane",
     ctx
   );
   assert.equal(result.ok, false);

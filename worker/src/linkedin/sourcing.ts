@@ -8,7 +8,7 @@ import {
   setLeadScore,
   unscoredLeads,
 } from "../db.ts";
-import { BudgetExceededError, scoreLead } from "../ai.ts";
+import { BudgetExceededError, NoAiKeyError, scoreLead } from "../ai.ts";
 import { announce, keepAlive } from "../store.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, readMeter, type Engager } from "./miner.ts";
@@ -1121,7 +1121,7 @@ export async function sourcePass(
   try {
     await scorePass(ctx);
   } catch (error) {
-    if (error instanceof BudgetExceededError) throw error;
+    if (error instanceof BudgetExceededError || error instanceof NoAiKeyError) throw error;
     log("the scoring pass did not complete", {
       agentId: ctx.agentId,
       reason: error instanceof Error ? error.message : String(error),
@@ -1209,7 +1209,7 @@ export async function scorePass(ctx: AgentContext): Promise<void> {
     } catch (error) {
       // A budget ceiling stops the whole pass; anything else is one lead that
       // stays unscored and is picked up next time.
-      if (error instanceof BudgetExceededError) throw error;
+      if (error instanceof BudgetExceededError || error instanceof NoAiKeyError) throw error;
       log("could not score a lead", {
         lead: name,
         reason: error instanceof Error ? error.message : String(error),

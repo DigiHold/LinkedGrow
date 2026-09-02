@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isCloud } from "@/lib/edition";
 
 export function DocsFooter() {
   return (
@@ -7,20 +8,36 @@ export function DocsFooter() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-6 text-sm text-slate-500 dark:text-slate-400">
             <Link href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              LinkedGrow.ai
+              LinkedGrow
             </Link>
-            <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Pricing
-            </Link>
-            <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Blog
-            </Link>
+            {/* The pricing and blog pages exist on the cloud only. */}
+            {isCloud() && (
+              <>
+                <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+                  Pricing
+                </Link>
+                <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+                  Blog
+                </Link>
+              </>
+            )}
           </div>
           <div className="text-sm text-slate-500 dark:text-slate-400">
             Need help?{" "}
-            <a href="mailto:contact@linkedgrow.ai" className="text-cyan-600 dark:text-cyan-400 hover:underline">
-              Contact support
-            </a>
+            {isCloud() ? (
+              <a href="mailto:contact@linkedgrow.ai" className="text-cyan-600 dark:text-cyan-400 hover:underline">
+                Contact support
+              </a>
+            ) : (
+              <a
+                href="https://github.com/DigiHold/LinkedGrow/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-600 dark:text-cyan-400 hover:underline"
+              >
+                Report an issue
+              </a>
+            )}
           </div>
         </div>
       </div>

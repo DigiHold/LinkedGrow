@@ -9,8 +9,8 @@ import {
   apiErrorResponse,
   apiSuccessResponse,
 } from "@/lib/api-auth";
-import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
-import { PLANS, PlanId } from "@/lib/plans";
+import { uploadToR2, isR2Configured, absoluteMediaUrl } from "@/lib/storage/r2";
+import { PLANS, effectivePlan } from "@/lib/plans";
 import { users } from "@/lib/db/schema";
 import sharp from "sharp";
 
@@ -38,7 +38,7 @@ function serializePost(
     metadata: post.metadata ? JSON.parse(post.metadata) : null,
     media: postMedia.map((m) => ({
       id: m.id,
-      storageUrl: m.storageUrl,
+      storageUrl: absoluteMediaUrl(m.storageUrl),
       mimeType: m.mimeType,
       fileSize: m.fileSize,
       width: m.width,
@@ -62,7 +62,7 @@ async function processAndUploadImage(
   base64Input: string,
   userId: string
 ): Promise<{ storageUrl: string; storageKey: string; mimeType: string; fileSize: number; width: number | null; height: number | null } | { error: string; status: number }> {
-  if (!isR2Configured()) {
+  if (!(await isR2Configured())) {
     return { error: "Storage not configured", status: 503 };
   }
 
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
       return apiErrorResponse("User not found", 404);
     }
 
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan({ plan: user.plan, isAdmin: user.isAdmin });
 
     // Check monthly post creation limit
     const postsPerMonthLimit = PLANS[userPlan].limits.postsPerMonth;

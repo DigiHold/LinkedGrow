@@ -164,7 +164,7 @@ export async function openSession(
   // Chrome's first launch on a brand-new profile fails often enough to matter,
   // and it fails hard: the process dies on SIGTRAP with crashpad complaining
   // about its own socket, and nothing about the second attempt is different
-  // except that it works. It cost Maria's first sign-in on 2026-07-31.
+  // except that it works. It cost the first real sign-in on 2026-07-31.
   //
   // The profile is never deleted between attempts. It may already hold the
   // session cookie, and throwing that away to fix a launch would turn a hiccup
@@ -259,8 +259,12 @@ function launchChrome(
   fp: ReturnType<typeof fingerprintFor>,
   proxy: ProxyAllocation | null
 ) {
+  // Google Chrome ships for amd64 only. An arm64 host points CHROME_PATH at a
+  // Chromium binary instead; nothing else about the launch changes, and the
+  // fingerprint keeps reporting a Chrome user agent.
+  const chromePath = optionalEnv("CHROME_PATH");
   return chromium.launchPersistentContext(userDataDir, {
-    channel: "chrome",
+    ...(chromePath ? { executablePath: chromePath } : { channel: "chrome" }),
     // Headful under a virtual display. Section 8a layer 2.
     headless: false,
     viewport: windowFor(fp),

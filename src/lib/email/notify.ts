@@ -1,12 +1,13 @@
 /**
- * Sending the agent and lifecycle emails.
+ * Sending the agent and operations emails.
  *
  * The templates know nothing about who they go to. This file is the only place
  * that pairs a template with a subject and an address, so a subject line is
  * never written twice and the plain-text version is never forgotten.
  */
 
-import { sendEmail } from "./ses-client";
+import { sendEmail, opsRecipient } from "./ses-client";
+import { instanceBrandName } from "./brand-name";
 import {
   type Lead,
   leadsDigestSubject,
@@ -26,48 +27,10 @@ import {
   firstDayEmailText,
 } from "./templates/agent-alert-emails";
 import {
-  abandonedCheckoutSubject,
-  abandonedCheckoutEmailTemplate,
-  abandonedCheckoutEmailText,
-  trialEndingSubject,
-  trialEndingEmailTemplate,
-  trialEndingEmailText,
-  paymentFailedSubject,
-  paymentFailedEmailTemplate,
-  paymentFailedEmailText,
-  churnImmediateSubject,
-  churnImmediateEmailTemplate,
-  churnImmediateEmailText,
-  churnValueSubject,
-  churnValueEmailTemplate,
-  churnValueEmailText,
-  churnAskSubject,
-  churnAskEmailTemplate,
-  churnAskEmailText,
-} from "./templates/lifecycle-emails";
-import {
   selectorAlertSubject,
   selectorAlertEmailTemplate,
   selectorAlertEmailText,
 } from "./templates/ops-emails";
-import {
-  signupWelcomeSubject,
-  signupWelcomeEmailTemplate,
-  signupWelcomeEmailText,
-  welcomeSubject,
-  welcomeEmailTemplate,
-  welcomeEmailText,
-  noAgentSubject,
-  noAgentEmailTemplate,
-  noAgentEmailText,
-  noAccountSubject,
-  noAccountEmailTemplate,
-  noAccountEmailText,
-  halfwaySubject,
-  halfwayEmailTemplate,
-  halfwayEmailText,
-} from "./templates/onboarding-emails";
-
 /** Everything here is addressed by first name, and a missing one is common. */
 function firstNameOf(name: string | null | undefined): string {
   const first = (name ?? "").trim().split(/\s+/)[0];
@@ -85,10 +48,11 @@ export async function sendLeadsDigestEmail(params: {
   agentId: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: leadsDigestSubject(params.count),
-    html: leadsDigestEmailTemplate({ ...params, firstName }),
+    html: leadsDigestEmailTemplate({ ...params, firstName, instanceName }),
     text: leadsDigestEmailText({ ...params, firstName }),
   });
 }
@@ -100,10 +64,11 @@ export async function sendVerificationNeededEmail(params: {
   agentId: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: verificationSubject,
-    html: verificationEmailTemplate({ ...params, firstName }),
+    html: verificationEmailTemplate({ ...params, firstName, instanceName }),
     text: verificationEmailText({ ...params, firstName }),
   });
 }
@@ -116,10 +81,11 @@ export async function sendAgentStoppedEmail(params: {
   agentId: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: agentStoppedSubject,
-    html: agentStoppedEmailTemplate({ ...params, firstName }),
+    html: agentStoppedEmailTemplate({ ...params, firstName, instanceName }),
     text: agentStoppedEmailText({ ...params, firstName }),
   });
 }
@@ -132,10 +98,11 @@ export async function sendReplyEmail(params: {
   agentContinues: boolean;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: replySubject(params.from),
-    html: replyEmailTemplate({ ...params, firstName }),
+    html: replyEmailTemplate({ ...params, firstName, instanceName }),
     text: replyEmailText({ ...params, firstName }),
   });
 }
@@ -149,172 +116,12 @@ export async function sendFirstDayEmail(params: {
   agentId: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
   return sendEmail({
     to: params.to,
     subject: firstDaySubject,
-    html: firstDayEmailTemplate({ ...params, firstName }),
+    html: firstDayEmailTemplate({ ...params, firstName, instanceName }),
     text: firstDayEmailText({ ...params, firstName }),
-  });
-}
-
-// ------------------------------------------------------------------ lifecycle
-
-export async function sendAbandonedCheckoutEmail(params: {
-  to: string;
-  name: string | null;
-  deletedOn?: string;
-}) {
-  const firstName = firstNameOf(params.name);
-  const rest = params.deletedOn ? { deletedOn: params.deletedOn } : {};
-  return sendEmail({
-    to: params.to,
-    subject: abandonedCheckoutSubject,
-    html: abandonedCheckoutEmailTemplate({ firstName, ...rest }),
-    text: abandonedCheckoutEmailText({ firstName, ...rest }),
-  });
-}
-
-export async function sendTrialEndingEmail(params: {
-  to: string;
-  name: string | null;
-  endsOn: string;
-  price: string;
-  found: number;
-  invited: number;
-  accepted: number;
-  replied: number;
-}) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: trialEndingSubject,
-    html: trialEndingEmailTemplate({ ...params, firstName }),
-    text: trialEndingEmailText({ ...params, firstName }),
-  });
-}
-
-export async function sendPaymentFailedEmail(params: {
-  to: string;
-  name: string | null;
-  graceDays: number;
-}) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: paymentFailedSubject,
-    html: paymentFailedEmailTemplate({ ...params, firstName }),
-    text: paymentFailedEmailText({ ...params, firstName }),
-  });
-}
-
-export async function sendChurnImmediateEmail(params: {
-  to: string;
-  name: string | null;
-}) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: churnImmediateSubject,
-    html: churnImmediateEmailTemplate({ firstName }),
-    text: churnImmediateEmailText({ firstName }),
-  });
-}
-
-export async function sendChurnValueEmail(params: {
-  to: string;
-  name: string | null;
-  read: number;
-  kept: number;
-}) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: churnValueSubject,
-    html: churnValueEmailTemplate({ ...params, firstName }),
-    text: churnValueEmailText({ ...params, firstName }),
-  });
-}
-
-export async function sendChurnAskEmail(params: { to: string; name: string | null }) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: churnAskSubject,
-    html: churnAskEmailTemplate({ firstName }),
-    text: churnAskEmailText({ firstName }),
-  });
-}
-
-// ----------------------------------------------------------------- onboarding
-
-export async function sendSignupWelcomeEmail(params: { to: string; name: string | null }) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: signupWelcomeSubject,
-    html: signupWelcomeEmailTemplate({ firstName }),
-    text: signupWelcomeEmailText({ firstName }),
-  });
-}
-
-export async function sendTrialWelcomeEmail(params: {
-  to: string;
-  name: string | null;
-  endsOn: string;
-  agentReady: boolean;
-}) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: welcomeSubject,
-    html: welcomeEmailTemplate({ ...params, firstName }),
-    text: welcomeEmailText({ ...params, firstName }),
-  });
-}
-
-export async function sendNoAgentEmail(params: {
-  to: string;
-  name: string | null;
-  daysLeft: number;
-}) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: noAgentSubject,
-    html: noAgentEmailTemplate({ ...params, firstName }),
-    text: noAgentEmailText({ ...params, firstName }),
-  });
-}
-
-export async function sendNoAccountEmail(params: {
-  to: string;
-  name: string | null;
-  agentName: string;
-  agentId: string;
-}) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: noAccountSubject,
-    html: noAccountEmailTemplate({ ...params, firstName }),
-    text: noAccountEmailText({ ...params, firstName }),
-  });
-}
-
-export async function sendHalfwayEmail(params: {
-  to: string;
-  name: string | null;
-  found: number;
-  invited: number;
-  replied: number;
-  agentId: string;
-}) {
-  const firstName = firstNameOf(params.name);
-  return sendEmail({
-    to: params.to,
-    subject: halfwaySubject,
-    html: halfwayEmailTemplate({ ...params, firstName }),
-    text: halfwayEmailText({ ...params, firstName }),
   });
 }
 
@@ -330,10 +137,13 @@ export async function sendSelectorAlertEmail(params: {
   agentFailures: number;
   missing: string[];
 }) {
+  const to = await opsRecipient();
+  if (!to) return { success: true, skipped: true as const, messageId: null };
+  const instanceName = await instanceBrandName();
   return sendEmail({
-    to: "contact@linkedgrow.ai",
+    to,
     subject: selectorAlertSubject,
-    html: selectorAlertEmailTemplate(params),
+    html: selectorAlertEmailTemplate({ ...params, instanceName }),
     text: selectorAlertEmailText(params),
   });
 }

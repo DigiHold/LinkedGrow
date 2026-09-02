@@ -1,0 +1,59 @@
+services:
+  db:
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    restart: unless-stopped
+    environment:
+      SQLD_NODE: primary
+      SQLD_DB_PATH: /var/lib/sqld/iku.db
+    volumes:
+      - db-data:/var/lib/sqld
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      TURSO_DATABASE_URL: http://db:8080
+      TURSO_AUTH_TOKEN: ""
+      LINKEDGROW_EDITION: self-hosted
+      STORAGE_ROOT: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      TURSO_DATABASE_URL: http://db:8080
+      TURSO_AUTH_TOKEN: ""
+      LINKEDGROW_EDITION: self-hosted
+      WORKER_ENV: production
+      APP_INTERNAL_URL: http://app:3000
+      WORKER_SLOTS: ${WORKER_SLOTS:-2}
+    shm_size: "2gb"
+    volumes:
+      - profiles:/data/profiles
+      - uploads:/data/uploads
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  uploads:
+  profiles:

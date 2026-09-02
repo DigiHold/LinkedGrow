@@ -78,7 +78,7 @@ test("the final write keeps the order id rather than replacing it with the proxy
  * An address is only in the country it is REGISTERED in.
  *
  * The purchase check asked one geolocation database and believed it. On
- * 2026-07-31 that database said Paris about 213.164.108.143 while the RIPE
+ * 2026-07-31 that database said Paris about 203.0.113.7 while the RIPE
  * record for its block said netname BITE-HRS, country LT, and LinkedIn emailed
  * Nicolas three times about the same address: Paris once, Vilnius twice. An
  * account that appears to move between countries is worse off than one seen

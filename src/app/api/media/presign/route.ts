@@ -3,7 +3,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { getPresignedUploadUrl, isR2Configured } from "@/lib/storage/r2";
+import { rateLimit } from "@/lib/rate-limit";
+import { getPresignedUploadUrl, isR2Configured, DIRECT_UPLOAD_UNAVAILABLE } from "@/lib/storage/r2";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime"];
@@ -21,7 +22,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!isR2Configured()) {
+    // A presigned URL is an upload the bucket will accept, so it counts as one.
+    const uploadLimit = rateLimit(`media-upload:${session.user.id}`, {
+      maxRequests: 60,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!uploadLimit.success) {
+      return NextResponse.json(
+        { error: "Too many uploads. Try again later." },
+        { status: 429 }
+      );
+    }
+
+    if (!(await isR2Configured())) {
       return NextResponse.json(
         { error: "Storage not configured" },
         { status: 503 }
@@ -77,12 +90,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const presigned = await getPresignedUploadUrl({
-      fileName,
-      contentType,
-      userId: user.id,
-      postId,
-    });
+    let presigned: { uploadUrl: string; key: string; publicUrl: string };
+    try {
+      presigned = await getPresignedUploadUrl({
+        fileName,
+        contentType,
+        userId: user.id,
+        postId,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === DIRECT_UPLOAD_UNAVAILABLE) {
+        return NextResponse.json(
+          { error: "Direct upload is not available on this storage. Use the standard upload." },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
 
     return NextResponse.json(presigned);
   } catch (error) {

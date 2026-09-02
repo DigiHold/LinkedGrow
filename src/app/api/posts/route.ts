@@ -6,8 +6,7 @@ import { posts, media, users, teams, teamMembers, linkedinAccounts } from "@/lib
 import { loadSessionUser } from "@/lib/auth-user";
 import { eq, desc, and, inArray, or, count, gte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { PLANS, PlanId } from "@/lib/plans";
-import { setBrevoAttributes, brevoDate } from "@/lib/newsletter";
+import { PLANS, effectivePlan } from "@/lib/plans";
 import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
 import sharp from "sharp";
 
@@ -284,7 +283,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check monthly post creation limit for Free plan
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan({ plan: user.plan, isAdmin: user.isAdmin });
     const postsPerMonthLimit = PLANS[userPlan].limits.postsPerMonth;
 
     if (postsPerMonthLimit !== -1) {
@@ -331,7 +330,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check scheduled posts limit for user's plan
-      const userPlan = (user.plan || "free") as PlanId;
+      const userPlan = effectivePlan({ plan: user.plan, isAdmin: user.isAdmin });
       const scheduledPostsLimit = PLANS[userPlan].limits.scheduledPosts;
 
       if (scheduledPostsLimit !== -1) {
@@ -371,7 +370,7 @@ export async function POST(request: NextRequest) {
     // This supports Reddit/Generator pages that send base64 images directly
     let processedMediaInfo = mediaInfo;
     if (mediaData?.base64 && !mediaInfo?.storageUrl) {
-      if (!isR2Configured()) {
+      if (!(await isR2Configured())) {
         return NextResponse.json(
           { error: "Storage not configured" },
           { status: 503 }
@@ -447,24 +446,6 @@ return NextResponse.json(
       updatedAt: now,
     });
 
-    // Sync total post count to Brevo so POSTS_CREATED attribute stays
-    // accurate. Fire-and-forget. We query the total count rather than
-    // incrementing because Brevo has no atomic increment operation.
-    if (user.email) {
-      (async () => {
-        try {
-          const [totalCount] = await db
-            .select({ count: count() })
-            .from(posts)
-            .where(eq(posts.userId, user.id));
-          await setBrevoAttributes(user.email, {
-            POSTS_CREATED: totalCount?.count ?? 0,
-          });
-        } catch {
-          // Silent fail
-        }
-      })();
-    }
 
     // Link already-uploaded R2 media to this post
     let uploadedMedia: typeof media.$inferSelect | null = null;

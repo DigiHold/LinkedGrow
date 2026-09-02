@@ -1,6 +1,6 @@
 ---
 title: "Setting Up AI API Keys"
-description: "Overview of the BYOK model and how to configure your AI API key for content generation in LinkedGrow."
+description: Overview of the BYOK model and how to configure your AI API key for content generation in LinkedGrow.
 category: "getting-started"
 order: 3
 ---
@@ -23,8 +23,6 @@ This means unlimited generations at cost. Most users spend $2-4 per month on AI 
 - **Kimi (Moonshot AI)** - Kimi K2.5, Kimi K2
 
 ### Image generation (3 providers, 14 models)
-
-Image generation requires the Pro plan or above.
 
 - **Google AI** - Nano Banana Pro, Nano Banana, Imagen 4 Ultra, Imagen 4, Imagen 4 Fast
 - **OpenAI** - GPT Image 1.5, GPT Image 1, GPT Image 1 Mini

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fetch as undiciFetch, ProxyAgent } from "undici";
 import { log } from "../logger.ts";
+import { localKeyFromUrl, readObject } from "../storage/local.ts";
 import { capturePage } from "./diagnose.ts";
 import {
   clickHumanLocator,
@@ -261,61 +262,87 @@ export function sniffImage(
   return null;
 }
 
-export async function downloadAttachment(
+const UNREADABLE_ATTACHMENT =
+  "The attachment could not be read back from storage, so nothing was posted.";
+
+/**
+ * The attachment's bytes. A file on this instance's own disk is read off the
+ * shared volume, because the app's public name is not always reachable from
+ * inside the worker's container. Everything else is fetched, through the
+ * account's own address when it has one. A relative URL is only ever one of
+ * the local driver's, so when it is not readable as a file there is nothing
+ * to fetch: it never goes to the network.
+ */
+async function attachmentBytes(
   url: string,
-  fileName: string,
-  proxy: { server: string; username: string; password: string } | null,
-  mimeType: string | null = null
-): Promise<{ path: string; mimeType: string | null; cleanup: () => void }> {
+  proxy: { server: string; username: string; password: string } | null
+): Promise<Buffer> {
+  const localKey = await localKeyFromUrl(url);
+  if (localKey) {
+    let bytes: Buffer | null;
+    try {
+      bytes = await readObject(localKey);
+    } catch {
+      bytes = null;
+    }
+    if (!bytes) throw new PublishError(UNREADABLE_ATTACHMENT);
+    return bytes;
+  }
+  if (url.startsWith("/")) throw new PublishError(UNREADABLE_ATTACHMENT);
+
   const dispatcher = proxy
     ? new ProxyAgent({
         uri: proxy.server,
         token: `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64")}`,
       })
     : undefined;
-
   try {
     const response = await undiciFetch(url, dispatcher ? { dispatcher } : {});
-    if (!response.ok) {
-      throw new PublishError(
-        "The attachment could not be read back from storage, so nothing was posted."
-      );
-    }
-    const bytes = Buffer.from(await response.arrayBuffer());
-
-    const dir = mkdtempSync(join(tmpdir(), "lg-publish-"));
-    const safeName = fileName.replace(/[^\w.-]/g, "_") || "attachment";
-    let realMime: string | null = null;
-
-    /**
-     * What the bytes are, not what the name says. Greg's "portland.jpeg" was
-     * an AVIF file: his browser labelled it from the extension, storage served
-     * it as image/jpeg, and LinkedIn, which reads the bytes, answered "This
-     * image format is not supported" and kept the composer open. The bytes are
-     * checked here against what LinkedIn takes (JPEG, PNG, GIF, and WebP,
-     * which it accepts in the composer), and anything else is refused with
-     * that list, permanently: retrying the same file cannot change the answer.
-     */
-    const declaredImage = /^image\//i.test(mimeType ?? "") || /\.(jpe?g|png|gif|webp|avif|heic|heif|bmp|tiff?)$/i.test(safeName);
-    if (declaredImage) {
-      const kind = sniffImage(bytes);
-      if (kind === "jpeg" || kind === "png" || kind === "gif" || kind === "webp") {
-        realMime = `image/${kind}`;
-      } else {
-        rmSync(dir, { recursive: true, force: true });
-        throw new PublishError(
-          `LinkedIn rejects this image format${kind ? ` (${kind.toUpperCase()})` : ""}. Accepted formats: JPEG, PNG, GIF, WebP. Please replace the image and publish again.`,
-          { permanent: true }
-        );
-      }
-    }
-
-    const path = join(dir, safeName);
-    writeFileSync(path, bytes);
-    return { path, mimeType: realMime, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+    if (!response.ok) throw new PublishError(UNREADABLE_ATTACHMENT);
+    return Buffer.from(await response.arrayBuffer());
   } finally {
     await dispatcher?.close().catch(() => {});
   }
+}
+
+export async function downloadAttachment(
+  url: string,
+  fileName: string,
+  proxy: { server: string; username: string; password: string } | null,
+  mimeType: string | null = null
+): Promise<{ path: string; mimeType: string | null; cleanup: () => void }> {
+  const bytes = await attachmentBytes(url, proxy);
+
+  const dir = mkdtempSync(join(tmpdir(), "lg-publish-"));
+  const safeName = fileName.replace(/[^\w.-]/g, "_") || "attachment";
+  let realMime: string | null = null;
+
+  /**
+   * What the bytes are, not what the name says. Greg's "portland.jpeg" was
+   * an AVIF file: his browser labelled it from the extension, storage served
+   * it as image/jpeg, and LinkedIn, which reads the bytes, answered "This
+   * image format is not supported" and kept the composer open. The bytes are
+   * checked here against what LinkedIn takes (JPEG, PNG, GIF, and WebP,
+   * which it accepts in the composer), and anything else is refused with
+   * that list, permanently: retrying the same file cannot change the answer.
+   */
+  const declaredImage = /^image\//i.test(mimeType ?? "") || /\.(jpe?g|png|gif|webp|avif|heic|heif|bmp|tiff?)$/i.test(safeName);
+  if (declaredImage) {
+    const kind = sniffImage(bytes);
+    if (kind === "jpeg" || kind === "png" || kind === "gif" || kind === "webp") {
+      realMime = `image/${kind}`;
+    } else {
+      rmSync(dir, { recursive: true, force: true });
+      throw new PublishError(
+        `LinkedIn rejects this image format${kind ? ` (${kind.toUpperCase()})` : ""}. Accepted formats: JPEG, PNG, GIF, WebP. Please replace the image and publish again.`,
+        { permanent: true }
+      );
+    }
+  }
+
+  const path = join(dir, safeName);
+  writeFileSync(path, bytes);
+  return { path, mimeType: realMime, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
 /** The first visible element in a set, because LinkedIn ships hidden duplicates. */

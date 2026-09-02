@@ -1,5 +1,6 @@
 "use client";
 
+import { uploadFileToStorage } from "@/lib/upload-client";
 import { useState, useRef, useCallback, forwardRef, useImperativeHandle, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -283,42 +284,15 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
 
       setIsUploading(true);
       try {
-        // Get presigned URL from our API
-        const presignRes = await fetch("/api/media/presign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: file.name,
-            contentType: file.type,
-            fileSize: file.size,
-          }),
-        });
+        const stored = await uploadFileToStorage(file, file.name, file.type, "image");
 
-        if (!presignRes.ok) {
-          const err = await presignRes.json().catch(() => null);
-          throw new Error(err?.error || "Failed to prepare upload");
-        }
-
-        const { uploadUrl, key, publicUrl } = await presignRes.json();
-
-        // Upload directly to R2 via presigned URL
-        const uploadRes = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error("Failed to upload image");
-        }
-
-        // Update state with R2 URL (no base64 needed)
+        // Update state with the stored URL (no base64 needed)
         onImageChange?.({
           base64: "",
-          mimeType: file.type,
+          mimeType: stored.mimeType,
           preview: previewUrl,
-          storageUrl: publicUrl,
-          storageKey: key,
+          storageUrl: stored.publicUrl,
+          storageKey: stored.key,
         });
       } catch (error) {
         onError?.(error instanceof Error ? error.message : "Failed to upload image");
@@ -361,42 +335,15 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
 
       setIsUploading(true);
       try {
-        // Get presigned URL from our API
-        const presignRes = await fetch("/api/media/presign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: file.name,
-            contentType: file.type,
-            fileSize: file.size,
-          }),
-        });
+        const stored = await uploadFileToStorage(file, file.name, file.type, "video");
 
-        if (!presignRes.ok) {
-          const err = await presignRes.json().catch(() => null);
-          throw new Error(err?.error || "Failed to prepare upload");
-        }
-
-        const { uploadUrl, key, publicUrl } = await presignRes.json();
-
-        // Upload directly to R2 via presigned URL
-        const uploadRes = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error("Failed to upload video");
-        }
-
-        // Update state with R2 URL
+        // Update state with the stored URL
         onImageChange?.({
           base64: "",
-          mimeType: file.type,
+          mimeType: stored.mimeType,
           preview: previewUrl,
-          storageUrl: publicUrl,
-          storageKey: key,
+          storageUrl: stored.publicUrl,
+          storageKey: stored.key,
         });
       } catch (error) {
         onError?.(error instanceof Error ? error.message : "Failed to upload video");
@@ -413,42 +360,15 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
     const handleCarouselSelect = async (file: File) => {
       setIsUploading(true);
       try {
-        // Get presigned URL from our API
-        const presignRes = await fetch("/api/media/presign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: file.name,
-            contentType: "application/pdf",
-            fileSize: file.size,
-          }),
-        });
+        const stored = await uploadFileToStorage(file, file.name, "application/pdf", "carousel PDF");
 
-        if (!presignRes.ok) {
-          const err = await presignRes.json().catch(() => null);
-          throw new Error(err?.error || "Failed to prepare upload");
-        }
-
-        const { uploadUrl, key, publicUrl } = await presignRes.json();
-
-        // Upload directly to R2 via presigned URL
-        const uploadRes = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": "application/pdf" },
-          body: file,
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error("Failed to upload carousel PDF");
-        }
-
-        // Update state with R2 URL
+        // Update state with the stored URL
         onImageChange?.({
           base64: "",
           mimeType: "application/pdf",
           preview: "",
-          storageUrl: publicUrl,
-          storageKey: key,
+          storageUrl: stored.publicUrl,
+          storageKey: stored.key,
         });
       } catch (error) {
         onError?.(error instanceof Error ? error.message : "Failed to upload carousel");

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 // Keeping a copy here is how the card came to print a ramp the engine was
 // never going to follow.
 import { RAMP, dayPace, workingDays } from "@/lib/agent-pace";
+import { isUnlimitedQuota, UPGRADE_PATH } from "@/lib/plans";
 
 /**
  * The agents list, built to the v2 dashboard prototype.
@@ -309,7 +310,7 @@ export function AgentsContent() {
         // No subscription means the agent story starts at the checkout, not
         // at an empty list with a button that will only refuse them later.
         if (payload.requiresCheckout) {
-          window.location.replace("/dashboard/upgrade");
+          window.location.replace(UPGRADE_PATH);
           return;
         }
         if (!cancelled) setData(payload);
@@ -342,11 +343,11 @@ export function AgentsContent() {
         <div className="flex-1" />
         {quota && (
           <Pill tone="neutral">
-            {running} / {quota.limit} running
+            {isUnlimitedQuota(quota.limit) ? `${running} running` : `${running} / ${quota.limit} running`}
           </Pill>
         )}
         <Link
-          href={atLimit ? "/dashboard/upgrade" : "/dashboard/agents/new"}
+          href={atLimit ? UPGRADE_PATH : "/dashboard/agents/new"}
           className="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
         >
           Create an agent
@@ -545,7 +546,7 @@ export function AgentsContent() {
 
         {data && (
           <Link
-            href={atLimit ? "/dashboard/upgrade" : "/dashboard/agents/new"}
+            href={atLimit ? UPGRADE_PATH : "/dashboard/agents/new"}
             className="flex flex-wrap items-center gap-3.5 rounded-2xl border border-dashed border-slate-300 p-[22px] transition-colors hover:border-blue-600/50 dark:border-white/15"
           >
             <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-blue-50 text-lg text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">

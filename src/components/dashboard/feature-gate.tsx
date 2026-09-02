@@ -30,6 +30,7 @@ import {
   canAccessFeature,
   getRequiredPlanForFeature,
   getMissingFeatures,
+  UPGRADE_PATH,
 } from "@/lib/plans";
 import { useSession } from "next-auth/react";
 import { UpgradeButton } from "./upgrade-button";
@@ -116,7 +117,7 @@ export function FeatureGate({ feature, children }: FeatureGateProps) {
         <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
           <UpgradeButton planName={planInfo.name} />
           <a
-            href="/dashboard/upgrade"
+            href={UPGRADE_PATH}
             className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           >
             Compare all plans
