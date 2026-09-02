@@ -1,7 +1,6 @@
 import { db } from "./db.ts";
 import { decryptSecret } from "./crypto.ts";
-import { EDITION } from "./edition.ts";
-import { optionalEnv } from "./config.ts";
+import { EDITION, type Edition } from "./edition.ts";
 
 /**
  * What the setup wizard stored about this instance, read the way the app
@@ -35,19 +34,25 @@ let cache: { at: number; value: InstanceSecrets } | null = null;
 const TTL_MS = 30_000;
 
 /** The cloud keeps reading its environment. The self hosted edition reads the wizard's row. */
-export async function instance(): Promise<InstanceSecrets> {
-  if (EDITION === "cloud") {
+export function instance(): Promise<InstanceSecrets> {
+  return instanceFor(EDITION, process.env);
+}
+
+/** The same resolution with the edition and the environment passed in, so both branches can be tested in one process. */
+export async function instanceFor(edition: Edition, env: Record<string, string | undefined>): Promise<InstanceSecrets> {
+  if (edition === "cloud") {
+    const fromEnv = (name: string): string | null => env[name] || null;
     return {
       agentAiProvider: "anthropic",
-      agentAiKey: optionalEnv("ANTHROPIC_API_KEY"),
+      agentAiKey: fromEnv("ANTHROPIC_API_KEY"),
       agentAiModelFast: null,
       agentAiModelWriter: null,
       agentDailyCapUsd: 1.0,
       accountMonthlyCapUsd: 12.0,
-      proxySellerKey: optionalEnv("PROXY_SELLER_API_KEY"),
+      proxySellerKey: fromEnv("PROXY_SELLER_API_KEY"),
       cronSecret: null,
       adminEmail: null,
-      appUrl: optionalEnv("APP_URL"),
+      appUrl: fromEnv("APP_URL"),
       timezone: null,
       storageProvider: null,
       s3Endpoint: null,
