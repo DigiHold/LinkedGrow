@@ -19,6 +19,8 @@ export interface InstanceSecrets {
   cronSecret: string | null;
   adminEmail: string | null;
   appUrl: string | null;
+  /** The IANA zone the wizard chose; the cron schedule reads its clock here. */
+  timezone: string | null;
   /** Null in the cloud, which reads its bucket from the environment. */
   storageProvider: "local" | "s3" | null;
   s3Endpoint: string | null;
@@ -46,6 +48,7 @@ export async function instance(): Promise<InstanceSecrets> {
       cronSecret: null,
       adminEmail: null,
       appUrl: optionalEnv("APP_URL"),
+      timezone: null,
       storageProvider: null,
       s3Endpoint: null,
       s3Region: null,
@@ -71,6 +74,7 @@ export async function instance(): Promise<InstanceSecrets> {
     cronSecret: dec(r.cron_secret_encrypted),
     adminEmail: text(r.admin_email),
     appUrl: text(r.app_url),
+    timezone: text(r.timezone),
     storageProvider: r.storage_provider === "s3" ? "s3" : "local",
     s3Endpoint: text(r.s3_endpoint),
     s3Region: text(r.s3_region),
