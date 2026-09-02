@@ -9,12 +9,12 @@ services:
       - db-data:/var/lib/sqld
 
   app:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.app
+    image: ghcr.io/digihold/linkedgrow:${LINKEDGROW_VERSION:-latest}
     restart: unless-stopped
+    # Bound to the loopback address by default, so only the reverse proxy on this
+    # machine reaches it. APP_BIND=0.0.0.0 in .env opens the port to the network.
     ports:
-      - "3000:3000"
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
     env_file: .env
     environment:
       TURSO_DATABASE_URL: http://db:8080
@@ -33,9 +33,7 @@ services:
       start_period: 90s
 
   worker:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.worker
+    image: ghcr.io/digihold/linkedgrow-worker:${LINKEDGROW_VERSION:-latest}
     restart: unless-stopped
     env_file: .env
     environment:
@@ -53,7 +51,27 @@ services:
       app:
         condition: service_healthy
 
+  # Runs only with COMPOSE_PROFILES=https in .env, which the installer sets when
+  # you give it a domain. It gets the certificate and renews it on its own.
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    profiles: ["https"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
 volumes:
   db-data:
   uploads:
   profiles:
+  caddy-data:
+  caddy-config:

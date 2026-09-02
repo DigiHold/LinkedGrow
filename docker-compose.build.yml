@@ -1,0 +1,23 @@
+# Build the 2 images from this checkout instead of pulling them from ghcr.io:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# The image names stay the same, so a build replaces the pulled image locally.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+
+  # From a checkout the Caddy configuration is still under docker/, while the
+  # installer copies it next to the compose file.
+  caddy:
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
