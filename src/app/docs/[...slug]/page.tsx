@@ -16,6 +16,12 @@ import { TableOfContents } from "@/components/docs/table-of-contents";
 import { ArticleFeedback } from "@/components/docs/article-feedback";
 import { ProseContent } from "@/components/docs/prose-content";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
+import { getAppUrl } from "@/lib/app-url";
+import { isCloud } from "@/lib/edition";
+
+const APP_URL = getAppUrl();
+// The default OG image lives on the cloud's R2 bucket.
+const CLOUD_OG_IMAGE = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp";
 
 interface PageProps {
   params: Promise<{ slug: string[] }>;
@@ -54,23 +60,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       openGraph: {
         title: `${category.title} - LinkedGrow Docs`,
         description: category.description,
-        url: `https://linkedgrow.ai/docs/${slug[0]}`,
+        url: `${APP_URL}/docs/${slug[0]}`,
         siteName: "LinkedGrow",
         type: "website",
-        images: [
-          {
-            url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
-            width: 1200,
-            height: 630,
-            alt: `${category.title} - LinkedGrow Documentation`,
-          },
-        ],
+        ...(isCloud()
+          ? { images: [{ url: CLOUD_OG_IMAGE, width: 1200, height: 630, alt: `${category.title} - LinkedGrow Documentation` }] }
+          : {}),
       },
       twitter: {
         card: "summary_large_image",
         title: `${category.title} - LinkedGrow Docs`,
         description: category.description,
-        images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+        ...(isCloud() ? { images: [CLOUD_OG_IMAGE] } : {}),
       },
     };
   }
@@ -85,23 +86,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       openGraph: {
         title: `${article.title} - LinkedGrow Docs`,
         description: article.description,
-        url: `https://linkedgrow.ai/docs/${slug[0]}/${slug[1]}`,
+        url: `${APP_URL}/docs/${slug[0]}/${slug[1]}`,
         siteName: "LinkedGrow",
         type: "article",
-        images: [
-          {
-            url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
-            width: 1200,
-            height: 630,
-            alt: `${article.title} - LinkedGrow Documentation`,
-          },
-        ],
+        ...(isCloud()
+          ? { images: [{ url: CLOUD_OG_IMAGE, width: 1200, height: 630, alt: `${article.title} - LinkedGrow Documentation` }] }
+          : {}),
       },
       twitter: {
         card: "summary_large_image",
         title: `${article.title} - LinkedGrow Docs`,
         description: article.description,
-        images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+        ...(isCloud() ? { images: [CLOUD_OG_IMAGE] } : {}),
       },
     };
   }
@@ -123,9 +119,9 @@ function CategoryPage({
     <>
       <BreadcrumbJsonLd
         items={[
-          { name: "Home", url: "https://linkedgrow.ai" },
-          { name: "Documentation", url: "https://linkedgrow.ai/docs" },
-          { name: category.title, url: `https://linkedgrow.ai/docs/${category.slug}` },
+          { name: "Home", url: APP_URL },
+          { name: "Documentation", url: `${APP_URL}/docs` },
+          { name: category.title, url: `${APP_URL}/docs/${category.slug}` },
         ]}
       />
       <DocsHeader searchIndex={searchIndex} />
@@ -213,10 +209,10 @@ function ArticlePage({
     <>
       <BreadcrumbJsonLd
         items={[
-          { name: "Home", url: "https://linkedgrow.ai" },
-          { name: "Documentation", url: "https://linkedgrow.ai/docs" },
-          { name: article.categoryTitle, url: `https://linkedgrow.ai/docs/${article.category}` },
-          { name: article.title, url: `https://linkedgrow.ai/docs/${article.category}/${article.slug}` },
+          { name: "Home", url: APP_URL },
+          { name: "Documentation", url: `${APP_URL}/docs` },
+          { name: article.categoryTitle, url: `${APP_URL}/docs/${article.category}` },
+          { name: article.title, url: `${APP_URL}/docs/${article.category}/${article.slug}` },
         ]}
       />
       <DocsHeader searchIndex={searchIndex} />

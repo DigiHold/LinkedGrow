@@ -11,6 +11,8 @@
  * new template cannot invent its own header again.
  */
 
+import { policyLinksHtml } from "./policy-links";
+
 interface BaseTemplateParams {
   preheader?: string;
   content: string;
@@ -173,18 +175,7 @@ ${content}
                                                         <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 14px; line-height: 150%; margin-bottom: 0;">LinkedGrow - Find leads and clients on LinkedIn, on autopilot<br>78 Avenue des Champs-Elysees, Paris, France</p>
                                                     </td>
                                                 </tr>
-                                                <tr>
-                                                    <td height="16" style="line-height: 16px;"></td>
-                                                </tr>
-                                                <tr>
-                                                    <td align="center">
-                                                        <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 14px; line-height: 150%; margin-bottom: 0;">
-                                                            <a href="https://linkedgrow.ai/privacy" style="color: #45556C; text-decoration: underline;">Privacy Policy</a>
-                                                            <span style="color: #45556C;"> | </span>
-                                                            <a href="https://linkedgrow.ai/cookies" style="color: #45556C; text-decoration: underline;">Cookie Policy</a>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+${policyLinksHtml()}
                                             </table>
                                         </td>
                                     </tr>

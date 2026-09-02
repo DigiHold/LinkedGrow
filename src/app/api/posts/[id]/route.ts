@@ -7,7 +7,6 @@ import { loadSessionUser } from "@/lib/auth-user";
 import { eq, and, inArray, count, gte } from "drizzle-orm";
 import { deleteMultipleFromR2, uploadToR2, isR2Configured } from "@/lib/storage/r2";
 import sharp from "sharp";
-import { cancelScheduledPost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
 import { PLANS, effectivePlan } from "@/lib/plans";
 import { canUserAccessPost } from "@/lib/post-access";
@@ -223,14 +222,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (firstComment !== undefined)
       updateData.firstComment = firstComment?.trim() || null;
 
-    // Unscheduling still cancels an upstream job, because posts scheduled
-    // before the API removal can still have one. Nothing new is queued: see
-    // the note in src/lib/qstash.ts.
+    // Unscheduling clears the id of any job queued before the API removal.
+    // Nothing new is queued: a scheduled post is a row the worker reads.
     const wasScheduled = existingPost.status === "scheduled";
     const willBeScheduled = (status ?? existingPost.status) === "scheduled";
 
     if (wasScheduled && !willBeScheduled && existingPost.qstashMessageId) {
-      await cancelScheduledPost(existingPost.qstashMessageId);
       updateData.qstashMessageId = null;
     }
 
@@ -417,15 +414,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const canAccess = await canUserAccessPost(user.id, existingPost.userId);
     if (!canAccess) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
-
-    // Cancel QStash scheduled message if post was scheduled
-    if (existingPost.status === "scheduled" && existingPost.qstashMessageId) {
-      try {
-        await cancelScheduledPost(existingPost.qstashMessageId);
-      } catch (e) {
-// Continue with deletion even if QStash cancel fails
-      }
     }
 
     // Get associated media to delete from R2

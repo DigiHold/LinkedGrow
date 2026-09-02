@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeGoogleCodeForToken, getGoogleUserInfo } from '@/lib/google';
 import { db, users, accounts } from '@/lib/db';
-import { affiliates, affiliateReferrals } from '@/lib/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
 import { newUserPolicy, SIGNUPS_CLOSED_MESSAGE } from '@/lib/registration';
-
-import { signUp, subscribeToNewsletter, brevoDate } from '@/lib/newsletter';
-import { sendSignupWelcomeEmail } from '@/lib/email';
 
 
 function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
@@ -55,7 +51,6 @@ export async function GET(request: NextRequest) {
   // Get cookies
   const storedState = request.cookies.get('google_oauth_state')?.value;
   const mode = request.cookies.get('google_oauth_mode')?.value || 'login';
-  const subscribeNewsletterCookie = request.cookies.get('google_newsletter')?.value === 'true';
   const isPopup = request.cookies.get('google_popup')?.value === 'true';
   const callbackUrl = sanitizeCallbackUrl(request.cookies.get('google_callback_url')?.value);
 
@@ -120,19 +115,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (mode === 'register') {
-      // Registration flow
-      if (user) {
-        // User already exists - redirect to login
-        if (isPopup) {
-          return createPopupResponse(false, { error: 'An account with this email already exists. Please sign in instead.' });
-        }
-        return NextResponse.redirect(
-          `${getAppUrl()}/sign-in?error=${encodeURIComponent('An account with this email already exists. Please sign in instead.')}`
-        );
-      }
-
-      // Self hosted: the first account is the administrator and sign ups may
-      // be closed. The cloud path answers plan free, never admin, never closed.
+      // Registration flow. Self hosted: the first account is the administrator
+      // and sign ups may be closed. The cloud path answers plan free, never
+      // admin, never closed. Checked before the "already exists" answer, so a
+      // closed instance never confirms which addresses hold an account.
       const policy = await newUserPolicy();
       if (policy.closed) {
         if (isPopup) {
@@ -143,23 +129,18 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      if (user) {
+        // User already exists - redirect to login
+        if (isPopup) {
+          return createPopupResponse(false, { error: 'An account with this email already exists. Please sign in instead.' });
+        }
+        return NextResponse.redirect(
+          `${getAppUrl()}/sign-in?error=${encodeURIComponent('An account with this email already exists. Please sign in instead.')}`
+        );
+      }
+
       // Create new user (don't store Google profile picture - only LinkedIn pictures are stored)
       const userId = randomUUID();
-
-      // Check for affiliate referral cookie
-      const refCode = request.cookies.get('lg_ref')?.value;
-      let validAffiliate: { id: string; referralCode: string } | null = null;
-      if (refCode) {
-        const aff = await db.query.affiliates.findFirst({
-          where: and(
-            eq(affiliates.referralCode, refCode),
-            eq(affiliates.status, 'approved'),
-          ),
-        });
-        if (aff) {
-          validAffiliate = { id: aff.id, referralCode: aff.referralCode };
-        }
-      }
 
       await db.insert(users).values({
         id: userId,
@@ -175,28 +156,9 @@ export async function GET(request: NextRequest) {
         isAdmin: policy.isAdmin,
         hasUsedTrial: false,
         twoFactorEnabled: false,
-        referredBy: validAffiliate?.referralCode || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-
-      // Track affiliate referral
-      if (validAffiliate) {
-        await db.insert(affiliateReferrals).values({
-          id: randomUUID(),
-          affiliateId: validAffiliate.id,
-          referredUserId: userId,
-          status: 'signed_up',
-          createdAt: new Date(),
-        });
-        await db
-          .update(affiliates)
-          .set({
-            totalSignups: sql`${affiliates.totalSignups} + 1`,
-            updatedAt: new Date(),
-          })
-          .where(eq(affiliates.id, validAffiliate.id));
-      }
 
       // Link Google account
       await db.insert(accounts).values({
@@ -217,37 +179,6 @@ export async function GET(request: NextRequest) {
       user = await db.query.users.findFirst({
         where: eq(users.id, userId),
       });
-
-      // Add every new user to the Welcome list (#9) for segmentation. The
-      // welcome email itself is ours (sendSignupWelcomeEmail below); the old
-      // Brevo automation on this list is gone. Also add to the Blog list
-      // (#11) if they opted in via the newsletter checkbox on the sign-up
-      // page. Seed free-user conversion attributes so the daily cron has a
-      // known starting state.
-      const fullName = googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim();
-      signUp({
-        email: googleUser.email,
-        name: fullName,
-        source: 'google_signup',
-        attributes: {
-          PLAN: "free",
-          IS_PAID: false,
-          SIGNUP_DATE: brevoDate(new Date()),
-          LINKEDIN_CONNECTED: false,
-          AI_KEY_ADDED: false,
-          POSTS_CREATED: 0,
-          POSTS_PUBLISHED: 0,
-        },
-      }).catch(() => {});
-      if (subscribeNewsletterCookie) {
-        subscribeToNewsletter({ email: googleUser.email, name: fullName, source: 'google_signup' }).catch(() => {});
-      }
-
-      // Awaited on purpose: Vercel freezes the function once the redirect
-      // returns, so a fire-and-forget send dies mid-flight.
-      try {
-        await sendSignupWelcomeEmail({ to: googleUser.email, name: fullName || null });
-      } catch {}
 
     } else {
       // Login flow

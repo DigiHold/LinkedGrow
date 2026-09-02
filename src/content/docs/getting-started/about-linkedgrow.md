@@ -31,7 +31,7 @@ LinkedGrow's mission is to democratize LinkedIn success by giving everyone acces
 
 - **Creator-First** - Every feature starts with one question: will this help creators grow their LinkedIn presence faster?
 - **Privacy by Design** - Your AI keys stay yours. Your content stays yours. We never train on your data.
-- **Radical Transparency** - BYOK pricing means you see exactly what you pay. No hidden fees, no surprises.
+- **Radical Transparency** - BYOK means the AI bill comes from your own provider, so you see exactly what you pay for AI.
 - **Results-Obsessed** - We measure success by your follower growth and engagement rates, not vanity metrics.
 - **Human + AI** - AI amplifies your unique voice. You stay in control of your content and brand.
 - **Continuous Innovation** - Monthly updates ensure you always have access to the latest LinkedIn growth strategies.

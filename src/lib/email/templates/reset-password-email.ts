@@ -1,3 +1,4 @@
+import { policyLinksHtml, policyLinksText } from "./policy-links";
 // Password reset email template - transactional email sent via Brevo
 interface ResetPasswordEmailParams {
   name?: string;
@@ -294,18 +295,7 @@ export function resetPasswordEmailTemplate({
                                                         <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 14px; line-height: 150%; margin-bottom: 0;">LinkedGrow - AI-Powered LinkedIn Content Platform<br>78 Avenue des Champs-Elysees, Paris, France</p>
                                                     </td>
                                                 </tr>
-                                                <tr>
-                                                    <td height="16" style="line-height: 16px;"></td>
-                                                </tr>
-                                                <tr>
-                                                    <td align="center">
-                                                        <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 14px; line-height: 150%; margin-bottom: 0;">
-                                                            <a href="https://linkedgrow.ai/privacy" style="color: #45556C; text-decoration: underline;">Privacy Policy</a>
-                                                            <span style="color: #45556C;"> | </span>
-                                                            <a href="https://linkedgrow.ai/cookies" style="color: #45556C; text-decoration: underline;">Cookie Policy</a>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+${policyLinksHtml()}
                                             </table>
                                         </td>
                                     </tr>
@@ -360,7 +350,6 @@ Founders of LinkedGrow
 LinkedGrow - AI-Powered LinkedIn Content Platform
 78 Avenue des Champs-Elysees, Paris, France
 
-Privacy Policy: https://linkedgrow.ai/privacy
-Cookie Policy: https://linkedgrow.ai/cookies
+${policyLinksText()}
 `;
 }

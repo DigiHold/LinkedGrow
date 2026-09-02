@@ -7,7 +7,7 @@ order: 1
 
 ## Create your account
 
-Head to [linkedgrow.ai/sign-up](https://linkedgrow.ai/sign-up) to create your free account. You have three options:
+Open the sign up page of your LinkedGrow instance to create your account. You can create it in 2 ways:
 
 - **Email and password** - Enter your email and choose a password
 - **Sign in with Google** - Use your Google account for one-click signup
@@ -83,7 +83,7 @@ Your dashboard is the command center. Here is what you will find:
 - **Upcoming schedule** - Your next 3 scheduled posts with publish times
 - **API key status** - An alert if you have not configured an AI provider yet, or a green confirmation when connected
 
-The sidebar gives you access to all features: Generator, Editor, Ideas, Hooks, Repurpose, Carousel, Posts library, Calendar, A/B Testing, Engagement (Pro+), Analytics (Pro+), and Team (Business).
+The sidebar gives you access to all features: Generator, Editor, Ideas, Hooks, Repurpose, Carousel, Posts library, Calendar, A/B Testing, Analytics, and Team.
 
 ## Next steps
 

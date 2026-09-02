@@ -1,4 +1,5 @@
 import { baseEmailTemplate } from "./base-template";
+import { getAppUrl } from "@/lib/app-url";
 import { p, lead, small, button, figures, quote } from "./parts";
 
 /**
@@ -14,7 +15,7 @@ import { p, lead, small, button, figures, quote } from "./parts";
  * something up before they know whether it matters.
  */
 
-const APP = "https://linkedgrow.ai";
+const APP = getAppUrl();
 
 export const selectorAlertSubject = "\u{1F6A8} Publishing is failing across accounts";
 

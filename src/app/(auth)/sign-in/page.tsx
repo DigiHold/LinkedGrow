@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, Shield, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { redirectToCheckout } from "@/lib/checkout";
+import { isCloud } from "@/lib/edition";
 import { sanitizeCallbackUrl } from "@/lib/url";
 
 // Official Google G icon
@@ -72,15 +72,6 @@ function SignInForm() {
           setErrorMessage(errorCode);
         }
       } else if (result?.ok) {
-        // If user came from LTD page, redirect to LTD checkout
-        // If user came from pricing with a plan selected, try Stripe checkout first
-        const plan = searchParams.get("plan");
-        if (plan) {
-          const interval = (searchParams.get("interval") as "month" | "year") || "month";
-          const coupon = searchParams.get("coupon") || undefined;
-          const redirected = await redirectToCheckout(plan, email, undefined, interval, coupon);
-          if (redirected) return;
-        }
         router.push(callbackUrl);
       }
     } catch {
@@ -120,16 +111,7 @@ function SignInForm() {
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
-        const session = await updateSession();
-        const userEmail = session?.user?.email;
-        // If user came from pricing with a plan selected, try Stripe checkout first
-        const plan = searchParams.get("plan");
-        if (plan && userEmail) {
-          const interval = (searchParams.get("interval") as "month" | "year") || "month";
-          const coupon = searchParams.get("coupon") || undefined;
-          const redirected = await redirectToCheckout(plan, userEmail, undefined, interval, coupon);
-          if (redirected) return;
-        }
+        await updateSession();
         // Use callbackUrl from the OAuth response if provided, otherwise use the one from URL
         const redirectTo = sanitizeCallbackUrl(event.data.callbackUrl || callbackUrl);
         router.push(redirectTo);
@@ -337,12 +319,15 @@ function SignInForm() {
             </Link>
           </div>
 
-          <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
-            By signing in, you agree to our{" "}
-            <Link href="/terms" className="hover:underline text-slate-600 dark:text-slate-400">Terms</Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="hover:underline text-slate-600 dark:text-slate-400">Privacy Policy</Link>
-          </p>
+          {/* The terms and privacy pages exist on the cloud only. */}
+          {isCloud() && (
+            <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
+              By signing in, you agree to our{" "}
+              <Link href="/terms" className="hover:underline text-slate-600 dark:text-slate-400">Terms</Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="hover:underline text-slate-600 dark:text-slate-400">Privacy Policy</Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

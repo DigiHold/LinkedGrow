@@ -3,7 +3,6 @@ import { createHash } from "crypto";
 import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { linkedinAccounts, proxyAllocations } from "@/lib/db/schema";
-import { stripe } from "@/lib/stripe";
 import { and, eq, gte, inArray, isNotNull, isNull, like, lt, or, sql, desc, type SQL } from "drizzle-orm";
 
 // Same recipe as the blog comments route: Gravatar keys on the MD5 of the
@@ -172,31 +171,6 @@ export async function GET(request: NextRequest) {
       if (a.linkedinAccountId) allocationByAccount.set(a.linkedinAccountId, a);
     }
 
-    // The billing truth for this page's subscribers, straight from Stripe:
-    // trial end, scheduled cancellation, payment state. Only the few rows
-    // holding a subscription id cost an API call, and a failed lookup shows
-    // as no detail rather than a broken page.
-    const subDetails = new Map<
-      string,
-      { status: string; trialEnd: number | null; cancelAt: number | null }
-    >();
-    await Promise.all(
-      usersList
-        .filter((u) => u.stripeSubscriptionId)
-        .map(async (u) => {
-          const sub = await stripe.subscriptions
-            .retrieve(u.stripeSubscriptionId as string)
-            .catch(() => null);
-          if (sub) {
-            subDetails.set(u.id, {
-              status: sub.status,
-              trialEnd: sub.trial_end ?? null,
-              cancelAt: sub.cancel_at ?? null,
-            });
-          }
-        })
-    );
-
     return NextResponse.json({
       users: usersList.map((user) => {
         const accounts = (accountsByUser.get(user.id) ?? []).map((a) => {
@@ -247,7 +221,8 @@ export async function GET(request: NextRequest) {
           // Paid means a live Stripe subscription, never the plan column: v1
           // wrote plan values (LTD holders carry business) with no card behind.
           hasSubscription: !!user.stripeSubscriptionId,
-          subscription: subDetails.get(user.id) ?? null,
+          // The cloud fills this from Stripe; there is no billing here.
+          subscription: null,
           accounts,
           spareIps,
         };

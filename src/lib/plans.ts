@@ -272,6 +272,14 @@ export function effectiveAgentQuota(plan: PlanId, extraAgents = 0): number {
   return effectiveAgentQuotaFor(EDITION, plan, extraAgents);
 }
 
+/**
+ * Where "upgrade" leads. The plan picker exists on the cloud only; a self
+ * hosted instance has every plan gate unlocked, so nothing that links here
+ * ever renders there and the path points at the settings page rather than
+ * at a 404.
+ */
+export const UPGRADE_PATH = EDITION === "cloud" ? "/dashboard/upgrade" : "/dashboard/settings";
+
 export function getUpgradePath(currentPlan: PlanId): PlanId | null {
   const order: PlanId[] = ["free", "pro", "business"];
   const currentIndex = order.indexOf(currentPlan);

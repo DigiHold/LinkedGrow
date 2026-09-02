@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, users } from "@/lib/db";
-import { affiliates, affiliateReferrals } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
-import { signUp, subscribeToNewsletter, brevoDate } from "@/lib/newsletter";
-import { sendSignupWelcomeEmail } from "@/lib/email";
 import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
 import { newUserPolicy, SIGNUPS_CLOSED_MESSAGE } from "@/lib/registration";
 
@@ -35,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name: rawName, email: rawEmail, password, subscribeNewsletter } = body;
+    const { name: rawName, email: rawEmail, password } = body;
 
     if (!rawEmail || !password) {
       return NextResponse.json(
@@ -82,6 +79,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Self hosted: the first account is the administrator and sign ups may be
+    // closed. The cloud path answers plan free, never admin, never closed.
+    // Checked before the email lookup, so a closed instance never confirms
+    // which addresses already hold an account.
+    const policy = await newUserPolicy();
+    if (policy.closed) {
+      return NextResponse.json({ error: SIGNUPS_CLOSED_MESSAGE }, { status: 403 });
+    }
+
     const existingUser = await db.query.users.findFirst({
       where: eq(users.email, email),
     });
@@ -93,30 +99,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Self hosted: the first account is the administrator and sign ups may be
-    // closed. The cloud path answers plan free, never admin, never closed.
-    const policy = await newUserPolicy();
-    if (policy.closed) {
-      return NextResponse.json({ error: SIGNUPS_CLOSED_MESSAGE }, { status: 403 });
-    }
-
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Check for affiliate referral cookie
-    const refCode = request.cookies.get("lg_ref")?.value;
-    let validAffiliate: { id: string; referralCode: string } | null = null;
-    if (refCode) {
-      const aff = await db.query.affiliates.findFirst({
-        where: and(
-          eq(affiliates.referralCode, refCode),
-          eq(affiliates.status, "approved"),
-        ),
-      });
-      if (aff) {
-        validAffiliate = { id: aff.id, referralCode: aff.referralCode };
-      }
-    }
 
     const userId = randomUUID();
     await db.insert(users).values({
@@ -132,60 +116,9 @@ export async function POST(request: NextRequest) {
       isAdmin: policy.isAdmin,
       hasUsedTrial: false,
       twoFactorEnabled: false,
-      referredBy: validAffiliate?.referralCode || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-
-    // Track affiliate referral
-    if (validAffiliate) {
-      await db.insert(affiliateReferrals).values({
-        id: randomUUID(),
-        affiliateId: validAffiliate.id,
-        referredUserId: userId,
-        status: "signed_up",
-        createdAt: new Date(),
-      });
-      // Increment affiliate's signup count
-      await db
-        .update(affiliates)
-        .set({
-          totalSignups: sql`${affiliates.totalSignups} + 1`,
-          updatedAt: new Date(),
-        })
-        .where(eq(affiliates.id, validAffiliate.id));
-    }
-
-    // Add every new user to the Welcome list (#9) for segmentation. The
-    // welcome email itself is ours (sendSignupWelcomeEmail below); the old
-    // Brevo automation on this list is gone. Also add to the Blog list (#11)
-    // if they opted in via the "Get growth tips" checkbox.
-    // Seed free-user conversion attributes so the daily cron and real-time
-    // hooks have a known starting state for every contact.
-    signUp({
-      email,
-      name: name || undefined,
-      source: "email_signup",
-      attributes: {
-        PLAN: "free",
-        IS_PAID: false,
-        SIGNUP_DATE: brevoDate(new Date()),
-        LINKEDIN_CONNECTED: false,
-        AI_KEY_ADDED: false,
-        POSTS_CREATED: 0,
-        POSTS_PUBLISHED: 0,
-      },
-    }).catch(() => {});
-    if (subscribeNewsletter) {
-      subscribeToNewsletter({ email, name: name || undefined, source: "email_signup" }).catch(() => {});
-    }
-
-    // Awaited on purpose: Vercel freezes the function when the response
-    // returns, so a fire-and-forget send dies mid-flight (the ticket-email
-    // incident). The failure stays silent; signup never breaks over an email.
-    try {
-      await sendSignupWelcomeEmail({ to: email, name: name || null });
-    } catch {}
 
     return NextResponse.json({
       success: true,

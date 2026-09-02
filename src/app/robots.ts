@@ -1,8 +1,13 @@
 import { MetadataRoute } from "next";
-
-const BASE_URL = "https://linkedgrow.ai";
+import { isSelfHosted } from "@/lib/edition";
+import { getAppUrl } from "@/lib/app-url";
 
 export default function robots(): MetadataRoute.Robots {
+  // A self hosted instance is a private product, never a site to index.
+  if (isSelfHosted()) {
+    return { rules: { userAgent: "*", disallow: "/" } };
+  }
+
   const disallowPaths = [
     "/dashboard/",
     "/api/",
@@ -57,6 +62,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: disallowPaths,
       },
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    sitemap: `${getAppUrl()}/sitemap.xml`,
   };
 }

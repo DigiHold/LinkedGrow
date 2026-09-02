@@ -7,7 +7,6 @@ import { loadSessionUser } from "@/lib/auth-user";
 import { eq, desc, and, inArray, or, count, gte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { PLANS, effectivePlan } from "@/lib/plans";
-import { setBrevoAttributes, brevoDate } from "@/lib/newsletter";
 import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
 import sharp from "sharp";
 
@@ -447,24 +446,6 @@ return NextResponse.json(
       updatedAt: now,
     });
 
-    // Sync total post count to Brevo so POSTS_CREATED attribute stays
-    // accurate. Fire-and-forget. We query the total count rather than
-    // incrementing because Brevo has no atomic increment operation.
-    if (user.email) {
-      (async () => {
-        try {
-          const [totalCount] = await db
-            .select({ count: count() })
-            .from(posts)
-            .where(eq(posts.userId, user.id));
-          await setBrevoAttributes(user.email, {
-            POSTS_CREATED: totalCount?.count ?? 0,
-          });
-        } catch {
-          // Silent fail
-        }
-      })();
-    }
 
     // Link already-uploaded R2 media to this post
     let uploadedMedia: typeof media.$inferSelect | null = null;

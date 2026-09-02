@@ -10,7 +10,6 @@ import {
   EncryptionNotConfiguredError,
 } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
-import { setBrevoAttributes, removeFromStuckSetupList } from "@/lib/newsletter";
 
 // GET - Fetch user settings
 export async function GET() {
@@ -381,43 +380,6 @@ export async function PUT(request: NextRequest) {
       .set(updateData)
       .where(eq(users.id, session.user.id));
 
-    // Sync AI_KEY_ADDED to Brevo whenever any text-AI provider key changes.
-    // If the payload contained any key-related field, look up the user's
-    // current state and push the boolean. Fire-and-forget so the response
-    // isn't blocked.
-    const aiKeyTouched =
-      openaiApiKey !== undefined ||
-      anthropicApiKey !== undefined ||
-      googleApiKey !== undefined ||
-      grokApiKey !== undefined ||
-      perplexityApiKey !== undefined ||
-      kimiApiKey !== undefined;
-
-    if (aiKeyTouched) {
-      (async () => {
-        try {
-          const updatedUser = await db.query.users.findFirst({
-            where: eq(users.id, session.user.id),
-          });
-          if (!updatedUser?.email) return;
-          const hasAiKey = !!(
-            updatedUser.openaiApiKey ||
-            updatedUser.anthropicApiKey ||
-            updatedUser.googleApiKey ||
-            updatedUser.grokApiKey ||
-            updatedUser.perplexityApiKey ||
-            updatedUser.kimiApiKey
-          );
-          await setBrevoAttributes(updatedUser.email, { AI_KEY_ADDED: hasAiKey });
-          // If setup is now complete (LinkedIn + AI key), exit Stuck Setup.
-          if (hasAiKey && updatedUser.linkedinAccessToken) {
-            await removeFromStuckSetupList(updatedUser.email);
-          }
-        } catch {
-          // Silent fail
-        }
-      })();
-    }
 
     return NextResponse.json({
       success: true,

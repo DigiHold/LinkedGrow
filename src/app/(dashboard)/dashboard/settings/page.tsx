@@ -52,12 +52,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarSettings } from "@/components/dashboard/settings/calendar-settings";
 import { cn } from "@/lib/utils";
 import { FieldActions } from "@/components/dashboard/ui/page";
 import { LinkedInAccountsPanel } from "@/components/dashboard/linkedin/accounts-panel";
 import { CONTENT_LANGUAGES } from "@/lib/content-languages";
-import { hasAgentSubscription } from "@/lib/plans";
+import { hasAgentSubscription, UPGRADE_PATH } from "@/lib/plans";
+import { isCloud } from "@/lib/edition";
 
 // Common timezones grouped by region with abbreviations and UTC offsets
 const timezones = [
@@ -121,9 +121,6 @@ const SETTINGS_TABS = [
   { id: "appearance", label: "Appearance" },
   { id: "voice", label: "Voice" },
   { id: "business", label: "Business" },
-  // Admin only, and filtered out of the row below for everybody else. The
-  // demo booker reads one calendar: the founder's.
-  { id: "calendar", label: "Calendar", adminOnly: true },
 ] as const;
 
 type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
@@ -676,9 +673,7 @@ function SettingsContent() {
           hidden sections stay mounted so a half-filled form survives a tab
           switch. */}
       <nav className="scroll-fade-x sticky top-16 z-20 -mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 py-2 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        {SETTINGS_TABS.filter(
-          (t) => !("adminOnly" in t && t.adminOnly) || session?.user?.isAdmin
-        ).map(({ id, label }) => (
+        {SETTINGS_TABS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
@@ -695,12 +690,6 @@ function SettingsContent() {
           </button>
         ))}
       </nav>
-
-      {session?.user?.isAdmin && (
-        <div className={tab === "calendar" ? "space-y-6" : "hidden"}>
-          <CalendarSettings />
-        </div>
-      )}
 
       <div className={tab === "linkedin" ? "space-y-6" : "hidden"}>
         {/* One connection point, not two. v2 drops the LinkedIn API, so an
@@ -722,7 +711,7 @@ function SettingsContent() {
                 agents and the posting both run on, so it belongs behind the
                 same wall as everything else. Lifetime holders bought the
                 posting half outright and keep it without a card. */}
-            {canConnectLinkedIn ? (
+            {canConnectLinkedIn || !isCloud() ? (
               <LinkedInAccountsPanel />
             ) : (
               <div className="rounded-xl border border-border bg-slate-50 p-5 dark:bg-white/[0.02]">
@@ -735,7 +724,7 @@ function SettingsContent() {
                   charges nothing before day 7.
                 </p>
                 <Link
-                  href="/dashboard/upgrade"
+                  href={UPGRADE_PATH}
                   className="mt-4 inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white"
                 >
                   See the plans

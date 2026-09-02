@@ -1,4 +1,5 @@
 import { baseEmailTemplate } from "./base-template";
+import { getAppUrl } from "@/lib/app-url";
 import { p, lead, small, button, quote, personRow, figures } from "./parts";
 
 /**
@@ -16,7 +17,7 @@ import { p, lead, small, button, quote, personRow, figures } from "./parts";
  * three that genuinely cannot wait.
  */
 
-const APP = "https://linkedgrow.ai";
+const APP = getAppUrl();
 
 export type Lead = {
   name: string;

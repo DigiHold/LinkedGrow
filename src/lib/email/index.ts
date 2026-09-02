@@ -1,4 +1,4 @@
-// Email utilities - Brevo transactional emails
+// Email utilities - transactional emails
 export { sendEmail } from "./ses-client";
 export { baseEmailTemplate } from "./templates/base-template";
 
@@ -11,18 +11,6 @@ export {
   teamInviteEmailText,
 } from "./templates/team-invite-email";
 export {
-  affiliateApplicationEmailTemplate,
-  affiliateApplicationEmailText,
-} from "./templates/affiliate-application-email";
-export {
-  affiliateApprovedEmailTemplate,
-  affiliateApprovedEmailText,
-} from "./templates/affiliate-approved-email";
-export {
-  affiliateRejectedEmailTemplate,
-  affiliateRejectedEmailText,
-} from "./templates/affiliate-rejected-email";
-export {
   networkNotificationInviteEmailTemplate,
   networkNotificationInviteEmailText,
 } from "./templates/network-notification-invite-email";
@@ -32,8 +20,6 @@ export {
 } from "./templates/network-notification-notify-email";
 
 export * from "./templates/agent-alert-emails";
-export * from "./templates/lifecycle-emails";
-export * from "./templates/onboarding-emails";
 export * from "./templates/ops-emails";
 export {
   sendLeadsDigestEmail,
@@ -41,22 +27,12 @@ export {
   sendAgentStoppedEmail,
   sendReplyEmail,
   sendFirstDayEmail,
-  sendAbandonedCheckoutEmail,
-  sendTrialEndingEmail,
-  sendPaymentFailedEmail,
-  sendChurnImmediateEmail,
-  sendChurnValueEmail,
-  sendChurnAskEmail,
-  sendSignupWelcomeEmail,
-  sendTrialWelcomeEmail,
-  sendNoAgentEmail,
-  sendNoAccountEmail,
-  sendHalfwayEmail,
   sendSelectorAlertEmail,
 } from "./notify";
 
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";
+import { getAppUrl } from "@/lib/app-url";
 import {
   resetPasswordEmailTemplate,
   resetPasswordEmailText,
@@ -65,18 +41,6 @@ import {
   teamInviteEmailTemplate,
   teamInviteEmailText,
 } from "./templates/team-invite-email";
-import {
-  affiliateApplicationEmailTemplate,
-  affiliateApplicationEmailText,
-} from "./templates/affiliate-application-email";
-import {
-  affiliateApprovedEmailTemplate,
-  affiliateApprovedEmailText,
-} from "./templates/affiliate-approved-email";
-import {
-  affiliateRejectedEmailTemplate,
-  affiliateRejectedEmailText,
-} from "./templates/affiliate-rejected-email";
 import {
   networkNotificationInviteEmailTemplate,
   networkNotificationInviteEmailText,
@@ -97,7 +61,7 @@ export async function sendPasswordResetEmail({
   name,
   resetToken,
 }: SendPasswordResetEmailParams) {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
+  const resetUrl = `${getAppUrl()}/reset-password?token=${resetToken}`;
 
   return sendEmail({
     to,
@@ -122,64 +86,13 @@ export async function sendTeamInviteEmail({
   role,
   inviteToken,
 }: SendTeamInviteEmailParams) {
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/team/invite?token=${inviteToken}`;
+  const inviteUrl = `${getAppUrl()}/team/invite?token=${inviteToken}`;
 
   return sendEmail({
     to,
     subject: `${inviterName} invited you to join ${teamName} on LinkedGrow`,
     html: teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl }),
     text: teamInviteEmailText({ inviterName, teamName, role, inviteUrl }),
-  });
-}
-
-export async function sendAffiliateApplicationEmail({
-  applicantName,
-  applicantEmail,
-  promotionPlan,
-  affiliateId,
-}: {
-  applicantName: string;
-  applicantEmail: string;
-  promotionPlan: string;
-  affiliateId: string;
-}) {
-  return sendEmail({
-    to: "contact@linkedgrow.ai",
-    subject: `New Affiliate Application: ${applicantName}`,
-    html: affiliateApplicationEmailTemplate({ applicantName, applicantEmail, promotionPlan, affiliateId }),
-    text: affiliateApplicationEmailText({ applicantName, applicantEmail, promotionPlan, affiliateId }),
-  });
-}
-
-export async function sendAffiliateApprovedEmail({
-  to,
-  name,
-  referralCode,
-}: {
-  to: string;
-  name: string;
-  referralCode: string;
-}) {
-  return sendEmail({
-    to,
-    subject: "Your LinkedGrow Affiliate Application Has Been Approved!",
-    html: affiliateApprovedEmailTemplate({ name, referralCode }),
-    text: affiliateApprovedEmailText({ name, referralCode }),
-  });
-}
-
-export async function sendAffiliateRejectedEmail({
-  to,
-  name,
-}: {
-  to: string;
-  name: string;
-}) {
-  return sendEmail({
-    to,
-    subject: "Update on Your LinkedGrow Affiliate Application",
-    html: affiliateRejectedEmailTemplate({ name }),
-    text: affiliateRejectedEmailText({ name }),
   });
 }
 
@@ -196,7 +109,7 @@ export async function sendNetworkNotificationInviteEmail({
   groupName,
   inviteToken,
 }: SendNetworkNotificationInviteEmailParams) {
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/network-notifications/invite?token=${inviteToken}`;
+  const inviteUrl = `${getAppUrl()}/network-notifications/invite?token=${inviteToken}`;
 
   return sendEmail({
     to,

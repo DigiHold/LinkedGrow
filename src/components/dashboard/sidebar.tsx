@@ -7,7 +7,6 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/dashboard/sidebar-context";
-import { isPaidUser } from "@/lib/is-paid-user";
 import { Logo, LogoMark } from "@/components/ui/logo";
 import {
   HomeIcon,
@@ -30,14 +29,11 @@ import {
   ChevronRightIcon,
   ChevronUpIcon,
   CloseIcon,
-  CrownIcon,
   KeyIcon,
   CodeIcon,
-  AffiliateIcon,
   BookIcon,
   ChatIcon,
   SettingsIcon,
-  CardIcon,
   ShieldIcon,
   SignOutIcon,
 } from "@/components/dashboard/nav-icons";
@@ -92,13 +88,7 @@ const businessNav: NavItem[] = [
 ];
 
 const adminLinks = [
-  { name: "Support tickets", href: "/dashboard/admin/support" },
-  { name: "Blog comments", href: "/dashboard/admin/comments" },
   { name: "Users", href: "/dashboard/admin/users" },
-  { name: "Affiliates", href: "/dashboard/admin/affiliates" },
-  { name: "Site data", href: "/dashboard/admin/site-data" },
-  { name: "Abandoned carts", href: "/dashboard/admin/abandoned-carts" },
-  { name: "Docs feedback", href: "/dashboard/admin/docs-feedback" },
 ];
 
 const planNames: Record<string, string> = {
@@ -245,59 +235,30 @@ export function Sidebar() {
   );
 
   /**
-   * Help, the guides and the referral programme, pinned to the foot of the
-   * sidebar in every section.
-   *
-   * They used to live in the account menu, which is the last place someone who
-   * is stuck thinks to look. The support target keeps the rule the menu had:
-   * paying accounts get the ticket system, trial and free accounts get the
-   * chatbot, because a free account with no ticket history has nothing to open
-   * a ticket against.
+   * The guides and the issue tracker, pinned to the foot of the sidebar on
+   * the home section, which is where someone who is stuck looks first.
    */
+  const helpLink = (
+    href: string,
+    label: string,
+    Icon: (props: { className?: string }) => React.ReactElement,
+    external = false
+  ) => (
+    <a
+      href={href}
+      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+    >
+      <Icon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
+      <span className="truncate">{label}</span>
+    </a>
+  );
+
   const helpBlock = (
     <div className="px-3 pb-3">
-      <button
-        onClick={() => {
-          closeMobile();
-          if (isPaidUser(session?.user)) {
-            router.push("/dashboard/support");
-          } else {
-            window.dispatchEvent(new Event("open-chat-widget"));
-          }
-        }}
-        className="group flex w-full items-center gap-3 rounded-2xl border border-cyan-100 bg-linear-to-br from-cyan-50 to-blue-50 px-3 py-3.5 text-left transition-colors hover:border-cyan-200 dark:border-cyan-500/20 dark:from-cyan-500/10 dark:to-blue-500/5 dark:hover:border-cyan-500/35"
-      >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-600 shadow-sm dark:bg-cyan-500/15 dark:text-cyan-300">
-          <ChatIcon className="h-[18px] w-[18px]" />
-        </span>
-        {/* The sidebar is 256px wide, so this copy wraps rather than
-            truncating. Anything longer loses its second line. */}
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold leading-snug text-slate-900 dark:text-white">
-            Need a hand?
-          </span>
-          <span className="block text-[12px] leading-snug text-slate-500 dark:text-slate-400">
-            We answer every message
-          </span>
-        </span>
-        <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-cyan-500/70 transition-transform group-hover:translate-x-0.5 dark:text-cyan-400/70" />
-      </button>
-
-      <div className="mt-3 space-y-1">
-        <a
-          href="/docs"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
-        >
-          <BookIcon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
-          <span className="truncate">Read the guides</span>
-        </a>
-        {navLink({
-          name: "Earn with referrals",
-          href: "/dashboard/affiliate",
-          icon: AffiliateIcon,
-        })}
+      <div className="space-y-1">
+        {helpLink("/docs", "Docs", BookIcon)}
+        {helpLink("https://github.com/DigiHold/LinkedGrow/issues", "Report an issue", ChatIcon, true)}
       </div>
     </div>
   );
@@ -440,27 +401,13 @@ export function Sidebar() {
               </div>
 
               {!isTeamMember && (
-                <>
-                  <button
-                    onClick={() => goToMenuItem("/dashboard/upgrade")}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
-                      plan === "business"
-                        ? "hover:bg-slate-100 dark:hover:bg-white/5"
-                        : "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50"
-                    )}
-                  >
-                    <CrownIcon className="h-4 w-4" />
-                    {plan === "business" ? "Our plans" : "Upgrade"}
-                  </button>
-                  <button
-                    onClick={() => goToMenuItem("/dashboard/settings/ai-api")}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
-                  >
-                    <KeyIcon className="h-4 w-4" />
-                    AI API keys
-                  </button>
-                </>
+                <button
+                  onClick={() => goToMenuItem("/dashboard/settings/ai-api")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  <KeyIcon className="h-4 w-4" />
+                  AI API keys
+                </button>
               )}
 
               {plan === "business" && !isTeamMember && (
@@ -480,16 +427,6 @@ export function Sidebar() {
                 <SettingsIcon className="h-4 w-4" />
                 Account settings
               </button>
-
-              {plan !== "free" && !isTeamMember && (
-                <button
-                  onClick={() => goToMenuItem("/dashboard/settings/billing")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
-                >
-                  <CardIcon className="h-4 w-4" />
-                  Billing and invoices
-                </button>
-              )}
 
               {session?.user?.isAdmin && (
                 <>

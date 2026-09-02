@@ -1,7 +1,8 @@
 // Brevo API Client for transactional emails
+import { isCloud } from "@/lib/edition";
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@linkedgrow.ai";
+const FROM_EMAIL = process.env.FROM_EMAIL || (isCloud() ? "noreply@linkedgrow.ai" : "");
 const FROM_NAME = "LinkedGrow";
 
 interface SendEmailParams {
@@ -27,6 +28,9 @@ const UNDELIVERABLE = /@(?:[^@]+\.)?(?:test|example|invalid|localhost)$/i;
 export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailParams) {
   if (!BREVO_API_KEY) {
     throw new Error("BREVO_API_KEY is not configured");
+  }
+  if (!FROM_EMAIL) {
+    throw new Error("FROM_EMAIL is not configured");
   }
 
   if (UNDELIVERABLE.test(to.trim())) {

@@ -8,12 +8,13 @@ import {
   Linkedin,
   Key,
   Settings,
-  CreditCard,
   Shield,
   Building2,
   HelpCircle,
 } from "lucide-react";
 import { getAllCategories, getAllArticleMetas } from "@/lib/docs";
+import { getAppUrl } from "@/lib/app-url";
+import { isCloud } from "@/lib/edition";
 import { DocsHeader } from "@/components/docs/docs-header";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { V3Effects } from "@/components/v3/effects";
@@ -23,29 +24,31 @@ import {
   H1, HERO_FIELD, HERO_ORB_A, HERO_ORB_B, HERO_RINGS, LEAD, RV, SEC, WRAP, WSPLIT,
 } from "@/components/v3/kit";
 
+const APP_URL = getAppUrl();
+const DOCS_TITLE = "Documentation - LinkedGrow Help Center";
+const DOCS_DESCRIPTION =
+  "Learn how to use LinkedGrow to find leads on LinkedIn and to create, schedule, and optimize your LinkedIn content. Guides for agents, BYOK setup, content creation, scheduling, and more.";
+// The default OG image lives on the cloud's R2 bucket.
+const CLOUD_OG_IMAGE = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp";
+
 export const metadata: Metadata = {
-  title: "Documentation - LinkedGrow Help Center",
-  description: "Learn how to use LinkedGrow to create, schedule, and optimize your LinkedIn content. Guides for BYOK setup, content creation, scheduling, and more.",
+  title: DOCS_TITLE,
+  description: DOCS_DESCRIPTION,
   openGraph: {
-    title: "Documentation - LinkedGrow Help Center",
-    description: "Learn how to use LinkedGrow to create, schedule, and optimize your LinkedIn content. Guides for BYOK setup, content creation, scheduling, and more.",
-    url: "https://linkedgrow.ai/docs",
+    title: DOCS_TITLE,
+    description: DOCS_DESCRIPTION,
+    url: `${APP_URL}/docs`,
     siteName: "LinkedGrow",
     type: "website",
-    images: [
-      {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
-        width: 1200,
-        height: 630,
-        alt: "LinkedGrow Documentation",
-      },
-    ],
+    ...(isCloud()
+      ? { images: [{ url: CLOUD_OG_IMAGE, width: 1200, height: 630, alt: "LinkedGrow Documentation" }] }
+      : {}),
   },
   twitter: {
     card: "summary_large_image",
-    title: "Documentation - LinkedGrow Help Center",
-    description: "Learn how to use LinkedGrow to create, schedule, and optimize your LinkedIn content.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    title: DOCS_TITLE,
+    description: DOCS_DESCRIPTION,
+    ...(isCloud() ? { images: [CLOUD_OG_IMAGE] } : {}),
   },
 };
 
@@ -57,7 +60,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
   "linkedin-integration": <Linkedin className="w-6 h-6" />,
   byok: <Key className="w-6 h-6" />,
   settings: <Settings className="w-6 h-6" />,
-  billing: <CreditCard className="w-6 h-6" />,
   "account-security": <Shield className="w-6 h-6" />,
   "business-features": <Building2 className="w-6 h-6" />,
   faq: <HelpCircle className="w-6 h-6" />,
@@ -79,8 +81,8 @@ export default function DocsPage() {
     <>
       <BreadcrumbJsonLd
         items={[
-          { name: "Home", url: "https://linkedgrow.ai" },
-          { name: "Documentation", url: "https://linkedgrow.ai/docs" },
+          { name: "Home", url: APP_URL },
+          { name: "Documentation", url: `${APP_URL}/docs` },
         ]}
       />
       <DocsHeader searchIndex={searchIndex} />
@@ -148,11 +150,18 @@ export default function DocsPage() {
           <div className={WRAP}>
             <div className={`${ASKCARD} mx-auto max-w-[640px] text-center`}>
               <b>Can&apos;t find what you&apos;re looking for?</b>
-              <p>Our team is here to help. Reach out and we&apos;ll get back to you quickly.</p>
-              <a className={FILL_SM} href="mailto:contact@linkedgrow.ai">
-                Contact support
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
-              </a>
+              <p>{isCloud() ? "Our team is here to help. Reach out and we'll get back to you quickly." : "Open an issue on GitHub and describe what you were trying to do."}</p>
+              {isCloud() ? (
+                <a className={FILL_SM} href="mailto:contact@linkedgrow.ai">
+                  Contact support
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+                </a>
+              ) : (
+                <a className={FILL_SM} href="https://github.com/DigiHold/LinkedGrow/issues" target="_blank" rel="noopener noreferrer">
+                  Report an issue
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+                </a>
+              )}
             </div>
           </div>
         </section>

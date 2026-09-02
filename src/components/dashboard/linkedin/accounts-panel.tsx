@@ -30,11 +30,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSession } from "next-auth/react";
 
 import { PROXY_COUNTRIES, countryName } from "@/lib/proxy-countries";
-import { redirectToCheckout } from "@/lib/checkout";
-import { EXTRA_AGENT_PRICE, isUnlimitedQuota } from "@/lib/plans";
+import { isCloud } from "@/lib/edition";
+import { EXTRA_AGENT_PRICE, isUnlimitedQuota, UPGRADE_PATH } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { ChallengePrompt } from "./challenge-prompt";
 
@@ -228,24 +227,13 @@ export function LinkedInAccountsPanel({
 }) {
   const { accounts, subscribed, quota, extraAgents, billingInterval, error, reload } =
     useLinkedInAccounts();
-  const { data: session } = useSession();
-  const [startingTrial, setStartingTrial] = useState(false);
-
   /* Connecting an account is the moment LinkedGrow starts costing money (a
-     dedicated address, a real browser), so it is the moment the card comes
-     in: the same gate the agent wizard applies. Stripe brings them back here
-     with ?resume=1 and the credentials form opens by itself. */
-  const startTrialThenConnect = async () => {
-    setStartingTrial(true);
-    const went = await redirectToCheckout(
-      "pro",
-      session?.user?.email ?? "",
-      () => setStartingTrial(false),
-      "month",
-      undefined,
-      "/dashboard/settings/linkedin-accounts?resume=1"
-    );
-    if (!went) setStartingTrial(false);
+     dedicated address, a real browser), so on the cloud it is the moment the
+     card comes in: the same gate the agent wizard applies. The plan picker
+     brings them back here with ?resume=1 and the credentials form opens by
+     itself. */
+  const startTrialThenConnect = () => {
+    window.location.href = UPGRADE_PATH;
   };
 
   useEffect(() => {
@@ -475,7 +463,6 @@ export function LinkedInAccountsPanel({
 
       <div className="flex flex-wrap items-center gap-3">
         <Button
-          disabled={startingTrial}
           onClick={() =>
             atQuota
               ? setUpselling(true)
@@ -487,11 +474,7 @@ export function LinkedInAccountsPanel({
           type="button"
           variant={accounts && accounts.length > 0 ? "outline" : "default"}
         >
-          {startingTrial ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Plus className="mr-2 h-4 w-4" />
-          )}
+          <Plus className="mr-2 h-4 w-4" />
           Connect an account
         </Button>
         {subscribed === false && (
@@ -512,14 +495,16 @@ export function LinkedInAccountsPanel({
         onOpenChange={setConnecting}
         open={connecting}
       />
-      <ExtraAgentDialog
-        billingInterval={billingInterval}
-        extraAgents={extraAgents}
-        onOpenChange={setUpselling}
-        onPurchased={() => reload()}
-        open={upselling}
-        quota={quota}
-      />
+      {isCloud() && (
+        <ExtraAgentDialog
+          billingInterval={billingInterval}
+          extraAgents={extraAgents}
+          onOpenChange={setUpselling}
+          onPurchased={() => reload()}
+          open={upselling}
+          quota={quota}
+        />
+      )}
       {/* Never the browser's own confirm box. It carries the domain name and
           the browser's buttons, it cannot be styled, and it stops the page
           dead. Nicolas, 2026-07-31. */}
@@ -735,7 +720,7 @@ export function ConnectLinkedInDialog({
       const data = await res.json();
       if (!res.ok) {
         if (data?.needsCheckout) {
-          window.location.href = "/dashboard/upgrade";
+          window.location.href = UPGRADE_PATH;
           return;
         }
         setError(data.error || "The account could not be connected.");

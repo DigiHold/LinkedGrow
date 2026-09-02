@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAppUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 
 // Proxy for R2 images to avoid CORS issues
@@ -51,7 +52,7 @@ const placeholder = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height=
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000, immutable",
-        "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai",
+        "Access-Control-Allow-Origin": getAppUrl(),
       },
     });
   } catch (error) {

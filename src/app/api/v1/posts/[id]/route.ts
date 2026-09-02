@@ -10,7 +10,6 @@ import {
   apiSuccessResponse,
 } from "@/lib/api-auth";
 import { uploadToR2, deleteFromR2, isR2Configured } from "@/lib/storage/r2";
-import { cancelScheduledPost } from "@/lib/qstash";
 import { PLANS, PlanId } from "@/lib/plans";
 import { users } from "@/lib/db/schema";
 import sharp from "sharp";
@@ -264,13 +263,8 @@ export async function PATCH(
     if (scheduledAt !== undefined) {
       if (scheduledAt === null) {
         updates.scheduledAt = null;
-        // Cancel existing QStash schedule if any
+        // Clear the id of any job queued before the API removal
         if (existingPost.qstashMessageId) {
-          try {
-            await cancelScheduledPost(existingPost.qstashMessageId);
-          } catch {
-            // Non-fatal - message may have already been delivered
-          }
           updates.qstashMessageId = null;
         }
       } else {
@@ -291,14 +285,9 @@ export async function PATCH(
       if (!finalScheduledAt) {
         return apiErrorResponse("scheduledAt is required for scheduled posts", 400);
       }
-      // Cancel any job left from before the API removal. Nothing new is
-      // queued: see the note in src/lib/qstash.ts.
+      // Clear the id of any job left from before the API removal. Nothing
+      // new is queued: a scheduled post is a row the worker reads.
       if (existingPost.qstashMessageId) {
-        try {
-          await cancelScheduledPost(existingPost.qstashMessageId);
-        } catch {
-          // Non-fatal
-        }
         updates.qstashMessageId = null;
       }
       updates.status = "scheduled";
@@ -439,15 +428,6 @@ export async function DELETE(
         await deleteFromR2(m.storageKey);
       } catch {
         // Non-fatal - continue with deletion
-      }
-    }
-
-    // Cancel QStash schedule if any
-    if (existingPost.qstashMessageId) {
-      try {
-        await cancelScheduledPost(existingPost.qstashMessageId);
-      } catch {
-        // Non-fatal
       }
     }
 

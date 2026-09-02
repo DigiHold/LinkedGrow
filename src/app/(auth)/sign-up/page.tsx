@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff, Sparkles } from "lucide-react";
 import { sanitizeCallbackUrl } from "@/lib/url";
-import { trackSignup } from "@/lib/insight";
+import { isCloud } from "@/lib/edition";
 
 type SocialProvider = "google" | null;
 
@@ -36,7 +36,6 @@ function SignUpContent() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [subscribeNewsletter, setSubscribeNewsletter] = useState(true);
   const [socialLoading, setSocialLoading] = useState<SocialProvider>(null);
 
   // Check for OAuth error from URL
@@ -53,7 +52,6 @@ function SignUpContent() {
 
     // Build OAuth URL with params
     const params = new URLSearchParams({ mode: "register", popup: "true" });
-    if (subscribeNewsletter) params.set("newsletter", "true");
 
     // Pass through callbackUrl if present (e.g., for team invite flow)
     const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
@@ -78,11 +76,6 @@ function SignUpContent() {
 
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
-        // Only a brand-new account counts as a signup, not a returning login.
-        // The OAuth callback sends isNewUser=true only when it created the user.
-        if (event.data.isNewUser === true) {
-          trackSignup();
-        }
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
         const userEmail = session?.user?.email;
@@ -150,7 +143,7 @@ function SignUpContent() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, subscribeNewsletter }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await response.json();
@@ -159,9 +152,6 @@ function SignUpContent() {
         setErrorMessage(data.error || "Failed to create account");
         return;
       }
-
-      // Account was really created (register returned ok) - fire signup goal once
-      trackSignup();
 
       const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
       const plan = searchParams.get("plan") || "pro";
@@ -375,26 +365,6 @@ function SignUpContent() {
                 )}
               </div>
 
-              {/* Newsletter Checkbox */}
-              <label className="flex items-center gap-3 cursor-pointer group mb-3">
-                <div className="relative flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    checked={subscribeNewsletter}
-                    onChange={(e) => setSubscribeNewsletter(e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded-md peer-checked:border-cyan-500 peer-checked:bg-cyan-500 transition-all group-hover:border-cyan-400">
-                    {subscribeNewsletter && (
-                      <Check className="w-full h-full text-white p-0.5" />
-                    )}
-                  </div>
-                </div>
-                <span className="text-sm text-slate-600 dark:text-slate-400 leading-tight">
-                  Get growth tips, new features, and exclusive offers.
-                </span>
-              </label>
-
               <Button
                 type="submit"
                 disabled={isLoading}
@@ -430,12 +400,15 @@ function SignUpContent() {
               </Link>
             </div>
 
-            <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
-              By creating an account, you agree to our{" "}
-              <Link href="/terms" className="hover:underline text-slate-600 dark:text-slate-400">Terms</Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="hover:underline text-slate-600 dark:text-slate-400">Privacy Policy</Link>
-            </p>
+            {/* The terms and privacy pages exist on the cloud only. */}
+            {isCloud() && (
+              <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
+                By creating an account, you agree to our{" "}
+                <Link href="/terms" className="hover:underline text-slate-600 dark:text-slate-400">Terms</Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="hover:underline text-slate-600 dark:text-slate-400">Privacy Policy</Link>
+              </p>
+            )}
           </div>
         </div>
       </div>

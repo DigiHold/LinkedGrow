@@ -6,14 +6,13 @@ import { SessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ScrollLockFix } from "@/components/providers/scroll-lock-fix";
 import { ScrollToTop } from "@/components/providers/scroll-to-top";
-import { CookieBanner } from "@/components/cookie-consent";
-import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/cookie-consent";
-import { ChatWidgetLoader } from "@/components/chat/chat-widget-loader";
 import {
   OrganizationJsonLd,
   WebsiteJsonLd,
   SoftwareApplicationJsonLd,
 } from "@/components/seo/json-ld";
+import { isCloud } from "@/lib/edition";
+import { getAppUrl } from "@/lib/app-url";
 import "./globals.css";
 
 // Sora - premium geometric sans-serif, bold and futuristic for headings
@@ -52,39 +51,47 @@ const caveat = Caveat({
   weight: ["400", "600"],
 });
 
-// Google Tag Manager ID from environment
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
+const APP_URL = getAppUrl();
+const TITLE = "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow";
+const DESCRIPTION =
+  "Lead generation on LinkedIn, run by an agent that finds your leads, sends the invitation and opens the conversation, inside limits that keep your account safe.";
+
+// The default OG image lives on the cloud's R2 bucket. A self hosted instance
+// has no public image to offer, so it advertises none.
+const CLOUD_OG_IMAGE = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/home.webp";
 
 export const metadata: Metadata = {
-  title: "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow",
-  description:
-    "Lead generation on LinkedIn, run by an agent that finds your leads, sends the invitation and opens the conversation, inside limits that keep your account safe.",
+  metadataBase: new URL(APP_URL),
+  title: TITLE,
+  description: DESCRIPTION,
   authors: [{ name: "LinkedGrow" }],
   openGraph: {
-    title: "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow",
-    description:
-      "Lead generation on LinkedIn, run by an agent that finds your leads and opens the conversation, inside limits that keep your account safe.",
-    url: "https://linkedgrow.ai",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: APP_URL,
     siteName: "LinkedGrow",
     type: "website",
-    images: [
-      {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/home.webp",
-        width: 1200,
-        height: 630,
-        alt: "LinkedGrow, the LinkedIn AI agent that finds leads and opens conversations",
-      },
-    ],
+    ...(isCloud()
+      ? {
+          images: [
+            {
+              url: CLOUD_OG_IMAGE,
+              width: 1200,
+              height: 630,
+              alt: "LinkedGrow, the LinkedIn AI agent that finds leads and opens conversations",
+            },
+          ],
+        }
+      : {}),
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow",
-    description:
-      "Lead generation on LinkedIn, run by an agent that finds your leads and opens the conversation, inside limits that keep your account safe.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/home.webp"],
+    title: TITLE,
+    description: DESCRIPTION,
+    ...(isCloud() ? { images: [CLOUD_OG_IMAGE] } : {}),
   },
   alternates: {
-    canonical: "https://linkedgrow.ai",
+    canonical: APP_URL,
   },
 };
 
@@ -126,19 +133,19 @@ export default async function RootLayout({
             `,
           }}
         />
-        {/* Privacy-friendly analytics */}
-        <script defer data-site="linkedgrow" data-persist="true" src="https://insight.nicolaslecocq.com/t.js" />
-        {/* Google Tag Manager with Consent Mode V2 */}
-        {GTM_ID && <GoogleTagManager gtmId={GTM_ID} />}
-        {/* JSON-LD Structured Data for SEO */}
-        <OrganizationJsonLd />
-        <WebsiteJsonLd />
-        <SoftwareApplicationJsonLd />
+        {/* The marketing schema describes the cloud company and product, and
+            the analytics script reports to the cloud's own instance. A self
+            hosted instance sends nothing anywhere. */}
+        {isCloud() && (
+          <>
+            <script defer data-site="linkedgrow" data-persist="true" src="https://insight.nicolaslecocq.com/t.js" />
+            <OrganizationJsonLd />
+            <WebsiteJsonLd />
+            <SoftwareApplicationJsonLd />
+          </>
+        )}
       </head>
       <body className={`${sora.variable} ${dmSans.variable} ${hostGrotesk.variable} ${instrumentSans.variable} ${caveat.variable} font-sans antialiased`}>
-        {/* GTM NoScript Fallback */}
-        {GTM_ID && <GoogleTagManagerNoScript gtmId={GTM_ID} />}
-
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
             <SessionProvider>
@@ -148,12 +155,6 @@ export default async function RootLayout({
             </SessionProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
-
-        {/* Cookie Consent Banner */}
-        <CookieBanner />
-
-        {/* AI Support Chatbot */}
-        <ChatWidgetLoader />
       </body>
     </html>
   );

@@ -2,9 +2,6 @@ import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { MAINTENANCE_MODE, MAINTENANCE_ALLOWED_ROUTES } from "@/lib/maintenance";
 import { isSelfHosted } from "@/lib/edition";
-import { db } from "@/lib/db";
-import { affiliates } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -18,11 +15,10 @@ const authRoutes = [
 ];
 
 // Post-trial paywall allowlist: paths a trial-expired free user can still
-// reach. Everything else under /dashboard redirects to /dashboard/upgrade.
+// reach. Everything else under /dashboard redirects to the plan picker. The
+// cloud restores its billing and referral pages on merge.
 const PAYWALL_ALLOWED_PREFIXES = [
-  "/dashboard/upgrade",
   "/dashboard/settings",
-  "/dashboard/affiliate",
   // The wizard is open before the card: a workspace builds its agent, sees
   // the value, and meets the checkout at "Connect LinkedIn & launch". The
   // routes that cost money (connect, activate) gate themselves server-side.
@@ -30,16 +26,11 @@ const PAYWALL_ALLOWED_PREFIXES = [
 ];
 
 // The API side of the same allowlist. A paywalled account must still be able
-// to pay, read its own account, and sign out; anything that spends money or
+// to read its own account and sign out; anything that spends money or
 // touches LinkedIn on its behalf is off.
 const PAYWALL_ALLOWED_API_PREFIXES = [
   "/api/auth",
-  "/api/stripe",
   "/api/user",
-  "/api/affiliate",
-  "/api/consent",
-  "/api/support",
-  "/api/chat",
   // The pre-card wizard: reading agents, saving the draft, the site read
   // (rate limited per user). POST /api/agents and the LinkedIn connect both
   // refuse workspaces without a subscription on their own.
@@ -54,63 +45,6 @@ const authProxy = auth(async (req) => {
   // Allow OPTIONS requests to pass through (CORS preflight)
   if (req.method === "OPTIONS") {
     return NextResponse.next();
-  }
-
-  // Affiliate referral tracking: set a 30-day cookie when ?ref= is present
-  const refCode = nextUrl.searchParams.get("ref");
-  if (!isSelfHosted() && refCode) {
-    // Track the click on the affiliate record
-    try {
-      await db
-        .update(affiliates)
-        .set({
-          totalClicks: sql`${affiliates.totalClicks} + 1`,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(affiliates.referralCode, refCode),
-            eq(affiliates.status, "approved")
-          )
-        );
-    } catch {
-      // Silently fail - don't block the redirect
-    }
-
-    const cleanUrl = new URL(nextUrl);
-    cleanUrl.searchParams.delete("ref");
-    const response = NextResponse.redirect(cleanUrl);
-    response.cookies.set("lg_ref", refCode, {
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-    });
-    return response;
-  }
-
-  /**
-   * A promotion claimed by a click. The launch banner links with ?coupon=,
-   * the code lands in a 30-day cookie, and the checkout applies it for this
-   * visitor only: the discount belongs to the people who saw and clicked the
-   * offer, and the click is measurable, unlike a blanket discount every
-   * checkout silently received. The code itself is validated against Stripe
-   * at checkout time, so a made-up value in the URL buys nothing.
-   */
-  const couponCode = nextUrl.searchParams.get("coupon");
-  if (!isSelfHosted() && couponCode && /^[A-Za-z0-9_-]{3,40}$/.test(couponCode)) {
-    const cleanUrl = new URL(nextUrl);
-    cleanUrl.searchParams.delete("coupon");
-    const response = NextResponse.redirect(cleanUrl);
-    response.cookies.set("lg_coupon", couponCode.toUpperCase(), {
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-    });
-    return response;
   }
 
   // A session object is not a session. An invalidated token can still
@@ -154,7 +88,7 @@ const authProxy = auth(async (req) => {
   if (isProtectedRoute && !isLoggedIn) {
     const signInUrl = new URL("/sign-in", nextUrl);
     // pathname alone dropped the query string, which killed campaign links
-    // like /dashboard/upgrade?coupon=... for signed-out users (2026-08-19).
+    // for signed-out users (2026-08-19).
     signInUrl.searchParams.set("callbackUrl", nextUrl.pathname + nextUrl.search);
     return NextResponse.redirect(signInUrl);
   }
@@ -200,23 +134,12 @@ const authProxy = auth(async (req) => {
   // Protect non-public API routes
   if (isApiRoute && !isLoggedIn) {
     const publicApiPrefixes = [
-      "/api/auth/", "/api/waitlist", "/api/stripe/",
-      "/api/blog/", "/api/docs/", "/api/geo", "/api/indexnow",
-      "/api/qstash/", "/api/v1/", "/api/cron/",
-      "/api/google/", "/api/linkedin/", "/api/chat",
-      "/api/consent", "/api/email-course", "/api/claude-course",
-      "/api/marketing/", "/api/team/invite/validate",
-      "/api/affiliate/apply", "/api/beta", "/api/free-tools/",
-      "/api/admin/affiliates/action",
-      "/api/admin/backfill-free-users",
+      "/api/auth/",
+      "/api/docs/",
+      "/api/v1/", "/api/cron/",
+      "/api/google/", "/api/linkedin/",
+      "/api/team/invite/validate",
       "/api/mcp",
-      // The demo booker is used by strangers before they have an account,
-      // which is the point of the page. Both routes guard themselves with an
-      // IP rate limit and hard validation.
-      "/api/book-demo",
-      // Written to by the Google Ads Script (bearer secret + IP rate limit),
-      // read by the local ads agent straight from Turso. Never session-authed.
-      "/api/ads-snapshot",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {

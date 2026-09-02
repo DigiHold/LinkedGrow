@@ -3,9 +3,10 @@
 
 import Script from "next/script";
 import { PLANS } from "@/lib/plans";
+import { getAppUrl } from "@/lib/app-url";
 
 const APP_NAME = "LinkedGrow";
-const APP_URL = "https://linkedgrow.ai";
+const APP_URL = getAppUrl();
 const COMPANY_NAME = "Vayalis SARL";
 
 // Stable @id anchors for cross-referencing between schemas

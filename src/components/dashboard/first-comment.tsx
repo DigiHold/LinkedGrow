@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Sparkles, Loader2, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
+import { UPGRADE_PATH } from "@/lib/plans";
 
 // Community Management API available in developer mode
 const COMING_SOON = false;
@@ -63,7 +64,7 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                 Automatically post a comment 1-5 min after publication to drive early interactions and boost your post in the algorithm. Available on Pro plan.
               </p>
-              <Link href="/dashboard/upgrade">
+              <Link href={UPGRADE_PATH}>
                 <Button size="sm">
                   Upgrade to Pro
                   <ArrowUpRight className="w-3.5 h-3.5 ml-1.5" />

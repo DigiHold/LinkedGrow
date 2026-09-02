@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Linkedin, BarChart3, Lock } from "lucide-react";
 import Link from "next/link";
+import { UPGRADE_PATH } from "@/lib/plans";
 
 interface EmptyStateProps {
   type: "no-linkedin" | "no-data" | "upgrade";
@@ -69,7 +70,7 @@ export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptySt
           <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
             {featureName} requires a higher plan. Upgrade to unlock this feature.
           </p>
-          <Link href="/dashboard/upgrade">
+          <Link href={UPGRADE_PATH}>
             <Button variant="primary" size="sm">
               Upgrade Plan
             </Button>

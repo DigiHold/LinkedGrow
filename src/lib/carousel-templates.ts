@@ -498,7 +498,7 @@ const magazine: CarouselTemplate = {
     { type: 'text', text: 'IMAGE', fontSize: 22, fontWeight: '500', fill: '#a3a3a3', left: 100, top: 830, width: 880, textAlign: 'center' },
     // Bottom line
     { type: 'shape', shapeType: 'rect', left: 100, top: 1100, width: 880, height: 1, fill: '#d4d4d4' },
-    { type: 'text', text: 'linkedgrow.ai', fontSize: 18, fontWeight: '400', fill: '#a3a3a3', left: 100, top: 1130, width: 880, textAlign: 'right' },
+    { type: 'text', text: 'yourwebsite.com', fontSize: 18, fontWeight: '400', fill: '#a3a3a3', left: 100, top: 1130, width: 880, textAlign: 'right' },
   ],
 };
 

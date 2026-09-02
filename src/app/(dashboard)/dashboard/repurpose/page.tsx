@@ -206,13 +206,14 @@ function decodeHtmlEntities(text: string): string {
     .replace(/<[^>]*>/g, "").replace(/\n/g, " ").trim();
 }
 
-// CF Worker for YouTube captions - browser calls directly (CORS enabled, Cloudflare edge IPs)
-const YT_WORKER = "https://youtube-captions.vayalis.workers.dev";
+// An optional edge worker for YouTube caption tracks, called from the browser
+// (CORS enabled). Without one the server route asks YouTube directly.
+const YT_WORKER = process.env.NEXT_PUBLIC_YOUTUBE_WORKER_URL || "";
 
-// CF Worker that proxy-fetches webpage/blog HTML - browser calls directly so the
-// fetch runs from Cloudflare edge IPs instead of Vercel datacenter IPs, which
-// many host firewalls (WPX, managed WordPress, etc.) block.
-const WEBPAGE_WORKER = "https://webpage-proxy.vayalis.workers.dev";
+// An optional edge proxy that fetches webpage/blog HTML from the browser, for
+// hosts whose firewalls block the server's own address. Without one the
+// server route fetches the page itself.
+const WEBPAGE_PROXY = process.env.NEXT_PUBLIC_WEBPAGE_PROXY_URL || "/api/content/webpage";
 
 function extractYoutubeVideoId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -228,10 +229,10 @@ async function fetchYoutubeContent(url: string): Promise<ContentData & { warning
 
   const videoId = extractYoutubeVideoId(url);
 
-  // Try CF Worker directly from browser (same principle as Arctic Shift for Reddit)
-  // Worker internally retries watch page on 429, so give it time
-  // If first attempt fails, retry once after 3s (YouTube rate limit clears fast)
-  if (videoId) {
+  // Try the edge worker directly from the browser when one is configured.
+  // It retries the watch page on 429 internally, so give it time; if the
+  // first attempt fails, retry once after 3s (YouTube rate limit clears fast)
+  if (videoId && YT_WORKER) {
     for (let attempt = 0; attempt < 2 && !trackUrl; attempt++) {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 3000));
       try {
@@ -253,7 +254,8 @@ async function fetchYoutubeContent(url: string): Promise<ContentData & { warning
     }
   }
 
-  // Fallback: Server route (tries CF Worker with secret + InnerTube + watch page from Vercel)
+  // Fallback: the server route (worker with secret when configured, then
+  // InnerTube and the watch page from the server itself)
   if (!trackUrl) {
     const trackResponse = await fetch("/api/content/youtube-tracks", {
       method: "POST",
@@ -326,23 +328,25 @@ async function fetchYoutubeContent(url: string): Promise<ContentData & { warning
 }
 
 async function fetchWebpageContent(url: string): Promise<ContentData & { warning?: string }> {
-  // Primary: fetch the page HTML via the CF Worker (Cloudflare edge IPs - same
-  // principle as the YouTube worker). Fallback: let the server fetch it directly.
+  // With an edge proxy configured, the browser fetches the page HTML through
+  // it first. Without one the server route fetches the page itself.
   let prefetchedHtml: string | null = null;
-  try {
-    const workerResp = await fetch(WEBPAGE_WORKER, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-    if (workerResp.ok) {
-      const data = await workerResp.json();
-      if (data?.html && typeof data.html === "string") {
-        prefetchedHtml = data.html;
+  if (WEBPAGE_PROXY !== "/api/content/webpage") {
+    try {
+      const workerResp = await fetch(WEBPAGE_PROXY, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      if (workerResp.ok) {
+        const data = await workerResp.json();
+        if (data?.html && typeof data.html === "string") {
+          prefetchedHtml = data.html;
+        }
       }
+    } catch {
+      // Proxy unavailable - fall through to the server-side fetch
     }
-  } catch {
-    // Worker unavailable - fall through to the server-side fetch
   }
 
   const response = await fetch("/api/content/webpage", {

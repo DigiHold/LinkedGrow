@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
+import { getAppUrl } from "@/lib/app-url";
 import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control, Path, controlsUtils, cache as fabricCache } from "fabric";
 import DOMPurify from "dompurify";
 import { getFrameById } from "./frameData";
@@ -2312,7 +2313,7 @@ return;
               // If it's a proxy URL, try to restore original
               if (src.includes('/api/media/proxy?url=')) {
                 try {
-                  const urlParam = new URL(src, 'https://linkedgrow.ai').searchParams.get('url');
+                  const urlParam = new URL(src, getAppUrl()).searchParams.get('url');
                   if (urlParam) {
                     obj.src = urlParam;
                   }

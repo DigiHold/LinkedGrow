@@ -26,7 +26,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { canAccessFeature, PlanId } from "@/lib/plans";
+import { canAccessFeature, PlanId, UPGRADE_PATH } from "@/lib/plans";
 import { ImageIcon, Sparkles, Crown, ExternalLink, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { VideoModal } from "@/components/dashboard/video-modal";
@@ -1097,7 +1097,7 @@ export default function AIAPISettingsPage() {
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                 Image models is available on the Pro plan and above
               </p>
-              <a href="/dashboard/upgrade">
+              <a href={UPGRADE_PATH}>
                 <Button
                                   >
                   <Sparkles className="w-4 h-4 mr-2" />
