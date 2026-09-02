@@ -674,7 +674,7 @@ export function saysWord(hay: string, keyword: string): boolean {
  * Is this person where the customer said their buyers are.
  *
  * The wizard asks for locations and the answer filtered nobody: `a.locations`
- * was read once, to write "You are Maria, based in Montreux" into the message
+ * was read once, to write "You are Jane, based in Lisbon" into the message
  * prompts, which is the SENDER's location. An agent aimed at France was
  * therefore claiming founders in Bangalore and Sofia, and the customer read
  * that as bad targeting because it is.

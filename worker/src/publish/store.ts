@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { db } from "../db.ts";
+import { db, paywallClause } from "../db.ts";
+import { EDITION, type Edition } from "../edition.ts";
 import { log } from "../logger.ts";
 import { deleteObject } from "../storage/r2.ts";
 import { timezoneForCountry } from "../browser/fingerprint.ts";
@@ -281,9 +282,13 @@ export async function releaseStaleClaims(): Promise<number> {
  * The paywall is applied here rather than only in the dashboard: a post
  * scheduled last week by somebody whose trial has since ended must not go up,
  * and the app route they queued it through is not in the loop any more. The
- * condition is the one in src/proxy.ts, kept identical on purpose.
+ * condition is the one in src/proxy.ts, kept identical on purpose. The self
+ * hosted edition has no paywall, so there the condition is simply absent.
+ *
+ * The edition is a parameter only so the tests can run the query both ways;
+ * production reads it from the environment once, at startup.
  */
-export async function loadDuePosts(limit = 25): Promise<DuePost[]> {
+export async function loadDuePosts(limit = 25, edition: Edition = EDITION): Promise<DuePost[]> {
   const { rows } = await db().execute({
     sql: `SELECT
             p.id                       AS id,
@@ -320,11 +325,7 @@ export async function loadDuePosts(limit = 25): Promise<DuePost[]> {
            -- cancelled. This copy still carried the v1 condition, which would
            -- have let a post go out for an account the dashboard refuses to
            -- open. Change one of these and change the other.
-           AND NOT (
-                 u.plan = 'free'
-             AND (u.stripe_subscription_id IS NULL OR u.stripe_subscription_id = '')
-             AND COALESCE(u.is_lifetime_deal, 0) = 0
-           )
+           ${paywallClause(edition)}
          ORDER BY p.scheduled_at ASC
          LIMIT ?`,
     args: [

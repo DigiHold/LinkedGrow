@@ -53,7 +53,7 @@ export const users = sqliteTable("users", {
   linkedinMemberId: text("linkedin_member_id"),
   linkedinProfileName: text("linkedin_profile_name"),
   linkedinHeadline: text("linkedin_headline"), // User's headline from r_basicprofile
-  linkedinVanityName: text("linkedin_vanity_name"), // User's vanity name (e.g., "nicolas-lecocq")
+  linkedinVanityName: text("linkedin_vanity_name"), // User's vanity name (e.g., "jane-doe-1a2b")
 
   // LinkedIn posting target selection
   linkedinPostingTarget: text("linkedin_posting_target", { enum: ["profile", "organization"] }).default("profile"),

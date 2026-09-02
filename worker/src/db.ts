@@ -5,6 +5,7 @@ import { DEFAULTS } from "./config.ts";
 import { timezoneForCountry } from "./browser/fingerprint.ts";
 import { firstNameOf } from "./names.ts";
 import { minimumScore } from "./linkedin/competitor.ts";
+import { EDITION, type Edition } from "./edition.ts";
 
 /**
  * The worker's view of the database.
@@ -99,6 +100,30 @@ function parseList(value: unknown): string[] {
 }
 
 /**
+ * The two places the worker checks that somebody is paying, by edition.
+ *
+ * The cloud edition bills, so a customer whose subscription ended must not have
+ * their account driven on our AI budget, and the app is a separate deploy whose
+ * webhook may have been missed: these clauses, re-read every pass, are the
+ * guarantee. The self hosted edition has no billing at all. Every user the
+ * instance holds is its operator's, so both clauses are empty rather than
+ * leaning on the plan column happening to say "business".
+ */
+export function payingClause(edition: Edition): string {
+  return edition === "self-hosted" ? "" : "AND (u.plan IN ('pro', 'business') OR u.is_admin = 1)";
+}
+
+/** The dashboard paywall on a queued post, kept identical to the app's src/proxy.ts. */
+export function paywallClause(edition: Edition): string {
+  if (edition === "self-hosted") return "";
+  return `AND NOT (
+                 u.plan = 'free'
+             AND (u.stripe_subscription_id IS NULL OR u.stripe_subscription_id = '')
+             AND COALESCE(u.is_lifetime_deal, 0) = 0
+           )`;
+}
+
+/**
  * Every agent the worker should consider this pass, with the context each one
  * needs. Paused, stopped and blocked agents never leave the database.
  */
@@ -172,7 +197,9 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       -- outright in v1 is the content half, and it stays theirs for ever; the
       -- agents are the thing they have to subscribe for. Exempting them here
       -- would have run agents for free for anybody holding a v1 code.
-      AND (u.plan IN ('pro', 'business') OR u.is_admin = 1)
+      --
+      -- Cloud only. The self hosted edition has no billing and no clause here.
+      ${payingClause(EDITION)}
   `);
 
   return rows.map((r) => {
@@ -228,7 +255,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
          * Where the customer wants their buyers, which filtered nobody.
          *
          * `a.locations` was selected, and used in exactly one place: to write
-         * "You are Maria, based in Montreux" into the message prompts. It is
+         * "You are Jane, based in Lisbon" into the message prompts. It is
          * the SENDER's location. No prospect was ever dropped for being on the
          * wrong continent, so an agent aimed at France was claiming people in
          * Bangalore and Sofia, and the customer read that as bad targeting

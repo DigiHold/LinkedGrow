@@ -72,7 +72,7 @@ export async function mineOwnPosts(
    * Relabelled to `own:`, which is what puts them at the top of the queue.
    *
    * The miner names a signal after the page it was read from, so these would
-   * arrive as `comment:maria-lecocq` and rank like any other commenter. The
+   * arrive as `comment:jane-doe-1a2b` and rank like any other commenter. The
    * ordering in HOT_FIRST looks for the `own:` prefix, and the sentence the
    * customer reads on the row is built from the same string.
    */

@@ -54,7 +54,7 @@ test("the counts are read whatever language the profile is in", () => {
   assert.equal(countNear("1,234 followers", FOLLOWER_WORDS), 1234);
   assert.equal(countNear("2 456 abonnés", FOLLOWER_WORDS), 2456);
   assert.equal(countNear("312 relations", CONNECTION_WORDS), 312);
-  assert.equal(countNear("Maria LECOCQ · 3rd", CONNECTION_WORDS), null);
+  assert.equal(countNear("Jane DOE · 3rd", CONNECTION_WORDS), null);
 });
 
 test("the oldest year on the profile is the start of its oldest entry", () => {

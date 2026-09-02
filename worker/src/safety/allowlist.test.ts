@@ -32,7 +32,7 @@ function spy() {
 
 test("a stranger is never liked, invited or messaged", async () => {
   const { actions, calls } = spy();
-  const guarded = onlyContact(actions, ["https://www.linkedin.com/in/maria-lecocq/"]);
+  const guarded = onlyContact(actions, ["https://www.linkedin.com/in/jane-doe-1a2b/"]);
   const stranger = row({ profile_url: "https://www.linkedin.com/in/thomas-berger-a91/" });
 
   assert.equal(await guarded.warmUp(stranger), false);
@@ -43,10 +43,10 @@ test("a stranger is never liked, invited or messaged", async () => {
 
 test("a named profile is contacted normally, by url or by slug", async () => {
   const { actions, calls } = spy();
-  const guarded = onlyContact(actions, ["https://www.linkedin.com/in/maria-lecocq/", "nicolas-lecocq"]);
+  const guarded = onlyContact(actions, ["https://www.linkedin.com/in/jane-doe-1a2b/", "john-roe-3c4d"]);
 
-  await guarded.sendDm(row({ profile_url: "https://www.linkedin.com/in/maria-lecocq/" }), "hi");
-  await guarded.sendDm(row({ profile_id: "nicolas-lecocq" }), "hi");
+  await guarded.sendDm(row({ profile_url: "https://www.linkedin.com/in/jane-doe-1a2b/" }), "hi");
+  await guarded.sendDm(row({ profile_id: "john-roe-3c4d" }), "hi");
   assert.deepEqual(calls, ["sendDm", "sendDm"]);
 });
 
@@ -56,7 +56,7 @@ test("a named profile is contacted normally, by url or by slug", async () => {
    account was restricted on 2026-08-08 for exactly that. */
 test("the contact allowlist does not block reading our own inbox", async () => {
   const { actions } = spy();
-  const guarded = onlyContact(actions, ["maria-lecocq"]);
+  const guarded = onlyContact(actions, ["jane-doe-1a2b"]);
   assert.deepEqual(await guarded.inboxRepliers(), []);
   assert.deepEqual(await guarded.readThread(row({})), []);
   assert.equal(await guarded.canMessageNow(row({})), true);
@@ -64,13 +64,13 @@ test("the contact allowlist does not block reading our own inbox", async () => {
 
 test("withdrawing an invitation is allowed, since it only undoes our own action", async () => {
   const { actions, calls } = spy();
-  const guarded = onlyContact(actions, ["maria-lecocq"]);
+  const guarded = onlyContact(actions, ["jane-doe-1a2b"]);
   await guarded.withdrawInvite(row({ profile_url: "https://www.linkedin.com/in/someone-else/" }));
   assert.deepEqual(calls, ["withdrawInvite"]);
 });
 
 test("a url and a bare slug are the same person", () => {
-  assert.equal(profileKey("https://www.linkedin.com/in/maria-lecocq/"), "maria-lecocq");
-  assert.equal(profileKey("https://linkedin.com/in/maria-lecocq?utm=x"), "maria-lecocq");
-  assert.equal(profileKey("Maria-Lecocq"), "maria-lecocq");
+  assert.equal(profileKey("https://www.linkedin.com/in/jane-doe-1a2b/"), "jane-doe-1a2b");
+  assert.equal(profileKey("https://linkedin.com/in/jane-doe-1a2b?utm=x"), "jane-doe-1a2b");
+  assert.equal(profileKey("Jane-Doe-1a2b"), "jane-doe-1a2b");
 });

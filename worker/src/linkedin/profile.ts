@@ -129,7 +129,7 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
      * it looked for the only `h1` (a profile now has no `h1` anywhere in the
      * document), for `.text-body-medium` (gone), and for an image whose `alt`
      * contains the member's name. That last one is the instructive failure. It
-     * happened to work on Maria's profile and returns nothing on Nicolas's,
+     * happened to work on one real profile and returns nothing on another,
      * where the same image carries `alt=""`.
      */
     const main = document.querySelector("main");
@@ -138,7 +138,7 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
       (main as HTMLElement | null);
 
     // The name, from the component built around it. The page title is the
-    // cross-check: it reads "Maria LECOCQ | LinkedIn" and has outlived every
+    // cross-check: it reads "Jane DOE | LinkedIn" and has outlived every
     // redesign.
     const fromComponent = (
       document.querySelector('[componentkey^="ProfileVerificationTriggerRef-"]') as
@@ -167,10 +167,10 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
     );
     let climb: Element | null = anchor;
     for (let hop = 0; climb && hop < 6 && !headline; hop++) {
-      // Every paragraph that follows, not only the first. Maria's profile
+      // Every paragraph that follows, not only the first. One real profile
       // carries a maiden name in brackets between the name and the headline
-      // and Nicolas's does not, so taking the first sibling stored
-      // "(Maria Nassif)" as her job title.
+      // and another does not, so taking the first sibling stored
+      // "(Jane Roe)" as the job title.
       let sibling = climb.nextElementSibling;
       while (sibling?.tagName === "P") {
         const text = (sibling as HTMLElement).innerText.trim();
@@ -198,8 +198,8 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
         const candidate = lines[i] as string;
         if (skip.test(candidate) || candidate.length > 220) continue;
         // A line that is nothing but brackets is the maiden or former name
-        // LinkedIn prints under the current one. Maria's profile shows
-        // "(Maria Nassif)" there and it was stored as her job title.
+        // LinkedIn prints under the current one. A real profile showed
+        // "(Jane Roe)" there and it was stored as the job title.
         if (/^\(.*\)$/.test(candidate)) continue;
         headline = candidate;
         break;

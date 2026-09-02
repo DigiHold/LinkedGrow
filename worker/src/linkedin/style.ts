@@ -10,7 +10,7 @@ export function getStyleSamples(db: DB, limit = 8): Promise<string[]> {
 
 /**
  * Harvests the account's OWN sent messages into style_samples, so the generator can match the
- * sender's real voice. NOT YET VERIFIED: Maria's account has no message threads yet, so the
+ * sender's real voice. NOT YET VERIFIED: the first real account had no message threads yet, so the
  * sent-bubble selectors below are best-effort and must be confirmed once there is message history.
  */
 export async function harvestStyle(page: Page, db: DB, maxThreads = 15): Promise<number> {

@@ -18,7 +18,7 @@ test("the co-founder of a booking product is not a buyer of a booking product", 
     "Co-founder, RazorBooking.com | Appointments, Payments & Reminders, Built for Service Businesses",
     BOOKING
   );
-  assert.ok(verdict.competes, "this message went out for real, in Maria's name");
+  assert.ok(verdict.competes, "this message went out for real, on a live account");
   assert.ok(verdict.overlap.length > 0, "the reason on the lead has to say why");
 });
 

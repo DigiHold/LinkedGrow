@@ -80,6 +80,14 @@ if ! command -v node >/dev/null 2>&1 || [[ "$(node -v | cut -c2- | cut -d. -f1)"
 fi
 node -v
 
+# Google publishes Chrome for amd64 only, which is what the apt source below
+# pins. On an arm64 box (Ampere, Graviton, a Raspberry Pi) skip this block,
+# install the distribution's Chromium instead:
+#     apt-get install -y chromium
+# and point the worker at it from worker.env:
+#     CHROME_PATH=/usr/bin/chromium
+# The driver then launches that binary in place of the Chrome channel, and
+# nothing else changes.
 say "Google Chrome (stable)"
 if ! command -v google-chrome >/dev/null 2>&1; then
   install -d -m 0755 /etc/apt/keyrings
@@ -174,6 +182,12 @@ if [[ ! -f "${WORKER_HOME}/worker.env" ]]; then
   say "Writing the environment template"
   cat >"${WORKER_HOME}/worker.env" <<'ENVFILE'
 # Fill these in, then: systemctl restart linkedgrow-worker
+#
+# This is the cloud plane. A self hoster does not run this script: the compose
+# file in docker/ starts the worker as self-hosted with its own environment.
+LINKEDGROW_EDITION=cloud
+# The dashboard's public address, https://... with no trailing slash.
+APP_URL=
 TURSO_DATABASE_URL=
 TURSO_AUTH_TOKEN=
 ANTHROPIC_API_KEY=

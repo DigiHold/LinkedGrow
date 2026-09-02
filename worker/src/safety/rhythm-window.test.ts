@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { dayPlan } from "./rhythm.ts";
 
 const ACCT = "88c3d39f-1925-4ed8-a64e-a1f4d02c1b13";
-// 07:00-19:00, Monday to Saturday, the window Nicolas set for Maria.
+// 07:00-19:00, Monday to Saturday, the window set on the first real account.
 const WIN = { days: [1, 2, 3, 4, 5, 6], startMin: 7 * 60, endMin: 19 * 60 };
 
 function plan(day: string, weekday: number) {

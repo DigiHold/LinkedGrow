@@ -169,7 +169,7 @@ function isGreeting(sentence: string): boolean {
  * sign-off word followed by it. Nothing else is a sign-off, so "Glad we connected, Jonathan." with
  * the recipient's name mid-sentence stays valid.
  *
- * The earlier version here only caught a bare name, so "Cheers," and "Best, Maria" walked through.
+ * The earlier version here only caught a bare name, so "Cheers," and "Best, Jane" walked through.
  */
 function signsOff(text: string, senderName: string): boolean {
   const lines = text.trim().split("\n").map((l) => l.trim()).filter(Boolean);

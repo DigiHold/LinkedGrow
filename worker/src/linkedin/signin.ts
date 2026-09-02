@@ -90,7 +90,7 @@ export type ChallengeKind =
  * password, landed on the checkpoint, found no code field, and reported "did
  * not reach a signed-in page" while LinkedIn sat there waiting for somebody to
  * confirm. It is the first thing a genuine account meets, and it met it on
- * 2026-07-31 with Maria's.
+ * 2026-07-31 with the first real account.
  *
  * Matched on the address rather than the wording, because the page is served in
  * the language of the country the account signs in from: this one arrived in
@@ -179,12 +179,12 @@ async function submitLogin(page: Page): Promise<void> {
  *
  * Shown instead of the login form when the profile still carries a remembered
  * session: the account's name, a masked email, a countdown and a Cancel link.
- * Read off Maria's account on 2026-08-06:
+ * Read off a real account on 2026-08-06:
  *
  *   Connexion en cours
  *   Si vous restez sur cette page, vous serez connecté(e).
  *   9
- *   Maria LECOCQ / m*****@gmail.com / Annuler la connexion
+ *   Jane DOE / j*****@example.com / Annuler la connexion
  *
  * Doing nothing is the correct action, so this waits rather than typing. The
  * wait is capped: a countdown that never finishes is a page that has stalled,

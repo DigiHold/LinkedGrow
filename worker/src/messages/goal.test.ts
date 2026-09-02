@@ -13,9 +13,9 @@ import type { AgentContext } from "../config.ts";
  * against 47% for an interest close. So the goal may only spend a reply that already exists.
  */
 const sender: Sender = {
-  firstName: "Maria",
+  firstName: "Jane",
   companyInfo: "I build website widgets",
-  location: "Montreux",
+  location: "Lisbon",
 };
 const prospect: Prospect = { firstName: "Tom", fullName: "Tom Meyer", source: "reaction:calendly" };
 

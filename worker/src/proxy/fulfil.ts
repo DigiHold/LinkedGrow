@@ -153,9 +153,9 @@ const HOSTING = /hosting|datacent|data center|\bserver\b|cloud|\bvps\b|colocatio
  * where a geolocation database currently places it.
  *
  * On 2026-07-31 LinkedIn emailed Nicolas three times about the same address,
- * 213.164.108.143. Once it said Paris. Twice it said Vilnius. ipinfo, ip-api
+ * 203.0.113.7. Once it said Paris. Twice it said Vilnius. ipinfo, ip-api
  * and iplocation all called it Paris, so the purchase check passed happily,
- * but the RIPE record for 213.164.108.0/24 says netname BITE-HRS, country LT,
+ * but the RIPE record for 203.0.113.0/24 says netname BITE-HRS, country LT,
  * UAB Init in Kaunas. The reseller had published a geofeed claiming Paris and
  * some databases believed it while LinkedIn's did not.
  *
