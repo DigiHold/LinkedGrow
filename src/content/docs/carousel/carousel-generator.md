@@ -1,6 +1,6 @@
 ---
 title: "Carousel Generator"
-description: "Create professional multi-slide LinkedIn carousel posts with LinkedGrow's full-featured visual canvas editor."
+description: Create professional multi-slide LinkedIn carousel posts with LinkedGrow's full-featured visual canvas editor.
 category: "carousel"
 order: 1
 ---
@@ -29,7 +29,7 @@ The left panel displays all your slides as thumbnails with slide numbers. From h
 - **Duplicate slides** - Create a copy of any existing slide with all its elements
 - **Delete slides** - Remove slides you no longer need (at least one slide must remain)
 - **Reorder slides** - Drag and drop slides to rearrange their order
-- **Navigate** - Click any slide thumbnail to switch to it for editing
+- **Switch** - Click any slide thumbnail to switch to it for editing
 
 ## Adding elements
 
@@ -152,7 +152,7 @@ Select an element and use the alignment buttons to snap it to the canvas edges o
 
 As you move elements around the canvas, smart alignment guides appear automatically when elements line up with each other or with the canvas center. These visual guides help you create pixel-perfect layouts without manual coordinate entry.
 
-Equal spacing guides (shown in pink) appear when the gap between three or more elements is even, helping you distribute elements uniformly.
+Equal spacing guides (shown in pink) appear when the distance between 3 or more elements is even, so you can distribute elements uniformly.
 
 ## Layering and layers panel
 
@@ -171,7 +171,7 @@ The layers panel provides a full tree view of all elements on the current slide.
 
 - **Reorder layers** by dragging
 - **Toggle visibility** - Show or hide elements using the eye icon
-- **Lock/unlock** - Lock elements to prevent accidental edits
+- **Lock** - Lock elements to prevent accidental edits, and release the lock when you need to move them again
 - **Delete** - Remove elements
 - **Expand groups** - See and select individual elements inside groups
 
@@ -213,7 +213,7 @@ The editor auto-saves your work continuously:
 - **Local save** - Your current state is saved to your browser every 2 seconds
 - **Cloud save** - Your carousel is saved to the database every 5 seconds
 
-If you close the browser or navigate away accidentally, your work is recovered automatically the next time you open the Carousel Generator. Drafts are kept for up to 7 days.
+If you close the browser or leave the page accidentally, your work is recovered automatically the next time you open the Carousel Generator. Drafts are kept for up to 7 days.
 
 You can also manually save your carousel with a name and description to your saved carousels library for long-term storage and reuse.
 
@@ -225,7 +225,3 @@ You can also manually save your carousel with a name and description to your sav
 - **End with a CTA** - tell readers what to do next (follow, comment, visit your site)
 - **Aim for 7-10 slides** - enough depth to provide value, short enough to maintain attention
 - **Use large, readable fonts** - many LinkedIn users browse on mobile
-
-## Plan availability
-
-The Carousel Generator is available on the Business plan. Users on the trial and on Pro plans can upgrade from the Upgrade page to access this feature.

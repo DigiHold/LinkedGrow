@@ -4,7 +4,7 @@ This checkout pushes to git@github.com:DigiHold/LinkedGrow.git only.
 
 ## What this repo is
 
-The self hosted edition of LinkedGrow: AI agents that find leads and clients on LinkedIn from a real Chrome signed in to the user's own account, plus the posting tools (generator, editor, calendar, carousels, analytics). Product code only. The hosted service at linkedgrow.ai lives in a private repo that merges from this one, so nothing about billing, marketing pages or the hosted operation belongs here, and a feature lands here first.
+The self hosted edition of LinkedGrow: AI agents that find leads and clients on LinkedIn from a real Chrome signed in to the user's own account, plus the posting tools (generator, editor, calendar, carousels, analytics), and it holds product code only. The hosted service at linkedgrow.ai lives in a private repo that merges from this one, so nothing about billing, marketing pages or the hosted operation belongs here, and a feature lands here first.
 
 ## The two editions
 

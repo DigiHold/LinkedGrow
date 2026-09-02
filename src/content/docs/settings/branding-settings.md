@@ -1,6 +1,6 @@
 ---
 title: "Branding Settings"
-description: "Customize your logo, profile picture, handle, website, and brand colors for consistent carousel branding."
+description: Customize your logo, profile picture, handle, website, and brand colors for consistent carousel branding.
 category: "settings"
 order: 7
 ---
@@ -62,6 +62,6 @@ Your branding settings are applied to:
 - **Upload a high-resolution logo** -- A crisp logo looks professional on all screen sizes
 - **Include your handle** -- This makes it easy for people to find and follow you when your carousel is shared
 
-## Plan availability
+## Availability
 
-Branding settings are part of the Carousel Generator and available on the **Business plan**.
+Branding settings belong to the Carousel Generator and are available to every user of the instance.

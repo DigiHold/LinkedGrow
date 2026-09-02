@@ -1,6 +1,6 @@
 ---
 title: "Ideas Generator"
-description: "Get AI-powered content ideas tailored to your niche, with engagement predictions and one-click post generation."
+description: Get AI-powered content ideas tailored to your niche, with engagement predictions and one-click post generation.
 category: "content-creation"
 order: 4
 ---
@@ -55,6 +55,6 @@ This approach gives you a full week of content in under an hour.
 - **Use engagement predictions as a guide.** Higher-predicted ideas often tap into trending topics or proven LinkedIn formats.
 - **Combine ideas.** Sometimes the best post comes from merging two related ideas into one.
 
-## Plan availability
+## Availability
 
-The Ideas Generator is available on all plans. Post generation from ideas uses your configured AI provider and counts toward any generation limits on the 7-day Pro trial.
+The Ideas Generator is available to every user of the instance, and post generation from ideas runs on the AI provider you configured in Settings.

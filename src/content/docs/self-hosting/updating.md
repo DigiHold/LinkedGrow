@@ -29,7 +29,7 @@ You will see `applying migrations` followed by `applied 1 migration(s): 003_add_
 
 ## Roll back
 
-Releases are git tags. To go back to the previous one, check it out and rebuild:
+Releases are git tags, so to go back to the previous one you check it out and rebuild:
 
 ```
 git tag

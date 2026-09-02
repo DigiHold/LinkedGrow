@@ -6,7 +6,7 @@ Email contact@linkedgrow.ai with the details and steps to reproduce. Please do n
 
 ## What is encrypted
 
-LinkedIn passwords and 2FA secrets, every API key (AI providers, proxy supplier, email, storage) and proxy credentials are encrypted at rest with AES-256-GCM using the `ENCRYPTION_KEY` from your `.env`. The worker needs the same key to read them. Sessions are signed with `AUTH_SECRET`.
+LinkedIn passwords and 2FA secrets, every API key (AI providers, proxy supplier, email, storage) and proxy credentials are encrypted at rest with AES-256-GCM using the `ENCRYPTION_KEY` from your `.env`. The worker needs the same key to read them, and sessions are signed with the `AUTH_SECRET` from the same file.
 
 ## What a self hosted install exposes
 

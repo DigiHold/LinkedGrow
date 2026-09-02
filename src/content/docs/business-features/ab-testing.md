@@ -1,6 +1,6 @@
 ---
 title: "A/B Testing"
-description: "Test different versions of your LinkedIn posts to find out which one your audience actually answers, with LinkedGrow's A/B testing."
+description: Test different versions of your LinkedIn posts to find out which one your audience actually answers, with LinkedGrow's A/B testing.
 category: "business-features"
 order: 1
 ---
@@ -12,8 +12,6 @@ order: 1
 ## What is A/B Testing?
 
 A/B testing lets you compare two versions of a LinkedIn post to see which one performs better. You create two variants - Variant A and Variant B - with different content, hooks, formats, or calls to action. LinkedGrow tracks the performance of each variant so you can make data-driven decisions about your content strategy.
-
-A/B testing is available exclusively on the **Business plan**.
 
 ## Why A/B Test Your Posts?
 

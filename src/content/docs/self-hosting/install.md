@@ -7,7 +7,7 @@ order: 1
 
 ## What you need
 
-A Linux host. On amd64 the worker runs Google Chrome, which is what LinkedIn expects to see; arm64 runs Chromium and is fine for a trial (see the [troubleshooting](/docs/self-hosting/troubleshooting) page). Docker with the Compose plugin. 4 GB of RAM runs 2 browsers at once (`WORKER_SLOTS=2` in `.env`), 16 GB runs 12. A domain and a reverse proxy when the instance is reachable from the internet, so that it is served over https. An AI key from Anthropic, OpenAI, Google, Grok or Kimi. And a source of dedicated addresses: a Proxy-Seller account with credit, with the server's public IP added to their API allowlist, or proxies you already own.
+The stack needs a Linux host. On amd64 the worker runs Google Chrome, which is what LinkedIn expects to see; arm64 runs Chromium and is fine for trying the product (see the [troubleshooting](/docs/self-hosting/troubleshooting) page). It also needs Docker with the Compose plugin, and enough memory for the browsers: 4 GB of RAM runs 2 at once (`WORKER_SLOTS=2` in `.env`), 16 GB runs 12. Add a domain and a reverse proxy when the instance is reachable from the internet, so that it is served over https. You also need an AI key from Anthropic, OpenAI, Google, Grok or Kimi, and a source of dedicated addresses: a Proxy-Seller account with credit, with the server's public IP added to their API allowlist, or proxies you already own.
 
 ## Start the stack
 

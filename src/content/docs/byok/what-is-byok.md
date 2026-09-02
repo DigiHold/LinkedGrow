@@ -1,6 +1,6 @@
 ---
 title: "What is BYOK?"
-description: "Understand LinkedGrow's Bring Your Own Key model, how it works, why it saves money, and how it compares to competitor pricing."
+description: Understand LinkedGrow's Bring Your Own Key model, how it works, why it saves money, and how it compares to competitor pricing.
 category: "byok"
 order: 1
 ---
@@ -11,9 +11,9 @@ order: 1
 
 ## Bring Your Own Key explained
 
-BYOK stands for Bring Your Own Key, and it is how LinkedGrow approaches AI-powered content creation. Instead of bundling AI costs into an expensive subscription with generation limits, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google AI, or Kimi.
+BYOK stands for Bring Your Own Key, and it is how LinkedGrow approaches AI-powered content creation. Instead of hiding AI costs inside a monthly price with generation limits, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google AI, or Kimi.
 
-You pay your LinkedGrow subscription for the platform features, and you pay the AI provider directly for actual usage at their wholesale API rates. Nothing is marked up along the way.
+LinkedGrow itself has no price on the self hosted edition: you pay for your server, and you pay the AI provider directly for actual usage at their API rates. Nothing is marked up along the way.
 
 ## How it works
 
@@ -27,14 +27,14 @@ The AI provider charges you based on actual usage. Each post generation typicall
 
 ## Why BYOK saves money
 
-Most LinkedIn tools bundle AI into the subscription and cap how much you can generate. Once you reach the cap you either stop or pay for more.
+Most LinkedIn tools bundle AI into their monthly price and cap how much you can generate. Once you reach the cap you either stop or pay for more.
 
-Two different AI bills sit behind LinkedGrow, and only one of them is yours:
+Two different AI keys sit behind a self hosted instance:
 
-| | Who pays | What it costs you |
+| | Which key | What it costs |
 |---|---|---|
-| Everything the agents think: finding leads, scoring them, writing messages | LinkedGrow | Included in the plan |
-| Everything you generate: posts, carousels, hooks, ideas | You, on your own key | $2-4 a month for most people |
+| Everything the agents think: finding leads, scoring them, writing messages | The instance key from the setup wizard | Billed by that provider to whoever set the instance up |
+| Everything you generate: posts, carousels, hooks, ideas | Your own key from Settings | $2-4 a month for most people |
 
 So the content side is unlimited at cost price. Generate 10 posts a month or 200, you pay your provider for exactly what you used, and you choose the model.
 

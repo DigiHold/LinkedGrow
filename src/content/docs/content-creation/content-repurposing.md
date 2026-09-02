@@ -1,6 +1,6 @@
 ---
 title: "Content Repurposing"
-description: "Convert articles, blog posts, YouTube videos, and Reddit threads into LinkedIn posts with AI-powered repurposing."
+description: Convert articles, blog posts, YouTube videos, and Reddit threads into LinkedIn posts with AI-powered repurposing.
 category: "content-creation"
 order: 5
 ---
@@ -55,7 +55,3 @@ The selected post opens in a built-in editor where you can:
 - **Choose high-quality sources.** The AI output is only as good as the input. Pick articles and videos with strong, clear insights.
 - **Repurpose your own content.** Blog posts you have written, talks you have given, and podcasts you have recorded are perfect candidates.
 - **Adapt the format.** A 2,000-word article might become a list post, a story, or a series of posts - experiment with different angles.
-
-## Plan availability
-
-Content repurposing is available on Pro and Business plans.

@@ -1,6 +1,6 @@
 ---
 title: "Network Notifications"
-description: "Get an email when people in your circle publish on LinkedIn so you never miss their posts."
+description: Get an email when people in your circle publish on LinkedIn so you never miss their posts.
 category: "business-features"
 order: 4
 ---
@@ -10,8 +10,6 @@ order: 4
 Network Notifications lets you create small groups of people whose LinkedIn posts you want to follow closely. When anyone in a group publishes a post via LinkedGrow, every other group member receives an email with a link straight to that post on LinkedIn.
 
 That's it. The feature is an email notifier, nothing more. LinkedGrow does not like, comment, repost, or interact with the post on your behalf. If you want to engage, you click through to LinkedIn and engage there, in your own voice, on your own time - exactly as you would if a friend had texted you the link.
-
-Network Notifications is available on the **Pro plan** and higher.
 
 ## Why this exists
 
@@ -23,7 +21,6 @@ A network group is just a small list of people whose posts you do not want to mi
 
 To use Network Notifications, every participant needs:
 
-- A **Pro plan** or higher on LinkedGrow
 - A **LinkedIn account connected to LinkedGrow** (Dashboard > Settings > LinkedIn) - this is how LinkedGrow knows when they have published
 
 ## Creating a Group

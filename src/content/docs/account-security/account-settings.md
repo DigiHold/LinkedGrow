@@ -1,6 +1,6 @@
 ---
 title: "Account Settings"
-description: "Manage your LinkedGrow account settings, including profile information, login methods, and LinkedIn connection."
+description: Manage your LinkedGrow account settings, including profile information, login methods, and LinkedIn connection.
 category: "account-security"
 order: 3
 ---
@@ -22,19 +22,19 @@ The profile section at the top of the Settings page displays your account detail
 
 ## Login Methods
 
-LinkedGrow supports three login methods. You can use one or more of these to access your account:
+LinkedGrow supports two login methods. You can use one or both of them to access your account:
 
 ### Email and Password
 
 The standard login method. You sign in with your email address and a password you set during registration or via the forgot password flow. See [Password Management](/docs/account-security/password-management) for details on managing your password.
 
-### Google OAuth
+### Google sign in
 
-Sign in using your Google account. When you sign in with Google, we only access your basic profile information (name and email). We never access your Google Drive, contacts, or other data.
+Sign in with your Google account when the administrator has configured it (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `NEXT_PUBLIC_GOOGLE_SIGNIN=1` in the instance's `.env`). Google sign in only reads your name and email address, and the instance never touches your Google Drive, contacts or other data.
 
 ### Using Multiple Login Methods
 
-You can have all three login methods active at the same time. This gives you flexibility and serves as a backup if one method becomes unavailable. For example, if you forget your password, you can still sign in with Google or LinkedIn.
+You can have both login methods active at the same time, which gives you a backup if one of them becomes unavailable. For example, if you forget your password, you can still sign in with Google.
 
 You must always have at least one active login method. If you try to disconnect a login method and it is the only one connected, you will be prompted to set up an alternative first.
 
@@ -68,14 +68,13 @@ LinkedGrow takes your data privacy seriously. Here is how we handle your informa
 ### What We Do Not Store
 
 - Your AI API keys are encrypted and never stored in plain text
-- Payment card details (handled entirely by Stripe)
 
 ### Data Access
 
 - Only you can see your posts and drafts
-- Team members on Business plans can see shared team content
-- LinkedGrow staff do not access your content unless you explicitly request support assistance
+- Team members you invited from the Team page can see shared team content
+- Everything lives on your own server, and nobody at LinkedGrow can reach it
 
-## Questions?
+## Questions
 
-For any account-related questions or concerns, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai). We are happy to assist.
+For anything this page does not answer, read the rest of the docs at `/docs` or open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues).

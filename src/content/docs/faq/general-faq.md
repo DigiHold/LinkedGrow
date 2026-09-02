@@ -1,6 +1,6 @@
 ---
 title: "General FAQ"
-description: "Answers to frequently asked questions about LinkedGrow, AI costs, LinkedIn integration, security, and more."
+description: Answers to frequently asked questions about LinkedGrow, AI costs, LinkedIn integration, security, and more.
 category: "faq"
 order: 1
 ---
@@ -11,7 +11,7 @@ LinkedGrow is an AI-powered LinkedIn content creation and scheduling platform. I
 
 ## What is BYOK (Bring Your Own Key)?
 
-BYOK stands for Bring Your Own Key. Instead of charging you a premium for built-in AI, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google, or others. This gives you full control over your AI costs, model selection, and usage. You pay the AI provider directly at their standard rates, which is significantly cheaper than platforms that bundle AI costs into their subscription.
+BYOK stands for Bring Your Own Key. Instead of charging you a premium for built-in AI, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google, or others. This gives you full control over your AI costs, model selection, and usage. You pay the AI provider directly at their standard rates, which is significantly cheaper than platforms that bundle AI costs into their monthly price.
 
 For setup instructions, see the [BYOK documentation](/docs/byok).
 
@@ -49,7 +49,7 @@ Yes. LinkedGrow supports multiple AI providers, and you can switch between them 
 
 ## Is my API key secure?
 
-Yes. Your API key is encrypted at rest and in transit. It is never stored in plain text, never shared with other users, and never accessible to LinkedGrow staff. The key is only used to make API calls to your AI provider on your behalf. You can rotate or revoke your key at any time from your settings.
+Yes. Your API key is encrypted at rest and in transit. It is never stored in plain text and never shared with other users of the instance. The key is only used to make API calls to your AI provider on your behalf. You can rotate or revoke your key at any time from your settings.
 
 ## How do I get help?
 

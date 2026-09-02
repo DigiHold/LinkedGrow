@@ -3,7 +3,7 @@
   "description": "Create engaging multi-slide carousel posts for LinkedIn with templates and customization tools.",
   "overview": [
     "The Carousel Generator is a visual canvas editor inside LinkedGrow for building multi-slide LinkedIn posts without leaving the platform. Every deck uses the 1080 x 1350 pixel format that LinkedIn displays best, and the workspace gives you a slide manager on the left, a zoomable canvas in the middle, and a properties panel for whichever element you have selected.",
-    "You can start from a pre-designed template or from a blank slide, then duplicate or delete slides as the deck takes shape. Branding settings apply your colors, fonts, and logo across every slide, which keeps your output consistent when you publish carousels regularly. The Carousel Generator is available on the Business plan.",
+    "You can start from a pre-designed template or from a blank slide, then duplicate or delete slides as the deck takes shape. Branding settings apply your colors, fonts, and logo across every slide, which keeps your output consistent when you publish carousels regularly.",
     "The two guides below cover the editor itself, then the template gallery and the branding settings that sit around it."
   ],
   "order": 3,

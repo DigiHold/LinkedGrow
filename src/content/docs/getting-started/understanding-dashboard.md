@@ -1,6 +1,6 @@
 ---
 title: "Understanding the Dashboard"
-description: "A complete overview of the LinkedGrow dashboard, navigation, stats, quick actions, and how features are organized by plan."
+description: A complete overview of the LinkedGrow dashboard, navigation, stats, quick actions, and where each feature lives
 category: "getting-started"
 order: 4
 ---
@@ -40,32 +40,25 @@ The bottom section of the dashboard shows:
 
 The left sidebar provides access to all features:
 
-| Menu item | What it does | Plan required |
-|---|---|---|
-| Dashboard | Main overview page | Trial or any plan |
-| Generator | AI post generation | Trial or Pro+ |
-| Editor | Post editing with AI assist | Trial or Pro+ |
-| Ideas | AI content ideas | Trial or Pro+ |
-| Hooks | Viral opening line generator | Trial or Pro+ |
-| Repurpose | Convert URLs to posts | Trial or Pro+ |
-| Carousel | Multi-slide carousel creator | Business |
-| Posts | Library of all your posts | Trial or any plan |
-| Calendar | Visual scheduling calendar | Trial or Pro+ |
-| Engagement | Engagement tracking tools | Trial or Pro+ |
-| Analytics | Performance analytics | Trial or Pro+ |
-| A/B Testing | Test post variations | Business |
-| Team | Team management | Business |
+| Menu item | What it does |
+|---|---|
+| Dashboard | Main overview page |
+| Generator | AI post generation |
+| Editor | Post editing with AI assist |
+| Ideas | AI content ideas |
+| Hooks | Viral opening line generator |
+| Repurpose | Convert URLs to posts |
+| Carousel | Multi-slide carousel creator |
+| Posts | Library of all your posts |
+| Calendar | Visual scheduling calendar |
+| Engagement | Engagement tracking tools |
+| Analytics | Performance analytics |
+| A/B Testing | Test post variations |
+| Team | Team management |
 
-## Feature gating
+## Every feature is included
 
-Every new account starts with a 7-day trial that runs the whole product, agents included. A card is taken at signup and charged when the trial ends, and cancelling before then costs nothing. After that there are two plans:
-
-- **Pro, $99 a month** - 2 agents finding and messaging your leads every working day, each on its own LinkedIn account and its own dedicated IP, plus unlimited posts, carousels and scheduling on your own AI key
-- **Business, $179 a month** - everything in Pro with 3 agents, seats for your team, A/B testing on your posts and team reporting
-
-Extra agents are $49 a month each on either plan.
-
-When you try to access a feature not included in your plan, you will see a friendly prompt explaining what the feature does and a link to upgrade.
+On a self hosted instance every feature in the sidebar is available to every user, agents included, and nothing is locked behind a paid tier. The first account created on the instance is the administrator, and colleagues join by invitation from the Team page.
 
 ## API key setup reminder
 

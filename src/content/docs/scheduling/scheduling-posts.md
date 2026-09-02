@@ -1,6 +1,6 @@
 ---
 title: "Scheduling Posts"
-description: "How to schedule LinkedIn posts for future dates and times, manage scheduled content, and understand scheduling limits by plan."
+description: How to schedule LinkedIn posts for future dates and times, manage scheduled content, and see why there is no queue cap
 category: "scheduling"
 order: 1
 ---
@@ -52,15 +52,9 @@ Open the post, click the Schedule button again, and pick a new date and time. Th
 
 Open the post and click **Save as Draft** to remove it from the schedule. The post moves back to draft status and will not be published automatically.
 
-## Scheduling limits by plan
+## Scheduling limits
 
-| Plan | Scheduled posts |
-|---|---|
-| 7-day Pro trial | Unlimited (full Pro access) |
-| Pro | Unlimited |
-| Business | Unlimited |
-
-Scheduling is unlimited on both plans and during the trial, so there is no queue cap to plan around.
+Scheduling is unlimited on a self hosted instance, so there is no queue cap to plan around.
 
 ## How scheduling works behind the scenes
 
@@ -75,7 +69,7 @@ into LinkedGrow, and whether or not anything of ours is running at that moment.
 And it appears in your own LinkedIn scheduled-posts list before it goes out, so
 you can see it there and change your mind.
 
-If a post is scheduled for less than about ninety minutes from now, there is no
+If a post is scheduled for less than about 90 minutes from now, there is no
 time for that, so LinkedGrow publishes it directly at the slot instead. In that
 case it may land a few minutes after the time you picked, on purpose: a post
 that appears at 09:00:00 every single day is a pattern, and LinkedGrow avoids

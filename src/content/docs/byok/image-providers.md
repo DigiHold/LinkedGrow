@@ -1,6 +1,6 @@
 ---
 title: "Image AI Providers"
-description: "Set up AI image generation with Google AI, OpenAI, or Replicate for creating visuals for your LinkedIn posts."
+description: Set up AI image generation with Google AI, OpenAI, or Replicate for creating visuals for your LinkedIn posts.
 category: "byok"
 order: 7
 ---
@@ -11,7 +11,7 @@ order: 7
 
 ## Overview
 
-LinkedGrow supports AI image generation from three providers. Image generation requires the Pro plan or above. You can set up more than one image provider and switch between them depending on what you need.
+LinkedGrow supports AI image generation from three providers. You can set up more than one image provider and switch between them depending on what you need.
 
 ## Google AI (Nano Banana)
 
@@ -51,7 +51,7 @@ OpenAI offers two image models using the same API key as its text models.
 | GPT Image 2 | Best quality | $0.006 - $0.21 |
 | GPT Image 1.5 | Standard | $0.009 - $0.13 |
 
-**Resolution options:** Square (1024x1024), Landscape (1792x1024), Portrait (1024x1792)
+**Resolution options:** Square (1024x1024), Horizontal (1792x1024), Portrait (1024x1792)
 
 **Quality settings:** High (best quality, slower), Medium (balanced), Low (fastest)
 
@@ -79,7 +79,7 @@ Replicate provides the FLUX models, which are open-weight image models known for
 | FLUX 1.1 Pro Ultra | 4MP output | ~$0.06 |
 | FLUX Schnell | Fastest and cheapest | ~$0.003 |
 
-**Resolution options:** Square (1024x1024), Landscape (1536x1024), Portrait (1024x1536), 4MP Square (2048x2048)
+**Resolution options:** Square (1024x1024), Horizontal (1536x1024), Portrait (1024x1536), 4MP Square (2048x2048)
 
 ## Setting up image generation
 
@@ -93,7 +93,3 @@ Replicate provides the FLUX models, which are open-weight image models known for
 ## Which provider should you choose?
 
 Google AI makes the most sense if you already have a Gemini key, and Nano Banana Lite at roughly $0.03 per image is its cheapest option. OpenAI is the natural pick if you already run GPT for text, where GPT Image 2 starts around $0.006 per image at the lowest quality setting. Replicate is worth the separate account when you want open-weight models or reference-image control, and FLUX Schnell at roughly $0.003 per image is the cheapest option across all three providers.
-
-## Plan availability
-
-Image generation is available on Pro and Business plans.

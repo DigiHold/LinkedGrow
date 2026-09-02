@@ -1,6 +1,6 @@
 ---
 title: "AI Post Generator"
-description: "How to use LinkedGrow's AI post generator to create engaging LinkedIn posts with customizable types, categories, and AI-powered editing."
+description: How to use LinkedGrow's AI post generator to create engaging LinkedIn posts with customizable types, categories, and AI-powered editing.
 category: "content-creation"
 order: 1
 ---
@@ -81,6 +81,6 @@ There is no need to move the post to a separate editor -- everything happens inl
 
 **Edit the output.** AI-generated posts are a starting point, not a finished product. The best results come from using AI as a first draft, then adding your personal touch.
 
-## Plan availability
+## Availability
 
-Post generation is available on Pro and Business, and on the 7-day trial that starts every account. Generations are unlimited on both plans, because the writing runs on your own provider key rather than on a bundled allowance.
+Post generation is available to every user of the instance, and generations are unlimited because the writing runs on your own provider key rather than on a bundled allowance.

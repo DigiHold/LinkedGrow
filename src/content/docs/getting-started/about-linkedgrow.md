@@ -1,13 +1,13 @@
 ---
 title: "About LinkedGrow"
-description: "Learn about LinkedGrow, its founders, company story, mission, and core values."
+description: Learn about LinkedGrow, its founders, company story, mission, and core values.
 category: "getting-started"
 order: 5
 ---
 
 ## Who Created LinkedGrow?
 
-LinkedGrow was founded by Nicolas Lecocq, a full-stack developer with 15+ years of experience in web development. Nicolas previously created OceanWP, a WordPress theme that powers over 500,000 websites worldwide. LinkedGrow is built and operated by DigiHold, based in France.
+LinkedGrow was founded by Nicolas Lecocq, a full-stack developer with 15+ years of experience in web development. Nicolas previously created OceanWP, a WordPress theme that powers over 500,000 websites worldwide. LinkedGrow is built by DigiHold, based in France.
 
 ## The Team
 
@@ -38,7 +38,7 @@ LinkedGrow's mission is to democratize LinkedIn success by giving everyone acces
 
 ## Where is LinkedGrow Based?
 
-LinkedGrow is based in France and operated by DigiHold. The platform is GDPR compliant and serves users globally through a worldwide CDN.
+LinkedGrow is developed in France by DigiHold. The self hosted edition runs on your own server, so where your data lives is your decision.
 
 ## Other Products
 

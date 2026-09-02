@@ -2,7 +2,7 @@
 
 The worker is the browser plane of LinkedGrow. It opens one persistent Chrome per connected LinkedIn account, signed in with the credentials the user gave the app and going out through that account's own dedicated address, and it does everything the product does on LinkedIn: sourcing people, sending invitations, running conversations, publishing scheduled posts, reading the numbers back. The app never touches LinkedIn; it writes work into the database and the worker picks it up.
 
-`src/worker.ts` runs 4 loops against the same database the app uses: the agents pass every 5 minutes, the publishing pass every minute, the insights pass every 30 minutes, and a connect pass every 8 seconds for accounts waiting to be signed in. Chrome runs headful under Xvfb, and the number of browsers open at once is capped by `WORKER_SLOTS`.
+`src/worker.ts` runs 5 loops against the same database the app uses: the agents pass every 5 minutes, the publishing pass every minute, the insights pass every 30 minutes, a connect pass every 8 seconds for accounts waiting to be signed in, and a cron pass that ticks every minute and runs each housekeeping job on its own cadence (`src/cron/pass.ts`): agent alerts every 15 minutes, the leads digest every 7 days, and once a day the proxy watchdog, the selector health check, media cleanup, dedicated address renewal and the supplier balance check. Chrome runs headful under Xvfb, and the number of browsers open at once is capped by `WORKER_SLOTS`.
 
 ## In Docker Compose
 

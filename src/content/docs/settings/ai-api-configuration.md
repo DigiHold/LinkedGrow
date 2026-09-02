@@ -1,6 +1,6 @@
 ---
 title: "AI API Configuration"
-description: "How to configure text and image AI providers, select models, and manage your API keys in LinkedGrow settings."
+description: How to configure text and image AI providers, select models, and manage your API keys in LinkedGrow settings.
 category: "settings"
 order: 8
 ---
@@ -54,7 +54,7 @@ The provider you configure and save becomes your active provider for all text ge
 
 ## Image AI configuration
 
-Image generation is shown below the text section and requires the Pro plan or above.
+Image generation is shown below the text section.
 
 ### Image providers
 
@@ -85,4 +85,4 @@ To remove a saved API key, click the delete (trash) icon next to the provider. T
 
 ## Team members
 
-If you are on the Business plan with team members, note that team members use the team owner's API keys automatically. Team members cannot access the AI API settings page - they see a message explaining that the owner manages API keys.
+If you have invited team members from the Team page, they use the team owner's API keys automatically. Team members cannot access the AI API settings page - they see a message explaining that the owner manages API keys.

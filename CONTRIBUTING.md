@@ -45,4 +45,4 @@ There are no generated migrations and no `drizzle-kit`. Add a numbered file unde
 
 ## Pull requests
 
-Small and focused. Say what changed and how you tested it, and add a screenshot for anything visual.
+Keep pull requests small and focused. Say what changed and how you tested it, and add a screenshot for anything visual.

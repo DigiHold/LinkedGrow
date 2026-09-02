@@ -93,6 +93,6 @@ Google Chrome only ships for amd64 on Linux. On arm64 (Raspberry Pi, Apple Silic
 
 ## Docs and help
 
-The docs live on your instance at `/docs` (self hosting under `/docs/self-hosting`). Development setup is in [CONTRIBUTING.md](CONTRIBUTING.md). Bugs and requests go to [GitHub issues](https://github.com/DigiHold/LinkedGrow/issues), security reports to the address in [SECURITY.md](SECURITY.md).
+The docs live on your instance at `/docs` (self hosting under `/docs/self-hosting`), with development setup in [CONTRIBUTING.md](CONTRIBUTING.md). Bugs and requests go to [GitHub issues](https://github.com/DigiHold/LinkedGrow/issues), security reports to the address in [SECURITY.md](SECURITY.md).
 
-Built by [Nicolas Lecocq](https://linkedgrow.ai) and Maria Lecocq. Copyright 2026 Vayalis Sàrl. Licensed under the AGPL-3.0, see [LICENSE](LICENSE).
+Built by [Nicolas Lecocq](https://linkedgrow.ai) and Maria Lecocq, copyright 2026 Vayalis Sàrl, and licensed under the AGPL-3.0 (see [LICENSE](LICENSE)).

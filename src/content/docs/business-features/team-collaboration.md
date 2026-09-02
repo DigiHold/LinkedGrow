@@ -1,6 +1,6 @@
 ---
 title: "Team Collaboration"
-description: "Invite team members, manage roles, and collaborate on LinkedIn content with LinkedGrow's team features."
+description: Invite team members, manage roles, and collaborate on LinkedIn content with LinkedGrow's team features.
 category: "business-features"
 order: 2
 ---
@@ -13,7 +13,7 @@ order: 2
 
 LinkedGrow's team collaboration features let you work together with colleagues on LinkedIn content. You can invite team members, assign roles with different permission levels, and manage content as a team - all from a shared workspace.
 
-Team collaboration is available exclusively on the **Business plan**.
+Every user of the instance can create a team and invite colleagues from the Team page.
 
 ## Creating a Team
 
@@ -52,7 +52,7 @@ The Owner has full access to everything in the team workspace:
 - Create and manage all A/B tests
 - Invite and remove team members
 - Change member roles
-- Manage team settings and billing
+- Manage team settings
 - Access all analytics and reports
 - Manage API keys
 
@@ -67,7 +67,7 @@ Admins have broad access to team content and management:
 - View all analytics and reports
 - Access API keys
 
-Admins cannot create or manage A/B tests, change billing settings, or remove other Admins.
+Admins cannot create or manage A/B tests or remove other Admins.
 
 ### Member
 
