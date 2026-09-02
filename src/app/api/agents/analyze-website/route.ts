@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { EDITION } from "@/lib/edition";
+import { getInstanceSettings, resolveInstanceSecret } from "@/lib/instance-settings";
+import { chat, type AgentProvider } from "@shared/ai-client.ts";
+import { AGENT_PROVIDERS, isAgentProvider } from "@shared/ai-models.ts";
 
 /**
  * Reads the client's own website once and turns it into the agent's targeting.
@@ -12,11 +16,15 @@ import { checkAIRateLimit } from "@/lib/rate-limit";
  * proposes the ICP, the roles, the industries and the company sizes. The
  * customer edits rather than invents.
  *
- * The AI runs on the platform Anthropic key, not the customer's: on v2 the
- * agent's AI is in the price and a new account has no key of its own yet.
- * Haiku, not Sonnet: pulling roles and topics out of a page is extraction, which
- * is what the plan's routing table sends to Haiku. The customer edits the result
- * anyway, so paying five times more for the same list buys nothing.
+ * In the cloud the read runs on the platform Anthropic key, not the customer's:
+ * on v2 the agent's AI is in the price and a new account has no key of its own
+ * yet. Haiku, not Sonnet: pulling roles and topics out of a page is extraction,
+ * which is what the plan's routing table sends to Haiku. The customer edits the
+ * result anyway, so paying five times more for the same list buys nothing.
+ *
+ * The self hosted edition reads with the key, the provider and the writer
+ * model the setup wizard stored, through the same shared client the worker
+ * uses, so the five providers behave the same here as they do in the agents.
  */
 
 const MAX_HTML = 400_000;
@@ -44,45 +52,28 @@ function readableText(html: string): string {
 }
 
 /**
- * The shape the answer has to take.
- *
- * Asking for JSON in the system prompt is a request; this is a constraint. The
- * model is decoded against the schema, so the reply cannot arrive wrapped in a
- * sentence or a code fence, which is what used to break the parse.
+ * The shape the answer has to take, asked for in words because the five
+ * providers do not share a schema-constrained decoding mode. The keys and the
+ * size bands are spelled out so every provider returns the same object.
  */
-const SCHEMA = {
-  type: "object",
-  properties: {
-    icpSummary: { type: "string" },
-    jobRoles: { type: "array", items: { type: "string" } },
-    industries: { type: "array", items: { type: "string" } },
-    companySizes: {
-      type: "array",
-      items: {
-        type: "string",
-        enum: ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"],
-      },
-    },
-    signals: { type: "array", items: { type: "string" } },
-    companyInfo: { type: "string" },
-  },
-  required: [
-    "icpSummary",
-    "jobRoles",
-    "industries",
-    "companySizes",
-    "signals",
-    "companyInfo",
-  ],
-  additionalProperties: false,
-} as const;
+const SYSTEM =
+  "You read a company's website and work out who buys from them. Fill each field: " +
+  "icpSummary, a sentence naming the buyer and the problem the company solves for them; " +
+  "jobRoles, the job titles that buy; industries, the sectors they work in; " +
+  "companySizes, the headcount bands that fit, each one of 1-10, 11-50, 51-200, 201-500, 501-1000 or 1000+; " +
+  "signals, 6 short topics those buyers post about or search for, two or three words " +
+  "each, no hashtags; " +
+  "companyInfo, two sentences a stranger could read to understand what the company sells. " +
+  "Leave an array empty rather than guessing. Never invent a location. " +
+  "Answer with one JSON object holding exactly the keys icpSummary, jobRoles, industries, companySizes, signals and companyInfo, " +
+  "and nothing else: no prose before or after it, no code fence.";
 
 /**
  * Reads the object out of the answer even if something wraps it.
  *
- * The schema above should make this unnecessary. It stays because a whole
- * signup stalls on one stray character, and the cost of being wrong here is a
- * customer staring at a form we promised to fill for them.
+ * The prompt asks for bare JSON. This stays because a whole signup stalls on
+ * one stray character, and the cost of being wrong here is a customer staring
+ * at a form we promised to fill for them.
  */
 function extractJson(text: string): Record<string, unknown> | null {
   const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/, "").trim();
@@ -106,6 +97,21 @@ function list(value: unknown, max: number): string[] {
     .filter(Boolean)
     .slice(0, max)
     .map((v) => v.slice(0, 80));
+}
+
+/** Who reads the page: the cloud's own Haiku, or whatever the setup wizard stored. */
+async function reader(): Promise<{ provider: AgentProvider; model: string; apiKey: string | null }> {
+  if (EDITION === "cloud") {
+    return { provider: "anthropic", model: "claude-haiku-4-5", apiKey: process.env.ANTHROPIC_API_KEY || null };
+  }
+  const settings = await getInstanceSettings();
+  const provider: AgentProvider =
+    settings.agentAiProvider && isAgentProvider(settings.agentAiProvider) ? settings.agentAiProvider : "anthropic";
+  return {
+    provider,
+    model: settings.agentAiModelWriter || AGENT_PROVIDERS[provider].writer,
+    apiKey: await resolveInstanceSecret("agentAiKey"),
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -156,12 +162,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "That address is not allowed." }, { status: 400 });
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Site reading is unavailable right now. Fill the fields by hand and carry on." },
-        { status: 503 },
-      );
+    const ai = await reader();
+    if (!ai.apiKey) {
+      // A self hosted owner can fix this themselves; a cloud customer cannot.
+      return EDITION === "cloud"
+        ? NextResponse.json(
+            { error: "Site reading is unavailable right now. Fill the fields by hand and carry on." },
+            { status: 503 },
+          )
+        : NextResponse.json(
+            { error: "No AI key is configured for the agents. Add one in Settings, Instance." },
+            { status: 400 },
+          );
     }
 
     let page: Response;
@@ -197,60 +209,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let completion: Response;
+    let answer: string;
     try {
-      completion = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5",
-          max_tokens: 1500,
-          output_config: { format: { type: "json_schema", schema: SCHEMA } },
-          system:
-            "You read a company's website and work out who buys from them. Fill each field: " +
-            "icpSummary, a sentence naming the buyer and the problem the company solves for them; " +
-            "jobRoles, the job titles that buy; industries, the sectors they work in; " +
-            "companySizes, the headcount bands that fit; " +
-            "signals, 6 short topics those buyers post about or search for, two or three words " +
-            "each, no hashtags; " +
-            "companyInfo, two sentences a stranger could read to understand what the company sells. " +
-            "Leave an array empty rather than guessing. Never invent a location.",
-          messages: [
-            { role: "user", content: `Website: ${target.hostname}\n\n${text}` },
-          ],
-        }),
-        signal: AbortSignal.timeout(45000),
-      });
-    } catch {
-      return NextResponse.json(
-        { error: "Reading the site timed out. Fill the fields by hand and carry on." },
-        { status: 504 },
-      );
-    }
-    if (!completion.ok) {
+      answer = (
+        await chat(
+          {
+            provider: ai.provider,
+            apiKey: ai.apiKey,
+            model: ai.model,
+            maxTokens: 1500,
+            system: SYSTEM,
+            messages: [{ role: "user", content: `Website: ${target.hostname}\n\n${text}` }],
+          },
+          (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(45000) }),
+        )
+      ).text;
+    } catch (error) {
+      if (error instanceof Error && error.name === "TimeoutError") {
+        return NextResponse.json(
+          { error: "Reading the site timed out. Fill the fields by hand and carry on." },
+          { status: 504 },
+        );
+      }
       return NextResponse.json(
         { error: "Reading the site failed. Fill the fields by hand and carry on." },
         { status: 502 },
       );
     }
 
-    const payload = await completion.json();
-    // Anthropic returns an array of blocks; the answer is the first text one.
-    const content = Array.isArray(payload?.content)
-      ? payload.content.find((b: { type?: string }) => b?.type === "text")?.text
-      : undefined;
-    // A cut answer is cut JSON, so say what happened instead of blaming the model.
-    if (payload?.stop_reason === "max_tokens") {
-      return NextResponse.json(
-        { error: "That page was too long to read in one go. Fill the fields by hand and carry on." },
-        { status: 502 },
-      );
-    }
-    const parsed = typeof content === "string" ? extractJson(content) : null;
+    const parsed = extractJson(answer);
     if (!parsed) {
       return NextResponse.json(
         { error: "The answer came back unreadable. Fill the fields by hand and carry on." },

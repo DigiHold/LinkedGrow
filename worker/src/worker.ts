@@ -4,7 +4,7 @@ import { db, loadRunnableAgents, touchRun, pauseAgent, flagAccount, requestSignI
 import type { AgentContext } from "./config.ts";
 import { log, logError } from "./logger.ts";
 import { assertCanSend, HaltedError } from "./guards.ts";
-import { BudgetExceededError, classifyReply } from "./ai.ts";
+import { BudgetExceededError, NO_AI_KEY_MESSAGE, NoAiKeyError, classifyReply, models } from "./ai.ts";
 import {
   openSession,
   closeSession,
@@ -127,6 +127,13 @@ async function runAgent(ctx: AgentContext): Promise<void> {
   const canWrite = isWithinBusinessHours(ctx.cfg);
 
   await assertCanSend(ctx);
+
+  // No key, no pass, and the reason goes on the agent itself: the owner of a
+  // self hosted instance reads the dashboard, not the journal.
+  if (!(await models()).apiKey) {
+    await pauseAgent(ctx, NO_AI_KEY_MESSAGE);
+    return;
+  }
 
   const proxy = await allocationFor(ctx.linkedinAccountId);
   if (!proxy && isProduction()) {
@@ -415,6 +422,10 @@ async function safely(ctx: AgentContext): Promise<void> {
     }
     if (error instanceof BudgetExceededError) {
       await recordEvent(ctx, "budget", error.message);
+      return;
+    }
+    if (error instanceof NoAiKeyError) {
+      await pauseAgent(ctx, error.message);
       return;
     }
     if (error instanceof ProxyMismatchError) {

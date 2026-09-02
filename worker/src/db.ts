@@ -1,5 +1,5 @@
 import { createClient, type Client } from "@libsql/client";
-import { requireEnv } from "./config.ts";
+import { optionalEnv, requireEnv } from "./config.ts";
 import type { AgentContext, Config } from "./config.ts";
 import { DEFAULTS } from "./config.ts";
 import { timezoneForCountry } from "./browser/fingerprint.ts";
@@ -31,7 +31,8 @@ export function db(): Client {
   if (!client) {
     client = createClient({
       url: requireEnv("TURSO_DATABASE_URL"),
-      authToken: requireEnv("TURSO_AUTH_TOKEN"),
+      // A local libsql behind http://db:8080 has no token; Turso does.
+      authToken: optionalEnv("TURSO_AUTH_TOKEN") ?? undefined,
     });
   }
   return client;

@@ -80,7 +80,7 @@ Return ONLY a JSON array:
   let ideas: Idea[] = [];
 
   if (provider === "openai") {
-    const openaiModel = model || "gpt-5.4-mini";
+    const openaiModel = model || "gpt-5.6-terra";
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
@@ -339,12 +339,12 @@ export async function POST(request: NextRequest) {
       kimi: aiSettingsUser.kimiModel,
     };
 
-    const defaultModel = provider === "openai" ? "gpt-5.4-mini" :
+    const defaultModel = provider === "openai" ? "gpt-5.6-terra" :
                          provider === "anthropic" ? "claude-sonnet-5" :
                          provider === "google" ? "gemini-3-flash-preview" :
                          provider === "grok" ? "grok-4.3" :
                          provider === "perplexity" ? "sonar-pro" :
-                         provider === "kimi" ? "kimi-k2.6" : "gpt-5.4-mini";
+                         provider === "kimi" ? "kimi-k2.6" : "gpt-5.6-terra";
     const model = providerModelMap[provider] || defaultModel;
 
     // Generate ideas using AI with voice settings (from owner for team members)

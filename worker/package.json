@@ -5,11 +5,10 @@
   "description": "The LinkedGrow worker plane: one persistent browser per LinkedIn account, driven through that account's dedicated address.",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --test --experimental-strip-types 'src/**/*.test.ts'",
+    "test": "node --test --experimental-strip-types 'src/**/*.test.ts' '../shared/**/*.test.ts'",
     "worker": "node --experimental-strip-types src/worker.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.0",
     "@libsql/client": "^0.15.15",
     "dotenv": "^17.2.3",
     "patchright": "1.61.1",

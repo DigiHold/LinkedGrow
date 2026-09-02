@@ -1,6 +1,6 @@
 import type { AgentContext } from "../config.ts";
 import { db } from "../db.ts";
-import { generate, MODELS } from "../ai.ts";
+import { generate, models } from "../ai.ts";
 import { log, logError } from "../logger.ts";
 import { competesWith } from "./competitor.ts";
 
@@ -223,6 +223,7 @@ export async function reviseMemory(ctx: AgentContext): Promise<Memory | null> {
 
   const sells = ctx.cfg.business.description ?? "";
 
+  const m = await models();
   let answer: string;
   try {
     answer = await generate(
@@ -245,7 +246,7 @@ export async function reviseMemory(ctx: AgentContext): Promise<Memory | null> {
       {
         purpose: "revise-memory",
         maxTokens: 400,
-        model: MODELS.fast,
+        model: m.fast,
         systemPrompt:
           "You keep one short note about who is worth contacting for a business, and you rewrite it from scratch every time rather than adding to it.\n\n" +
           "Replace the previous note. Keep what the new evidence still supports, drop what it contradicts, and add what it teaches. The note must never grow: it is a few short lines and it stays that way however many revisions it has been through.\n\n" +

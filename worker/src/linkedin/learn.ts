@@ -1,6 +1,6 @@
 import type { AgentContext } from "../config.ts";
 import { db } from "../db.ts";
-import { generate, MODELS } from "../ai.ts";
+import { generate, models } from "../ai.ts";
 import { log, logError } from "../logger.ts";
 
 /**
@@ -609,6 +609,7 @@ export async function growFrom(
   );
   if (room <= 0) return 0;
 
+  const m = await models();
   let answer: string;
   try {
     answer = await generate(
@@ -630,7 +631,7 @@ export async function growFrom(
       {
         purpose: "grow-source",
         maxTokens: 120,
-        model: MODELS.fast,
+        model: m.fast,
         systemPrompt:
           "You turn a set of real LinkedIn headlines into new places to find more people like them.\n\n" +
           "A creator is a real PERSON active on LinkedIn whose posts this audience reads and comments under: a founder who writes about the niche, a well-known operator, an investor they follow. Give their full name as LinkedIn shows it. Never invent someone, and never name a person who is famous elsewhere but quiet on LinkedIn.\n\n" +

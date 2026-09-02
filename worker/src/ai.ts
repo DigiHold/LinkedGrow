@@ -1,8 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { requireEnv } from "./config.ts";
 import type { AgentContext } from "./config.ts";
 import { db, type ReplyIntent } from "./db.ts";
 import { log } from "./logger.ts";
+import { chat, type AgentProvider } from "../../shared/ai-client.ts";
+import { AGENT_PROVIDERS, isAgentProvider, priceFor } from "../../shared/ai-models.ts";
+import { instance } from "./instance.ts";
 
 /**
  * Every model call in the worker goes through here.
@@ -11,9 +12,10 @@ import { log } from "./logger.ts";
  *
  * 1. **API only.** Plan section 8b settles that subscription mode cannot serve
  *    a product. The CLI path is gone rather than disabled.
- * 2. **Routing.** Section 8c: Haiku for classification, where volume is the
- *    cost driver and quality barely moves, Sonnet for anything a human reads.
- *    Built naively this bill is five times larger for no gain.
+ * 2. **Routing.** Section 8c: the provider's fast model for classification,
+ *    where volume is the cost driver and quality barely moves, its writer model
+ *    for anything a human reads. Built naively this bill is five times larger
+ *    for no gain.
  * 3. **Ceilings, checked before the call.** Section 8g: $1.00 a day and $12 a
  *    month per agent. Scoring is the one cost line LinkedIn's limits do not
  *    bound, so an agent pointed at fifteen broad sources could otherwise score
@@ -23,18 +25,45 @@ import { log } from "./logger.ts";
  * be recorded is a call that does not happen.
  */
 
-export const MODELS = {
+export interface AgentModels {
+  provider: AgentProvider;
   /** Classification and scoring. Volume is the cost driver here. */
-  fast: "claude-haiku-4-5-20251001",
+  fast: string;
   /** Anything a person will read: notes, DMs, comments. */
-  writer: "claude-sonnet-5",
-} as const;
+  writer: string;
+  apiKey: string | null;
+}
 
-/** Standard pricing, dollars per million tokens. Sonnet's intro rate ended 2026-08-31. */
-const PRICE = {
-  [MODELS.fast]: { input: 1, output: 5 },
-  [MODELS.writer]: { input: 3, output: 15 },
-} as const;
+/**
+ * Which provider, which two models and which key the agents run on.
+ *
+ * The cloud keeps Anthropic on the environment's key. The self hosted edition
+ * runs on whatever the setup wizard stored: any of the five providers, the
+ * stored model ids when the owner picked some, the provider's own pair
+ * otherwise. Prices live in the shared table next to the client.
+ */
+export async function models(): Promise<AgentModels> {
+  const inst = await instance();
+  const provider: AgentProvider =
+    inst.agentAiProvider && isAgentProvider(inst.agentAiProvider) ? inst.agentAiProvider : "anthropic";
+  const defaults = AGENT_PROVIDERS[provider];
+  return {
+    provider,
+    fast: inst.agentAiModelFast || defaults.fast,
+    writer: inst.agentAiModelWriter || defaults.writer,
+    apiKey: inst.agentAiKey,
+  };
+}
+
+export const NO_AI_KEY_MESSAGE = "No AI key is configured for the agents. Add one in Settings, Instance.";
+
+/** Thrown before any call when there is no key to call with. The agent is paused with this message. */
+export class NoAiKeyError extends Error {
+  constructor() {
+    super(NO_AI_KEY_MESSAGE);
+    this.name = "NoAiKeyError";
+  }
+}
 
 export const DAILY_CEILING_USD = 1.0;
 
@@ -52,13 +81,6 @@ export const DAILY_CEILING_USD = 1.0;
  * happens, because ICPs are not equally good.
  */
 export const MONTHLY_CEILING_PER_AGENT_USD = 12.0;
-
-let client: Anthropic | null = null;
-
-function anthropic(): Anthropic {
-  if (!client) client = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
-  return client;
-}
 
 export class BudgetExceededError extends Error {
   readonly window: "day" | "month";
@@ -113,12 +135,15 @@ async function accountSpentSince(
  */
 export async function assertBudget(ctx: AgentContext, purpose = ""): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
-  const [day, month] = await Promise.all([
+  // The caps come from the instance: the wizard's two numbers on a self hosted
+  // box, the constants above in the cloud.
+  const [day, month, inst] = await Promise.all([
     spentSince(ctx.agentId, now - 86_400),
     accountSpentSince(ctx.linkedinAccountId, now - 30 * 86_400),
+    instance(),
   ]);
 
-  const pool = MONTHLY_CEILING_PER_AGENT_USD * Math.max(1, ctx.agentsOnAccount);
+  const pool = inst.accountMonthlyCapUsd * Math.max(1, ctx.agentsOnAccount);
 
   // Answering a person who wrote to you is not the same kind of spend as
   // looking for more people. When the pool runs low, discovery stops first and
@@ -128,17 +153,18 @@ export async function assertBudget(ctx: AgentContext, purpose = ""): Promise<voi
     purpose === "ask" || purpose === "hello" || purpose === "classify-reply";
   const limit = conversation ? pool : pool * 0.8;
 
-  if (day >= DAILY_CEILING_USD) throw new BudgetExceededError("day", day);
+  if (day >= inst.agentDailyCapUsd) throw new BudgetExceededError("day", day);
   if (month >= limit) throw new BudgetExceededError("month", month);
 }
 
-function costOf(model: string, inputTokens: number, outputTokens: number): number {
-  const price = PRICE[model as keyof typeof PRICE] ?? PRICE[MODELS.writer];
+function costOf(provider: AgentProvider, model: string, inputTokens: number, outputTokens: number): number {
+  const price = priceFor(provider, model);
   return (inputTokens * price.input + outputTokens * price.output) / 1_000_000;
 }
 
 async function meter(
   ctx: AgentContext,
+  provider: AgentProvider,
   model: string,
   purpose: string,
   inputTokens: number,
@@ -152,7 +178,7 @@ async function meter(
     args: [
       crypto.randomUUID(), ctx.workspaceId, ctx.agentId, ctx.linkedinAccountId,
       model, purpose, inputTokens, outputTokens,
-      costOf(model, inputTokens, outputTokens),
+      costOf(provider, model, inputTokens, outputTokens),
       Math.floor(Date.now() / 1000),
     ],
   });
@@ -170,9 +196,9 @@ export interface GenerateOptions {
 /**
  * One model call, metered and capped.
  *
- * The system prompt is sent with a cache breakpoint because it is identical
- * across thousands of scoring calls, and cached reads bill at roughly a tenth
- * of input. Section 8c: without caching the same workload costs several times
+ * On Anthropic the system prompt is sent with a cache breakpoint because it is
+ * identical across thousands of scoring calls, and cached reads bill at roughly
+ * a tenth of input. Section 8c: without caching the same workload costs several times
  * more, and that is the difference between the agent AI being affordable to
  * include and not.
  */
@@ -182,39 +208,22 @@ export async function generate(
   opts: GenerateOptions
 ): Promise<string> {
   await assertBudget(ctx, opts.purpose);
-  const model = opts.model ?? MODELS.writer;
+  const m = await models();
+  if (!m.apiKey) throw new NoAiKeyError();
+  const model = opts.model ?? m.writer;
 
-  const message = await anthropic().messages.create({
+  const result = await chat({
+    provider: m.provider,
+    apiKey: m.apiKey,
     model,
-    max_tokens: opts.maxTokens ?? 1024,
-    ...(opts.systemPrompt
-      ? {
-          system: [
-            {
-              type: "text" as const,
-              text: opts.systemPrompt,
-              cache_control: { type: "ephemeral" as const },
-            },
-          ],
-        }
-      : {}),
+    system: opts.systemPrompt,
+    cacheSystem: m.provider === "anthropic",
     messages: [{ role: "user", content: prompt }],
+    maxTokens: opts.maxTokens ?? 1024,
   });
 
-  await meter(
-    ctx,
-    model,
-    opts.purpose,
-    message.usage.input_tokens,
-    message.usage.output_tokens
-  );
-
-  const text = message.content
-    .map((block) => (block.type === "text" ? block.text : ""))
-    .join("")
-    .trim();
-  if (!text) throw new Error("The model returned nothing");
-  return text;
+  await meter(ctx, m.provider, model, opts.purpose, result.inputTokens, result.outputTokens);
+  return result.text;
 }
 
 /**
@@ -235,11 +244,12 @@ export async function prefilter(
     .map((c, i) => `${i + 1}. ${c.name} — ${c.headline}`)
     .join("\n");
 
+  const m = await models();
   const answer = await generate(
     ctx,
     `Ideal customer: ${icp}\n\nPeople:\n${list}\n\nFor each number, answer keep or drop. One word per line, in order, nothing else.`,
     {
-      model: MODELS.fast,
+      model: m.fast,
       purpose: "prefilter",
       maxTokens: Math.min(1000, candidates.length * 5 + 20),
       systemPrompt:
@@ -296,6 +306,7 @@ export async function classifyReply(
     .map((t) => `${t.from === "us" ? "Us" : "Them"}: ${t.body.replace(/\s+/g, " ").trim()}`)
     .join("\n");
 
+  const m = await models();
   const answer = await generate(
     ctx,
     `Our business: ${business || "a software product"}\n\nThe conversation so far:\n${transcript}\n\nAnswer on one line: HUMAN or AGENT, then INTERESTED, NEUTRAL or REFUSED, then a short reason.`,
@@ -307,7 +318,7 @@ export async function classifyReply(
        * filled the customer's Yours-now list with greetings while a
        * co-founder solicitation sat there labelled as needing them.
        */
-      model: MODELS.writer,
+      model: m.writer,
       purpose: "classify-reply",
       maxTokens: 60,
       systemPrompt:
@@ -341,7 +352,7 @@ export async function classifyReply(
   return { handOver: verdict, why: why || answer.trim().slice(0, 120), intent };
 }
 
-/** Full scoring, still on the cheap model. Sonnet here is the biggest cost mistake available. */
+/** Full scoring, still on the fast model. The writer here is the biggest cost mistake available. */
 export async function scoreLead(
   ctx: AgentContext,
   icp: string,
@@ -407,6 +418,7 @@ export async function scoreLead(
           .join(", ")}. Turning up repeatedly through different routes is hard evidence of being active in this market, and it is worth more than any headline.`
       : "";
 
+  const m = await models();
   const answer = await generate(
     ctx,
     `${sells ? `What our customer sells: ${sells}\n\n` : ""}Ideal customer: ${icp}
@@ -421,7 +433,7 @@ ${profile.about ? `About: ${profile.about.slice(0, 600)}` : ""}
 
 Score from 0 to 100. What they were doing when they were found is real evidence about their interest, so somebody asking about the problem beats the same headline found in a search. Reply with the score and a one-sentence reason.`,
     {
-      model: MODELS.fast,
+      model: m.fast,
       purpose: "score",
       maxTokens: 150,
       systemPrompt:
