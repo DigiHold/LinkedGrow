@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed-admin": "npx tsx src/lib/db/seed-admin.ts",
-    "embed-docs": "npx tsx scripts/embed-docs.ts"
+    "db:seed-admin": "npx tsx src/lib/db/seed-admin.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.37",
