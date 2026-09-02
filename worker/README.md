@@ -6,7 +6,7 @@ The worker is the browser plane of LinkedGrow. It opens one persistent Chrome pe
 
 ## In Docker Compose
 
-The `worker` service of the stack's `docker-compose.yml` builds `docker/Dockerfile.worker`, mounts the `profiles` and `uploads` volumes, and starts once the app reports healthy. Nothing to configure beyond `WORKER_SLOTS` in the root `.env`: the database address, the edition and the encryption key are wired by the compose file. On an amd64 host the image installs Google Chrome; on arm64 it installs Chromium and the entrypoint sets `CHROME_PATH` for it.
+The `worker` service of the stack's `docker-compose.yml` runs `ghcr.io/digihold/linkedgrow-worker`, built from `docker/Dockerfile.worker`, mounts the `profiles` and `uploads` volumes, and starts once the app reports healthy. Nothing to configure beyond `WORKER_SLOTS` in the root `.env`: the database address, the edition and the encryption key are wired by the compose file. On an amd64 host the image installs Google Chrome; on arm64 it installs Chromium and the entrypoint sets `CHROME_PATH` for it.
 
 ## On a machine of its own
 
