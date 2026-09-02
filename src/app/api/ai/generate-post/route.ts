@@ -7,7 +7,7 @@ import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoni
 import { buildLanguageInstruction } from "@/lib/content-languages";
 import { checkGenerationLimit, incrementGenerationUsage } from "@/lib/generation-usage";
 import { HOOK_RULES, POST_STYLE_RULES, stripSlop } from "@/lib/post-style";
-import type { PlanId } from "@/lib/plans";
+import { effectivePlan } from "@/lib/plans";
 
 export const maxDuration = 120;
 
@@ -851,7 +851,7 @@ export async function POST(request: NextRequest) {
     // (action === "generate") and refinements (action === "edit") do NOT count;
     // they're part of the same cycle. Carousel is Business-only so irrelevant.
     const countableAction = action === "ideas";
-    const userPlan = (session.user.plan || "free") as PlanId;
+    const userPlan = effectivePlan({ plan: session.user.plan, isAdmin: session.user.isAdmin });
     let limitCheck: Awaited<ReturnType<typeof checkGenerationLimit>> | null = null;
     if (countableAction) {
       limitCheck = await checkGenerationLimit(session.user.id, userPlan);

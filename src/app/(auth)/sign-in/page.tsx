@@ -114,7 +114,7 @@ function SignInForm() {
 
     // Listen for messages from the popup
     const handleMessage = async (event: MessageEvent) => {
-      const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
+      const allowedOrigin = window.location.origin;
       if (event.origin !== allowedOrigin) return;
 
       if (event.data.type === `${provider}-success`) {
@@ -191,8 +191,8 @@ function SignInForm() {
             </div>
           )}
 
-          {/* Social Login Buttons */}
-          {!requires2FA && (
+          {/* Social Login Buttons, only on an instance with Google configured */}
+          {!requires2FA && process.env.NEXT_PUBLIC_GOOGLE_SIGNIN === "1" && (
             <>
               <div className="mb-6">
                 <button

@@ -6,6 +6,8 @@ import {
   agentQuotaForEdition,
   hasAgentSubscriptionFor,
   effectiveAgentQuotaFor,
+  isWithinLimitFor,
+  isUnlimitedQuota,
 } from "./plans";
 
 test("self hosted: everything is business and unlimited", () => {
@@ -15,6 +17,8 @@ test("self hosted: everything is business and unlimited", () => {
   assert.equal(agentQuotaForEdition(e, "free"), Number.MAX_SAFE_INTEGER);
   assert.equal(hasAgentSubscriptionFor(e, { stripeSubscriptionId: null, isAdmin: false }), true);
   assert.equal(effectiveAgentQuotaFor(e, "free", 0), Number.MAX_SAFE_INTEGER);
+  assert.equal(isWithinLimitFor(e, "free", "postsPerMonth", 5), true);
+  assert.equal(isUnlimitedQuota(Number.MAX_SAFE_INTEGER), true);
 });
 
 test("cloud: today's answers are unchanged", () => {
@@ -28,4 +32,7 @@ test("cloud: today's answers are unchanged", () => {
   assert.equal(hasAgentSubscriptionFor(c, { stripeSubscriptionId: "sub_1", isAdmin: false }), true);
   assert.equal(effectiveAgentQuotaFor(c, "business", 2), 5);
   assert.equal(effectiveAgentQuotaFor(c, "free", 4), 0);
+  assert.equal(isWithinLimitFor(c, "free", "postsPerMonth", 5), false);
+  assert.equal(isWithinLimitFor(c, "pro", "postsPerMonth", 5), true);
+  assert.equal(isUnlimitedQuota(3), false);
 });

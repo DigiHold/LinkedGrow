@@ -9,7 +9,7 @@ import { deleteMultipleFromR2, uploadToR2, isR2Configured } from "@/lib/storage/
 import sharp from "sharp";
 import { cancelScheduledPost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
-import { PLANS, PlanId } from "@/lib/plans";
+import { PLANS, effectivePlan } from "@/lib/plans";
 import { canUserAccessPost } from "@/lib/post-access";
 
 interface RouteParams {
@@ -173,7 +173,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
       // Check scheduled posts limit if changing from non-scheduled to scheduled
       if (existingPost.status !== "scheduled") {
-        const userPlan = (user.plan || "free") as PlanId;
+        const userPlan = effectivePlan({ plan: user.plan, isAdmin: user.isAdmin });
         const scheduledPostsLimit = PLANS[userPlan].limits.scheduledPosts;
 
         if (scheduledPostsLimit !== -1) {

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 // Keeping a copy here is how the card came to print a ramp the engine was
 // never going to follow.
 import { RAMP, dayPace, workingDays } from "@/lib/agent-pace";
+import { isUnlimitedQuota } from "@/lib/plans";
 
 /**
  * The agents list, built to the v2 dashboard prototype.
@@ -342,7 +343,7 @@ export function AgentsContent() {
         <div className="flex-1" />
         {quota && (
           <Pill tone="neutral">
-            {running} / {quota.limit} running
+            {isUnlimitedQuota(quota.limit) ? `${running} running` : `${running} / ${quota.limit} running`}
           </Pill>
         )}
         <Link

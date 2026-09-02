@@ -196,14 +196,29 @@ export function getRequiredPlanForFeature(
   return "business";
 }
 
+/** Self hosted has no monthly caps at all; the cloud keeps the plan table's numbers. */
+export function isWithinLimitFor(
+  edition: Edition,
+  userPlan: PlanId,
+  limitType: "postsPerMonth" | "scheduledPosts" | "imagesPerMonth",
+  currentUsage: number
+): boolean {
+  if (edition === "self-hosted") return true;
+  const limit = PLANS[userPlan].limits[limitType];
+  if (limit === -1) return true; // Unlimited
+  return currentUsage < limit;
+}
 export function isWithinLimit(
   userPlan: PlanId,
   limitType: "postsPerMonth" | "scheduledPosts" | "imagesPerMonth",
   currentUsage: number
 ): boolean {
-  const limit = PLANS[userPlan].limits[limitType];
-  if (limit === -1) return true; // Unlimited
-  return currentUsage < limit;
+  return isWithinLimitFor(EDITION, userPlan, limitType, currentUsage);
+}
+
+/** A self hosted quota is Number.MAX_SAFE_INTEGER; screens hide the fraction rather than print it. */
+export function isUnlimitedQuota(n: number): boolean {
+  return n >= Number.MAX_SAFE_INTEGER;
 }
 
 /** Agents included before the $49 add-on. Self hosted has no ceiling. */

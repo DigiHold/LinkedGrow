@@ -6,7 +6,7 @@ import { posts, media, users, teams, teamMembers, linkedinAccounts } from "@/lib
 import { loadSessionUser } from "@/lib/auth-user";
 import { eq, desc, and, inArray, or, count, gte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { PLANS, PlanId } from "@/lib/plans";
+import { PLANS, effectivePlan } from "@/lib/plans";
 import { setBrevoAttributes, brevoDate } from "@/lib/newsletter";
 import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
 import sharp from "sharp";
@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check monthly post creation limit for Free plan
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan({ plan: user.plan, isAdmin: user.isAdmin });
     const postsPerMonthLimit = PLANS[userPlan].limits.postsPerMonth;
 
     if (postsPerMonthLimit !== -1) {
@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check scheduled posts limit for user's plan
-      const userPlan = (user.plan || "free") as PlanId;
+      const userPlan = effectivePlan({ plan: user.plan, isAdmin: user.isAdmin });
       const scheduledPostsLimit = PLANS[userPlan].limits.scheduledPosts;
 
       if (scheduledPostsLimit !== -1) {

@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { signUp, subscribeToNewsletter, brevoDate } from "@/lib/newsletter";
 import { sendSignupWelcomeEmail } from "@/lib/email";
 import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
+import { newUserPolicy, SIGNUPS_CLOSED_MESSAGE } from "@/lib/registration";
 
 
 export async function POST(request: NextRequest) {
@@ -92,6 +93,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Self hosted: the first account is the administrator and sign ups may be
+    // closed. The cloud path answers plan free, never admin, never closed.
+    const policy = await newUserPolicy();
+    if (policy.closed) {
+      return NextResponse.json({ error: SIGNUPS_CLOSED_MESSAGE }, { status: 403 });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -110,19 +118,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create user with 7-day Pro trial. Every new signup gets the trial -
-    // they can upgrade to a paid plan at any time during the trial from
-    // /dashboard/upgrade or the post-checkout flow.
     const userId = randomUUID();
     await db.insert(users).values({
       id: userId,
       name: name,
       email: email,
       password: hashedPassword,
-      // No plan until Stripe says so. The trial is granted by Checkout and its
-      // dates are written back by the webhook, so an account created here can
-      // sign in and reach nothing except the plan picker.
-      plan: "free",
+      // Cloud: no plan until Stripe says so. The trial is granted by Checkout
+      // and its dates are written back by the webhook, so an account created
+      // here can sign in and reach nothing except the plan picker.
+      // Self hosted: business, and the first account is the administrator.
+      plan: policy.plan,
+      isAdmin: policy.isAdmin,
       hasUsedTrial: false,
       twoFactorEnabled: false,
       referredBy: validAffiliate?.referralCode || null,

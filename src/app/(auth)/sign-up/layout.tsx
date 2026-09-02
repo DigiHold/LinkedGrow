@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { getAppUrl } from "@/lib/app-url";
 
 export const metadata: Metadata = {
   title: "Sign Up - Create Your LinkedGrow Account",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
     title: "Sign Up - Create Your LinkedGrow Account",
     description:
       "Create your free LinkedGrow account and start growing your LinkedIn presence with AI-powered content.",
-    url: "https://linkedgrow.ai/sign-up",
+    url: `${getAppUrl()}/sign-up`,
     siteName: "LinkedGrow",
     type: "website",
   },
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   alternates: {
-    canonical: "https://linkedgrow.ai/sign-up",
+    canonical: `${getAppUrl()}/sign-up`,
   },
 };
 

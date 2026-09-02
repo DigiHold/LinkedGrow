@@ -73,7 +73,7 @@ function SignUpContent() {
 
     // Listen for messages from the popup
     const handleMessage = async (event: MessageEvent) => {
-      const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
+      const allowedOrigin = window.location.origin;
       if (event.origin !== allowedOrigin) return;
 
       if (event.data.type === `${provider}-success`) {
@@ -252,36 +252,40 @@ function SignUpContent() {
               </div>
             )}
 
-            {/* Social Login Buttons */}
-            <div className="mb-6">
-              <button
-                type="button"
-                onClick={() => handleSocialSignUp("google")}
-                disabled={socialLoading !== null}
-                className="h-12 w-full flex items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {socialLoading === "google" ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <GoogleIcon className="w-5 h-5" />
-                    <span>Continue with Google</span>
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Social Login Buttons, only on an instance with Google configured */}
+            {process.env.NEXT_PUBLIC_GOOGLE_SIGNIN === "1" && (
+              <>
+                <div className="mb-6">
+                  <button
+                    type="button"
+                    onClick={() => handleSocialSignUp("google")}
+                    disabled={socialLoading !== null}
+                    className="h-12 w-full flex items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {socialLoading === "google" ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <GoogleIcon className="w-5 h-5" />
+                        <span>Continue with Google</span>
+                      </>
+                    )}
+                  </button>
+                </div>
 
-            {/* Divider */}
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white/80 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400">
-                  or continue with email
-                </span>
-              </div>
-            </div>
+                {/* Divider */}
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white/80 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400">
+                      or continue with email
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <div className="relative">

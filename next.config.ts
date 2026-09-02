@@ -4,6 +4,11 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Inlined into the server and browser bundles alike, so a client component
+  // gating on the edition answers the same as the route behind it.
+  env: {
+    LINKEDGROW_EDITION: process.env.LINKEDGROW_EDITION ?? "self-hosted",
+  },
   // Performance optimizations
   experimental: {
     // Optimize package imports for smaller bundles

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { getAppUrl } from "@/lib/app-url";
 
 export const metadata: Metadata = {
   title: "Forgot Password - LinkedGrow",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
     title: "Forgot Password - LinkedGrow",
     description:
       "Reset your LinkedGrow account password.",
-    url: "https://linkedgrow.ai/forgot-password",
+    url: `${getAppUrl()}/forgot-password`,
     siteName: "LinkedGrow",
     type: "website",
   },
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   alternates: {
-    canonical: "https://linkedgrow.ai/forgot-password",
+    canonical: `${getAppUrl()}/forgot-password`,
   },
 };
 

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { getAppUrl } from "@/lib/app-url";
 
 export const metadata: Metadata = {
   title: "Reset Password - LinkedGrow",
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Reset Password - LinkedGrow",
     description: "Create a new password for your LinkedGrow account.",
-    url: "https://linkedgrow.ai/reset-password",
+    url: `${getAppUrl()}/reset-password`,
     siteName: "LinkedGrow",
     type: "website",
   },
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     follow: false,
   },
   alternates: {
-    canonical: "https://linkedgrow.ai/reset-password",
+    canonical: `${getAppUrl()}/reset-password`,
   },
 };
 

@@ -34,7 +34,7 @@ import { useSession } from "next-auth/react";
 
 import { PROXY_COUNTRIES, countryName } from "@/lib/proxy-countries";
 import { redirectToCheckout } from "@/lib/checkout";
-import { EXTRA_AGENT_PRICE } from "@/lib/plans";
+import { EXTRA_AGENT_PRICE, isUnlimitedQuota } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { ChallengePrompt } from "./challenge-prompt";
 
@@ -500,7 +500,7 @@ export function LinkedInAccountsPanel({
             you cancel first.
           </span>
         )}
-        {quota > 0 && (
+        {quota > 0 && !isUnlimitedQuota(quota) && (
           <span className="text-[13px] text-slate-500 dark:text-slate-400">
             {used} of {quota} on your plan
           </span>

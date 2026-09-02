@@ -21,6 +21,9 @@ export function assertEditionConsistency(env: Env): void {
   }
 }
 
-export const EDITION: Edition = editionFrom(process.env);
+// A member expression on purpose: Next inlines process.env.X into the browser
+// bundle (see the env block in next.config.ts), while a passed process.env
+// object is {} there and every client component would read self hosted.
+export const EDITION: Edition = editionFrom({ LINKEDGROW_EDITION: process.env.LINKEDGROW_EDITION });
 export const isSelfHosted = (): boolean => EDITION === "self-hosted";
 export const isCloud = (): boolean => EDITION === "cloud";

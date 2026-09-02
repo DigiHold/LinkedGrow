@@ -10,7 +10,7 @@ import {
   apiSuccessResponse,
 } from "@/lib/api-auth";
 import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
-import { PLANS, PlanId } from "@/lib/plans";
+import { PLANS, effectivePlan } from "@/lib/plans";
 import { users } from "@/lib/db/schema";
 import sharp from "sharp";
 
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
       return apiErrorResponse("User not found", 404);
     }
 
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan({ plan: user.plan, isAdmin: user.isAdmin });
 
     // Check monthly post creation limit
     const postsPerMonthLimit = PLANS[userPlan].limits.postsPerMonth;

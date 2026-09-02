@@ -57,6 +57,7 @@ import { cn } from "@/lib/utils";
 import { FieldActions } from "@/components/dashboard/ui/page";
 import { LinkedInAccountsPanel } from "@/components/dashboard/linkedin/accounts-panel";
 import { CONTENT_LANGUAGES } from "@/lib/content-languages";
+import { hasAgentSubscription } from "@/lib/plans";
 
 // Common timezones grouped by region with abbreviations and UTC offsets
 const timezones = [
@@ -141,9 +142,10 @@ function SettingsContent() {
   const { theme, setTheme } = useTheme();
   const { data: session, update: updateSession } = useSession();
   const canConnectLinkedIn =
-    !!session?.user?.isAdmin ||
-    !!session?.user?.isLifetimeDeal ||
-    !!session?.user?.stripeSubscriptionId;
+    hasAgentSubscription({
+      stripeSubscriptionId: session?.user?.stripeSubscriptionId,
+      isAdmin: session?.user?.isAdmin,
+    }) || !!session?.user?.isLifetimeDeal;
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 

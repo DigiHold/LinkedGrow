@@ -5,6 +5,8 @@ import { affiliates, affiliateReferrals } from '@/lib/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
+import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
+import { newUserPolicy, SIGNUPS_CLOSED_MESSAGE } from '@/lib/registration';
 
 import { signUp, subscribeToNewsletter, brevoDate } from '@/lib/newsletter';
 import { sendSignupWelcomeEmail } from '@/lib/email';
@@ -23,7 +25,7 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
     ? { type: 'google-success', callbackUrl: redirectUrl }
     : { type: 'google-error', error: data.error };
 
-  const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
+  const appOrigin = getAppUrl();
 
   return new NextResponse(
     `<!DOCTYPE html>
@@ -63,7 +65,7 @@ export async function GET(request: NextRequest) {
       return createPopupResponse(false, { error });
     }
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent(error)}`
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent(error)}`
     );
   }
 
@@ -73,7 +75,7 @@ export async function GET(request: NextRequest) {
       return createPopupResponse(false, { error: 'Invalid state parameter' });
     }
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('Invalid state parameter')}`
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent('Invalid state parameter')}`
     );
   }
 
@@ -82,12 +84,12 @@ export async function GET(request: NextRequest) {
       return createPopupResponse(false, { error: 'No authorization code provided' });
     }
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('No authorization code provided')}`
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent('No authorization code provided')}`
     );
   }
 
   try {
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/google/callback`;
+    const redirectUri = `${getAppUrl()}/api/google/callback`;
 
     // Exchange code for access token
     const tokenData = await exchangeGoogleCodeForToken(code, redirectUri);
@@ -100,7 +102,7 @@ export async function GET(request: NextRequest) {
         return createPopupResponse(false, { error: 'Could not retrieve email from Google' });
       }
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('Could not retrieve email from Google')}`
+        `${getAppUrl()}/sign-in?error=${encodeURIComponent('Could not retrieve email from Google')}`
       );
     }
 
@@ -125,11 +127,23 @@ export async function GET(request: NextRequest) {
           return createPopupResponse(false, { error: 'An account with this email already exists. Please sign in instead.' });
         }
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('An account with this email already exists. Please sign in instead.')}`
+          `${getAppUrl()}/sign-in?error=${encodeURIComponent('An account with this email already exists. Please sign in instead.')}`
         );
       }
 
-      // Create new user with 7-day Pro trial (don't store Google profile picture - only LinkedIn pictures are stored)
+      // Self hosted: the first account is the administrator and sign ups may
+      // be closed. The cloud path answers plan free, never admin, never closed.
+      const policy = await newUserPolicy();
+      if (policy.closed) {
+        if (isPopup) {
+          return createPopupResponse(false, { error: SIGNUPS_CLOSED_MESSAGE });
+        }
+        return NextResponse.redirect(
+          `${getAppUrl()}/sign-up?error=${encodeURIComponent(SIGNUPS_CLOSED_MESSAGE)}`
+        );
+      }
+
+      // Create new user (don't store Google profile picture - only LinkedIn pictures are stored)
       const userId = randomUUID();
 
       // Check for affiliate referral cookie
@@ -153,10 +167,12 @@ export async function GET(request: NextRequest) {
         name: googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim(),
         image: null,
         emailVerified: googleUser.verified_email ? new Date() : null,
-        // No plan until Stripe says so. The trial is granted by Checkout and its
-        // dates are written back by the webhook, so an account created here can
-        // sign in and reach nothing except the plan picker.
-        plan: 'free',
+        // Cloud: no plan until Stripe says so. The trial is granted by Checkout
+        // and its dates are written back by the webhook, so an account created
+        // here can sign in and reach nothing except the plan picker.
+        // Self hosted: business, and the first account is the administrator.
+        plan: policy.plan,
+        isAdmin: policy.isAdmin,
         hasUsedTrial: false,
         twoFactorEnabled: false,
         referredBy: validAffiliate?.referralCode || null,
@@ -241,7 +257,7 @@ export async function GET(request: NextRequest) {
           return createPopupResponse(false, { error: 'No account found with this email. Please create an account first.' });
         }
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/sign-up?error=${encodeURIComponent('No account found with this email. Please create an account first.')}`
+          `${getAppUrl()}/sign-up?error=${encodeURIComponent('No account found with this email. Please create an account first.')}`
         );
       }
 
@@ -289,7 +305,7 @@ export async function GET(request: NextRequest) {
 
     // Create session token using NextAuth JWT
     // Salt is the cookie name used by NextAuth
-    const cookieName = process.env.NODE_ENV === 'production'
+    const cookieName = isSecureAppUrl()
       ? '__Secure-authjs.session-token'
       : 'authjs.session-token';
 
@@ -311,7 +327,7 @@ export async function GET(request: NextRequest) {
     // Handle popup mode - return HTML that sets cookie and notifies parent
     if (isPopup) {
       const redirectUrl = callbackUrl || '/dashboard';
-      const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
+      const appOrigin = getAppUrl();
       const response = new NextResponse(
         `<!DOCTYPE html>
         <html>
@@ -333,7 +349,7 @@ export async function GET(request: NextRequest) {
       // Set the session cookie
       response.cookies.set(cookieName, token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isSecureAppUrl(),
         sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60, // 30 days
         path: '/',
@@ -351,12 +367,12 @@ export async function GET(request: NextRequest) {
 
     // Redirect to callbackUrl or dashboard with session cookie
     const redirectUrl = callbackUrl || '/dashboard';
-    const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl}`);
+    const response = NextResponse.redirect(`${getAppUrl()}${redirectUrl}`);
 
     // Set the session cookie (NextAuth v5 uses authjs.session-token)
     response.cookies.set(cookieName, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureAppUrl(),
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days
       path: '/',
@@ -376,7 +392,7 @@ const errorMessage = err instanceof Error ? err.message : 'Failed to sign in wit
       return createPopupResponse(false, { error: errorMessage });
     }
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent(errorMessage)}`
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent(errorMessage)}`
     );
   }
 }
