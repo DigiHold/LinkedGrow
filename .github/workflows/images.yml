@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+    # Files outside the images: a docs only push does not rebuild them.
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+      - "tests/**"
+      - "playwright*.ts"
+      - "install.sh"
   workflow_dispatch:
 
 permissions:
