@@ -1,5 +1,6 @@
-/** The public origin of this instance, without a trailing slash. */
+/** The public origin of this instance, without a trailing slash. In the browser it is the page's own origin. */
 export function getAppUrl(): string {
+  if (typeof window !== "undefined") return window.location.origin;
   const raw = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://localhost:3000";
   return raw.replace(/\/+$/, "");
 }

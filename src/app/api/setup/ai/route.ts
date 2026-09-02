@@ -4,7 +4,8 @@
  * Saved on the instance row for the worker, and copied once into the
  * administrator's own BYOK column for the same provider, so the post
  * generator works on day one without a second paste. The copy happens only
- * when that column is empty: a key the administrator chose for posting is
+ * when that column is empty, and the provider selected for posting is set
+ * only when there is none yet: what the administrator chose for posting is
  * never overwritten from here.
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -36,6 +37,7 @@ async function copyIntoByok(userId: string, provider: AgentProvider, apiKey: str
   const columns = BYOK_COLUMNS[provider];
   const [row] = await db
     .select({
+      aiProvider: users.aiProvider,
       anthropicApiKey: users.anthropicApiKey,
       openaiApiKey: users.openaiApiKey,
       googleApiKey: users.googleApiKey,
@@ -47,7 +49,7 @@ async function copyIntoByok(userId: string, provider: AgentProvider, apiKey: str
     .limit(1);
   if (!row || row[columns.key]) return;
 
-  const patch: UserPatch = { aiProvider: provider, updatedAt: new Date() };
+  const patch: UserPatch = { updatedAt: new Date(), ...(row.aiProvider ? {} : { aiProvider: provider }) };
   patch[columns.key] = encryptApiKey(apiKey);
   patch[columns.model] = writer;
   await db.update(users).set(patch).where(eq(users.id, userId));

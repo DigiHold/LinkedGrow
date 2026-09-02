@@ -41,6 +41,11 @@ const PAYWALL_ALLOWED_API_PREFIXES = [
   "/api/linkedin/accounts",
 ];
 
+// Self hosted: once the wizard has run it stays run, so the instance row is
+// read only until it says so, then this latch answers for the life of the
+// process.
+let setupDone = false;
+
 // Wrapper: intercept signout BEFORE auth() touches the request
 const authProxy = auth(async (req) => {
   const { nextUrl } = req;
@@ -98,17 +103,17 @@ const authProxy = auth(async (req) => {
 
   // Self hosted: nothing in the dashboard opens before the setup wizard has
   // run, and the wizard closes once it has. A non admin lands on the wizard
-  // page too, where it shows the waiting card rather than a redirect. Read
-  // fresh: the proxy is its own bundle, so the cache the routes invalidate
-  // when the wizard finishes is not this one.
+  // page too, where it shows the waiting card rather than a redirect. Until
+  // the latch is set the row is read fresh: the proxy is its own bundle, so
+  // the cache the routes invalidate when the wizard finishes is not this one.
   if (isSelfHosted() && isLoggedIn) {
     const isSetupRoute = nextUrl.pathname === "/setup";
     if (isProtectedRoute || isSetupRoute) {
-      const { setupCompleted } = await getInstanceSettings(true);
-      if (isProtectedRoute && !setupCompleted) {
+      if (!setupDone) setupDone = (await getInstanceSettings(true)).setupCompleted;
+      if (isProtectedRoute && !setupDone) {
         return NextResponse.redirect(new URL("/setup", nextUrl));
       }
-      if (isSetupRoute && setupCompleted) {
+      if (isSetupRoute && setupDone) {
         return NextResponse.redirect(new URL("/dashboard", nextUrl));
       }
     }

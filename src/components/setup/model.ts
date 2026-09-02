@@ -3,13 +3,15 @@
  *
  * Both screens edit the same five areas through the same routes; this file
  * holds the form shapes, how a status becomes a form, how a form becomes a
- * request body, and the two calls (save, test) each screen makes.
+ * request body, the two calls (save, test) each screen makes, and how what a
+ * save answers merges back into the status.
  */
 import type {
   AiSection,
   EmailSection,
   InstanceSection,
   ProviderOption,
+  ProxySaved,
   ProxySection,
   SetupStatus,
   StorageSection,
@@ -101,7 +103,7 @@ export function formsFrom(status: SetupStatus, defaults: { adminEmail: string })
   return {
     instance: {
       instanceName: status.instance.instanceName ?? "",
-      appUrl: status.instance.appUrl,
+      appUrl: status.instance.appUrl ?? (typeof window !== "undefined" ? window.location.origin : ""),
       timezone: status.instance.timezone ?? browserTimezone(),
       adminEmail: status.instance.adminEmail ?? defaults.adminEmail,
     },
@@ -230,22 +232,22 @@ export async function request<T>(path: string, method: "GET" | "POST" | "PATCH",
   }
 }
 
-export async function fetchStatus(): Promise<ApiResult<SetupStatus>> {
-  return request<SetupStatus>("/api/setup/status", "GET");
+/** `withIp` asks the server to look up its own public address as well; the dedicated IP step needs it. */
+export async function fetchStatus(options: { withIp?: boolean } = {}): Promise<ApiResult<SetupStatus>> {
+  return request<SetupStatus>(options.withIp ? "/api/setup/status?ip=1" : "/api/setup/status", "GET");
 }
 
-type SectionPatch = Partial<Pick<SetupStatus, Area>>;
-
-interface SaveResponse {
+/** What a save answers: the section as the status route shows it, except that the proxy comes without its address. */
+export interface SectionPatch {
   instance?: InstanceSection;
   ai?: AiSection;
-  proxy?: ProxySection;
+  proxy?: ProxySaved;
   email?: EmailSection;
   storage?: StorageSection;
 }
 
 export async function saveArea(area: Area, forms: Forms): Promise<{ ok: true; patch: SectionPatch } | { ok: false; error: string }> {
-  const result = await request<SaveResponse>(`/api/setup/${area}`, "PATCH", bodyFor(area, forms));
+  const result = await request<SectionPatch>(`/api/setup/${area}`, "PATCH", bodyFor(area, forms));
   if (!result.ok) return result;
   const patch: SectionPatch = {};
   if (result.data.instance) patch.instance = result.data.instance;
@@ -254,6 +256,18 @@ export async function saveArea(area: Area, forms: Forms): Promise<{ ok: true; pa
   if (result.data.email) patch.email = result.data.email;
   if (result.data.storage) patch.storage = result.data.storage;
   return { ok: true, patch };
+}
+
+/** Merges what a save answered into the status. The proxy section keeps the address it had: a save never carries one. */
+export function applyPatch(status: SetupStatus, patch: SectionPatch): SetupStatus {
+  return {
+    ...status,
+    ...(patch.instance ? { instance: patch.instance } : {}),
+    ...(patch.ai ? { ai: patch.ai } : {}),
+    ...(patch.proxy ? { proxy: { ...status.proxy, ...patch.proxy } } : {}),
+    ...(patch.email ? { email: patch.email } : {}),
+    ...(patch.storage ? { storage: patch.storage } : {}),
+  };
 }
 
 interface TestResponse {
@@ -291,15 +305,16 @@ export async function testArea(area: TestArea, forms: Forms): Promise<{ outcome:
   return { outcome: { state: "ok", detail }, patch };
 }
 
-export function summary(status: SetupStatus, forms: Forms): { label: string; value: string }[] {
-  const models = `${forms.ai.modelFast || "?"} and ${forms.ai.modelWriter || "?"}`;
-  const providerLabel = status.ai.providers.find((p) => p.id === forms.ai.provider)?.label ?? forms.ai.provider;
-  const emailLabel = { none: "None", resend: "Resend", smtp: "SMTP", brevo: "Brevo" }[forms.email.provider];
+/** The review step, read from what is saved rather than from what is typed in the forms. */
+export function summary(status: SetupStatus): { label: string; value: string }[] {
+  const models = `${status.ai.modelFast || "?"} and ${status.ai.modelWriter || "?"}`;
+  const providerLabel = status.ai.providers.find((p) => p.id === status.ai.provider)?.label ?? status.ai.provider ?? "?";
+  const emailLabel = { none: "None", resend: "Resend", smtp: "SMTP", brevo: "Brevo" }[status.email.provider];
   return [
-    { label: "Instance", value: [forms.instance.instanceName, forms.instance.appUrl, forms.instance.timezone].filter(Boolean).join(", ") },
+    { label: "Instance", value: [status.instance.instanceName, status.instance.appUrl, status.instance.timezone].filter(Boolean).join(", ") },
     { label: "AI provider and models", value: `${providerLabel}: ${models}` },
-    { label: "Dedicated IP", value: forms.proxy.provider === "proxy-seller" ? "Proxy-Seller" : "My own proxy" },
-    { label: "Email", value: forms.email.provider === "none" ? emailLabel : `${emailLabel}, ${forms.email.fromAddress}` },
-    { label: "Storage", value: forms.storage.provider === "s3" ? `S3 compatible, ${forms.storage.s3Bucket}` : "Local disk" },
+    { label: "Dedicated IP", value: status.proxy.provider === "proxy-seller" ? "Proxy-Seller" : "My own proxy" },
+    { label: "Email", value: status.email.provider === "none" ? emailLabel : `${emailLabel}, ${status.email.fromAddress ?? "?"}` },
+    { label: "Storage", value: status.storage.provider === "s3" ? `S3 compatible, ${status.storage.s3Bucket ?? "?"}` : "Local disk" },
   ];
 }

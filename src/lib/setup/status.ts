@@ -5,7 +5,6 @@
  * status route would have shown for it. Secrets never appear here: each one
  * is reduced to its masked suffix through maskSecret.
  */
-import { getAppUrl } from "@/lib/app-url";
 import { EDITION } from "@/lib/edition";
 import {
   getInstanceSettings,
@@ -25,7 +24,7 @@ export interface ProviderOption {
 
 export interface InstanceSection {
   instanceName: string | null;
-  appUrl: string;
+  appUrl: string | null;
   timezone: string | null;
   adminEmail: string | null;
 }
@@ -45,6 +44,9 @@ export interface ProxySection {
   keyMask: string | null;
   serverIp: string | null;
 }
+
+/** What a proxy save answers. The address is the status route's to look up; a save never carries one. */
+export type ProxySaved = Omit<ProxySection, "serverIp">;
 
 export interface EmailSection {
   provider: InstanceSettings["emailProvider"];
@@ -90,7 +92,8 @@ export const PROVIDER_OPTIONS: ProviderOption[] = AGENT_PROVIDER_IDS.map((id) =>
 export function instanceSection(row: InstanceSettings): InstanceSection {
   return {
     instanceName: row.instanceName,
-    appUrl: row.appUrl || getAppUrl(),
+    // No server default: the browser fills an empty field from its own origin.
+    appUrl: row.appUrl,
     timezone: row.timezone,
     adminEmail: row.adminEmail,
   };
@@ -108,11 +111,10 @@ export function aiSection(row: InstanceSettings, secrets: Secrets): AiSection {
   };
 }
 
-export function proxySection(row: InstanceSettings, secrets: Secrets, serverIp: string | null): ProxySection {
+export function proxySection(row: InstanceSettings, secrets: Secrets): ProxySaved {
   return {
     provider: row.proxyProvider,
     keyMask: maskSecret(secrets.proxySellerKey),
-    serverIp,
   };
 }
 
@@ -142,28 +144,44 @@ export function storageSection(row: InstanceSettings, secrets: Secrets): Storage
   };
 }
 
-/** The address this server calls out from, as the internet sees it. Null when nobody answers in time. */
+const IP_TTL_MS = 10 * 60 * 1000;
+let ipCache: { at: number; ip: string } | null = null;
+
+/**
+ * The address this server calls out from, as the internet sees it. An answer
+ * is kept for 10 minutes per process; a lookup nobody answers in time gives
+ * null and is tried again next time.
+ */
 export async function serverPublicIp(): Promise<string | null> {
+  if (ipCache && Date.now() - ipCache.at < IP_TTL_MS) return ipCache.ip;
   try {
     const response = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(3000) });
     if (!response.ok) return null;
     const data = (await response.json()) as { ip?: unknown };
-    return typeof data.ip === "string" && data.ip ? data.ip : null;
+    if (typeof data.ip !== "string" || !data.ip) return null;
+    ipCache = { at: Date.now(), ip: data.ip };
+    return data.ip;
   } catch {
     return null;
   }
 }
 
-export async function setupStatus(serverIp: string | null): Promise<SetupStatus> {
+/**
+ * The whole status. The public address costs a network call, so it is looked
+ * up only when Proxy-Seller is the provider (their allowlist needs it) or when
+ * the caller asks for it, which the wizard's dedicated IP step does.
+ */
+export async function setupStatus(options: { withIp: boolean }): Promise<SetupStatus> {
   const row = await getInstanceSettings(true);
   const secrets = await instanceSecrets();
+  const serverIp = options.withIp || row.proxyProvider === "proxy-seller" ? await serverPublicIp() : null;
   return {
     edition: EDITION,
     setupCompleted: row.setupCompleted,
     allowSignups: row.allowSignups,
     instance: instanceSection(row),
     ai: aiSection(row, secrets),
-    proxy: proxySection(row, secrets, serverIp),
+    proxy: { ...proxySection(row, secrets), serverIp },
     email: emailSection(row, secrets),
     storage: storageSection(row, secrets),
     cronSecretMask: maskSecret(secrets.cronSecret),

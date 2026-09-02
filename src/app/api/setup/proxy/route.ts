@@ -40,7 +40,7 @@ export async function PATCH(request: NextRequest) {
       ...(apiKey !== undefined ? { proxySellerKeyEncrypted: apiKey === null ? null : encryptSecret(apiKey) } : {}),
     });
     const secrets = await instanceSecrets();
-    return NextResponse.json({ ok: true, proxy: proxySection(row, secrets, null) });
+    return NextResponse.json({ ok: true, proxy: proxySection(row, secrets) });
   } catch (error) {
     if (error instanceof ValidationError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: "Could not save the proxy settings" }, { status: 500 });

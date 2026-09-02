@@ -1,34 +1,27 @@
 /**
  * Everything the setup wizard and the instance settings page show, masked.
  *
- * Before setup any signed in account may read it: the wizard page decides
- * what that account gets to see. After setup it is the administrator's.
- * Self hosted only; the cloud has no row to describe.
+ * The administrator's, before and after setup: the wizard page shows anybody
+ * else a waiting card that never calls this. Self hosted only; the cloud has
+ * no row to describe. `?ip=1` asks for this server's public address as well;
+ * without it the address is looked up only when Proxy-Seller is the provider.
  */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { isSelfHosted } from "@/lib/edition";
-import { getInstanceSettings } from "@/lib/instance-settings";
-import { serverPublicIp, setupStatus } from "@/lib/setup/status";
+import { setupStatus } from "@/lib/setup/status";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session.user.isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     if (!isSelfHosted()) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const { setupCompleted } = await getInstanceSettings(true);
-    if (setupCompleted && !session.user.isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const status = await setupStatus(await serverPublicIp());
+    const status = await setupStatus({ withIp: request.nextUrl.searchParams.get("ip") === "1" });
     return NextResponse.json(status);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Could not read the instance settings", detail: error instanceof Error ? error.message : "unknown" },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 

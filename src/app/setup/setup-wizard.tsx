@@ -5,6 +5,7 @@ import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StepRail } from "@/components/dashboard/step-rail";
 import {
+  applyPatch,
   clearSecrets,
   fetchStatus,
   formsFrom,
@@ -63,6 +64,20 @@ export function SetupWizard({ adminEmail }: { adminEmail: string }) {
     };
   }, [adminEmail]);
 
+  // Step 3 shows the address this server calls out from, which only the
+  // status route looks up; step 6 sums up what is saved, not what is typed.
+  useEffect(() => {
+    if (step !== 3 && step !== 6) return;
+    let cancelled = false;
+    void fetchStatus({ withIp: step === 3 }).then((result) => {
+      if (cancelled || !result.ok) return;
+      setStatus(result.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [step]);
+
   const patchForm = <A extends Area>(area: A, patch: Partial<Forms[A]>) => {
     setForms((f) => (f ? { ...f, [area]: { ...f[area], ...patch } } : f));
     setError(null);
@@ -77,7 +92,7 @@ export function SetupWizard({ adminEmail }: { adminEmail: string }) {
       setError(result.error);
       return false;
     }
-    setStatus((s) => (s ? { ...s, ...result.patch } : s));
+    setStatus((s) => (s ? applyPatch(s, result.patch) : s));
     setForms((f) => (f ? clearSecrets(area, f) : f));
     return true;
   };
@@ -100,7 +115,7 @@ export function SetupWizard({ adminEmail }: { adminEmail: string }) {
     const result = await testArea(area, forms);
     if (result.patch) {
       const patch = result.patch;
-      setStatus((s) => (s ? { ...s, ...patch } : s));
+      setStatus((s) => (s ? applyPatch(s, patch) : s));
       setForms((f) => (f ? clearSecrets(area, f) : f));
     }
     setTests((t) => ({ ...t, [area]: result.outcome }));
@@ -201,7 +216,7 @@ export function SetupWizard({ adminEmail }: { adminEmail: string }) {
               {step === 6 && (
                 <StepBody title={COPY.review.heading}>
                   <dl className="divide-y divide-border rounded-xl border border-border">
-                    {summary(status, forms).map((row) => (
+                    {summary(status).map((row) => (
                       <div key={row.label} className="grid gap-1 p-4 sm:grid-cols-[180px_1fr] sm:gap-4">
                         <dt className="text-sm text-slate-500 dark:text-slate-400">{row.label}</dt>
                         <dd className="text-sm text-slate-900 dark:text-white break-words">{row.value}</dd>

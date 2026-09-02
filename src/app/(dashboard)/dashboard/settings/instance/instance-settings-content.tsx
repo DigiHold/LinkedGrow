@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { FieldActions, PageShell } from "@/components/dashboard/ui/page";
 import {
+  applyPatch,
   clearSecrets,
   fetchStatus,
   formsFrom,
@@ -38,7 +39,8 @@ export function InstanceSettingsContent({ adminEmail }: { adminEmail: string }) 
 
   useEffect(() => {
     let cancelled = false;
-    void fetchStatus().then((result) => {
+    // With the address: the Proxy-Seller card tells the administrator to allowlist it before testing.
+    void fetchStatus({ withIp: true }).then((result) => {
       if (cancelled) return;
       if (!result.ok) {
         setLoadError(result.error);
@@ -66,7 +68,7 @@ export function InstanceSettingsContent({ adminEmail }: { adminEmail: string }) 
       setNotices((n) => ({ ...n, [area]: { type: "error", text: result.error } }));
       return;
     }
-    setStatus((s) => (s ? { ...s, ...result.patch } : s));
+    setStatus((s) => (s ? applyPatch(s, result.patch) : s));
     setForms((f) => (f ? clearSecrets(area, f) : f));
     setNotices((n) => ({ ...n, [area]: { type: "success", text: "Saved" } }));
   };
@@ -77,7 +79,7 @@ export function InstanceSettingsContent({ adminEmail }: { adminEmail: string }) 
     const result = await testArea(area, forms);
     if (result.patch) {
       const patch = result.patch;
-      setStatus((s) => (s ? { ...s, ...patch } : s));
+      setStatus((s) => (s ? applyPatch(s, patch) : s));
       setForms((f) => (f ? clearSecrets(area, f) : f));
     }
     setTests((t) => ({ ...t, [area]: result.outcome }));

@@ -36,11 +36,8 @@ export async function POST() {
     } catch (error) {
       return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "The storage did not answer." });
     }
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Could not test the storage", detail: error instanceof Error ? error.message : "unknown" },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
