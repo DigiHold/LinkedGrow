@@ -15,19 +15,23 @@ DEFAULT_DIR="/opt/linkedgrow"
 
 MODE="install"
 DIR="${LINKEDGROW_DIR:-$DEFAULT_DIR}"
+DIR_GIVEN=0
 DOMAIN="${LINKEDGROW_DOMAIN:-}"
 DOMAIN_GIVEN=0
 VERSION="${LINKEDGROW_VERSION:-latest}"
 VERSION_GIVEN=0
 PORT="${LINKEDGROW_PORT:-3000}"
 PORT_GIVEN=0
+EXPLICIT_ADDRESS=0
 SOURCE=0
 ASSUME_YES=0
 SUDO=""
 DOCKER="docker"
 PROFILE_ARGS=""
+[ -z "${LINKEDGROW_DIR:-}" ] || DIR_GIVEN=1
 [ -z "${LINKEDGROW_VERSION:-}" ] || VERSION_GIVEN=1
-[ -z "${LINKEDGROW_PORT:-}" ] || PORT_GIVEN=1
+[ -z "${LINKEDGROW_PORT:-}" ] || { PORT_GIVEN=1; EXPLICIT_ADDRESS=1; }
+[ -z "${LINKEDGROW_DOMAIN:-}" ] || { DOMAIN_GIVEN=1; EXPLICIT_ADDRESS=1; }
 
 say() { printf '%s\n' "$1"; }
 fail() { printf 'linkedgrow: %s\n' "$1" >&2; exit 1; }
@@ -56,22 +60,18 @@ USAGE
 
 # ---------- arguments ----------
 
-if [ "$#" -gt 0 ] && [ "$1" = "update" ]; then
-  MODE="update"
-  shift
-fi
-
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --domain) [ "$#" -ge 2 ] || fail "The --domain option needs a domain name."; DOMAIN="$2"; DOMAIN_GIVEN=1; shift 2 ;;
-    --domain=*) DOMAIN="${1#--domain=}"; DOMAIN_GIVEN=1; shift ;;
-    --no-domain) DOMAIN=""; DOMAIN_GIVEN=1; shift ;;
-    --dir) [ "$#" -ge 2 ] || fail "The --dir option needs a folder path."; DIR="$2"; shift 2 ;;
-    --dir=*) DIR="${1#--dir=}"; shift ;;
+    update) MODE="update"; shift ;;
+    --domain) [ "$#" -ge 2 ] || fail "The --domain option needs a domain name."; DOMAIN="$2"; DOMAIN_GIVEN=1; EXPLICIT_ADDRESS=1; shift 2 ;;
+    --domain=*) DOMAIN="${1#--domain=}"; DOMAIN_GIVEN=1; EXPLICIT_ADDRESS=1; shift ;;
+    --no-domain) DOMAIN=""; DOMAIN_GIVEN=1; EXPLICIT_ADDRESS=1; shift ;;
+    --dir) [ "$#" -ge 2 ] || fail "The --dir option needs a folder path."; DIR="$2"; DIR_GIVEN=1; shift 2 ;;
+    --dir=*) DIR="${1#--dir=}"; DIR_GIVEN=1; shift ;;
     --version) [ "$#" -ge 2 ] || fail "The --version option needs an image tag."; VERSION="$2"; VERSION_GIVEN=1; shift 2 ;;
     --version=*) VERSION="${1#--version=}"; VERSION_GIVEN=1; shift ;;
-    --port) [ "$#" -ge 2 ] || fail "The --port option needs a port number."; PORT="$2"; PORT_GIVEN=1; shift 2 ;;
-    --port=*) PORT="${1#--port=}"; PORT_GIVEN=1; shift ;;
+    --port) [ "$#" -ge 2 ] || fail "The --port option needs a port number."; PORT="$2"; PORT_GIVEN=1; EXPLICIT_ADDRESS=1; shift 2 ;;
+    --port=*) PORT="${1#--port=}"; PORT_GIVEN=1; EXPLICIT_ADDRESS=1; shift ;;
     --source) SOURCE=1; shift ;;
     --yes|-y) ASSUME_YES=1; shift ;;
     --help|-h) usage; exit 0 ;;
@@ -96,13 +96,15 @@ if [ -n "$SELF_DIR" ] && [ -f "$SELF_DIR/docker-compose.yml" ] && [ -f "$SELF_DI
   CHECKOUT="$SELF_DIR"
 fi
 
-# A source build from a checkout runs in that checkout, where the Dockerfiles are.
-if [ "$SOURCE" = "1" ] && [ -n "$CHECKOUT" ]; then
+# A source build from a checkout runs in that checkout, where the Dockerfiles are,
+# unless a folder was asked for by name.
+if [ "$SOURCE" = "1" ] && [ -n "$CHECKOUT" ] && [ "$DIR_GIVEN" = "0" ]; then
   DIR="$CHECKOUT"
 fi
 
-# An update run started from the stack folder stays in it.
-if [ "$MODE" = "update" ] && [ -z "${LINKEDGROW_DIR:-}" ] && [ -n "$SELF_DIR" ] && [ -f "$SELF_DIR/.env" ] && [ -f "$SELF_DIR/docker-compose.yml" ]; then
+# A copy of this script sits in the stack folder, so a run started from there
+# works on that stack rather than on the default folder.
+if [ "$DIR_GIVEN" = "0" ] && [ -n "$SELF_DIR" ] && [ -f "$SELF_DIR/.env" ] && [ -f "$SELF_DIR/docker-compose.yml" ]; then
   DIR="$SELF_DIR"
 fi
 
@@ -115,10 +117,10 @@ env_get() {
 
 env_set() {
   if [ -f "$ENV_FILE" ] && grep -q "^$1=" "$ENV_FILE"; then
-    awk -v k="$1" -v v="$2" 'index($0, k "=") == 1 { print k "=" v; next } { print }' "$ENV_FILE" > "$ENV_FILE.tmp"
+    ( umask 077; awk -v k="$1" -v v="$2" 'index($0, k "=") == 1 { print k "=" v; next } { print }' "$ENV_FILE" > "$ENV_FILE.tmp" )
     mv "$ENV_FILE.tmp" "$ENV_FILE"
   else
-    printf '%s=%s\n' "$1" "$2" >> "$ENV_FILE"
+    ( umask 077; printf '%s=%s\n' "$1" "$2" >> "$ENV_FILE" )
   fi
   chmod 600 "$ENV_FILE" 2>/dev/null || true
 }
@@ -139,10 +141,16 @@ if [ "$VERSION_GIVEN" = "0" ]; then
   fi
 fi
 
+# The image tag and the git ref are not the same string. A release image is
+# tagged v1.0.0 and lives on the git tag v1.0.0, while sha-1a2b3c4 is the image
+# of commit 1a2b3c4.
 REF="main"
+REF_IS_COMMIT=0
 case "$VERSION" in
   latest|"") VERSION="latest" ;;
-  *) REF="$VERSION" ;;
+  v[0-9]*) REF="$VERSION" ;;
+  sha-*) REF="${VERSION#sha-}"; REF_IS_COMMIT=1 ;;
+  *) fail "The version $VERSION is not one this installer knows. Use latest, a release like v1.0.0, or a build like sha-1a2b3c4." ;;
 esac
 RAW="https://raw.githubusercontent.com/$REPO/$REF"
 
@@ -200,35 +208,63 @@ if [ ! -d "$DIR" ]; then
 fi
 [ -w "$DIR" ] || fail "$DIR is not writable by this user."
 
-fetch() {
-  # fetch <source path in the repo> <destination>
+# Writes to a temporary name first, so a failed download never truncates a file
+# the stack is already running on. Returns 1 instead of stopping the run.
+fetch_try() {
   if [ -n "$CHECKOUT" ]; then
-    cp "$CHECKOUT/$1" "$2" || fail "Could not copy $1 from $CHECKOUT."
+    cp "$CHECKOUT/$1" "$2.new" 2>/dev/null || return 1
   else
-    curl -fsSL "$RAW/$1" -o "$2" || fail "Could not download $1 from $RAW. Check the version tag and the network."
+    curl -fsL "$RAW/$1" -o "$2.new" || { rm -f "$2.new"; return 1; }
   fi
+  mv "$2.new" "$2"
 }
 
-if [ "$SOURCE" = "1" ] && [ -z "$CHECKOUT" ]; then
+fetch() {
+  fetch_try "$1" "$2" || fail "Could not get $1 at $REF. Check the version and the network, and sign in with a token while the repository is private."
+}
+
+# A source build needs the source in the stack folder, so any folder that is not
+# already a checkout gets one.
+if [ "$SOURCE" = "1" ] && [ "$DIR" != "$CHECKOUT" ]; then
   command -v git >/dev/null 2>&1 || fail "--source needs git and git is missing. Install git, then run this again."
   if [ -d "$DIR/.git" ]; then
     say "Updating the checkout in $DIR."
-    (cd "$DIR" && git fetch --depth 1 origin "$REF" && git checkout -q FETCH_HEAD) || fail "Could not update the checkout in $DIR."
+    if [ "$REF_IS_COMMIT" = "1" ]; then
+      # A short commit is not something a remote will hand over on its own, so
+      # the whole history comes down and the checkout happens locally.
+      (cd "$DIR" && git fetch origin && git checkout -q "$REF") || fail "Could not check out $REF in $DIR."
+    else
+      (cd "$DIR" && git fetch --depth 1 origin "$REF" && git checkout -q FETCH_HEAD) || fail "Could not update the checkout in $DIR."
+    fi
   else
     say "Cloning the source into $DIR."
-    git clone --depth 1 --branch "$REF" "https://github.com/$REPO.git" "$DIR" || fail "Could not clone $REPO over https. The repository is private until launch, so sign in with a token or install without --source."
+    if [ "$REF_IS_COMMIT" = "1" ]; then
+      git clone "https://github.com/$REPO.git" "$DIR" || fail "Could not clone $REPO over https. The repository is private until launch, so sign in with a token or install without --source."
+      (cd "$DIR" && git checkout -q "$REF") || fail "The commit $REF is not in the repository."
+    else
+      git clone --depth 1 --branch "$REF" "https://github.com/$REPO.git" "$DIR" || fail "Could not clone $REPO over https at $REF. The repository is private until launch, so sign in with a token or install without --source."
+    fi
   fi
   CHECKOUT="$DIR"
 fi
 
+# A file the stack does not have yet has to arrive. One it already has is only
+# refreshed, so a rerun without a network keeps working on what is on disk.
+place() {
+  if [ -f "$2" ]; then
+    fetch_try "$1" "$2" || say "Could not refresh $(basename "$2"), so this run keeps the one already in $DIR."
+  else
+    fetch "$1" "$2"
+  fi
+}
+
 if [ "$MODE" = "install" ] && [ "$DIR" != "$CHECKOUT" ]; then
-  fetch docker-compose.yml "$DIR/docker-compose.yml"
-  fetch docker/Caddyfile "$DIR/Caddyfile"
-  fetch install.sh "$DIR/install.sh.new"
-  mv "$DIR/install.sh.new" "$DIR/install.sh"
+  place docker-compose.yml "$DIR/docker-compose.yml"
+  place docker/Caddyfile "$DIR/Caddyfile"
+  place install.sh "$DIR/install.sh"
   chmod +x "$DIR/install.sh"
   if [ "$SOURCE" = "1" ]; then
-    fetch docker-compose.build.yml "$DIR/docker-compose.build.yml"
+    place docker-compose.build.yml "$DIR/docker-compose.build.yml"
   fi
 fi
 
@@ -251,9 +287,18 @@ if [ "$MODE" = "update" ]; then
     PROFILE_ARGS="--profile https"
   fi
   say "Updating the stack that lives in $DIR."
+  if [ "$SOURCE" != "1" ] && [ "$DIR" != "$CHECKOUT" ]; then
+    if fetch_try docker-compose.yml "$DIR/docker-compose.yml"; then
+      if [ "$PROFILE_ARGS" = "--profile https" ]; then
+        fetch_try docker/Caddyfile "$DIR/Caddyfile" || say "Could not refresh the Caddyfile, so the update keeps the one in $DIR."
+      fi
+    else
+      say "Could not refresh docker-compose.yml, so the update keeps the file already in $DIR."
+    fi
+  fi
   if [ "$SOURCE" = "1" ]; then
     compose pull --ignore-pull-failures || true
-    compose up -d --build || fail "The stack did not start. Run 'docker compose logs' in $DIR to see why."
+    compose up -d --build --remove-orphans || fail "The stack did not start. Run 'docker compose logs' in $DIR to see why."
   else
     if [ "${LINKEDGROW_SKIP_PULL:-0}" != "1" ]; then
       compose pull || fail "Could not pull the images. Sign in with 'docker login ghcr.io', or run the installer with --source."
@@ -304,7 +349,7 @@ gen_secret() {
   fi
 }
 
-public_ip() {
+detect_ip() {
   ip=$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || true)
   case "$ip" in
     ''|*[!0-9.]*) ip="" ;;
@@ -312,7 +357,6 @@ public_ip() {
   if [ -z "$ip" ] && command -v hostname >/dev/null 2>&1; then
     ip=$(hostname -I 2>/dev/null | awk '{print $1}')
   fi
-  [ -n "$ip" ] || ip="127.0.0.1"
   printf '%s' "$ip"
 }
 
@@ -345,16 +389,25 @@ worker_slots() {
   fi
 }
 
-IP=$(public_ip)
+IP=$(detect_ip)
+
+PREVIOUS_PROFILES=$(env_get COMPOSE_PROFILES)
+STORED_APP_URL=$(env_get APP_URL)
 
 if [ -n "$DOMAIN" ]; then
   APP_URL="https://$DOMAIN"
   BIND="127.0.0.1"
   PROFILES="https"
 else
-  APP_URL="http://$IP:$PORT"
   BIND="0.0.0.0"
   PROFILES=""
+  if [ "$EXPLICIT_ADDRESS" = "0" ] && [ -n "$STORED_APP_URL" ]; then
+    # A rerun that says nothing about the address keeps the one people already use.
+    APP_URL="$STORED_APP_URL"
+  else
+    [ -n "$IP" ] || fail "Could not work out the address of this server. Rerun with --domain example.com, or write APP_URL into .env yourself."
+    APP_URL="http://$IP:$PORT"
+  fi
 fi
 
 # ---------- .env ----------
@@ -392,6 +445,13 @@ env_set APP_PORT "$PORT"
 env_set COMPOSE_PROFILES "$PROFILES"
 env_set LINKEDGROW_VERSION "$VERSION"
 
+if [ "$PREVIOUS_PROFILES" = "https" ] && [ -z "$PROFILES" ]; then
+  say "Removing the Caddy container, which held ports 80 and 443 for the old domain."
+  PROFILE_ARGS="--profile https"
+  compose rm -sf caddy >/dev/null 2>&1 || true
+  PROFILE_ARGS=""
+fi
+
 if [ "$PROFILES" = "https" ]; then
   PROFILE_ARGS="--profile https"
 fi
@@ -402,6 +462,8 @@ if [ -n "$DOMAIN" ]; then
   target=$(resolved_ip "$DOMAIN")
   if [ -z "$target" ]; then
     say "Warning: $DOMAIN does not resolve yet. Caddy cannot get a certificate until it does."
+  elif [ -z "$IP" ]; then
+    say "Warning: this server did not report a public address, so the domain could not be checked against it."
   elif [ "$target" != "$IP" ]; then
     say "Warning: $DOMAIN resolves to $target and this server answers on $IP. Point the A record here, or the certificate fails."
   fi
@@ -412,14 +474,14 @@ fi
 if [ "$SOURCE" = "1" ]; then
   say "Building the images from the source in $DIR. Expect about 10 minutes."
   compose pull --ignore-pull-failures || true
-  compose up -d --build || fail "The stack did not start. Run 'docker compose logs' in $DIR to see why."
+  compose up -d --build --remove-orphans || fail "The stack did not start. Run 'docker compose logs' in $DIR to see why."
 else
   if [ "${LINKEDGROW_SKIP_PULL:-0}" != "1" ]; then
     say "Pulling the app, the worker and the database images."
     compose pull || fail "Could not pull the images. Sign in with 'docker login ghcr.io' or run the installer again with --source."
   fi
   say "Starting the containers."
-  compose up -d || fail "The stack did not start. Run 'docker compose logs' in $DIR to see why."
+  compose up -d --remove-orphans || fail "The stack did not start. Run 'docker compose logs' in $DIR to see why."
 fi
 
 say "Waiting for the app to answer."
@@ -436,7 +498,9 @@ while [ "$i" -lt 90 ]; do
 done
 
 if [ "$ready" != "1" ]; then
-  fail "The app did not answer within 3 minutes. Run 'docker compose logs app' in $DIR to see why."
+  say "The app did not answer within 3 minutes. Its last 50 log lines follow."
+  compose logs --tail 50 app || true
+  fail "The app is not answering on port $PORT. The lines above say why, and the stack is still up in $DIR."
 fi
 
 say ""
