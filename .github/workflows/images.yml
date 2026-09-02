@@ -24,6 +24,8 @@ concurrency:
 jobs:
   build:
     name: build ${{ matrix.name }}
+    # The cloud repository merges this file too and must never publish under these names.
+    if: github.repository == 'DigiHold/LinkedGrow'
     runs-on: ubuntu-latest
     permissions:
       contents: read
