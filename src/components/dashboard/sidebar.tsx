@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { isCloud } from "@/lib/edition";
 import { useSidebar } from "@/components/dashboard/sidebar-context";
 import { Logo, LogoMark } from "@/components/ui/logo";
 import {
@@ -258,7 +259,9 @@ export function Sidebar() {
     <div className="px-3 pb-3">
       <div className="space-y-1">
         {helpLink("/docs", "Docs", BookIcon)}
-        {helpLink("https://github.com/DigiHold/LinkedGrow/issues", "Report an issue", ChatIcon, true)}
+        {isCloud()
+          ? helpLink("mailto:contact@linkedgrow.ai", "Contact support", ChatIcon)
+          : helpLink("https://github.com/DigiHold/LinkedGrow/issues", "Report an issue", ChatIcon, true)}
       </div>
     </div>
   );

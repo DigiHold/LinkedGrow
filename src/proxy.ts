@@ -23,6 +23,8 @@ const PAYWALL_ALLOWED_PREFIXES = [
   // the value, and meets the checkout at "Connect LinkedIn & launch". The
   // routes that cost money (connect, activate) gate themselves server-side.
   "/dashboard/agents",
+  // The paywall redirect target, cloud only page.
+  "/dashboard/upgrade",
 ];
 
 // The API side of the same allowlist. A paywalled account must still be able

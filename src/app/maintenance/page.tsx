@@ -1,6 +1,7 @@
 import { Wrench, Clock, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { isCloud } from "@/lib/edition";
 
 export default function MaintenancePage() {
   return (
@@ -73,12 +74,26 @@ export default function MaintenancePage() {
         </div>
 
         {/* Contact */}
-        <p className="mt-6 text-sm text-muted-foreground">
-          Questions? Contact us at{" "}
-          <a href="mailto:contact@linkedgrow.ai" className="text-linkedin hover:underline">
-            contact@linkedgrow.ai
-          </a>
-        </p>
+        {isCloud() ? (
+          <p className="mt-6 text-sm text-muted-foreground">
+            Questions? Contact us at{" "}
+            <a href="mailto:contact@linkedgrow.ai" className="text-linkedin hover:underline">
+              contact@linkedgrow.ai
+            </a>
+          </p>
+        ) : (
+          <p className="mt-6 text-sm text-muted-foreground">
+            Questions?{" "}
+            <a
+              href="https://github.com/DigiHold/LinkedGrow/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-linkedin hover:underline"
+            >
+              Report an issue on GitHub
+            </a>
+          </p>
+        )}
       </div>
     </div>
   );

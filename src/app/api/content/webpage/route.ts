@@ -167,14 +167,17 @@ function isBlockedHost(hostname: string): boolean {
     h.endsWith(".local") ||
     h.endsWith(".internal") ||
     h === "[::1]" ||
+    h === "[::]" ||
     h.startsWith("[fc") ||
     h.startsWith("[fd") ||
     h.startsWith("[fe80:") ||
+    h.startsWith("[::ffff:") ||
     /^127\./.test(h) ||
     /^10\./.test(h) ||
     /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
     /^192\.168\./.test(h) ||
     /^169\.254\./.test(h) ||
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h) ||
     /^0\./.test(h)
   );
 }
@@ -240,30 +243,67 @@ export async function POST(request: NextRequest) {
           ? providedHtml.slice(0, MAX_HTML_SIZE)
           : providedHtml;
     } else {
-      // Fetch the page server side with browser-like headers.
+      // Fetch the page server side with browser-like headers. Redirects are
+      // followed manually, one hop at a time, so every hop lands back through
+      // the same protocol and private-host checks the original URL passed.
+      // Without this a public URL could 302 to an internal address and the
+      // block list above would never see it.
       let response: Response;
-      try {
-        response = await fetch(parsedUrl.toString(), {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Cache-Control": "no-cache",
-          },
-          signal: AbortSignal.timeout(15000),
-          redirect: "follow",
-        });
-      } catch (error) {
-        if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      let currentUrl = parsedUrl;
+      let redirectCount = 0;
+
+      for (;;) {
+        try {
+          response = await fetch(currentUrl.toString(), {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+              "Accept-Language": "en-US,en;q=0.9",
+              "Cache-Control": "no-cache",
+            },
+            signal: AbortSignal.timeout(15000),
+            redirect: "manual",
+          });
+        } catch (error) {
+          if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+            return NextResponse.json(
+              { error: "This page took too long to load. Please check the URL and try again." },
+              { status: 408 }
+            );
+          }
           return NextResponse.json(
-            { error: "This page took too long to load. Please check the URL and try again." },
-            { status: 408 }
+            { error: "Failed to fetch the page. Please check the URL and try again." },
+            { status: 502 }
           );
         }
-        return NextResponse.json(
-          { error: "Failed to fetch the page. Please check the URL and try again." },
-          { status: 502 }
-        );
+
+        if (![301, 302, 303, 307, 308].includes(response.status)) break;
+
+        redirectCount++;
+        if (redirectCount > 3) {
+          return NextResponse.json({ error: "Too many redirects" }, { status: 400 });
+        }
+
+        const location = response.headers.get("location");
+        let nextUrl: URL;
+        try {
+          if (!location) throw new Error("missing location header");
+          nextUrl = new URL(location, currentUrl);
+        } catch {
+          return NextResponse.json(
+            { error: "Failed to fetch the page. Please check the URL and try again." },
+            { status: 502 }
+          );
+        }
+
+        if (nextUrl.protocol !== "https:" && nextUrl.protocol !== "http:") {
+          return NextResponse.json({ error: "Only HTTP and HTTPS URLs are supported." }, { status: 400 });
+        }
+        if (isBlockedHost(nextUrl.hostname)) {
+          return NextResponse.json({ error: "This URL is not allowed." }, { status: 400 });
+        }
+
+        currentUrl = nextUrl;
       }
 
       if (!response.ok) {
@@ -290,6 +330,17 @@ export async function POST(request: NextRequest) {
       if (!contentType.includes("text/html") && !contentType.includes("application/xhtml") && !contentType.includes("text/plain")) {
         return NextResponse.json(
           { error: "This URL doesn't point to a web page. Make sure it's a blog post or article URL." },
+          { status: 400 }
+        );
+      }
+
+      // A declared size above the cap is rejected before it is buffered at
+      // all; the slice-after-download fallback below still catches a host
+      // that lies about content-length.
+      const contentLength = response.headers.get("content-length");
+      if (contentLength && Number(contentLength) > MAX_HTML_SIZE) {
+        return NextResponse.json(
+          { error: "This page is too large to process. Please try a different URL." },
           { status: 400 }
         );
       }
