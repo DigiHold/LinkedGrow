@@ -2,8 +2,6 @@
 
 AI agents that find your leads and clients on LinkedIn, plus the posting tools to keep your profile alive, on your own server. One install command, a setup wizard, no LinkedIn API and no subscription. A hosted version runs at [linkedgrow.ai](https://linkedgrow.ai) for people who would rather not run a server.
 
-![LinkedGrow dashboard](docs/images/dashboard.png)
-
 ## What it does
 
 You describe who you sell to, and an agent goes to find those people where they already are: under a competitor's post, in a search, among the people who reacted to a topic. It visits the profile, likes something real, sends an invitation without a note, and once the person accepts it runs a short conversation in your name and hands you the ones who want to talk. Every lead keeps its source, so you always know which post or search produced it.

@@ -12,6 +12,8 @@ docker compose logs app
 docker compose logs worker
 ```
 
+Run them in the stack folder, `/opt/linkedgrow` for an install that took the default. The installer runs as root, so the `.env` it wrote is owned by root and readable by root only, and every compose command on this page expects the same root account, or `sudo` in front of it.
+
 Add `-f` to follow, or `--tail 200` for the last lines only. `docker compose ps` shows which of the 3 services is running and whether the app is healthy.
 
 ## The app refuses to start
