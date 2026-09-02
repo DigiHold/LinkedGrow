@@ -5,7 +5,8 @@
  * API only answers that box. This cron is the leg that stands somewhere else:
  * if the VPS dies, the worker crashes, or the renewal pass silently stops
  * running, nothing over there can say so. This runs on Vercel, reads only our
- * own database, and mails contact@ when either of two things is true:
+ * own database, and mails the operations address (contact@ in the cloud, the
+ * instance admin on a self hosted install) when either of two things is true:
  *
  *  1. The renewal pass has not left its heartbeat for over 36 hours.
  *  2. An address bound to a paying customer ends within 7 days, which the
@@ -22,7 +23,7 @@ import { and, eq, isNotNull, lt, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { linkedinAccounts, proxyAllocations, users, workerFlags } from "@/lib/db/schema";
-import { sendEmail } from "@/lib/email/ses-client";
+import { sendEmail, opsRecipient } from "@/lib/email/ses-client";
 
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
@@ -81,16 +82,18 @@ async function runWatchdog() {
     );
   }
 
-  if (problems.length) {
+  // No recipient means nobody is listening; the summary still says so.
+  const to = problems.length ? await opsRecipient() : "";
+  if (to) {
     await sendEmail({
-      to: "contact@linkedgrow.ai",
+      to,
       subject: `Proxy watchdog: ${problems.length} problem${problems.length === 1 ? "" : "s"}`,
       html: `<p>${problems.join("</p><p>")}</p><p>An expired address cannot be recovered, so act while there are days left.</p>`,
       text: problems.join("\n\n"),
     });
   }
 
-  return { problems: problems.length, checked: closeRows.length, heartbeat: beat?.updatedAt ?? null };
+  return { problems: problems.length, checked: closeRows.length, heartbeat: beat?.updatedAt ?? null, notified: to !== "" };
 }
 
 export async function POST(request: NextRequest) {

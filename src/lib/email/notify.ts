@@ -6,7 +6,7 @@
  * never written twice and the plain-text version is never forgotten.
  */
 
-import { sendEmail } from "./ses-client";
+import { sendEmail, opsRecipient } from "./ses-client";
 import {
   type Lead,
   leadsDigestSubject,
@@ -131,8 +131,10 @@ export async function sendSelectorAlertEmail(params: {
   agentFailures: number;
   missing: string[];
 }) {
+  const to = await opsRecipient();
+  if (!to) return { success: true, skipped: true as const, messageId: null };
   return sendEmail({
-    to: "contact@linkedgrow.ai",
+    to,
     subject: selectorAlertSubject,
     html: selectorAlertEmailTemplate(params),
     text: selectorAlertEmailText(params),
