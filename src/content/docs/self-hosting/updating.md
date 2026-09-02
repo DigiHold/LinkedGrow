@@ -28,7 +28,7 @@ Every push to the main branch publishes `ghcr.io/digihold/linkedgrow` and `ghcr.
 | Tag | What it points at |
 | --- | --- |
 | `latest` | The newest build of the main branch, which is what a fresh install runs. |
-| `v1.0.0` and `1.0` | A release. The shorter tag moves forward with each patch release. |
+| `v1.0.0` and `v1.0` | A release. The shorter tag moves forward with each patch release. |
 | `sha-1a2b3c4` | One exact commit, which never moves. |
 
 Release tags are also built for arm64. `latest` is built for amd64 only, so an arm64 host runs a release tag or [builds from source](/docs/self-hosting/install).
