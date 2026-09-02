@@ -24,6 +24,16 @@ cd worker && npm install && npx patchright install chrome && cp .env.example .en
 
 In `worker/.env`, point `TURSO_DATABASE_URL` at the same file (`file:../linkedgrow.db`) and paste the same `ENCRYPTION_KEY` as the app; the worker cannot read a credential encrypted with a different one.
 
+## The stack from this checkout
+
+The compose file pulls the published images, so a checkout that should run its own code adds the build override:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
+It replaces the 2 images with a build of the working tree and keeps everything else. `./install.sh --source` runs the same 2 files, and a `docker-compose.override.yml` next to them holds the tweaks that belong to your machine only, such as `platform: linux/amd64` for the worker on Apple Silicon; it is gitignored.
+
 ## Tests and the build gate
 
 ```

@@ -1,8 +1,6 @@
 # LinkedGrow
 
-AI agents that find your leads and clients on LinkedIn, plus the posting tools to keep your profile alive, on your own server. One `docker compose up`, a setup wizard, no LinkedIn API and no subscription. A hosted version runs at [linkedgrow.ai](https://linkedgrow.ai) for people who would rather not run a server.
-
-![LinkedGrow dashboard](docs/images/dashboard.png)
+AI agents that find your leads and clients on LinkedIn, plus the posting tools to keep your profile alive, on your own server. One install command, a setup wizard, no LinkedIn API and no subscription. A hosted version runs at [linkedgrow.ai](https://linkedgrow.ai) for people who would rather not run a server.
 
 ## What it does
 
@@ -19,29 +17,47 @@ Everything runs through a real Chrome signed in to your account, on one dedicate
 | `app` | The Next.js dashboard and API on port 3000; it runs migrations at boot and serves uploads from the `uploads` volume. |
 | `worker` | A Node 24 process driving one Chrome per LinkedIn account under Xvfb; `WORKER_SLOTS` in `.env` sets how many run at once. |
 | `db` | A libSQL server with its data in `db-data`, reached at `http://db:8080` inside the stack, with no published port. |
+| `caddy` | Optional. With a domain in `.env` it takes ports 80 and 443, gets the certificate and forwards to the app. |
 
 ## Requirements
 
 - A Linux host, amd64 preferred (see the arm64 note).
 - Docker with the Compose plugin.
 - 4 GB of RAM for 2 concurrent browsers (`WORKER_SLOTS=2`), 16 GB for 12.
-- A domain and a reverse proxy for https.
+- A domain pointing at the server for https, or an open port 3000 for a plain http trial.
 - An AI key from Anthropic, OpenAI, Google, Grok or Kimi.
 - A Proxy-Seller account, with the server's public IP on their API allowlist, or proxies of your own.
 
 ## Install
 
+On a fresh Linux server, as root:
+
 ```
-git clone https://github.com/DigiHold/LinkedGrow.git && cd LinkedGrow
-cp .env.example .env
-openssl rand -hex 32   # AUTH_SECRET
-openssl rand -hex 32   # ENCRYPTION_KEY
-docker compose up -d
+curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh | sh
 ```
 
-Before the last line, open `.env` and set 3 values: `APP_URL`, the address people will use, then `AUTH_SECRET` and `ENCRYPTION_KEY`, each with one `openssl` output pasted in. Keep `ENCRYPTION_KEY` safe; everything sensitive in the database is encrypted with it and cannot be read with another one.
+It asks for your domain, installs Docker when it is missing, writes an `.env` with fresh secrets, pulls the images and starts the stack in `/opt/linkedgrow`. Answer the question with an empty line to serve on the server address over http instead. Give it 2 or 3 minutes, then open the address it prints at the end.
+
+### Manual install
+
+```
+mkdir -p /opt/linkedgrow && cd /opt/linkedgrow
+curl -fsSLO https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/.env.example -o .env
+docker compose pull && docker compose up -d
+```
+
+Before the last line, open `.env` and set 3 values: `APP_URL`, the address people will use, then `AUTH_SECRET` and `ENCRYPTION_KEY`, each holding the output of `openssl rand -hex 32`. Keep `ENCRYPTION_KEY` safe; everything sensitive in the database is encrypted with it and cannot be read with another one.
 
 Open the address, create the first account (it is the administrator), and follow the wizard.
+
+### Install with an AI agent
+
+The install is written down for agents in [llms-install.md](llms-install.md), so an agent with shell access to the server can run it end to end. Give yours this prompt:
+
+> Install LinkedGrow on this server following https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/llms-install.md, with the domain linkedgrow.example.com. Do not put any key of your own in the configuration, and do not create the first account. Tell me the address to open when it answers on its health check.
+
+Replace the domain with yours, or ask for the run without a domain to reach the app on the server address.
 
 ## The setup wizard
 
@@ -59,21 +75,15 @@ Everything can be changed later in Settings, Instance.
 
 ## Behind a reverse proxy
 
-Set `APP_URL` to your https address and put any reverse proxy in front of port 3000. With Caddy:
-
-```
-linkedgrow.example.com {
-    reverse_proxy localhost:3000
-}
-```
+The installer runs Caddy for you when you give it a domain, writing `DOMAIN` and `COMPOSE_PROFILES=https` into `.env`, and Caddy gets the certificate and renews it on its own. To run a proxy you already have instead, leave `COMPOSE_PROFILES` empty, set `APP_URL` to your https address, set `APP_BIND=127.0.0.1` and forward to port 3000. The [reverse proxy page](src/content/docs/self-hosting/reverse-proxy.md) has the nginx and Caddy blocks.
 
 ## Updating
 
 ```
-git pull && docker compose up -d --build
+cd /opt/linkedgrow && ./install.sh update
 ```
 
-Database migrations run when the app starts.
+That pulls the current images and restarts the stack, which is also what `docker compose pull && docker compose up -d` does by hand. Database migrations run when the app starts. Pin a release by setting `LINKEDGROW_VERSION=v1.0.0` in `.env` instead of `latest`.
 
 ## Backups
 
@@ -89,7 +99,7 @@ LinkedIn restricts accounts that automate, and no tool changes that. LinkedGrow 
 
 ## Arm64 hosts
 
-Google Chrome only ships for amd64 on Linux. On arm64 (Raspberry Pi, Apple Silicon) Compose builds the worker image for the host and it falls back to Chromium through `CHROME_PATH`, which LinkedIn can tell apart from Chrome more easily. It works for trying the product; run production on amd64.
+Google Chrome only ships for amd64 on Linux. On arm64 (Raspberry Pi, Apple Silicon) the worker image falls back to Chromium through `CHROME_PATH`, which LinkedIn can tell apart from Chrome more easily. Release tags carry an arm64 image; `latest` is built for amd64 only, so an arm64 host runs `--source` or a release tag. It works for trying the product; run production on amd64.
 
 ## Docs and help
 
