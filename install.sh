@@ -120,6 +120,7 @@ env_set() {
   else
     printf '%s=%s\n' "$1" "$2" >> "$ENV_FILE"
   fi
+  chmod 600 "$ENV_FILE" 2>/dev/null || true
 }
 
 # An option wins over .env, and .env wins over the default, so a rerun without
@@ -377,6 +378,7 @@ APP_PORT=$PORT
 COMPOSE_PROFILES=$PROFILES
 ENVFILE
   )
+  chmod 600 "$ENV_FILE" 2>/dev/null || true
   say "Wrote $ENV_FILE with a new AUTH_SECRET and ENCRYPTION_KEY."
 fi
 
