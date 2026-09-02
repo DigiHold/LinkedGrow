@@ -9,7 +9,11 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const appUrl = new URL(getAppUrl());
 const appProtocol: "http" | "https" = appUrl.protocol === "http:" ? "http" : "https";
 
+// The self hosted image runs the traced standalone server (docker/Dockerfile.app).
+const selfHosted = (process.env.LINKEDGROW_EDITION ?? "self-hosted") !== "cloud";
+
 const nextConfig: NextConfig = {
+  ...(selfHosted ? { output: "standalone" } : {}),
   // Inlined into the server and browser bundles alike, so a client component
   // gating on the edition answers the same as the route behind it.
   env: {

@@ -1,0 +1,28 @@
+FROM node:24-bookworm
+ARG TARGETARCH
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
+      ca-certificates curl gnupg xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+      libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
+      libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libatspi2.0-0 \
+    && (apt-get install -y -qq --no-install-recommends libasound2t64 || apt-get install -y -qq --no-install-recommends libasound2) \
+    && if [ "$TARGETARCH" = "amd64" ]; then \
+         install -d -m 0755 /etc/apt/keyrings \
+         && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg \
+         && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+         && apt-get update -qq && apt-get install -y -qq --no-install-recommends google-chrome-stable ; \
+       else \
+         apt-get install -y -qq --no-install-recommends chromium ; \
+       fi \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app/worker
+COPY worker/package.json worker/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY shared /app/shared
+COPY worker .
+COPY docker/entrypoint-worker.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh && groupadd -r linkedgrow && useradd -r -g linkedgrow -m -d /home/linkedgrow linkedgrow \
+    && mkdir -p /data/profiles /data/uploads && chown -R linkedgrow:linkedgrow /app /data
+USER linkedgrow
+ENV DISPLAY=:99 SCREEN_SIZE=1920x1080 PROFILE_ROOT=/data/profiles STORAGE_ROOT=/data/uploads HOME=/home/linkedgrow WORKER_ENV=production LINKEDGROW_EDITION=self-hosted
+ENTRYPOINT ["/app/entrypoint.sh"]

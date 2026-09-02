@@ -113,6 +113,17 @@ export function payingClause(edition: Edition): string {
   return edition === "self-hosted" ? "" : "AND (u.plan IN ('pro', 'business') OR u.is_admin = 1)";
 }
 
+/**
+ * Who a dedicated address is renewed for, the connect gate's "still pays"
+ * (mayConnect in the dashboard) re-read every morning by the renewal pass.
+ * The self hosted edition bills nobody, so every bound address is renewed.
+ */
+export function renewClause(edition: Edition): string {
+  return edition === "self-hosted"
+    ? ""
+    : "AND (u.is_admin = 1 OR u.is_lifetime_deal = 1 OR (u.stripe_subscription_id IS NOT NULL AND u.stripe_subscription_id != ''))";
+}
+
 /** The dashboard paywall on a queued post, kept identical to the app's src/proxy.ts. */
 export function paywallClause(edition: Edition): string {
   if (edition === "self-hosted") return "";

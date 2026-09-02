@@ -168,6 +168,8 @@ const authProxy = auth(async (req) => {
       "/api/mcp",
       // Authenticates itself with the instance cron secret (src/lib/cron-auth.ts).
       "/api/internal/",
+      // Liveness for the compose healthcheck and the boot wait of the worker.
+      "/api/health",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {

@@ -1,4 +1,5 @@
-import { db } from "../db.ts";
+import { db, renewClause } from "../db.ts";
+import { EDITION } from "../edition.ts";
 import { log } from "../logger.ts";
 import { call } from "../proxy/fulfil.ts";
 import { notifyOps } from "../notify.ts";
@@ -20,7 +21,8 @@ import { notifyOps } from "../notify.ts";
  * a live Stripe subscription, a lifetime deal, or an admin house account.
  * Churn is not an event this pass listens to, it is a state it re-reads every
  * morning, so cancellations, refunds and failed trials all collapse into the
- * same test with no webhook to forget.
+ * same test with no webhook to forget. The self hosted edition bills nobody,
+ * so there every bound address is renewed (renewClause in db.ts).
  *
  * Facts this code is built on, each verified against the live API:
  * - Renewing early adds the new term AFTER the current end (29.08 + 1m came
@@ -31,8 +33,10 @@ import { notifyOps } from "../notify.ts";
  *   planning for: expired means a support lottery, so expiry is the one
  *   outcome this pass exists to prevent.
  *
- * Run daily by cron on the VPS (/etc/cron.d/linkedgrow-proxy-renew), because
- * the supplier API is IP-allowlisted to this box alone.
+ * In the cloud this file is run daily by cron on the VPS
+ * (/etc/cron.d/linkedgrow-proxy-renew), because the supplier API is
+ * IP-allowlisted to that box alone. A self hosted install has no cron.d: the
+ * worker's own schedule (cron/pass.ts) calls renewProxiesPass once a day.
  */
 
 /** Override for a one-off manual run (e.g. RENEW_WINDOW_DAYS=30 to exercise
@@ -52,6 +56,12 @@ interface SupplierRow {
   status_type?: string;
 }
 
+export interface RenewSummary {
+  renewed: number;
+  released: number;
+  alerts: string[];
+}
+
 /** Their dates are DD.MM.YYYY. */
 function parseEnd(value: string | undefined): Date | null {
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value ?? "");
@@ -67,7 +77,11 @@ async function heartbeat(summary: unknown): Promise<void> {
   });
 }
 
-async function main(): Promise<void> {
+/**
+ * One renewal pass. Alerts are mailed to operations before it returns and
+ * come back to the caller too; a failure of the pass itself is thrown.
+ */
+export async function renewProxiesPass(): Promise<RenewSummary> {
   const alerts: string[] = [];
 
   // The supplier's list is the truth about what exists and when it ends.
@@ -83,11 +97,14 @@ async function main(): Promise<void> {
     }
   }
 
-  // Every managed allocation, with whether its workspace still pays.
+  // Every managed allocation, with whether its workspace still pays. The
+  // clause is a WHERE fragment that starts with AND, so it is anchored on a
+  // true literal to become the boolean the loop reads; with no user row the
+  // cloud text evaluates to NULL, which the CASE reads as not paying.
   const { rows } = await db().execute({
     sql: `SELECT pa.id, pa.provider_ref, pa.last_exit_ip, pa.country, pa.status,
                  pa.linkedin_account_id,
-                 u.stripe_subscription_id, u.is_lifetime_deal, u.is_admin
+                 CASE WHEN 1 ${renewClause(EDITION)} THEN 1 ELSE 0 END AS paying
             FROM proxy_allocations pa
             LEFT JOIN linkedin_accounts la ON la.id = pa.linkedin_account_id
             LEFT JOIN users u ON u.id = COALESCE(la.workspace_id, pa.workspace_id)
@@ -97,6 +114,7 @@ async function main(): Promise<void> {
 
   const now = Date.now();
   let renewed = 0;
+  let released = 0;
   let dueLater = 0;
   let lapsing = 0;
 
@@ -104,10 +122,7 @@ async function main(): Promise<void> {
     const ref = String(row.provider_ref ?? "");
     const item = ref ? byOrder.get(ref) : undefined;
     const bound = row.linkedin_account_id != null;
-    const paying =
-      Number(row.is_admin ?? 0) === 1 ||
-      Number(row.is_lifetime_deal ?? 0) === 1 ||
-      (row.stripe_subscription_id != null && String(row.stripe_subscription_id) !== "");
+    const paying = Number(row.paying ?? 0) === 1;
     const deserves = bound && paying && String(row.status) === "active";
 
     if (!item) {
@@ -117,10 +132,11 @@ async function main(): Promise<void> {
         alerts.push(`Allocation ${row.id} (${row.country}, exit ${row.last_exit_ip}) is bound to a paying customer but order ${ref} is GONE at Proxy-Seller.`);
       } else if (String(row.status) === "active" || String(row.status) === "released") {
         // Lapsed as designed. Close the row so the pool can never hand it out.
-        await db().execute({
+        const closed = await db().execute({
           sql: `UPDATE proxy_allocations SET status = 'released', linkedin_account_id = NULL, updated_at = ? WHERE id = ? AND status != 'released'`,
           args: [Math.floor(now / 1000), String(row.id)],
         });
+        released += closed.rowsAffected;
       }
       continue;
     }
@@ -195,7 +211,7 @@ async function main(): Promise<void> {
             JOIN users u ON u.id = la.workspace_id
            WHERE pa.source = 'managed' AND pa.status = 'active'
              AND pa.linkedin_account_id IS NOT NULL
-             AND (u.is_admin = 1 OR u.is_lifetime_deal = 1 OR (u.stripe_subscription_id IS NOT NULL AND u.stripe_subscription_id != ''))
+             ${renewClause(EDITION)}
              AND pa.expires_at IS NOT NULL AND pa.expires_at < ?`,
     args: [Math.floor(now / 1000) + ALERT_WITHIN_DAYS * 86_400],
   });
@@ -211,7 +227,7 @@ async function main(): Promise<void> {
     alerts.push(`Supplier balance $${usd} may not cover the coming renewals (~$${needed}). The daily top-up guard should have mailed a payment link; it needs the click.`);
   }
 
-  const summary = { renewed, dueLater, lapsing, alerts: alerts.length, balance: usd, at: new Date().toISOString() };
+  const summary = { renewed, released, dueLater, lapsing, alerts: alerts.length, balance: usd, at: new Date().toISOString() };
   await heartbeat(summary);
   log("proxy renewal pass done", summary);
 
@@ -221,15 +237,19 @@ async function main(): Promise<void> {
       `Proxy renewal: ${alerts.length} thing${alerts.length === 1 ? "" : "s"} need${alerts.length === 1 ? "s" : ""} you`,
       alerts
     );
-    process.exitCode = 1;
   }
+
+  return { renewed, released, alerts };
 }
 
-main().then(
-  () => process.exit(process.exitCode ?? 0),
-  (error) => {
-    log("proxy renewal pass failed", { error: String(error) });
-    // The pass itself failing must not stay quiet either.
-    notifyOps("Proxy renewal pass CRASHED", [String(error)]).finally(() => process.exit(1));
-  }
-);
+// The cloud's cron.d entry runs this file directly; the worker imports it.
+if (import.meta.filename === process.argv[1]) {
+  renewProxiesPass().then(
+    ({ alerts }) => process.exit(alerts.length ? 1 : 0),
+    (error) => {
+      log("proxy renewal pass failed", { error: String(error) });
+      // The pass itself failing must not stay quiet either.
+      notifyOps("Proxy renewal pass CRASHED", [String(error)]).finally(() => process.exit(1));
+    }
+  );
+}

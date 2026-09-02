@@ -11,7 +11,19 @@ const client = createClient({
 const split = (sql) =>
   sql.split(/\r?\n/).filter((l) => !l.trim().startsWith("--")).join("\n")
     .split(/;\s*(?:\r?\n|$)/).map((s) => s.trim()).filter((s) => s.length > 0);
-await client.execute("CREATE TABLE IF NOT EXISTS schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL)");
+// sqld takes a few seconds to open after its container starts, and compose
+// has no way to wait for it, so the first statement is the wait.
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+for (let attempt = 1; ; attempt++) {
+  try {
+    await client.execute("CREATE TABLE IF NOT EXISTS schema_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL)");
+    break;
+  } catch (error) {
+    if (attempt >= 30) throw error;
+    process.stdout.write(`waiting for the database (${attempt}/30)\n`);
+    await sleep(2000);
+  }
+}
 const done = new Set((await client.execute("SELECT id FROM schema_migrations")).rows.map((r) => String(r.id)));
 const files = readdirSync(dir).filter((f) => /^\d{3}_.+\.sql$/.test(f)).sort();
 const applied = [];
