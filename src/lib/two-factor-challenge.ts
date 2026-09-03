@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { isSecureAppUrl } from "./app-url";
 
 /**
  * The short lived proof that Google confirmed an address, and nothing more.
@@ -10,7 +11,17 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
  * names the account and carries its own expiry, so nothing about the session is
  * decided by anything the browser could edit.
  */
-export const TWO_FACTOR_CHALLENGE_COOKIE = "google_2fa_challenge";
+const TWO_FACTOR_CHALLENGE_COOKIE = "google_2fa_challenge";
+
+/**
+ * The __Secure- prefix follows the public url, the same rule the session cookie
+ * uses. A browser refuses a cookie carrying that prefix unless it arrived over
+ * https with the Secure flag, so the name itself holds the guarantee and a
+ * downgraded request cannot plant one.
+ */
+export function twoFactorChallengeCookieName(): string {
+  return isSecureAppUrl() ? `__Secure-${TWO_FACTOR_CHALLENGE_COOKIE}` : TWO_FACTOR_CHALLENGE_COOKIE;
+}
 
 /** Long enough to open an authenticator app, short enough to be worthless if it leaks. */
 export const TWO_FACTOR_CHALLENGE_TTL_SECONDS = 5 * 60;

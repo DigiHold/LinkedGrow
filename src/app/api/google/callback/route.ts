@@ -6,22 +6,16 @@ import { eq, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
 import { newUserPolicy, SIGNUPS_CLOSED_MESSAGE } from '@/lib/registration';
+import { sanitizeCallbackUrl } from '@/lib/url';
 import { rateLimit, getClientIP, AUTH_RATE_LIMITS } from '@/lib/rate-limit';
 import { createSessionToken, sessionCookieName, sessionCookieOptions } from '@/lib/session-cookie';
 import {
-  TWO_FACTOR_CHALLENGE_COOKIE,
   TWO_FACTOR_CHALLENGE_TTL_SECONDS,
   mintTwoFactorChallenge,
   requireAuthSecret,
+  twoFactorChallengeCookieName,
 } from '@/lib/two-factor-challenge';
 
-
-function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
-  if (!url) return undefined;
-  // Only allow relative paths starting with / (no protocol-relative //evil.com or absolute URLs)
-  if (!url.startsWith('/') || url.startsWith('//')) return undefined;
-  return url;
-}
 
 /**
  * A value on its way into a <script> block.
@@ -100,7 +94,7 @@ function twoFactorChallengeResponse(userId: string, isPopup: boolean, googleAcco
     : NextResponse.redirect(signInUrl);
 
   response.cookies.set(
-    TWO_FACTOR_CHALLENGE_COOKIE,
+    twoFactorChallengeCookieName(),
     mintTwoFactorChallenge(userId, requireAuthSecret(), googleAccountId),
     {
       httpOnly: true,
@@ -134,7 +128,7 @@ export async function GET(request: NextRequest) {
   const storedState = request.cookies.get('google_oauth_state')?.value;
   const mode = request.cookies.get('google_oauth_mode')?.value || 'login';
   const isPopup = request.cookies.get('google_popup')?.value === 'true';
-  const callbackUrl = sanitizeCallbackUrl(request.cookies.get('google_callback_url')?.value);
+  const callbackUrl = sanitizeCallbackUrl(request.cookies.get('google_callback_url')?.value ?? null);
 
   // Public by design: Google sends the browser here. Counted on its own key,
   // so a burst of callbacks never spends the budget of the outbound route.
@@ -361,7 +355,7 @@ export async function GET(request: NextRequest) {
 
     // Handle popup mode - return HTML that sets cookie and notifies parent
     if (isPopup) {
-      const redirectUrl = callbackUrl || '/dashboard';
+      const redirectUrl = callbackUrl;
       const appOrigin = getAppUrl();
       const response = new NextResponse(
         `<!DOCTYPE html>
@@ -395,7 +389,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to callbackUrl or dashboard with session cookie
-    const redirectUrl = callbackUrl || '/dashboard';
+    const redirectUrl = callbackUrl;
     const response = NextResponse.redirect(`${getAppUrl()}${redirectUrl}`);
 
     // Set the session cookie (NextAuth v5 uses authjs.session-token)

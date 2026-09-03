@@ -4,6 +4,7 @@ import {
   TWO_FACTOR_CHALLENGE_TTL_SECONDS,
   mintTwoFactorChallenge,
   readTwoFactorChallenge,
+  twoFactorChallengeCookieName,
 } from "./two-factor-challenge";
 
 const SECRET = "3d6f45a5fd7b4b0e9c2a1f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1908f7e6";
@@ -60,4 +61,16 @@ test("a challenge stops being read once it expires", () => {
 
   assert.equal(readTwoFactorChallenge(value, SECRET, stillValid)?.userId, "user-1");
   assert.equal(readTwoFactorChallenge(value, SECRET, expired), null);
+});
+
+test("the challenge cookie takes the Secure prefix on an https instance", () => {
+  const original = process.env.NEXT_PUBLIC_APP_URL;
+
+  process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+  assert.equal(twoFactorChallengeCookieName(), "google_2fa_challenge");
+
+  process.env.NEXT_PUBLIC_APP_URL = "https://linkedgrow.example.com";
+  assert.equal(twoFactorChallengeCookieName(), "__Secure-google_2fa_challenge");
+
+  process.env.NEXT_PUBLIC_APP_URL = original;
 });

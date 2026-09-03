@@ -7,7 +7,7 @@ import { sanitizeCallbackUrl } from '@/lib/url';
 import { rateLimit, getClientIP, AUTH_RATE_LIMITS } from '@/lib/rate-limit';
 import { createSessionToken, sessionCookieName, sessionCookieOptions } from '@/lib/session-cookie';
 import {
-  TWO_FACTOR_CHALLENGE_COOKIE,
+  twoFactorChallengeCookieName,
   TWO_FACTOR_CHALLENGE_TTL_SECONDS,
   readTwoFactorChallenge,
   requireAuthSecret,
@@ -24,7 +24,7 @@ import {
  */
 function restart(message: string, status: number) {
   const response = NextResponse.json({ error: message, restart: true }, { status });
-  response.cookies.delete(TWO_FACTOR_CHALLENGE_COOKIE);
+  response.cookies.delete(twoFactorChallengeCookieName());
   return response;
 }
 
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const challenge = readTwoFactorChallenge(
-      request.cookies.get(TWO_FACTOR_CHALLENGE_COOKIE)?.value,
+      request.cookies.get(twoFactorChallengeCookieName())?.value,
       requireAuthSecret()
     );
     if (!challenge) {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ success: true, callbackUrl: redirectUrl });
     response.cookies.set(sessionCookieName(), token, sessionCookieOptions());
-    response.cookies.delete(TWO_FACTOR_CHALLENGE_COOKIE);
+    response.cookies.delete(twoFactorChallengeCookieName());
     response.cookies.delete('google_callback_url');
     return response;
   } catch {
