@@ -24,6 +24,7 @@ COPY --from=build --chown=linkedgrow:linkedgrow /app/.next/static ./.next/static
 COPY --from=build --chown=linkedgrow:linkedgrow /app/public ./public
 COPY --from=build --chown=linkedgrow:linkedgrow /app/docker/migrations ./docker/migrations
 COPY --from=build --chown=linkedgrow:linkedgrow /app/docker/migrate.mjs ./docker/migrate.mjs
+COPY --from=build --chown=linkedgrow:linkedgrow /app/scripts/clear-two-factor.mjs ./scripts/clear-two-factor.mjs
 COPY --chown=linkedgrow:linkedgrow docker/entrypoint-app.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 USER linkedgrow

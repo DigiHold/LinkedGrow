@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:seed-admin": "npx tsx src/lib/db/seed-admin.ts",
     "db:migrate": "node --import tsx src/lib/db/migrate-cli.ts",
+    "db:clear-2fa": "node scripts/clear-two-factor.mjs",
     "test": "node --import tsx --test 'src/**/*.test.ts' 'shared/**/*.test.ts'",
     "test:e2e": "playwright test --reporter=line"
   },
