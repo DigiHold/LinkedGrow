@@ -7,7 +7,7 @@ order: 6
 
 ## Overview
 
-Perplexity provides Sonar Deep Research, Sonar Reasoning Pro, Sonar Reasoning, Sonar Pro, and Sonar models. Perplexity models are unique because they can access real-time web information, making them excellent for creating data-backed and trend-aware LinkedIn content.
+Perplexity provides Sonar Deep Research, Sonar Reasoning Pro, Sonar Pro and Sonar. Perplexity models are unusual because they can read the live web, which makes them a strong choice for a post that leans on current numbers or on something being discussed this week.
 
 ## Step 1 - Create a Perplexity account
 
@@ -39,12 +39,11 @@ Perplexity provides Sonar Deep Research, Sonar Reasoning Pro, Sonar Reasoning, S
 | Model | Best for | Cost per post | Monthly estimate (30 posts) |
 |---|---|---|---|
 | Sonar Deep Research | In-depth research content | ~$0.02 | ~$0.60 |
-| Sonar Reasoning Pro | Complex analysis | ~$0.05 | ~$1.50 |
-| Sonar Reasoning | Analytical posts | ~$0.03 | ~$0.90 |
+| Sonar Reasoning Pro | Complex analysis | ~$0.02 | ~$0.60 |
 | Sonar Pro (Recommended) | Best overall value | ~$0.03 | ~$0.90 |
-| Sonar | Fastest, most affordable | ~$0.002 | ~$0.06 |
+| Sonar | Fastest, most affordable | ~$0.004 | ~$0.11 |
 
-**Recommendation:** **Sonar Pro** provides the best balance of research quality and cost. For budget-conscious users, **Sonar** is extremely affordable at just $0.002 per post.
+**Recommendation:** **Sonar Pro** provides the best balance of research quality and cost. When the budget is what matters, **Sonar** is extremely affordable at roughly $0.004 per post.
 
 ## When to use Perplexity
 

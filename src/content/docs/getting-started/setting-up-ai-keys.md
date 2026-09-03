@@ -13,20 +13,20 @@ Nothing meters your generations, so what you spend follows what you write and wh
 
 ## Supported providers
 
-### Text generation (6 providers, 28 models)
+### Text generation (6 providers, 35 models)
 
-- **OpenAI** - GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, o3-mini
-- **Anthropic** - Claude Opus 4.6, Claude Sonnet 4.6, Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Sonnet 4
-- **Google AI** - Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
-- **Grok (xAI)** - Grok 4, Grok 4.1 Fast, Grok Code Fast, Grok 3
-- **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Reasoning, Sonar Pro, Sonar
-- **Kimi (Moonshot AI)** - Kimi K2.5, Kimi K2
+- **OpenAI** - GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna, GPT-5.5, GPT-5.4, GPT-5.4 mini, GPT-5.4 nano
+- **Anthropic** - Claude Fable 5.1, Claude Opus 5, Claude Sonnet 5, Claude Haiku 4.5, Claude Opus 4.8, Claude Fable 5, Claude Sonnet 4.6
+- **Google AI** - Gemini 3.7 Flash, Gemini 3.6 Flash, Gemini 3.5 Flash, Gemini 3.5 Flash Lite, Gemini 3.1 Pro, Gemini 3.1 Flash Lite, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
+- **Grok (xAI)** - Grok 4.6, Grok 4.5, Grok 4.3, Grok 4.20 Reasoning
+- **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Pro, Sonar
+- **Kimi (Moonshot AI)** - Kimi K3, Kimi K2.7 Code, Kimi K2.6
 
-### Image generation (3 providers, 14 models)
+### Image generation (3 providers)
 
-- **Google AI** - Nano Banana Pro, Nano Banana, Imagen 4 Ultra, Imagen 4, Imagen 4 Fast
-- **OpenAI** - GPT Image 1.5, GPT Image 1, GPT Image 1 Mini
-- **Replicate** - FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX 1.1 Pro Ultra, FLUX 1.1 Pro, FLUX Schnell
+- **Google AI** - Nano Banana Pro, Nano Banana 2, Nano Banana 2 Lite
+- **OpenAI** - GPT Image 2, GPT Image 1.5, GPT Image 1, GPT Image 1 Mini
+- **Replicate** - FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX.2 Klein 4B, FLUX 1.1 Pro Ultra, FLUX Schnell
 
 ## Quick setup
 
@@ -42,12 +42,12 @@ Your key is encrypted and stored securely. LinkedGrow never shares your API key 
 
 | Usage level | Posts per month | Estimated AI cost |
 |---|---|---|
-| Light | 10 posts | $0.10 - $0.30 |
-| Regular | 30 posts | $0.30 - $0.90 |
-| Active | 60 posts | $0.60 - $1.80 |
-| Heavy (with images) | 100+ posts | $3 - $8 |
+| Light | 10 posts | $0.07 - $0.50 |
+| Regular | 30 posts | $0.21 - $1.50 |
+| Active | 60 posts | $0.42 - $3.00 |
+| Heavy | 100 posts | $0.70 - $5.00 |
 
-Costs vary from one model to the next. Budget models like GPT-5 Nano ($0.002/post), Gemini 2.5 Flash Lite ($0.001/post), or Sonar ($0.002/post) are extremely affordable. Premium models like Claude Opus 4.6 or Sonar Reasoning Pro cost more but produce higher quality content.
+Those figures follow the models LinkedGrow marks as recommended, which run from $0.007 a post on Gemini 3.7 Flash to $0.05 a post on Claude Opus 5. Budget models go lower still, down to $0.001 a post on Gemini 2.5 Flash Lite, and the dearest model on the list is Claude Fable 5.1 at $0.10 a post. Images are billed on top of that, from $0.003 each on FLUX Schnell to $0.24 on Nano Banana Pro.
 
 ## Next steps
 

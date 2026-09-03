@@ -23,7 +23,7 @@ LinkedGrow itself has no price on the self hosted edition: you pay for your serv
 4. **Paste your key in LinkedGrow** - Go to Settings > AI API and enter your key
 5. **Start generating** - Create unlimited posts, ideas, hooks, and more
 
-The AI provider charges you based on actual usage. Each post generation typically costs $0.001 to $0.05 depending on the model you choose.
+The AI provider charges you based on actual usage. Each post generation typically costs $0.001 to $0.10 depending on the model you choose.
 
 ## Which key pays for what
 
@@ -41,7 +41,7 @@ The agent key is the administrator's business rather than yours, and it carries 
 ## Benefits of BYOK
 
 - **No generation limits** - Create as many posts, ideas, and hooks as you want
-- **Choose your model** - Use budget models for brainstorming ($0.001/post) and premium models for final drafts ($0.03/post)
+- **Choose your model** - Use budget models for brainstorming ($0.001/post) and premium models for final drafts (up to $0.10/post)
 - **Full cost transparency** - See exactly what you spend in your provider's dashboard
 - **No vendor lock-in** - Your API key works with any service, not just LinkedGrow
 - **Switch providers instantly** - Try OpenAI today and Anthropic tomorrow with no friction
@@ -51,8 +51,8 @@ The agent key is the administrator's business rather than yours, and it carries 
 
 | Usage level | Description | Estimated cost |
 |---|---|---|
-| Light | 10-15 posts per month with a budget model | $0.10 - $0.30 |
-| Regular | 30 posts per month with a recommended model | $0.30 - $0.90 |
+| Light | 10-15 posts per month with a budget model | $0.01 - $0.06 |
+| Regular | 30 posts per month with a recommended model | $0.21 - $1.50 |
 | Active | 60 posts with hooks and ideas | $1 - $3 |
 | Heavy | 100+ posts with image generation | $3 - $8 |
 

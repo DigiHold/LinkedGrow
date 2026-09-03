@@ -53,15 +53,15 @@ OpenAI bills pay-as-you-go, so you are only charged for what you actually use, a
 
 | Model | Best for | Cost per post | Monthly estimate (30 posts) |
 |---|---|---|---|
-| GPT-5.6 Sol | Highest quality, hardest reasoning | ~$0.06 | ~$1.80 |
-| GPT-5.6 Terra | Balanced quality and cost | ~$0.03 | ~$0.90 |
-| GPT-5.6 Luna | Fast and cost-sensitive work | ~$0.012 | ~$0.36 |
+| GPT-5.6 Sol | Highest quality, hardest reasoning | ~$0.04 | ~$1.20 |
+| GPT-5.6 Terra (Recommended) | Balanced quality and cost | ~$0.02 | ~$0.66 |
+| GPT-5.6 Luna | Fast, cheap drafting work | ~$0.002 | ~$0.07 |
 | GPT-5.5 | Complex professional writing | ~$0.06 | ~$1.80 |
-| GPT-5.4 | Reliable, well-tested quality | ~$0.03 | ~$0.90 |
-| GPT-5.4 mini (Recommended) | Best value for everyday posts | ~$0.008 | ~$0.24 |
-| GPT-5.4 nano | Cheapest option available | ~$0.002 | ~$0.06 |
+| GPT-5.4 | Reliable, well tested quality | ~$0.03 | ~$0.90 |
+| GPT-5.4 mini | Best value in the older lineup | ~$0.008 | ~$0.25 |
+| GPT-5.4 nano | Cheapest option available | ~$0.002 | ~$0.07 |
 
-**Recommendation:** GPT-5.4 mini is the default in LinkedGrow and the right starting point for most people. It writes solid LinkedIn posts for well under a cent each. Move up to GPT-5.6 Terra when you want stronger reasoning at moderate cost, or to GPT-5.6 Sol when quality matters more than the bill.
+**Recommendation:** GPT-5.6 Terra is the model LinkedGrow marks as recommended and the right starting point for most people. It writes solid LinkedIn posts for about 2 cents each. Move down to GPT-5.6 Luna when volume matters more than polish, or up to GPT-5.6 Sol when quality matters more than the bill.
 
 ## Pricing details
 
@@ -69,9 +69,9 @@ OpenAI bills by token, and 1,000 tokens covers roughly 750 words.
 
 | Model | Input (per 1M tokens) | Output (per 1M tokens) |
 |---|---|---|
-| GPT-5.6 Sol | $5.00 | $30.00 |
-| GPT-5.6 Terra | $2.50 | $15.00 |
-| GPT-5.6 Luna | $1.00 | $6.00 |
+| GPT-5.6 Sol | $4.00 | $20.00 |
+| GPT-5.6 Terra | $2.00 | $12.00 |
+| GPT-5.6 Luna | $0.20 | $1.20 |
 | GPT-5.5 | $5.00 | $30.00 |
 | GPT-5.4 | $2.50 | $15.00 |
 | GPT-5.4 mini | $0.75 | $4.50 |
@@ -91,4 +91,4 @@ Track your API usage and costs at [platform.openai.com/usage](https://platform.o
 
 ## Image generation
 
-OpenAI also supports image generation through GPT Image 2 and GPT Image 1.5. The same API key works for text and images. See [Image Providers](/docs/byok/image-providers) for details on setting up image AI.
+OpenAI also supports image generation through GPT Image 2, with GPT Image 1.5, GPT Image 1 and GPT Image 1 Mini kept as legacy choices. The same API key works for text and images. See [Image Providers](/docs/byok/image-providers) for details on setting up image AI.

@@ -55,14 +55,14 @@ Start with this documentation, which has a guide for every LinkedGrow feature. I
 
 ## What AI models are supported?
 
-LinkedGrow supports 28+ AI models through the BYOK system across 6 text providers and 3 image providers:
+Through the BYOK system LinkedGrow supports 35 text models across 6 providers, and image generation across 3 more:
 
-- **OpenAI** - GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, o3-mini
-- **Anthropic** - Claude Opus 4.6, Claude Sonnet 4.6, Claude Haiku 4.5, and more
-- **Google** - Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, and more
-- **Grok (xAI)** - Grok 4, Grok 4.1 Fast, Grok Code Fast, Grok 3
-- **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Pro, and more
-- **Kimi (Moonshot AI)** - Kimi K2.5, Kimi K2
+- **OpenAI** - GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna, GPT-5.5, GPT-5.4, and more
+- **Anthropic** - Claude Fable 5.1, Claude Opus 5, Claude Sonnet 5, Claude Haiku 4.5, and more
+- **Google** - Gemini 3.7 Flash, Gemini 3.5 Flash, Gemini 3.1 Pro, Gemini 2.5 Pro, and more
+- **Grok (xAI)** - Grok 4.6, Grok 4.5, Grok 4.3, Grok 4.20 Reasoning
+- **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Pro, Sonar
+- **Kimi (Moonshot AI)** - Kimi K3, Kimi K2.7 Code, Kimi K2.6
 
 You choose which model to use in your BYOK settings. Different models offer different balances of quality, speed, and cost. Check the [BYOK documentation](/docs/byok) for setup guides for each provider.
 

@@ -21,6 +21,7 @@ This means LinkedGrow could not authenticate with the AI provider using your key
   - Google AI: starts with `AIza`
   - Grok: starts with `xai-`
   - Perplexity: starts with `pplx-`
+  - Kimi: starts with `sk-`, the same prefix OpenAI uses, so check the tab
   - Replicate: starts with `r8_`
 - Check if the key has been revoked or deleted at the provider's dashboard
 - Generate a new key if the old one is no longer valid
@@ -37,6 +38,7 @@ The AI provider requires a payment method before you can use the API, even for f
 - Google AI: Google Cloud Console billing
 - Grok: console.x.ai billing settings
 - Perplexity: perplexity.ai/settings/api billing
+- Kimi: platform.kimi.ai/console billing
 
 After adding a payment method, try generating again in LinkedGrow.
 

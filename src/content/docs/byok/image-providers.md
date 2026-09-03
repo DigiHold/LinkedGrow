@@ -15,7 +15,7 @@ LinkedGrow supports AI image generation from three providers. You can set up mor
 
 ## Google AI (Nano Banana)
 
-Google AI offers four image models, and they use the same API key as your Gemini text models.
+Google AI offers three image models, and they use the same API key as your Gemini text models.
 
 **API key URL:** [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 
@@ -27,8 +27,7 @@ Google AI offers four image models, and they use the same API key as your Gemini
 |---|---|---|
 | Nano Banana Pro (Gemini 3 Pro Image) | Best quality, up to 4K | $0.13 - $0.24 |
 | Nano Banana 2 (Gemini 3.1 Flash Image) | Balanced quality and cost | $0.07 - $0.15 |
-| Nano Banana (Gemini 2.5 Flash Image) | Fast, good quality | ~$0.04 |
-| Nano Banana Lite (Gemini 3.1 Flash Lite Image) | Cheapest Google option | ~$0.03 |
+| Nano Banana 2 Lite (Gemini 3.1 Flash Lite Image) | Cheapest Google option | ~$0.03 |
 
 **Resolution options:** 1K (~1376x768), 2K (~2752x1536), 4K (~4096x2304)
 
@@ -38,7 +37,7 @@ If you already have a Google AI key for text, you do not need a separate key for
 
 ## OpenAI (GPT Image)
 
-OpenAI offers two image models using the same API key as its text models.
+OpenAI offers four image models using the same API key as its text models.
 
 **API key URL:** [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
@@ -48,14 +47,16 @@ OpenAI offers two image models using the same API key as its text models.
 
 | Model | Quality | Price per image |
 |---|---|---|
-| GPT Image 2 | Best quality | $0.006 - $0.21 |
-| GPT Image 1.5 | Standard | $0.009 - $0.13 |
+| GPT Image 2 (Recommended) | Best quality | $0.006 - $0.21 |
+| GPT Image 1.5 | Legacy | See OpenAI pricing |
+| GPT Image 1 | Legacy | See OpenAI pricing |
+| GPT Image 1 Mini | Legacy | See OpenAI pricing |
 
-**Resolution options:** Square (1024x1024), Horizontal (1792x1024), Portrait (1024x1792)
+**Resolution options:** Square (1024x1024), Landscape (1792x1024), Portrait (1024x1792)
 
 **Quality settings:** High (best quality, slower), Medium (balanced), Low (fastest)
 
-The wide price range on both models comes from the quality setting and the resolution you pick, so a low-quality square image sits at the bottom of the range and a high-quality wide image sits at the top.
+The wide price range comes from the quality setting and the resolution you pick, so a square image at low quality sits at the bottom of the range and a wide one at high quality sits at the top.
 
 ## Replicate (FLUX)
 
@@ -79,7 +80,7 @@ Replicate provides the FLUX models, which are open-weight image models known for
 | FLUX 1.1 Pro Ultra | 4MP output | ~$0.06 |
 | FLUX Schnell | Fastest and cheapest | ~$0.003 |
 
-**Resolution options:** Square (1024x1024), Horizontal (1536x1024), Portrait (1024x1536), 4MP Square (2048x2048)
+**Resolution options:** Square (1024x1024), Landscape (1536x1024), Portrait (1024x1536), 4MP Square (2048x2048)
 
 ## Setting up image generation
 
@@ -92,4 +93,4 @@ Replicate provides the FLUX models, which are open-weight image models known for
 
 ## Which provider should you choose?
 
-Google AI makes the most sense if you already have a Gemini key, and Nano Banana Lite at roughly $0.03 per image is its cheapest option. OpenAI is the natural pick if you already run GPT for text, where GPT Image 2 starts around $0.006 per image at the lowest quality setting. Replicate is worth the separate account when you want open-weight models or reference-image control, and FLUX Schnell at roughly $0.003 per image is the cheapest option across all three providers.
+Google AI makes the most sense if you already have a Gemini key, and Nano Banana 2 Lite at roughly $0.03 per image is its cheapest option. OpenAI is the natural pick if you already run GPT for text, where GPT Image 2 starts around $0.006 per image at the lowest quality setting. Replicate is worth the separate account when you want open weight models, or the control that comes from passing your own reference images, and FLUX Schnell at roughly $0.003 per image is the cheapest option across all three providers.
