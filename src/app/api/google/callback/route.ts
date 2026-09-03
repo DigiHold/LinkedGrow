@@ -75,7 +75,7 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
  * rather than a session. In a popup the opener has to hear about it, or it sits
  * on its spinner behind a window that just closed.
  */
-function twoFactorChallengeResponse(userId: string, isPopup: boolean) {
+function twoFactorChallengeResponse(userId: string, isPopup: boolean, googleAccountId: string) {
   const appOrigin = getAppUrl();
   const signInUrl = `${appOrigin}/sign-in?google2fa=1`;
 
@@ -99,13 +99,17 @@ function twoFactorChallengeResponse(userId: string, isPopup: boolean) {
       )
     : NextResponse.redirect(signInUrl);
 
-  response.cookies.set(TWO_FACTOR_CHALLENGE_COOKIE, mintTwoFactorChallenge(userId, requireAuthSecret()), {
-    httpOnly: true,
-    secure: isSecureAppUrl(),
-    sameSite: 'lax',
-    maxAge: TWO_FACTOR_CHALLENGE_TTL_SECONDS,
-    path: '/',
-  });
+  response.cookies.set(
+    TWO_FACTOR_CHALLENGE_COOKIE,
+    mintTwoFactorChallenge(userId, requireAuthSecret(), googleAccountId),
+    {
+      httpOnly: true,
+      secure: isSecureAppUrl(),
+      sameSite: 'lax',
+      maxAge: TWO_FACTOR_CHALLENGE_TTL_SECONDS,
+      path: '/',
+    },
+  );
 
   // The OAuth exchange is finished. Only the callback url survives, because the
   // two factor route still has to send the browser where it was going.
@@ -283,39 +287,57 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Link Google account if not already linked
-      if (!existingAccount) {
-        await db.insert(accounts).values({
-          userId: user.id,
-          type: 'oauth',
-          provider: 'google',
-          providerAccountId: googleUser.id,
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token || null,
-          expires_at: tokenData.expires_in
-            ? Math.floor(Date.now() / 1000) + tokenData.expires_in
-            : null,
-          token_type: tokenData.token_type,
-          scope: tokenData.scope,
-          id_token: tokenData.id_token || null,
-        });
-      } else {
-        // Update existing account tokens
-        await db
-          .update(accounts)
-          .set({
+      // Google is proof of an address only when Google says it verified it.
+      // Without that, anyone who administers a domain could assert an address
+      // on it, so an unverified one never reaches an account it is not already
+      // linked to. An established link is its own proof and still signs in.
+      if (!existingAccount && !googleUser.verified_email) {
+        const message = 'This Google account has no verified email address. Sign in with your password instead.';
+        if (isPopup) {
+          return createPopupResponse(false, { error: message });
+        }
+        return NextResponse.redirect(
+          `${getAppUrl()}/sign-in?error=${encodeURIComponent(message)}`
+        );
+      }
+
+      // Linking is a change to the account, and an account with two factor
+      // changes for nobody until the code proves the device. For those the
+      // write moves to /api/google/2fa, which runs once the code is checked.
+      if (!user.twoFactorEnabled) {
+        if (!existingAccount) {
+          await db.insert(accounts).values({
+            userId: user.id,
+            type: 'oauth',
+            provider: 'google',
+            providerAccountId: googleUser.id,
             access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token || undefined,
+            refresh_token: tokenData.refresh_token || null,
             expires_at: tokenData.expires_in
               ? Math.floor(Date.now() / 1000) + tokenData.expires_in
-              : undefined,
-          })
-          .where(
-            and(
-              eq(accounts.provider, 'google'),
-              eq(accounts.providerAccountId, googleUser.id)
-            )
-          );
+              : null,
+            token_type: tokenData.token_type,
+            scope: tokenData.scope,
+            id_token: tokenData.id_token || null,
+          });
+        } else {
+          // Update existing account tokens
+          await db
+            .update(accounts)
+            .set({
+              access_token: tokenData.access_token,
+              refresh_token: tokenData.refresh_token || undefined,
+              expires_at: tokenData.expires_in
+                ? Math.floor(Date.now() / 1000) + tokenData.expires_in
+                : undefined,
+            })
+            .where(
+              and(
+                eq(accounts.provider, 'google'),
+                eq(accounts.providerAccountId, googleUser.id)
+              )
+            );
+        }
       }
 
       // Don't update profile picture from Google - only LinkedIn pictures are used
@@ -330,7 +352,7 @@ export async function GET(request: NextRequest) {
     // route hands out a 5 minute challenge instead. Registration always creates
     // the row with two factor off, so only the login branch ever lands here.
     if (user.twoFactorEnabled) {
-      return twoFactorChallengeResponse(user.id, isPopup);
+      return twoFactorChallengeResponse(user.id, isPopup, googleUser.id);
     }
 
     // Create session token using NextAuth JWT

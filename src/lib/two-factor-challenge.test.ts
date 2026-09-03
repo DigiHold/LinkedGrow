@@ -40,9 +40,21 @@ test("a forged challenge naming another account is refused", () => {
   assert.equal(readTwoFactorChallenge(forged, SECRET), null);
 });
 
+test("the google account to link rides along, and only as a string", () => {
+  const withId = mintTwoFactorChallenge("user-1", SECRET, "google-123");
+  assert.equal(readTwoFactorChallenge(withId, SECRET)?.googleAccountId, "google-123");
+  assert.equal(readTwoFactorChallenge(mintTwoFactorChallenge("user-1", SECRET), SECRET)?.googleAccountId, null);
+
+  const forged = Buffer.from(
+    JSON.stringify({ uid: "user-1", jti: "abc", exp: Date.now() + 60_000, gid: { evil: true } }),
+    "utf8",
+  ).toString("base64url");
+  assert.equal(readTwoFactorChallenge(`${forged}.anything`, SECRET), null);
+});
+
 test("a challenge stops being read once it expires", () => {
   const now = Date.now();
-  const value = mintTwoFactorChallenge("user-1", SECRET, now);
+  const value = mintTwoFactorChallenge("user-1", SECRET, null, now);
   const stillValid = now + TWO_FACTOR_CHALLENGE_TTL_SECONDS * 1000 - 1000;
   const expired = now + TWO_FACTOR_CHALLENGE_TTL_SECONDS * 1000 + 1;
 

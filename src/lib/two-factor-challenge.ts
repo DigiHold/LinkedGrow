@@ -28,11 +28,20 @@ interface ChallengePayload {
   jti: string;
   /** Expiry, milliseconds since the epoch. */
   exp: number;
+  /**
+   * The Google account id waiting to be linked, when there is one. A public
+   * identifier, never a token: the callback refuses to write the link before
+   * the code is checked, so the id has to survive the round trip somehow, and
+   * signed alongside the account it belongs to is the only place it is safe.
+   */
+  gid?: string;
 }
 
 export interface TwoFactorChallenge {
   userId: string;
   id: string;
+  /** The Google account to link once the code checks out, or null. */
+  googleAccountId: string | null;
 }
 
 /** The signing key, or a clear failure. An unsigned challenge is not a challenge. */
@@ -47,11 +56,17 @@ function sign(body: string, secret: string): string {
 }
 
 /** A signed challenge value for one account, valid for the next few minutes. */
-export function mintTwoFactorChallenge(userId: string, secret: string, now: number = Date.now()): string {
+export function mintTwoFactorChallenge(
+  userId: string,
+  secret: string,
+  googleAccountId: string | null = null,
+  now: number = Date.now(),
+): string {
   const payload: ChallengePayload = {
     uid: userId,
     jti: randomBytes(12).toString("base64url"),
     exp: now + TWO_FACTOR_CHALLENGE_TTL_SECONDS * 1000,
+    ...(googleAccountId ? { gid: googleAccountId } : {}),
   };
   const body = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
   return `${body}.${sign(body, secret)}`;
@@ -86,6 +101,7 @@ export function readTwoFactorChallenge(
   if (typeof payload.uid !== "string" || payload.uid.length === 0) return null;
   if (typeof payload.jti !== "string" || payload.jti.length === 0) return null;
   if (typeof payload.exp !== "number" || payload.exp <= now) return null;
+  if (payload.gid !== undefined && typeof payload.gid !== "string") return null;
 
-  return { userId: payload.uid, id: payload.jti };
+  return { userId: payload.uid, id: payload.jti, googleAccountId: payload.gid ?? null };
 }

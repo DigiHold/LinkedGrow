@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCloud } from '@/lib/edition';
-import { db, users } from '@/lib/db';
-import { eq } from 'drizzle-orm';
+import { db, users, accounts } from '@/lib/db';
+import { eq, and } from 'drizzle-orm';
 import { verifyTOTP } from '@/lib/totp';
 import { sanitizeCallbackUrl } from '@/lib/url';
 import { rateLimit, getClientIP, AUTH_RATE_LIMITS } from '@/lib/rate-limit';
@@ -86,6 +86,28 @@ export async function POST(request: NextRequest) {
     });
     if (!spend.success) {
       return restart('Your sign in request expired. Please start again.', 400);
+    }
+
+    // The link the callback deliberately did not write. The code has proved the
+    // device, so the Google identity may now be attached to the account. The
+    // OAuth tokens are not carried here: nothing in the app reads a stored
+    // Google token, and the export route strips them, so the identity is all
+    // that is worth keeping and the only thing safe to put in a cookie.
+    if (challenge.googleAccountId) {
+      const alreadyLinked = await db.query.accounts.findFirst({
+        where: and(
+          eq(accounts.provider, 'google'),
+          eq(accounts.providerAccountId, challenge.googleAccountId)
+        ),
+      });
+      if (!alreadyLinked) {
+        await db.insert(accounts).values({
+          userId: user.id,
+          type: 'oauth',
+          provider: 'google',
+          providerAccountId: challenge.googleAccountId,
+        });
+      }
     }
 
     const token = await createSessionToken(user, requireAuthSecret());
