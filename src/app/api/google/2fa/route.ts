@@ -8,6 +8,7 @@ import { rateLimit, getClientIP, AUTH_RATE_LIMITS } from '@/lib/rate-limit';
 import { createSessionToken, sessionCookieName, sessionCookieOptions } from '@/lib/session-cookie';
 import {
   TWO_FACTOR_CHALLENGE_COOKIE,
+  TWO_FACTOR_CHALLENGE_TTL_SECONDS,
   readTwoFactorChallenge,
   requireAuthSecret,
 } from '@/lib/two-factor-challenge';
@@ -73,6 +74,18 @@ export async function POST(request: NextRequest) {
 
     if (!verifyTOTP(code, user.twoFactorSecret)) {
       return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
+    }
+
+    // One challenge buys one session. The value is signed and carries its own
+    // expiry, so without this a captured cookie stays spendable for the rest of
+    // its 5 minutes even after the person it belongs to has already signed in.
+    // Counted only once the code is right, so mistyping costs nothing here.
+    const spend = rateLimit(`google-2fa-spent:${challenge.id}`, {
+      maxRequests: 1,
+      windowMs: TWO_FACTOR_CHALLENGE_TTL_SECONDS * 1000,
+    });
+    if (!spend.success) {
+      return restart('Your sign in request expired. Please start again.', 400);
     }
 
     const token = await createSessionToken(user, requireAuthSecret());
