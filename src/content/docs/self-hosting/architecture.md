@@ -74,7 +74,7 @@ The `profiles` volume belongs to the worker alone. One directory per LinkedIn ac
 
 ## Where the credentials live
 
-Every secret in the database is encrypted with `ENCRYPTION_KEY` from `.env`: the LinkedIn passwords and 2FA secrets, the AI key the agents run on, the proxy supplier key, the email password, the S3 keys, the AI keys individual users add for their own writing, and the shared secret the worker signs its scheduled calls with. The app and the worker both read that one `.env` through `env_file`, so the 2 sides always hold the same key.
+Every credential stored in the database is encrypted with `ENCRYPTION_KEY` from `.env`: the LinkedIn passwords, the LinkedIn 2FA secrets, the AI key the agents run on, the proxy supplier key, the email password, the S3 keys, the AI keys individual users add for their own writing, and the shared secret the worker signs its scheduled calls with. The one value that is not a credential and is not encrypted is the TOTP secret behind two factor on a LinkedGrow account, which sits in the users table as plain text, so a stolen copy of the database is enough to generate codes for an account that uses it. The app and the worker both read that one `.env` through `env_file`, so the 2 sides always hold the same key.
 
 Change it after the first start and none of that is readable again, by anybody, ever. There is no recovery path and no second copy. It is the one line of your configuration that deserves a backup somewhere the server is not.
 

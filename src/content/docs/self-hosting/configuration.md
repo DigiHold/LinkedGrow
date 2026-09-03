@@ -15,7 +15,7 @@ The installer creates this file with fresh secrets and keeps it on every later r
 | --- | --- | --- |
 | `APP_URL` | The address people type to open the instance, with no path and no trailing slash. Every session cookie, redirect and emailed link is built from it, and the entrypoint refuses to start without it. | Your own domain over https, or `http://<server address>:3000` without one |
 | `AUTH_SECRET` | Signs the session tokens the app hands out. The entrypoint refuses to start while it still says `change-me`. | `openssl rand -hex 32` |
-| `ENCRYPTION_KEY` | Encrypts every credential stored in the database: LinkedIn passwords, 2FA secrets, AI keys, the proxy supplier key, the email password, the S3 keys. Exactly 64 hex characters, checked at boot. | `openssl rand -hex 32` |
+| `ENCRYPTION_KEY` | Encrypts every credential stored in the database: LinkedIn passwords, LinkedIn 2FA secrets, AI keys, the proxy supplier key, the email password, the S3 keys. Exactly 64 hex characters, checked at boot. | `openssl rand -hex 32` |
 
 Never change `ENCRYPTION_KEY` after the first start. Everything written under the old value becomes unreadable, there is no way to recover it, and the only remedy is deleting the affected credentials and entering them again. Back this file up somewhere the server is not.
 

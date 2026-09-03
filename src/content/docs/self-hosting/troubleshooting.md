@@ -20,6 +20,16 @@ Add `-f` to follow, or `--tail 200` for the last lines only. `docker compose ps`
 
 The app checks `.env` before anything else and stops with one line on the reason. `AUTH_SECRET is not set` means the value is still the `change-me` placeholder. `ENCRYPTION_KEY must be exactly 64 hex characters` means the key is missing, too short, or contains something other than the digits and letters `openssl rand -hex 32` prints. `APP_URL is not set` means the line is empty. Fix the value and run `docker compose up -d` again; nothing has been written yet.
 
+## The two factor device is gone and nobody can sign in
+
+Two factor on a LinkedGrow account is checked against a secret held on that account's own row, so no reset link and no support address gets past it. The instance ships a command that clears those fields for one address, and the account then signs in with its password alone. Run it from the stack folder, the same place every other compose command on this page runs:
+
+```
+docker compose exec app npm run db:clear-2fa -- you@example.com
+```
+
+It names the address it cleared, and it stops with a message when no account on this instance uses that address. The account keeps everything else, its agents and its posts included. Sessions opened before the command runs are signed out, so a second browser that was still signed in has to sign in again. Switch two factor back on from Settings once you are in, because the stored secret is gone and the old QR code no longer works.
+
 ## The worker keeps waiting for the app
 
 `worker: waiting for the app` repeating in the worker log is the worker polling the app's health check, which only passes once the database is reachable and the migrations have run. Look at the app log for the reason: an `.env` problem as above, or the database container still opening on a slow disk, which the app retries for a minute on its own. The worker starts by itself as soon as the app answers.

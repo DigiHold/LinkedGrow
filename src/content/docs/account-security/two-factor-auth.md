@@ -64,9 +64,19 @@ After disabling 2FA, you will only need your password to sign in. We recommend k
 
 ## Lost Access to Your Authenticator
 
-If you lose your phone or cannot open your authenticator app, nobody can sign you in from the outside, because the code is checked against a secret only your own row holds. The administrator of the instance clears the two factor fields on that row in the database, which is the only way back in, and you then sign in with your password alone.
+If you lose your phone or cannot open your authenticator app, nobody can sign you in from the outside, because the code is checked against a secret only your own row holds. The way back in is a command the administrator of the instance runs, which clears the two factor fields on your account so that your password alone signs you in again.
 
-Once you are back in, set 2FA up again straight away with your new device or app. Go to **Settings** to disable the old 2FA and enable it again with a new QR code.
+On a self hosted instance, from the folder holding `docker-compose.yml`:
+
+```
+docker compose exec app npm run db:clear-2fa -- you@example.com
+```
+
+The command names the address it cleared, and it stops with a message when no account on that instance uses the address. Every session opened before it runs is signed out, so another browser that was still signed in has to sign in again.
+
+On the hosted service at linkedgrow.ai, write to contact@linkedgrow.ai from the address on the account and we run the same command for you.
+
+Once you are back in, set 2FA up again straight away with your new device or app. The old secret is gone and the old QR code no longer works, so go to **Settings** and enable it again with a new one.
 
 ## Best Practices
 
