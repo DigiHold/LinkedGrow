@@ -41,13 +41,51 @@ function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState(error || "");
-  const [requires2FA, setRequires2FA] = useState(false);
+  // Google sign in stops at the same two factor step. The callback sent the
+  // browser back here with a challenge cookie, so the code goes to the Google
+  // route rather than to the credentials provider.
+  const googleChallengeParam = searchParams.get("google2fa") === "1";
+  const [requires2FA, setRequires2FA] = useState(googleChallengeParam);
+  const [googleChallenge, setGoogleChallenge] = useState(googleChallengeParam);
   const [showPassword, setShowPassword] = useState(false);
+
+  const finishGoogleSignIn = async (redirectTo: string) => {
+    await updateSession();
+    router.push(sanitizeCallbackUrl(redirectTo));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage("");
+
+    if (googleChallenge) {
+      try {
+        const response = await fetch("/api/google/2fa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: totpCode }),
+        });
+        const data = (await response.json()) as { error?: string; restart?: boolean; callbackUrl?: string };
+
+        if (!response.ok) {
+          setErrorMessage(data.error || "Invalid verification code");
+          if (data.restart) {
+            setGoogleChallenge(false);
+            setRequires2FA(false);
+          }
+          setTotpCode("");
+          return;
+        }
+
+        await finishGoogleSignIn(data.callbackUrl || callbackUrl);
+      } catch {
+        setErrorMessage("An error occurred. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     try {
       const result = await signIn("credentials", {
@@ -111,10 +149,17 @@ function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
-        await updateSession();
         // Use callbackUrl from the OAuth response if provided, otherwise use the one from URL
-        const redirectTo = sanitizeCallbackUrl(event.data.callbackUrl || callbackUrl);
-        router.push(redirectTo);
+        await finishGoogleSignIn(event.data.callbackUrl || callbackUrl);
+      } else if (event.data.type === "google-2fa") {
+        // The account carries two factor, so the popup came back with a
+        // challenge instead of a session. Same step, same input, same errors.
+        window.removeEventListener('message', handleMessage);
+        setErrorMessage("");
+        setTotpCode("");
+        setRequires2FA(true);
+        setGoogleChallenge(true);
+        setSocialLoading(null);
       } else if (event.data.type === `${provider}-error`) {
         window.removeEventListener('message', handleMessage);
         setErrorMessage(event.data.error || `Failed to sign in with ${provider}`);
@@ -275,7 +320,9 @@ function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
                   type="button"
                   onClick={() => {
                     setRequires2FA(false);
+                    setGoogleChallenge(false);
                     setTotpCode("");
+                    setErrorMessage("");
                   }}
                   className="text-sm text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 w-full text-center"
                 >

@@ -1,18 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isCloud } from '@/lib/edition';
 import { exchangeGoogleCodeForToken, getGoogleUserInfo } from '@/lib/google';
 import { db, users, accounts } from '@/lib/db';
 import { eq, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { encode } from 'next-auth/jwt';
 import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
 import { newUserPolicy, SIGNUPS_CLOSED_MESSAGE } from '@/lib/registration';
+import { sanitizeCallbackUrl } from '@/lib/url';
+import { rateLimit, getClientIP, AUTH_RATE_LIMITS } from '@/lib/rate-limit';
+import { createSessionToken, sessionCookieName, sessionCookieOptions } from '@/lib/session-cookie';
+import {
+  TWO_FACTOR_CHALLENGE_TTL_SECONDS,
+  mintTwoFactorChallenge,
+  requireAuthSecret,
+  twoFactorChallengeCookieName,
+} from '@/lib/two-factor-challenge';
 
 
-function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
-  if (!url) return undefined;
-  // Only allow relative paths starting with / (no protocol-relative //evil.com or absolute URLs)
-  if (!url.startsWith('/') || url.startsWith('//')) return undefined;
-  return url;
+/**
+ * A value on its way into a <script> block.
+ *
+ * encodeURIComponent is not enough on its own: it leaves the apostrophe alone,
+ * so a quoted interpolation lets a crafted error message close the string and
+ * run its own code on our own origin. JSON.stringify quotes the value properly,
+ * and the angle bracket escape stops a payload closing the element from the
+ * inside, which quoting alone does not prevent.
+ */
+function js(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 function createPopupResponse(success: boolean, data: { error?: string; callbackUrl?: string }) {
@@ -22,6 +40,9 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
     : { type: 'google-error', error: data.error };
 
   const appOrigin = getAppUrl();
+  const fallbackUrl = success
+    ? redirectUrl
+    : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`;
 
   return new NextResponse(
     `<!DOCTYPE html>
@@ -30,10 +51,10 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
       <body>
         <script>
           if (window.opener) {
-            window.opener.postMessage(${JSON.stringify(message)}, '${appOrigin}');
+            window.opener.postMessage(${js(message)}, ${js(appOrigin)});
             window.close();
           } else {
-            window.location.href = '${success ? redirectUrl : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
+            window.location.href = ${js(fallbackUrl)};
           }
         </script>
       </body>
@@ -42,7 +63,62 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
   );
 }
 
+/**
+ * Google proved the address, nothing has proved the second factor yet, so the
+ * browser gets a challenge cookie and the sign in page's own two factor step
+ * rather than a session. In a popup the opener has to hear about it, or it sits
+ * on its spinner behind a window that just closed.
+ */
+function twoFactorChallengeResponse(userId: string, isPopup: boolean, googleAccountId: string) {
+  const appOrigin = getAppUrl();
+  const signInUrl = `${appOrigin}/sign-in?google2fa=1`;
+
+  const response = isPopup
+    ? new NextResponse(
+        `<!DOCTYPE html>
+        <html>
+          <head><title>Google Login</title></head>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'google-2fa' }, ${js(appOrigin)});
+                window.close();
+              } else {
+                window.location.href = ${js(signInUrl)};
+              }
+            </script>
+          </body>
+        </html>`,
+        { headers: { 'Content-Type': 'text/html' } }
+      )
+    : NextResponse.redirect(signInUrl);
+
+  response.cookies.set(
+    twoFactorChallengeCookieName(),
+    mintTwoFactorChallenge(userId, requireAuthSecret(), googleAccountId),
+    {
+      httpOnly: true,
+      secure: isSecureAppUrl(),
+      sameSite: 'lax',
+      maxAge: TWO_FACTOR_CHALLENGE_TTL_SECONDS,
+      path: '/',
+    },
+  );
+
+  // The OAuth exchange is finished. Only the callback url survives, because the
+  // two factor route still has to send the browser where it was going.
+  response.cookies.delete('google_oauth_state');
+  response.cookies.delete('google_oauth_mode');
+  response.cookies.delete('google_newsletter');
+  response.cookies.delete('google_popup');
+
+  return response;
+}
+
 export async function GET(request: NextRequest) {
+  // Google sign in belongs to the hosted service; a self hosted instance has
+  // no Google flow at all, so the whole path answers as if it did not exist.
+  if (!isCloud()) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const state = searchParams.get('state');
@@ -52,7 +128,20 @@ export async function GET(request: NextRequest) {
   const storedState = request.cookies.get('google_oauth_state')?.value;
   const mode = request.cookies.get('google_oauth_mode')?.value || 'login';
   const isPopup = request.cookies.get('google_popup')?.value === 'true';
-  const callbackUrl = sanitizeCallbackUrl(request.cookies.get('google_callback_url')?.value);
+  const callbackUrl = sanitizeCallbackUrl(request.cookies.get('google_callback_url')?.value ?? null);
+
+  // Public by design: Google sends the browser here. Counted on its own key,
+  // so a burst of callbacks never spends the budget of the outbound route.
+  const limit = rateLimit(`google-callback:${getClientIP(request)}`, AUTH_RATE_LIMITS.googleOAuth);
+  if (!limit.success) {
+    const message = 'Too many sign in attempts. Please try again later.';
+    if (isPopup) {
+      return createPopupResponse(false, { error: message });
+    }
+    return NextResponse.redirect(
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent(message)}`
+    );
+  }
 
   // Handle OAuth errors
   if (error) {
@@ -192,39 +281,57 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Link Google account if not already linked
-      if (!existingAccount) {
-        await db.insert(accounts).values({
-          userId: user.id,
-          type: 'oauth',
-          provider: 'google',
-          providerAccountId: googleUser.id,
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token || null,
-          expires_at: tokenData.expires_in
-            ? Math.floor(Date.now() / 1000) + tokenData.expires_in
-            : null,
-          token_type: tokenData.token_type,
-          scope: tokenData.scope,
-          id_token: tokenData.id_token || null,
-        });
-      } else {
-        // Update existing account tokens
-        await db
-          .update(accounts)
-          .set({
+      // Google is proof of an address only when Google says it verified it.
+      // Without that, anyone who administers a domain could assert an address
+      // on it, so an unverified one never reaches an account it is not already
+      // linked to. An established link is its own proof and still signs in.
+      if (!existingAccount && !googleUser.verified_email) {
+        const message = 'This Google account has no verified email address. Sign in with your password instead.';
+        if (isPopup) {
+          return createPopupResponse(false, { error: message });
+        }
+        return NextResponse.redirect(
+          `${getAppUrl()}/sign-in?error=${encodeURIComponent(message)}`
+        );
+      }
+
+      // Linking is a change to the account, and an account with two factor
+      // changes for nobody until the code proves the device. For those the
+      // write moves to /api/google/2fa, which runs once the code is checked.
+      if (!user.twoFactorEnabled) {
+        if (!existingAccount) {
+          await db.insert(accounts).values({
+            userId: user.id,
+            type: 'oauth',
+            provider: 'google',
+            providerAccountId: googleUser.id,
             access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token || undefined,
+            refresh_token: tokenData.refresh_token || null,
             expires_at: tokenData.expires_in
               ? Math.floor(Date.now() / 1000) + tokenData.expires_in
-              : undefined,
-          })
-          .where(
-            and(
-              eq(accounts.provider, 'google'),
-              eq(accounts.providerAccountId, googleUser.id)
-            )
-          );
+              : null,
+            token_type: tokenData.token_type,
+            scope: tokenData.scope,
+            id_token: tokenData.id_token || null,
+          });
+        } else {
+          // Update existing account tokens
+          await db
+            .update(accounts)
+            .set({
+              access_token: tokenData.access_token,
+              refresh_token: tokenData.refresh_token || undefined,
+              expires_at: tokenData.expires_in
+                ? Math.floor(Date.now() / 1000) + tokenData.expires_in
+                : undefined,
+            })
+            .where(
+              and(
+                eq(accounts.provider, 'google'),
+                eq(accounts.providerAccountId, googleUser.id)
+              )
+            );
+        }
       }
 
       // Don't update profile picture from Google - only LinkedIn pictures are used
@@ -234,30 +341,21 @@ export async function GET(request: NextRequest) {
       throw new Error('Failed to create or find user');
     }
 
-    // Create session token using NextAuth JWT
-    // Salt is the cookie name used by NextAuth
-    const cookieName = isSecureAppUrl()
-      ? '__Secure-authjs.session-token'
-      : 'authjs.session-token';
+    // An account with two factor switched on gets no session here. Google
+    // proved the address; the code proves the device, and until it does this
+    // route hands out a 5 minute challenge instead. Registration always creates
+    // the row with two factor off, so only the login branch ever lands here.
+    if (user.twoFactorEnabled) {
+      return twoFactorChallengeResponse(user.id, isPopup, googleUser.id);
+    }
 
-    const token = await encode({
-      token: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        image: user.image, // Only set if user connected LinkedIn
-        plan: user.plan,
-        twoFactorEnabled: user.twoFactorEnabled,
-        isAdmin: user.isAdmin,
-      },
-      secret: process.env.AUTH_SECRET!,
-      salt: cookieName,
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-    });
+    // Create session token using NextAuth JWT
+    const cookieName = sessionCookieName();
+    const token = await createSessionToken(user, requireAuthSecret());
 
     // Handle popup mode - return HTML that sets cookie and notifies parent
     if (isPopup) {
-      const redirectUrl = callbackUrl || '/dashboard';
+      const redirectUrl = callbackUrl;
       const appOrigin = getAppUrl();
       const response = new NextResponse(
         `<!DOCTYPE html>
@@ -266,10 +364,10 @@ export async function GET(request: NextRequest) {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'google-success', callbackUrl: '${redirectUrl}', isNewUser: ${mode === 'register'} }, '${appOrigin}');
+                window.opener.postMessage(${js({ type: 'google-success', callbackUrl: redirectUrl, isNewUser: mode === 'register' })}, ${js(appOrigin)});
                 window.close();
               } else {
-                window.location.href = '${redirectUrl}';
+                window.location.href = ${js(redirectUrl)};
               }
             </script>
           </body>
@@ -278,13 +376,7 @@ export async function GET(request: NextRequest) {
       );
 
       // Set the session cookie
-      response.cookies.set(cookieName, token, {
-        httpOnly: true,
-        secure: isSecureAppUrl(),
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        path: '/',
-      });
+      response.cookies.set(cookieName, token, sessionCookieOptions());
 
       // Clear OAuth cookies
       response.cookies.delete('google_oauth_state');
@@ -297,17 +389,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to callbackUrl or dashboard with session cookie
-    const redirectUrl = callbackUrl || '/dashboard';
+    const redirectUrl = callbackUrl;
     const response = NextResponse.redirect(`${getAppUrl()}${redirectUrl}`);
 
     // Set the session cookie (NextAuth v5 uses authjs.session-token)
-    response.cookies.set(cookieName, token, {
-      httpOnly: true,
-      secure: isSecureAppUrl(),
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: '/',
-    });
+    response.cookies.set(cookieName, token, sessionCookieOptions());
 
     // Clear OAuth cookies
     response.cookies.delete('google_oauth_state');
@@ -317,13 +403,17 @@ export async function GET(request: NextRequest) {
 
     return response;
 
-  } catch (err) {
-const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
+  } catch (error) {
+    // The reason stays in the log. It has said things like which environment
+    // variable is missing, and this route answers anyone who asks, signed in
+    // or not, so the browser only ever gets the same sentence.
+    console.error("[google-callback] Failed:", error);
+    const message = 'Failed to sign in with Google. Please try again.';
     if (isPopup) {
-      return createPopupResponse(false, { error: errorMessage });
+      return createPopupResponse(false, { error: message });
     }
     return NextResponse.redirect(
-      `${getAppUrl()}/sign-in?error=${encodeURIComponent(errorMessage)}`
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent(message)}`
     );
   }
 }

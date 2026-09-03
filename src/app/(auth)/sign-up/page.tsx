@@ -1,12 +1,13 @@
 import { isGoogleConfigured } from "@/lib/google";
+import { isCloud } from "@/lib/edition";
 import { SignUpContent } from "./sign-up-content";
 
-/* Rendered on every request so the Google credentials are read when the
-   container starts rather than baked in when the image is built. A browser
-   flag would be inlined at build time, and a published image could never
-   show the button on an instance that configured Google afterwards. */
+/* Google sign in belongs to the hosted service. A self hosted instance signs
+   people in with an email and a password, so the button is never rendered
+   there, and the hosted build reads its credentials when the server starts
+   rather than when the image is built. */
 export const dynamic = "force-dynamic";
 
 export default function SignUpPage() {
-  return <SignUpContent googleEnabled={isGoogleConfigured()} />;
+  return <SignUpContent googleEnabled={isCloud() && isGoogleConfigured()} />;
 }
