@@ -27,11 +27,11 @@ with a link to the post itself.
 
 ### Text posts
 
-The most common format. Write your content in the editor and publish. Text posts support up to 3,000 characters on LinkedIn.
+The most common format, where you write your content in the editor and publish it. Text posts support up to 3,000 characters on LinkedIn.
 
 ### Image posts
 
-Attach a single image to your post. The image can be uploaded from your device or generated with AI (Pro+ plan). The editor supports attaching one image at a time.
+Attach a single image to your post. The image can be uploaded from your device or generated with AI on your own image provider key. The editor supports attaching one image at a time.
 
 ### Video posts
 

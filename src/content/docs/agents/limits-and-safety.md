@@ -25,7 +25,7 @@ It never retries into a checkpoint, because retrying is what turns a short inter
 
 ## Nobody is contacted twice
 
-Every lead your agents have touched is remembered across all of them. Two agents on the same plan never write to the same person, and nobody who already replied is approached again by a different agent.
+Every lead your agents have touched is remembered across all of them. Two of your agents never write to the same person, and nobody who already replied is approached again by a different agent.
 
 ## What you can stop at any time
 

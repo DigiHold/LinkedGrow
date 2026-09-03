@@ -1,13 +1,13 @@
 ---
 title: "Cost Comparison"
-description: Compare what a self hosted LinkedGrow instance costs to run against competitor pricing to understand your total monthly expense
+description: What a self hosted LinkedGrow instance costs to run, line by line, and what the AI adds at each level of usage
 category: "byok"
 order: 8
 ---
 
-## LinkedGrow vs competitors
+## What running an instance costs
 
-Most LinkedIn content tools charge a flat monthly fee that includes limited AI generations. The self hosted edition of LinkedGrow charges nothing for the software and lets you pay your own AI provider for what you use, which gives you much lower total costs with no generation limits.
+The software itself is free, so a month is the server bill, the AI your instance actually used, and one dedicated address behind each LinkedIn account. Nothing meters your generations, and no invoice ever arrives from LinkedGrow.
 
 ### What you actually pay
 
@@ -19,9 +19,7 @@ Most LinkedIn content tools charge a flat monthly fee that includes limited AI g
 | **AI for your posts** | **Your own key, $2-4 a month for most people** |
 | **Dedicated addresses** | **Bought through Proxy-Seller from the instance, or proxies you already own** |
 
-The comparison people usually want is against a lead generation stack rather than a writing tool: a prospecting tool, a data provider and a sequencer bought separately are 3 monthly bills before anybody writes a message, and none of them post for you.
-
-Against writing tools, the difference is the cap. They bundle AI and meter it. LinkedGrow does not meter the content side at all, because you are paying your own provider for exactly what you use and you pick the model.
+The 2 lines that actually move are the AI and the addresses. The AI follows how much your agents read and how much you write, under the ceilings the setup wizard set on the agent key. The addresses follow how many LinkedIn accounts you connect, because each one keeps an address of its own for good.
 
 ## Cost breakdown by usage level
 
@@ -111,5 +109,5 @@ Every AI provider offers a usage dashboard where you can:
 - View usage by model and day
 - Download invoices
 
-We recommend setting a $10 monthly limit when you first start. You can always increase it later as you understand your usage patterns.
+Set a $10 monthly limit when you first start, and raise it later once you know what your instance really uses.
 

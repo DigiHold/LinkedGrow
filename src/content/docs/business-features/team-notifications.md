@@ -7,7 +7,7 @@ order: 5
 
 ## Overview
 
-When your company page publishes a new LinkedIn post through LinkedGrow, every member of your team receives an email with a direct link to the post on LinkedIn. That's the entire feature.
+When your company page publishes a new LinkedIn post through LinkedGrow, every member of your team receives an email with a direct link to the post on LinkedIn, and that is the entire feature.
 
 LinkedGrow does **not** like, comment, repost, or take any action on LinkedIn on team members' behalf. Each team member opens the post on LinkedIn themselves and decides individually whether and how to engage.
 
@@ -15,7 +15,7 @@ LinkedGrow does **not** like, comment, repost, or take any action on LinkedIn on
 
 If your company page publishes a post, your team members usually want to know - they may want to engage organically, share it inside their network, or simply stay aware of what marketing is putting out. Without a notification, they miss it.
 
-This feature is a thin notifier on top of company page publishing. Nothing else.
+This feature is a thin notifier on top of company page publishing, and it does nothing else.
 
 ## Requirements
 
@@ -43,4 +43,4 @@ When a team member clicks **View on LinkedIn** from the email, they land on the 
 
 ## Questions?
 
-For help, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai).
+Your instance administrator sets up the email provider these notifications go through, and anything broken belongs on the [LinkedGrow issue tracker](https://github.com/DigiHold/LinkedGrow/issues).

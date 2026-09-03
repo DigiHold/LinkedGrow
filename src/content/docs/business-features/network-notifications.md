@@ -9,7 +9,7 @@ order: 4
 
 Network Notifications lets you create small groups of people whose LinkedIn posts you want to follow closely. When anyone in a group publishes a post via LinkedGrow, every other group member receives an email with a link straight to that post on LinkedIn.
 
-That's it. The feature is an email notifier, nothing more. LinkedGrow does not like, comment, repost, or interact with the post on your behalf. If you want to engage, you click through to LinkedIn and engage there, in your own voice, on your own time - exactly as you would if a friend had texted you the link.
+The feature is an email notifier and nothing more than that. LinkedGrow does not like, comment, repost, or interact with the post on your behalf. If you want to engage, you click through to LinkedIn and engage there, in your own voice, on your own time - exactly as you would if a friend had texted you the link.
 
 ## Why this exists
 
@@ -38,7 +38,7 @@ You are automatically added as the owner.
 2. Enter the email address of the person you want to invite
 3. Click **Send Invitation**
 
-They receive an email with a link to join. They need a LinkedGrow account on Pro or higher to accept. Invitations expire after **7 days**. You can cancel a pending invitation at any time.
+They receive an email with a link to join. They need an account on this instance to accept. Invitations expire after **7 days**. You can cancel a pending invitation at any time.
 
 ## What happens when someone publishes
 
@@ -71,4 +71,4 @@ Only the group owner can perform these actions.
 
 ## Questions?
 
-For help, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai).
+Your instance administrator sets up the email provider these notifications go through, and anything broken belongs on the [LinkedGrow issue tracker](https://github.com/DigiHold/LinkedGrow/issues).

@@ -9,7 +9,7 @@ Go to **Agents** in the dashboard and click **New agent**. The whole setup is a 
 
 ## 1. Describe your buyer
 
-This is the part worth spending real time on. Write who they are in plain language, the way they would describe themselves rather than the way a marketer would: "founders who built their own website and run a booking tool" beats "SMB decision makers in the digital space".
+This is the field worth spending real time on. Write who they are in plain language, the way they would describe themselves rather than the way a marketer would: "founders who built their own website and run a booking tool" beats "SMB decision makers in the digital space".
 
 Your description is the starting point rather than the final answer. The agent tests it against who actually accepts and replies, and sharpens it from there.
 

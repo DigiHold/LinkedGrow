@@ -9,7 +9,7 @@ order: 2
 
 LinkedGrow provides a REST API that lets you manage your posts programmatically. You can create, read, update, and delete posts through API calls, making it easy to integrate LinkedGrow into your existing tools and workflows.
 
-API access is available on the **Pro** and **Business** plans.
+Every user of the instance can create a key and call the API with it.
 
 ## What You Can Do with the API
 
@@ -70,7 +70,7 @@ Requests without a valid API key will receive a 401 Unauthorized response. Reque
 
 The posts endpoint lets you manage your LinkedIn posts:
 
-**Base URL:** `https://linkedgrow.ai/api/v1/posts`
+**Base URL:** the address of your instance followed by `/api/v1/posts`
 
 #### List All Posts
 
@@ -216,4 +216,4 @@ Revoking an API key is immediate. Any integrations using that key will stop work
 
 ## Questions?
 
-For API support or feature requests, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai).
+For a bug or a feature request, open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues).

@@ -7,9 +7,9 @@ order: 3
 
 ## What is BYOK?
 
-BYOK stands for Bring Your Own Key. Instead of charging you per generation or limiting your monthly usage, LinkedGrow lets you connect your own AI API key from providers like OpenAI, Anthropic, Google, or Kimi. You pay the AI provider directly at their rates with no markup from us.
+BYOK stands for Bring Your Own Key. LinkedGrow never resells AI, so you connect an API key of your own from OpenAI, Anthropic, Google, Grok, Perplexity or Kimi, and that provider bills you directly at their published rates.
 
-This means unlimited generations at cost. Most users spend $2-4 per month on AI costs, compared to competitors that charge $49 or more per month with caps on how much content you can create.
+Nothing meters your generations, so what you spend follows what you write and which model you picked. The table further down turns that into a rough monthly figure.
 
 ## Supported providers
 
@@ -47,7 +47,7 @@ Your key is encrypted and stored securely. LinkedGrow never shares your API key 
 | Active | 60 posts | $0.60 - $1.80 |
 | Heavy (with images) | 100+ posts | $3 - $8 |
 
-Costs vary by model. Budget models like GPT-5 Nano ($0.002/post), Gemini 2.5 Flash Lite ($0.001/post), or Sonar ($0.002/post) are extremely affordable. Premium models like Claude Opus 4.6 or Sonar Reasoning Pro cost more but produce higher quality content.
+Costs vary from one model to the next. Budget models like GPT-5 Nano ($0.002/post), Gemini 2.5 Flash Lite ($0.001/post), or Sonar ($0.002/post) are extremely affordable. Premium models like Claude Opus 4.6 or Sonar Reasoning Pro cost more but produce higher quality content.
 
 ## Next steps
 

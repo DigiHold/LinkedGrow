@@ -21,7 +21,7 @@ You can format your posts with:
 
 - Line breaks and spacing for readability
 - Bullet points and numbered lists
-- Emojis (type them directly using your operating system's emoji input -- for example, Cmd+Ctrl+Space on Mac or Win+. on Windows)
+- Emojis (type them directly using your operating system's emoji input, for example Cmd+Ctrl+Space on Mac or Win+. on Windows)
 
 ## AI Assist
 
@@ -50,7 +50,7 @@ Aim for a score above 70 for best performance. The score updates in real time as
 
 You can attach images and videos to your posts:
 
-- **Images** - Upload from your device or generate AI images (Pro+ plan). Multiple images create a gallery post.
+- **Images** - Upload from your device or generate AI images on your own image provider key. Multiple images create a gallery post.
 - **Videos** - Upload video files. Videos are too large to be stored by LinkedGrow, so posts with videos must be published immediately. Video posts cannot be scheduled or saved as drafts.
 
 Media appears as a preview below your post content.

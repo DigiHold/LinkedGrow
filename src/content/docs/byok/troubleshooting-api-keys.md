@@ -91,10 +91,10 @@ You can verify your key is working correctly in LinkedGrow:
 
 ## Still having issues?
 
-If none of the above solutions work, contact us at contact@linkedgrow.ai with:
+If none of the above solutions work, open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues) with:
 
 - The error message you are seeing
 - Which AI provider and model you are trying to use
 - When the issue started
 
-We will help you troubleshoot and get up and running.
+When the provider itself is refusing the key, their own status page and their support are the faster route, because the key belongs to your account with them.

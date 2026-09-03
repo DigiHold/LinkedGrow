@@ -17,7 +17,7 @@ If you know your current password and want to change it:
 6. Confirm your new password by typing it again
 7. Click **Save**
 
-Your password is updated immediately.
+Your new password takes effect immediately.
 
 ## Forgot Your Password
 
@@ -72,9 +72,9 @@ Do not use easily guessable passwords such as:
 
 ### Watch for Phishing
 
-LinkedGrow will never ask for your password via email, chat, or phone. If you receive a message asking for your password, do not respond and report it to [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai).
+LinkedGrow never asks for your password by email or by message. If something asks you for it, do not answer and tell whoever administers your instance.
 
-Always verify that you are on the official LinkedGrow website (linkedgrow.ai) before entering your credentials.
+Check the address in the browser bar before you type your credentials, because the only address that should ever ask for them is the one your administrator gave you.
 
 ## Accounts Using Social Login Only
 
@@ -87,4 +87,4 @@ Having both a password and a social login gives you flexibility in how you acces
 
 ## Questions?
 
-If you are having trouble with your password or accessing your account, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai). We will help you get back in.
+If the reset email never arrives or you still cannot sign in, ask whoever administers your instance. They can set a new password for your account from Dashboard, Admin, Users.

@@ -11,7 +11,7 @@ Your target audience setting tells the AI who you are writing for. This affects 
 
 ## Where to find it
 
-Target Audience is one of the fields in the **Business Profile** card on the **Settings** page. It sits alongside your other business details like Business Name, Niche/Industry, and Key Topics. It is not a standalone section -- it is part of your overall Business Profile.
+Target Audience is one of the fields in the **Business Profile** card on the **Settings** page. It sits alongside your other business details like Business Name, Niche/Industry, and Key Topics. It is not a standalone section, but one field of your overall Business Profile.
 
 The placeholder text reads *Startup founders, Marketing managers*
 
@@ -20,16 +20,16 @@ The placeholder text reads *Startup founders, Marketing managers*
 1. Go to **Settings**
 2. Find the **Business Profile** card
 3. Locate the **Target Audience** field
-4. Describe your ideal audience -- job titles, roles, or segments
+4. Describe your ideal audience: job titles, roles, or segments
 5. Click **Save**
 
 ## Writing an effective audience description
 
 You can keep it short and list-like, or write a more detailed description. Include elements like:
 
-- **Job titles or roles** -- Who are they professionally?
-- **Industry or sector** -- What field do they work in?
-- **Company size or stage** -- Startup founders, enterprise executives, freelancers?
+- **Job titles or roles**: who are they professionally?
+- **Industry or sector**: what field do they work in?
+- **Company size or stage**: startup founders, enterprise executives, freelancers?
 
 ### Examples
 
