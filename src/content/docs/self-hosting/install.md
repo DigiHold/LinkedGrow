@@ -11,6 +11,10 @@ A Linux host on amd64, Docker with the Compose plugin, which the installer sets 
 
 The [requirements](/docs/self-hosting/requirements) page goes through all of that in detail, including the arm64 situation and everything the stack calls out to.
 
+## Let an AI agent do it
+
+An assistant with shell access to the server can run the whole install on its own, following [llms-install.md](https://github.com/DigiHold/LinkedGrow/blob/main/llms-install.md) in the repository. The [install with an AI agent](/docs/self-hosting/install-with-an-agent) page has the prompt to paste and the checks to run afterwards.
+
 ## Install with Docker Compose
 
 LinkedGrow is 3 containers and a compose file, so the install is the one every self hosted project uses. On a Linux host that already has Docker:
@@ -39,7 +43,7 @@ COMPOSE_PROFILES=https
 
 `docker compose ps` then lists the 4 services. The app reports healthy once its migrations have run, and the worker waits for that before it starts.
 
-## Or let the installer do all of that
+## Or one command
 
 ```
 curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh | sh
@@ -62,10 +66,6 @@ The options, for a run that should not ask anything:
 | `--yes` | Never asks anything, and needs `--domain` or `--no-domain`. |
 
 Running the installer again is safe. It keeps the `.env` it wrote, secrets included, and only rewrites the address lines when you pass a different domain.
-
-## Let an AI agent do it
-
-An assistant with shell access to the server can run the whole install on its own, following [llms-install.md](https://github.com/DigiHold/LinkedGrow/blob/main/llms-install.md) in the repository. The [install with an AI agent](/docs/self-hosting/install-with-an-agent) page has the prompt to paste and the checks to run afterwards.
 
 ## Build from source
 

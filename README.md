@@ -24,7 +24,24 @@ The posting side is the same product. A generator writes a first draft in your v
 
 ## Install
 
-LinkedGrow is 3 containers and a compose file, so the install is the one every self hoster already knows. On a Linux host with Docker:
+LinkedGrow is 3 containers and a compose file. Take whichever of the 3 ways below suits you, they all end at the same place.
+
+### Hand it to an AI agent
+
+An assistant with shell access to the server does the whole thing, because the run is written down for one in [llms-install.md](llms-install.md). Paste this into Claude Code, OpenClaw, Cursor or whatever you already point at your servers, with your own domain in it:
+
+```text
+Install LinkedGrow on this server by following
+https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/llms-install.md
+with the domain linkedgrow.example.com. Use no key of your own, create no
+account, and give me the address to open once the health check answers.
+```
+
+Drop the domain from that prompt to serve on the server address over plain http instead. The agent reads the page, runs the installer, and comes back with the address in 2 or 3 minutes.
+
+### Docker Compose
+
+The install every self hosted project uses. On a Linux host that already has Docker:
 
 ```sh
 mkdir -p /opt/linkedgrow && cd /opt/linkedgrow
@@ -33,7 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/.env.examp
 docker compose pull && docker compose up -d
 ```
 
-Open `.env` before that last line and fill in 3 values. `APP_URL` is the address people will type in their browser. `AUTH_SECRET` signs the sessions, and `ENCRYPTION_KEY` encrypts every stored credential; each takes one output of `openssl rand -hex 32`. Keep `ENCRYPTION_KEY` somewhere safe and never change it after the first start, because everything encrypted with the old value becomes unreadable. The app refuses to start while either secret is still the placeholder.
+Open `.env` before that last line and fill in 3 values. `APP_URL` is the address people will type in their browser. `AUTH_SECRET` signs the sessions, and `ENCRYPTION_KEY` encrypts every stored credential; each takes one output of `openssl rand -hex 32`. Keep `ENCRYPTION_KEY` somewhere safe and never change it after the first start, because everything encrypted with the old value becomes unreadable.
 
 To let the stack serve https itself, take the Caddy configuration too and set 2 more lines in `.env`:
 
@@ -46,32 +63,24 @@ DOMAIN=linkedgrow.example.com
 COMPOSE_PROFILES=https
 ```
 
-The first start pulls about 4 GB, most of it the browser the worker drives. Then open the address, create the first account, which administers the instance, and answer the wizard once.
+### One command
 
-![The setup wizard asking for the AI key that runs the agents, with the models and the spending ceilings](docs/images/setup-wizard.png)
-
-### Or let the installer do all of that
-
-The script runs exactly the commands above, and adds the pieces a fresh server needs: it installs Docker when the command is missing, generates both secrets itself, picks `WORKER_SLOTS` from the memory of the machine, writes the `.env` readable only by its owner, starts Caddy when you give it a domain, and waits for the app to answer its health check before it prints the address.
+The script runs exactly those commands and adds what a bare server needs: it installs Docker when the command is missing, generates both secrets, sizes `WORKER_SLOTS` from the memory of the machine, writes the `.env` readable only by its owner, starts Caddy when you give it a domain, and waits for the health check before printing the address.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh | sh
 ```
 
-It asks one question, your domain, and an empty answer serves on the server address over plain http instead. Read it first if piping a script into a shell makes you uncomfortable, it is 500 lines of POSIX sh and it does nothing you have not seen above.
+It asks one question, your domain, and an empty answer serves over plain http on the server address. Read it first if piping a script into a shell makes you uncomfortable, it is 500 lines of POSIX sh and it does nothing you have not seen above. Its options are in the [install page](src/content/docs/self-hosting/install.md), including `--yes` for a run that asks nothing.
 
-| Option | What it does |
-| --- | --- |
-| `--domain NAME` | Serves on that domain over https, with the Caddy that ships in the compose file. |
-| `--no-domain` | Serves on the server address over http, on the port below. |
-| `--dir PATH` | Where the stack lives. Default `/opt/linkedgrow` |
-| `--version TAG` | Image tag to run: `latest`, a release like `v1.0.0`, or `sha-1a2b3c4`. Default `latest` |
-| `--port NUMBER` | Port the app is published on. Default `3000` |
-| `--source` | Builds the images from the source instead of pulling them. |
-| `--yes` | Never asks anything, and needs `--domain` or `--no-domain`. |
+### After any of the 3
+
+The first start pulls about 4 GB, most of it the browser the worker drives. Open the address, create the first account, which administers the instance, and answer the wizard once.
+
+![The setup wizard asking for the AI key that runs the agents, with the models and the spending ceilings](docs/images/setup-wizard.png)
 
 <details>
-<summary><b>Build the images from the source</b></summary>
+<summary><b>Build the images from the source instead</b></summary>
 
 <br>
 
@@ -82,19 +91,6 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
 It replaces the 2 published images with a build of the working tree and leaves everything else alone. Local development, tests and the database rules live in [CONTRIBUTING.md](CONTRIBUTING.md).
-
-</details>
-
-<details>
-<summary><b>Install with an AI agent</b></summary>
-
-<br>
-
-The whole run is written down for agents in [llms-install.md](llms-install.md), so an assistant with shell access to the server can do it end to end. Give yours this prompt:
-
-> Install LinkedGrow on this server following https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/llms-install.md, with the domain linkedgrow.example.com. Do not put any key of your own in the configuration, and do not create the first account. Tell me the address to open when it answers on its health check.
-
-Replace the domain with yours, or ask for the run without a domain to reach the app on the server address.
 
 </details>
 
