@@ -22,11 +22,11 @@ The profile section at the top of the Settings page displays your account detail
 
 ## Login Methods
 
-LinkedGrow supports two login methods. You can use one or both of them to access your account:
+LinkedGrow supports 2 login methods, and you can use one or both of them to reach your account:
 
 ### Email and Password
 
-The standard login method. You sign in with your email address and a password you set during registration or via the forgot password flow. See [Password Management](/docs/account-security/password-management) for details on managing your password.
+The standard login method, where you sign in with your email address and a password you set during registration or through the forgot password flow. See [Password Management](/docs/account-security/password-management) for details on managing your password.
 
 ### Google sign in
 

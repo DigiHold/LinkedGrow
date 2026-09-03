@@ -39,7 +39,7 @@ Type your request in the AI Assist field and click apply. The AI edits your post
 
 The Algorithm Score analyzes your post against LinkedIn's ranking factors and gives it a score from 0 to 100. The score breaks down into four components:
 
-- **Hook Strength** - How compelling your opening lines are. Ideal first lines are 10-100 characters and create curiosity or promise value.
+- **Hook Strength** - How hard your opening lines pull a reader in. Ideal first lines are 10 to 100 characters and create curiosity or promise value.
 - **Length** - Whether your post is in the optimal range. LinkedIn's algorithm favors posts between 800-1,500 characters.
 - **Formatting** - Use of bullet points, line breaks, and special characters that improve readability and dwell time.
 - **Engagement** - Presence of questions, calls-to-action, and engagement triggers that encourage comments and shares.

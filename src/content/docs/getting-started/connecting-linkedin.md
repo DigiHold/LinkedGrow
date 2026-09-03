@@ -11,7 +11,6 @@ Connecting your LinkedIn account allows LinkedGrow to:
 
 - **Publish posts** directly to your LinkedIn profile
 - **Schedule posts** for future dates and times
-- **Post to company pages** you manage
 - **Sync your profile** name and avatar for post previews
 
 Without connecting LinkedIn, you can still generate and draft posts, but you will need to copy and paste them manually.
@@ -63,7 +62,7 @@ LinkedIn sometimes asks for a security check, or the password changes on your si
 
 **Posts failing after connection:**
 - Check the account's status on the LinkedIn accounts page and reconnect it if it shows "Disconnected"
-- Make sure you are posting to the correct profile (personal vs. company page)
+- Check that the post is queued against the LinkedIn account you meant, if you have connected more than one
 
 **Profile picture not showing:**
 - Your LinkedIn avatar syncs when the worker first signs in

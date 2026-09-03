@@ -26,7 +26,7 @@ Nothing meters your generations, so what you spend follows what you write and wh
 
 - **Google AI** - Nano Banana Pro, Nano Banana 2, Nano Banana 2 Lite
 - **OpenAI** - GPT Image 2, GPT Image 1.5, GPT Image 1, GPT Image 1 Mini
-- **Replicate** - FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX.2 Klein 4B, FLUX 1.1 Pro Ultra, FLUX Schnell
+- **Replicate** - FLUX.2 Max, FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX.2 Klein 4B, FLUX 1.1 Pro Ultra, FLUX Schnell
 
 ## Quick setup
 
@@ -36,7 +36,7 @@ Nothing meters your generations, so what you spend follows what you write and wh
 4. Select a model from the dropdown (recommended models are marked)
 5. Click **Save**
 
-Your key is encrypted and stored securely. LinkedGrow never shares your API key with anyone.
+Your key is encrypted before it is written to the database, and LinkedGrow never shares it with anyone else on the instance.
 
 ## Typical costs
 

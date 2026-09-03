@@ -1,46 +1,28 @@
 ---
 title: "Team Notifications"
-description: Notify your team by email when your company page publishes a new post on LinkedIn.
+description: Why no email reaches your team when a post goes out, and what the Team screens still give you.
 category: "business-features"
 order: 5
 ---
 
 ## Overview
 
-When your company page publishes a new LinkedIn post through LinkedGrow, every member of your team receives an email with a direct link to the post on LinkedIn, and that is the entire feature.
+Team Notifications was meant to email the rest of your team whenever the team owner published a post, and it does not do that in this edition. There is no screen for it either. What exists is the team itself, its members and their roles, all under **Team** in the sidebar.
 
-LinkedGrow does **not** like, comment, repost, or take any action on LinkedIn on team members' behalf. Each team member opens the post on LinkedIn themselves and decides individually whether and how to engage.
+## What happens when a post goes out
 
-## Why this exists
+Nothing is sent to anyone at all. The function that would write those emails lives in the code and neither the app nor the worker ever calls it, so the owner publishes, the post appears on LinkedIn as normal, and no team member is told about it.
 
-If your company page publishes a post, your team members usually want to know - they may want to engage organically, share it inside their network, or simply stay aware of what marketing is putting out. Without a notification, they miss it.
+Connecting that trigger again is a change to the code rather than a setting in the dashboard, so there is nothing here for you to switch on while it stays this way.
 
-This feature is a thin notifier on top of company page publishing, and it does nothing else.
+## What the Team screens still do
 
-## Requirements
+Everything described in [Team collaboration](/docs/business-features/team-collaboration) works: you create a team, you invite colleagues by email, you give each of them a role, and they share your workspace and your AI keys. Removing somebody takes their access away straight away.
 
-- A team set up under **Team** in the dashboard
-- The team owner's account connected to the company page (Settings > LinkedIn > posting target)
+## What it never did
 
-## How it works
-
-1. The team owner publishes a post to the company page through LinkedGrow
-2. LinkedGrow detects the post and queues notifications for every other team member
-3. Each team member receives an email with a preview of the post and a **View on LinkedIn** button
-4. Clicking the button opens the post on LinkedIn
-
-No automated action happens on LinkedIn. No queued likes, no auto-comments, no auto-reposts. Just an email per member, with a link.
-
-## What members can do
-
-When a team member clicks **View on LinkedIn** from the email, they land on the post in their own LinkedIn session. From there, they can read the post and decide on their own whether to react, comment, repost, or do nothing. All engagement is fully manual, on LinkedIn, from their own profile - exactly as it would be if a colleague had Slack-pinged them the URL.
-
-## Important notes
-
-- Team Notifications is an email notifier. It does not perform any action on LinkedIn for any user.
-- Only **company page** posts trigger team notifications, not personal-profile posts.
-- Removing a team member instantly stops them from receiving Team Notifications.
+LinkedGrow does not like, comment or repost on a team member's behalf, and that was already true while the email was being sent. Engagement has always been something each person does themselves, in their own voice, on LinkedIn.
 
 ## Questions?
 
-Your instance administrator sets up the email provider these notifications go through, and anything broken belongs on the [LinkedGrow issue tracker](https://github.com/DigiHold/LinkedGrow/issues).
+The team screens and the email provider behind the invitations are set up by your instance administrator, and anything broken belongs on the [LinkedGrow issue tracker](https://github.com/DigiHold/LinkedGrow/issues).

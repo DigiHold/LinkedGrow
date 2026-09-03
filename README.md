@@ -63,7 +63,7 @@ Replace the domain with yours, or ask for the run without a domain to reach the 
 
 The wizard runs once, at the first login, and asks for what the agents need to work.
 
-An AI key, from Anthropic, OpenAI, Google, Grok or Kimi. It runs the agents and, until you add another provider in Settings, the post generator as well. You set a daily and a monthly spending ceiling on it.
+An AI key, from Anthropic, OpenAI, Google, Grok or Kimi. It runs the agents, and the wizard copies it into your own AI settings so the post generator works for you straight away; every other account adds a key of its own in Settings. You set a daily and a monthly spending ceiling on it.
 
 A way to get one dedicated address per LinkedIn account. LinkedGrow buys them through your own Proxy-Seller account when you paste its API key, in the country you pick when you connect the account. You can bring your own proxy instead.
 
@@ -83,7 +83,7 @@ The installer runs Caddy for you when you give it a domain, writing `DOMAIN` and
 cd /opt/linkedgrow && ./install.sh update
 ```
 
-That pulls the current images and restarts the stack, which is also what `docker compose pull && docker compose up -d` does by hand. Database migrations run when the app starts. Pin a release by setting `LINKEDGROW_VERSION=v1.0.0` in `.env` instead of `latest`.
+That pulls the current images and restarts the stack, which is also what `docker compose pull && docker compose up -d` does by hand. Database migrations run when the app starts, and you pin a release by setting `LINKEDGROW_VERSION=v1.0.0` in `.env` instead of `latest`.
 
 ## Backups
 

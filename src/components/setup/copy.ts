@@ -14,7 +14,7 @@ export const COPY = {
   ai: {
     heading: "The key your agents think with",
     intro:
-      "Pick a provider and paste one API key. This key runs the agents: finding people, judging fit, writing messages. It also reads your website in the agent wizard, and the post generator uses it until you add another provider in Settings. The agents always use this key, whatever you add later.",
+      "Pick a provider and paste one API key. This key runs the agents: finding people, judging fit, writing messages. It also reads your website in the agent wizard, and it fills your own AI settings when those are still empty, so the post generator works straight away. The agents always use this key, and everyone else on the instance adds a key of their own in Settings.",
   },
   proxy: {
     heading: "One address per LinkedIn account",
@@ -30,7 +30,7 @@ export const COPY = {
   storage: {
     heading: "Where files live",
     intro:
-      "Images and carousels attached to posts, plus an encrypted archive of each LinkedIn browser session. Local disk keeps them in the uploads volume of this install, which is the right choice for one server. S3 compatible storage such as Cloudflare R2, MinIO or AWS works when you want files off the server or across several.",
+      "Images and carousels attached to posts live here. Local disk keeps them in the uploads volume of this install, which is the right choice for one server. S3 compatible storage such as Cloudflare R2, MinIO or AWS works when you want files off the server or across several.",
   },
   review: {
     heading: "Check it, then finish",

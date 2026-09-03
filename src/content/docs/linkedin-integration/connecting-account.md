@@ -13,7 +13,6 @@ Once connected, you can:
 
 - Publish posts directly from the editor with one click
 - Schedule posts for automatic publishing at specific dates and times
-- Post to company pages you manage
 - See your LinkedIn profile name and avatar in post previews
 
 ## Connecting, step by step
