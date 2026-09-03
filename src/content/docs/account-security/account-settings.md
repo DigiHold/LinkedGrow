@@ -22,15 +22,15 @@ The profile section at the top of the Settings page displays your account detail
 
 ## Login Methods
 
-LinkedGrow supports two login methods. You can use one or both of them to access your account:
+LinkedGrow supports 2 login methods, and you can use one or both of them to reach your account:
 
 ### Email and Password
 
-The standard login method. You sign in with your email address and a password you set during registration or via the forgot password flow. See [Password Management](/docs/account-security/password-management) for details on managing your password.
+The standard login method, where you sign in with your email address and a password you set during registration or through the forgot password flow. See [Password Management](/docs/account-security/password-management) for details on managing your password.
 
 ### Google sign in
 
-Sign in with your Google account when the administrator has configured it (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `NEXT_PUBLIC_GOOGLE_SIGNIN=1` in the instance's `.env`). Google sign in only reads your name and email address, and the instance never touches your Google Drive, contacts or other data.
+Sign in with your Google account when the administrator has configured it (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the instance's `.env`). Google sign in only reads your name and email address, and the instance never touches your Google Drive, contacts or other data.
 
 ### Using Multiple Login Methods
 

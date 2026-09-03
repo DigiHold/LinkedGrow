@@ -11,7 +11,7 @@ order: 3
 
 ## Overview
 
-Anthropic provides Claude Fable 5, Claude Opus 4.8, Claude Sonnet 5, Claude Haiku 4.5, Claude Opus 4.7 and Claude Sonnet 4.6. Claude models are known for their natural, conversational writing style, which makes them a strong fit for LinkedIn content.
+Anthropic provides Claude Fable 5.1, Claude Opus 5, Claude Sonnet 5 and Claude Haiku 4.5, with Claude Opus 4.8, Claude Fable 5 and Claude Sonnet 4.6 kept as legacy choices. Claude models are known for their natural, conversational writing style, which makes them a strong fit for LinkedIn content.
 
 ## Step 1 - Create an Anthropic account
 
@@ -47,14 +47,15 @@ Anthropic bills pay-as-you-go, so you only pay for what you actually use.
 
 | Model | Best for | Cost per post | Monthly estimate (30 posts) |
 |---|---|---|---|
-| Claude Fable 5 | The most demanding reasoning work | ~$0.10 | ~$3.00 |
-| Claude Opus 4.8 | Highest quality, nuanced content | ~$0.05 | ~$1.50 |
-| Claude Sonnet 5 (Recommended) | Best balance of quality and cost | ~$0.03 | ~$0.90 |
+| Claude Fable 5.1 | The most demanding reasoning work | ~$0.10 | ~$3.00 |
+| Claude Opus 5 (Recommended) | Highest quality, nuanced content | ~$0.05 | ~$1.50 |
+| Claude Sonnet 5 | Best balance of quality and cost | ~$0.02 | ~$0.60 |
 | Claude Haiku 4.5 | Fastest and most affordable | ~$0.01 | ~$0.30 |
-| Claude Opus 4.7 | Previous flagship, still excellent | ~$0.05 | ~$1.50 |
-| Claude Sonnet 4.6 | Reliable, well-tested balance | ~$0.03 | ~$0.90 |
+| Claude Opus 4.8 | The previous flagship, still excellent | ~$0.05 | ~$1.50 |
+| Claude Fable 5 | The previous reasoning model | ~$0.10 | ~$3.00 |
+| Claude Sonnet 4.6 | Reliable, well tested balance | ~$0.03 | ~$0.90 |
 
-**Recommendation:** Claude Sonnet 5 is the default in LinkedGrow and suits most people. Claude models tend to produce natural-sounding content that works well for personal branding, and Sonnet 5 gives you close to Opus quality at a third of the price. Choose Claude Opus 4.8 or Claude Fable 5 when a post really has to land.
+**Recommendation:** Claude Opus 5 is the model LinkedGrow marks as recommended, and it suits most people. Claude models tend to produce natural writing that works well for personal branding, and Claude Sonnet 5 costs less than half as much when you generate every day. Choose Claude Fable 5.1 when a post really has to land.
 
 ## Pricing details
 
@@ -62,16 +63,17 @@ Anthropic bills by token, and 1,000 tokens covers roughly 750 words.
 
 | Model | Input (per 1M tokens) | Output (per 1M tokens) |
 |---|---|---|
-| Claude Fable 5 | $10.00 | $50.00 |
-| Claude Opus 4.8 | $5.00 | $25.00 |
-| Claude Sonnet 5 | $3.00 | $15.00 |
+| Claude Fable 5.1 | $10.00 | $50.00 |
+| Claude Opus 5 | $5.00 | $25.00 |
+| Claude Sonnet 5 | $2.00 | $10.00 |
 | Claude Haiku 4.5 | $1.00 | $5.00 |
-| Claude Opus 4.7 | $5.00 | $25.00 |
+| Claude Opus 4.8 | $5.00 | $25.00 |
+| Claude Fable 5 | $10.00 | $50.00 |
 | Claude Sonnet 4.6 | $3.00 | $15.00 |
 
 ## How thinking affects your bill
 
-Claude Sonnet 5 and Claude Fable 5 think before they answer, and Anthropic bills those thinking tokens at the output rate. LinkedGrow sets the effort level to low on every request that supports it, which keeps a single post from costing several times the headline rate. You do not need to configure anything for this.
+Claude Sonnet 5 and Claude Fable 5.1 think before they answer, and Anthropic bills those thinking tokens at the output rate. LinkedGrow sets the effort level to low on every request that supports it, which keeps a single post from costing several times the headline rate. You do not need to configure anything for this.
 
 ## Key format
 

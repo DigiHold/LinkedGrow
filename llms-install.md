@@ -37,6 +37,17 @@ curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh
 
 The run takes 2 or 3 minutes on a normal connection, most of it spent pulling the worker image. It ends by printing the address to open.
 
+## What the installer does
+
+In this order, stopping at the first failure:
+
+1. Installs Docker from get.docker.com when the `docker` command is missing, on an apt or dnf based distribution only.
+2. Creates the stack folder, `/opt/linkedgrow` unless `--dir` says otherwise, and puts `docker-compose.yml`, the `Caddyfile` and a copy of `install.sh` in it.
+3. Writes `.env` with mode 600, holding a fresh `AUTH_SECRET` and `ENCRYPTION_KEY`, the address the app answers on, and a `WORKER_SLOTS` it chose by reading the memory of the machine: 2 below 8 GB, 4 at 8 GB, 8 at 16 GB. An `.env` that already exists is kept as it is.
+4. Warns, without stopping, when the domain resolves somewhere other than this server, because Caddy cannot get a certificate until the A record is right.
+5. Pulls the app, worker and database images and starts the containers, plus Caddy when a domain was given.
+6. Polls `/api/health` for up to 3 minutes, then prints the address to open. If the app never answers it prints the last 50 lines of the app log and stops with the stack still running.
+
 ## Check that it worked
 
 ```
@@ -45,7 +56,7 @@ docker compose ps
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/api/health
 ```
 
-`docker compose ps` lists 3 services, plus Caddy when you gave a domain. The app says healthy, the worker and the database say up, and the health check answers `200`. Anything else means the stack is not ready, and `docker compose logs app` says why.
+`docker compose ps` lists 3 services, plus Caddy when you gave a domain. The app says healthy, the worker and the database say up, and the health check answers `200`. Use the number you passed to `--port` in that last command when it was not 3000. Anything else means the stack is not ready, and `docker compose logs app` says why.
 
 ## What you must not do
 

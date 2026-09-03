@@ -21,7 +21,7 @@ You can format your posts with:
 
 - Line breaks and spacing for readability
 - Bullet points and numbered lists
-- Emojis (type them directly using your operating system's emoji input -- for example, Cmd+Ctrl+Space on Mac or Win+. on Windows)
+- Emojis (type them directly using your operating system's emoji input, for example Cmd+Ctrl+Space on Mac or Win+. on Windows)
 
 ## AI Assist
 
@@ -39,7 +39,7 @@ Type your request in the AI Assist field and click apply. The AI edits your post
 
 The Algorithm Score analyzes your post against LinkedIn's ranking factors and gives it a score from 0 to 100. The score breaks down into four components:
 
-- **Hook Strength** - How compelling your opening lines are. Ideal first lines are 10-100 characters and create curiosity or promise value.
+- **Hook Strength** - How hard your opening lines pull a reader in. Ideal first lines are 10 to 100 characters and create curiosity or promise value.
 - **Length** - Whether your post is in the optimal range. LinkedIn's algorithm favors posts between 800-1,500 characters.
 - **Formatting** - Use of bullet points, line breaks, and special characters that improve readability and dwell time.
 - **Engagement** - Presence of questions, calls-to-action, and engagement triggers that encourage comments and shares.
@@ -50,7 +50,7 @@ Aim for a score above 70 for best performance. The score updates in real time as
 
 You can attach images and videos to your posts:
 
-- **Images** - Upload from your device or generate AI images (Pro+ plan). Multiple images create a gallery post.
+- **Images** - Upload from your device or generate AI images on your own image provider key. Multiple images create a gallery post.
 - **Videos** - Upload video files. Videos are too large to be stored by LinkedGrow, so posts with videos must be published immediately. Video posts cannot be scheduled or saved as drafts.
 
 Media appears as a preview below your post content.

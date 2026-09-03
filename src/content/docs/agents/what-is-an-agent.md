@@ -21,11 +21,11 @@ You do not queue anything, approve anything or press start each morning. You des
 
 Each agent drives exactly one LinkedIn account, and each account gets its own dedicated address. Two agents never share an account and two accounts never share an address, because that is how LinkedIn notices something is off.
 
-Pro includes 2 agents and Business includes 3. You can add more at $49 a month each, on either plan.
+Nothing in the software caps how many agents you run. The ceiling is what your server can carry and what you are willing to spend on the AI key they share, since every agent needs a LinkedIn account with its own dedicated address behind it.
 
 ## Two agents, two different markets
 
-Agents on the same plan do not pool what they know. If you sell a booking tool with one and a cookie banner with another, each one learns its own buyer and neither is confused by the other's results. What they do share is anything that belongs to the LinkedIn account itself, such as its daily limits and its inbox.
+Two of your agents do not pool what they know. If you sell a booking tool with one and a cookie banner with another, each one learns its own buyer and neither is confused by the other's results. What they do share is anything that belongs to the LinkedIn account itself, such as its daily limits and its inbox.
 
 ## What it never does
 

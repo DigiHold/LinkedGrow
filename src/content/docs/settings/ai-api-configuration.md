@@ -15,11 +15,12 @@ The AI API configuration page is where you manage all your AI provider connectio
 
 The page shows tabs for each supported text provider:
 
-- **OpenAI** - GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, o3-mini
-- **Anthropic** - Claude Opus 4.6, Claude Sonnet 4.6, Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Sonnet 4
-- **Gemini** - Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
-- **Grok** - Grok 4, Grok 4.1 Fast, Grok Code Fast, Grok 3
-- **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Reasoning, Sonar Pro, Sonar
+- **OpenAI** - GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna, GPT-5.5, GPT-5.4, GPT-5.4 mini, GPT-5.4 nano
+- **Anthropic** - Claude Fable 5.1, Claude Opus 5, Claude Sonnet 5, Claude Haiku 4.5, Claude Opus 4.8, Claude Fable 5, Claude Sonnet 4.6
+- **Gemini** - Gemini 3.7 Flash, Gemini 3.6 Flash, Gemini 3.5 Flash, Gemini 3.5 Flash Lite, Gemini 3.1 Pro, Gemini 3.1 Flash Lite, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
+- **Grok** - Grok 4.6, Grok 4.5, Grok 4.3, Grok 4.20 Reasoning
+- **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Pro, Sonar
+- **Kimi** - Kimi K3, Kimi K2.7 Code, Kimi K2.6
 
 Click a tab to configure that provider.
 
@@ -58,9 +59,9 @@ Image generation is shown below the text section.
 
 ### Image providers
 
-- **Google AI** - Nano Banana Pro, Nano Banana, Imagen 4 Ultra, Imagen 4, Imagen 4 Fast
-- **OpenAI** - GPT Image 1.5, GPT Image 1, GPT Image 1 Mini
-- **Replicate** - FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX 1.1 Pro Ultra, FLUX 1.1 Pro, FLUX Schnell
+- **Google AI** - Nano Banana Pro, Nano Banana 2, Nano Banana 2 Lite
+- **OpenAI** - GPT Image 2, GPT Image 1.5, GPT Image 1, GPT Image 1 Mini
+- **Replicate** - FLUX.2 Max, FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX.2 Klein 4B, FLUX 1.1 Pro Ultra, FLUX Schnell
 
 ### Image-specific settings
 

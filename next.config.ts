@@ -124,8 +124,9 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Public marketing pages only (logged-out) - CDN cache 1 hour, stale-while-revalidate
-        source: "/:path(about|privacy|terms|cookies|beta|sign-in|sign-up|pricing|blog|blog/.*|docs|docs/.*|help|for/.*|features/.*|free-tools/.*|use-cases/.*|industries/.*|compare/.*|affiliate|affiliate/.*|free-linkedin-course|switch-to-claude|linkedin-profile-views-guide|linkedin-analytics-tool|linkedin-new-job-announcement|linkedin-automation-tools|linkedin-marketing-tool|linkedin-lead-generation-tools|linkedin-prospecting-tools|b2b-lead-generation-tools|linkedin-scraper|linkedin-ai-agent|ai-bdr|ai-sdr-software|ai-sales-tools|ai-sales-agent|book-demo)",
+        // The documentation, the only pages that are the same for every visitor.
+        // The sign in and sign up pages read their configuration at request time.
+        source: "/:path(docs|docs/.*)",
         headers: [
           {
             key: "Cache-Control",

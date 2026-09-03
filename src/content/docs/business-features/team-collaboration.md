@@ -112,4 +112,4 @@ When a member is removed, their content remains in the team workspace. They lose
 
 ## Questions?
 
-For help with team setup or management, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai).
+Your instance administrator manages the accounts on the instance, and anything broken belongs on the [LinkedGrow issue tracker](https://github.com/DigiHold/LinkedGrow/issues).

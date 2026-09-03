@@ -64,9 +64,9 @@ After disabling 2FA, you will only need your password to sign in. We recommend k
 
 ## Lost Access to Your Authenticator
 
-If you lose your phone or cannot access your authenticator app, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai) from the email address associated with your account. We will verify your identity and help you regain access. This process may take 1 to 2 business days for security reasons.
+If you lose your phone or cannot open your authenticator app, nobody can sign you in from the outside, because the code is checked against a secret only your own row holds. The administrator of the instance clears the two factor fields on that row in the database, which is the only way back in, and you then sign in with your password alone.
 
-Once you regain access, we recommend immediately setting up 2FA again with your new device or app. Go to **Settings** to disable the old 2FA and enable it again with a new QR code.
+Once you are back in, set 2FA up again straight away with your new device or app. Go to **Settings** to disable the old 2FA and enable it again with a new QR code.
 
 ## Best Practices
 

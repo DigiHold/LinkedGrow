@@ -11,19 +11,19 @@ LinkedGrow is an AI-powered LinkedIn content creation and scheduling platform. I
 
 ## What is BYOK (Bring Your Own Key)?
 
-BYOK stands for Bring Your Own Key. Instead of charging you a premium for built-in AI, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google, or others. This gives you full control over your AI costs, model selection, and usage. You pay the AI provider directly at their standard rates, which is significantly cheaper than platforms that bundle AI costs into their monthly price.
+BYOK stands for Bring Your Own Key. LinkedGrow never resells AI, so you connect an API key of your own from OpenAI, Anthropic, Google, Grok, Perplexity or Kimi, and that provider bills you directly at their published rates. You choose the model, you see every cent of it in your provider's dashboard, and you can change either one whenever you want.
 
 For setup instructions, see the [BYOK documentation](/docs/byok).
 
 ## How much does the AI cost?
 
-With the BYOK model, most users spend between $2 and $4 per month on AI usage. The exact cost depends on how much content you generate and which AI model you use. For comparison, platforms that bundle AI into their pricing often charge $30 to $50 per month or more for similar functionality.
+The AI costs whatever your provider charges for what your instance used, and nothing is added on top of it. A generated post runs from a fraction of a cent to a few cents depending on the model, so the monthly figure follows how much you write. The agents spend a separate key, the one the administrator pasted in the setup wizard, under a daily ceiling per agent and a monthly ceiling per LinkedIn account.
 
 You can monitor your AI spending directly through your AI provider's dashboard (such as the OpenAI usage page or Anthropic console).
 
 ## Do I need LinkedIn Premium to use LinkedGrow?
 
-No. LinkedGrow works with any LinkedIn account, including free LinkedIn accounts. You do not need LinkedIn Premium, Sales Navigator, or any other paid LinkedIn subscription to use LinkedGrow.
+No, LinkedGrow works with any LinkedIn account, including free LinkedIn accounts. You do not need LinkedIn Premium, Sales Navigator, or any other paid LinkedIn subscription to use LinkedGrow.
 
 ## Will my posts sound like they were written by AI?
 
@@ -33,23 +33,21 @@ No, not if you use the voice training feature. LinkedGrow's voice training analy
 
 The Algorithm Score is a real-time rating that evaluates how well your post is optimized for LinkedIn's algorithm. It analyzes factors like post length, formatting, hook strength, call to action, hashtag usage, and readability. The score updates as you edit, giving you instant feedback to improve your post's potential reach before publishing.
 
-## How is LinkedGrow different from competitors?
+## What is different about running it yourself
 
-LinkedGrow stands apart in several key ways:
-
-- **BYOK model** - you bring your own AI key, so AI costs are a fraction of what competitors charge
-- **Voice training** - the AI learns to write in your voice, not a generic tone
-- **Algorithm optimizer** - real-time scoring tells you how well your post will perform before you publish
-- **All-in-one platform** - content creation, scheduling, carousel generation, analytics, and team collaboration in one tool
-- **Transparent AI costs** - the AI bill comes from your own provider, so you see exactly what you pay for
+- **You own the installation** - the code is licensed under the AGPL-3.0 and the instance runs on your server, so your leads and your drafts never leave it
+- **No LinkedIn API** - the agents work in a real Chrome signed in to your account, which is why they can invite, message and publish at all
+- **Voice training** - the generator learns how you write instead of producing a house tone
+- **Your own AI key** - the bill arrives from your provider for exactly what you used, and you pick the model it runs on
+- **No tier above yours** - every feature is available to every user of the instance, and the only limits are the ones the administrator sets, apart from one cap in the code: a network notification group holds 20 members
 
 ## Can I use multiple AI providers?
 
-Yes. LinkedGrow supports multiple AI providers, and you can switch between them at any time. In your BYOK settings, you can configure API keys for different providers and choose which one to use for content generation. This lets you compare outputs from different models and use whichever one works best for your needs.
+Yes, LinkedGrow supports multiple AI providers, and you can switch between them at any time. In your BYOK settings, you can configure API keys for different providers and choose which one to use for content generation. This lets you compare outputs from different models and use whichever one works best for your needs.
 
 ## Is my API key secure?
 
-Yes. Your API key is encrypted at rest and in transit. It is never stored in plain text and never shared with other users of the instance. The key is only used to make API calls to your AI provider on your behalf. You can rotate or revoke your key at any time from your settings.
+Yes, your API key is encrypted at rest and in transit. It is never stored in plain text and never shared with other users of the instance. The key is only used to make API calls to your AI provider on your behalf. You can rotate or revoke your key at any time from your settings.
 
 ## How do I get help?
 
@@ -57,20 +55,20 @@ Start with this documentation, which has a guide for every LinkedGrow feature. I
 
 ## What AI models are supported?
 
-LinkedGrow supports 28+ AI models through the BYOK system across 6 text providers and 3 image providers:
+Through the BYOK system LinkedGrow supports 35 text models across 6 providers. Images come from Google and OpenAI on the same keys, plus Replicate, which is the one provider you add for images alone:
 
-- **OpenAI** - GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, o3-mini
-- **Anthropic** - Claude Opus 4.6, Claude Sonnet 4.6, Claude Haiku 4.5, and more
-- **Google** - Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, and more
-- **Grok (xAI)** - Grok 4, Grok 4.1 Fast, Grok Code Fast, Grok 3
-- **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Pro, and more
-- **Kimi (Moonshot AI)** - Kimi K2.5, Kimi K2
+- **OpenAI** - GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna, GPT-5.5, GPT-5.4, and more
+- **Anthropic** - Claude Fable 5.1, Claude Opus 5, Claude Sonnet 5, Claude Haiku 4.5, and more
+- **Google** - Gemini 3.7 Flash, Gemini 3.5 Flash, Gemini 3.1 Pro, Gemini 2.5 Pro, and more
+- **Grok (xAI)** - Grok 4.6, Grok 4.5, Grok 4.3, Grok 4.20 Reasoning
+- **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Pro, Sonar
+- **Kimi (Moonshot AI)** - Kimi K3, Kimi K2.7 Code, Kimi K2.6
 
 You choose which model to use in your BYOK settings. Different models offer different balances of quality, speed, and cost. Check the [BYOK documentation](/docs/byok) for setup guides for each provider.
 
 ## Can I schedule posts for LinkedIn company pages?
 
-Yes. When you connect your LinkedIn account, you can choose to post to your personal profile or any company page where you have admin access. You can set a default posting target in your settings or choose the destination for each post individually.
+No, and there is no picker for a company page anywhere in the product. A post goes out from the account the agent is signed in to. Connect a second LinkedIn account if you want its posts scheduled, and that account publishes from itself in the same way.
 
 ## I have a question that is not listed here
 

@@ -6,6 +6,7 @@ import { Search, X, ArrowRight, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Logo } from "@/components/ui/logo";
+import { isCloud } from "@/lib/edition";
 
 interface SearchResult {
   title: string;
@@ -125,7 +126,9 @@ export function DocsHeader({ searchIndex = [] }: DocsHeaderProps) {
                   href="/sign-up"
                   className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg shadow-lg shadow-cyan-500/20 transition-all"
                 >
-                  Start Free
+                  {/* An instance you run yourself sells nothing, so the button
+                      says what it does instead of naming a hosted offer. */}
+                  {isCloud() ? "Start Free" : "Create account"}
                 </Link>
               </div>
             )}

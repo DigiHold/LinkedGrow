@@ -2,12 +2,12 @@
 title: Backups
 description: The 3 volumes that hold everything, one command to archive them, and how to restore on a new server
 category: self-hosting
-order: 5
+order: 9
 ---
 
 ## What to back up
 
-3 Docker volumes hold everything the stack knows: `db-data` is the database, `uploads` holds the files attached to posts and the archived browser sessions, and `profiles` holds the signed in Chrome profile of each LinkedIn account. Compose names them with the project prefix, `linkedgrow_db-data` and so on for a stack installed in `/opt/linkedgrow`; `docker volume ls` shows the real names on your host.
+3 Docker volumes hold everything the stack knows: `db-data` is the database, `uploads` holds the files attached to posts, and `profiles` holds the signed in Chrome profile of each LinkedIn account. Compose names them with the project prefix, `linkedgrow_db-data` and so on for a stack installed in `/opt/linkedgrow`; `docker volume ls` shows the real names on your host.
 
 The `.env` file is the fourth thing. Every stored credential is encrypted with its `ENCRYPTION_KEY`, so a database restored next to a different key is unreadable, and a backup without `.env` is not a backup. Keep a copy of it somewhere the volumes are not.
 

@@ -2,7 +2,7 @@
 title: Setup wizard
 description: What each step of the first login wizard asks for and why the agents need it
 category: self-hosting
-order: 2
+order: 4
 ---
 
 The wizard runs once, at the administrator's first sign in, and every value it asks for can be changed later in Settings, Instance.
@@ -13,7 +13,7 @@ The instance name is shown in the sidebar and in the emails the instance sends. 
 
 ## AI key
 
-Pick a provider (Anthropic, OpenAI, Google, Grok or Kimi) and paste one API key. It runs the agents (finding people, judging fit, writing messages), reads your website in the agent wizard, and powers the post generator until you add another provider in Settings. The key is stored encrypted; the test sends one short request and shows the answer.
+Pick a provider (Anthropic, OpenAI, Google, Grok or Kimi) and paste one API key. It runs the agents (finding people, judging fit, writing messages) and reads your website in the agent wizard. The wizard also copies it into your own AI settings when those are still empty, which is what makes the post generator work for you straight away; every other account on the instance needs a key of its own in Settings. The key is stored encrypted; the test sends one short request and shows the answer.
 
 Under advanced, 2 models share the work: a cheap one sorts and scores profiles, a better one writes anything a person will read. The 2 ceilings cap the spending on your own key, 1 dollar a day per agent and 12 dollars a month per LinkedIn account by default.
 
@@ -29,7 +29,7 @@ LinkedGrow emails you when a lead replies, when LinkedIn asks for a verification
 
 ## Storage
 
-Images and carousels attached to posts, plus an encrypted archive of each browser session. Local disk keeps them in the `uploads` volume, served by the app, the right choice for one server. S3 compatible storage (Cloudflare R2, MinIO, AWS) takes an endpoint, region, bucket, access key, secret key and the public URL files are read from.
+Images and carousels attached to posts live here. Local disk keeps them in the `uploads` volume, served by the app, the right choice for one server. S3 compatible storage (Cloudflare R2, MinIO, AWS) takes an endpoint, region, bucket, access key, secret key and the public URL files are read from.
 
 ## Review
 

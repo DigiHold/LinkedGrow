@@ -179,7 +179,15 @@ export function Sidebar() {
     .toUpperCase()
     .slice(0, 2);
 
-  const planLabel = planNames[plan] || "Free";
+  // A self hosted instance sells no plan, so the line under the name says what
+  // the person is on this instance instead of naming a tier that does not exist.
+  const planLabel = isCloud()
+    ? planNames[plan] || "Free"
+    : isTeamMember
+      ? "Team member"
+      : session?.user?.isAdmin
+        ? "Administrator"
+        : "Member";
 
   const visibleAgentNav = useMemo(
     () => agentNav.filter((i) => !(isTeamMember && i.hideForTeamMember)),

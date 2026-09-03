@@ -11,7 +11,7 @@ order: 5
 
 ## Overview
 
-xAI provides Grok 4.5, Grok 4.3 and Grok 4.20 Reasoning. Grok models are known for a conversational, engaging writing style and good awareness of what is currently being discussed, which makes them a solid choice for LinkedIn content.
+xAI provides Grok 4.6, Grok 4.5, Grok 4.3 and Grok 4.20 Reasoning. Grok models are known for a conversational, engaging writing style and good awareness of what is currently being discussed, which makes them a solid choice for LinkedIn content.
 
 ## Step 1 - Create an xAI account
 
@@ -43,11 +43,12 @@ xAI provides Grok 4.5, Grok 4.3 and Grok 4.20 Reasoning. Grok models are known f
 
 | Model | Best for | Cost per post | Monthly estimate (30 posts) |
 |---|---|---|---|
-| Grok 4.5 | Highest quality and fastest | ~$0.013 | ~$0.39 |
-| Grok 4.3 (Recommended) | Best value for quality | ~$0.006 | ~$0.18 |
-| Grok 4.20 Reasoning | Step-by-step reasoning tasks | ~$0.006 | ~$0.18 |
+| Grok 4.6 (Recommended) | Highest quality on the list | ~$0.013 | ~$0.39 |
+| Grok 4.5 | The same price, one release back | ~$0.013 | ~$0.39 |
+| Grok 4.3 | Fastest and cheapest | ~$0.006 | ~$0.19 |
+| Grok 4.20 Reasoning | Reasoning through a problem in steps | ~$0.006 | ~$0.19 |
 
-**Recommendation:** Grok 4.3 gives you engaging, natural-sounding LinkedIn posts at a low price. Move up to Grok 4.5 when you want xAI's strongest and fastest model, and pick Grok 4.20 Reasoning when a post needs the model to work through something step by step.
+**Recommendation:** Grok 4.6 is the model LinkedGrow marks as recommended, and it writes engaging, natural LinkedIn posts. Drop to Grok 4.3 when you want the cheapest and fastest option, and pick Grok 4.20 Reasoning when a post needs the model to work through something step by step.
 
 ## Pricing details
 
@@ -55,6 +56,7 @@ xAI bills by token, and 1,000 tokens covers roughly 750 words.
 
 | Model | Input (per 1M tokens) | Output (per 1M tokens) |
 |---|---|---|
+| Grok 4.6 | $2.00 | $6.00 |
 | Grok 4.5 | $2.00 | $6.00 |
 | Grok 4.3 | $1.25 | $2.50 |
 | Grok 4.20 Reasoning | $1.25 | $2.50 |

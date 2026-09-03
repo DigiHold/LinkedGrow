@@ -2,7 +2,7 @@
 title: Updating
 description: One command to pull the current images and restart, what the tags mean, pinning a version, and the migrations that run at boot
 category: self-hosting
-order: 4
+order: 8
 ---
 
 Take a [backup](/docs/self-hosting/backups) before an update that changes the database. The changelog says when a release does.
@@ -23,7 +23,7 @@ Expect a minute or 2 during which the app answers nothing. The worker restarts a
 
 ## The tags
 
-Every push to the main branch publishes `ghcr.io/digihold/linkedgrow` and `ghcr.io/digihold/linkedgrow-worker`, and both carry the same 3 kinds of tag.
+A push to the main branch that changes the code publishes `ghcr.io/digihold/linkedgrow` and `ghcr.io/digihold/linkedgrow-worker`, and both carry the same 3 kinds of tag. A push that only touches the documentation, the tests or the installer rebuilds nothing.
 
 | Tag | What it points at |
 | --- | --- |

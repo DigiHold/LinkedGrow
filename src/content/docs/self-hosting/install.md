@@ -2,12 +2,14 @@
 title: Install
 description: The one command install, the manual install, building from source, the first account and the setup wizard
 category: self-hosting
-order: 1
+order: 2
 ---
 
 ## What you need
 
-The stack needs a Linux host. On amd64 the worker runs Google Chrome, which is what LinkedIn expects to see; arm64 runs Chromium and is fine for trying the product (see the [troubleshooting](/docs/self-hosting/troubleshooting) page). It also needs Docker with the Compose plugin, which the installer sets up for you when the command is missing, and enough memory for the browsers: 4 GB of RAM runs 2 at once (`WORKER_SLOTS=2` in `.env`), 16 GB runs 12. Add a domain with an A record pointing at the server to be served over https, with ports 80 and 443 free. You also need an AI key from Anthropic, OpenAI, Google, Grok or Kimi, and a source of dedicated addresses: a Proxy-Seller account with credit, with the server's public IP added to their API allowlist, or proxies you already own.
+A Linux host on amd64, Docker with the Compose plugin, which the installer sets up for you when the command is missing, and enough memory for the browsers you want open at once: 4 GB of RAM runs 2 of them, 16 GB runs 12. A domain with an A record pointing at the server gets you https, with ports 80 and 443 free for it. You also need an AI key from Anthropic, OpenAI, Google, Grok or Kimi, and a source of dedicated addresses, which is normally a Proxy-Seller account with credit and this server's public IP on their API allowlist.
+
+The [requirements](/docs/self-hosting/requirements) page goes through all of that in detail, including the arm64 situation and everything the stack calls out to.
 
 ## One command
 
@@ -32,6 +34,10 @@ The options, for a run that should not ask anything:
 | `--yes` | Never asks anything, and needs `--domain` or `--no-domain`. |
 
 Running the installer again is safe. It keeps the `.env` it wrote, secrets included, and only rewrites the address lines when you pass a different domain.
+
+## Let an AI agent do it
+
+An assistant with shell access to the server can run the whole install on its own, following [llms-install.md](https://github.com/DigiHold/LinkedGrow/blob/main/llms-install.md) in the repository. The [install with an AI agent](/docs/self-hosting/install-with-an-agent) page has the prompt to paste and the checks to run afterwards.
 
 ## Manual install
 
@@ -71,7 +77,9 @@ cp .env.example .env
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
-The override replaces the 2 published images with a build of this checkout, and everything else in the compose file stays the same. `./install.sh --source` does the same from the clone.
+Fill in the same 3 values before the last line as you would for a manual install, because a copied `.env.example` still says `change-me` and the app refuses to start on it.
+
+The override replaces the 2 published images with a build of this checkout, and everything else in the compose file stays the same. `./install.sh --source` does all of it from the clone, secrets included.
 
 ## The first account
 

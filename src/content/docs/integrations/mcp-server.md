@@ -11,13 +11,13 @@ LinkedGrow runs an MCP server, so an assistant you already use can operate your 
 
 There is one address and one key to paste, no local process to keep running, and nothing at all to install.
 
-MCP access is available on the **Pro** and **Business** plans.
+Every user of the instance can create a key and connect an assistant to it.
 
 ## What you need
 
 | | |
 | --- | --- |
-| Endpoint | `https://linkedgrow.ai/api/mcp` |
+| Endpoint | The address of your instance with `/api/mcp` on the end |
 | Transport | HTTP |
 | Authentication | `Authorization: Bearer YOUR_API_KEY` |
 
@@ -42,7 +42,7 @@ Most clients read the same JSON. Add the server under `mcpServers` in your clien
   "mcpServers": {
     "linkedgrow": {
       "type": "http",
-      "url": "https://linkedgrow.ai/api/mcp",
+      "url": "https://linkedgrow.example.com/api/mcp",
       "headers": {
         "Authorization": "Bearer lg_live_your_key_here"
       }
@@ -73,7 +73,7 @@ The tools cover the whole product, grouped roughly as follows.
 
 ## What it will not do
 
-Nothing in the chat reaches into your LinkedIn account. LinkedIn actions belong to your agent, which runs on LinkedGrow's own infrastructure inside its daily caps, and no tool sends a message to a person you name.
+Nothing in the chat reaches into your LinkedIn account. LinkedIn actions belong to your agent, which runs on your own server inside its daily caps, and no tool sends a message to a person you name.
 
 Starting an agent from the chat does cause real outreach the same way pressing the button in the dashboard does, so a good assistant tells you what it started. Everything an assistant writes lands somewhere you can read it: drafts sit in your posts, scheduled items sit in your calendar and can be cancelled there, and replies wait for your approval.
 
@@ -81,9 +81,9 @@ Lead names, headlines, post text and inbound replies come back wrapped in an `un
 
 ## Limits and costs
 
-Each key is allowed 120 requests a minute, which ordinary conversation never comes close to spending.
+Each key is allowed 60 requests a minute. The MCP route keeps a counter of its own set at 120, but the key is authenticated before that counter is ever read and the authentication stops at 60, so 60 is the number you would actually meet. Ordinary conversation never comes close to spending it.
 
-Everything your agent does is included in your plan and runs on our AI budget. The tools that write content for you are the exception: they run on your own provider key, the one you added under Settings, AI keys, which is what keeps writing unlimited for a few dollars a month. If no key is connected, those tools say so and nothing is charged.
+Everything your agent does runs on the instance key the administrator pasted in the setup wizard, inside the daily ceiling per agent and the monthly ceiling per LinkedIn account. The tools that write content for you are the exception: they run on your own provider key, the one you added under Settings, AI keys. If no key is connected, those tools say so and nothing is spent.
 
 ## When it does not connect
 

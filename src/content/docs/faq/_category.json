@@ -3,7 +3,7 @@
   "description": "Answers to frequently asked questions about LinkedGrow, AI costs, LinkedIn integration, and more.",
   "overview": [
     "This section answers the questions people ask before and after they create an account: what LinkedGrow does, how the BYOK model changes what you pay for AI, and how the LinkedIn connection works.",
-    "The short version is that LinkedGrow writes, schedules, and publishes your LinkedIn content, and you connect your own AI provider key instead of paying a bundled AI markup. Most people spend $2 to $4 per month on AI usage.",
+    "The short version is that agents find buyers on LinkedIn for you while the writing tools keep your profile alive, and every model call runs on an API key somebody on this instance holds. The software costs nothing, so the only AI bill is the one your provider sends for what your instance actually used.",
     "If the answer you need is not below, the rest of the documentation goes deeper on each feature, and the issue tracker on GitHub is the place to report what is broken."
   ],
   "order": 12,

@@ -23,7 +23,7 @@ Both credentials are encrypted before they are stored and decrypted only in memo
 
 ## Set up AI for posts
 
-The AI key from the setup wizard already runs the agents and the post generator. To generate posts on a different provider, or on a key of your own, add one:
+The AI key from the setup wizard runs the agents, and the administrator who ran that wizard also has it in their own AI settings. Every other account starts with nothing there, and the post generator answers that there is no key until one is saved:
 
 1. Go to **Settings > AI API** from the sidebar
 2. Choose a provider and paste your API key from the provider's dashboard

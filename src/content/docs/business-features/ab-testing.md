@@ -105,4 +105,4 @@ From the A/B Testing dashboard, you can:
 
 ## Questions?
 
-If you need help setting up or interpreting your A/B tests, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai).
+If A/B testing does not behave the way this page describes, open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues).
