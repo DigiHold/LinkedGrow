@@ -9,7 +9,6 @@
 [![License AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-1d4ed8.svg)](LICENSE)
 [![Self hosted, one command](https://img.shields.io/badge/self%20hosted-one%20command-00b8db)](#install)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-[![Stars](https://img.shields.io/github/stars/DigiHold/LinkedGrow?style=social)](https://github.com/DigiHold/LinkedGrow)
 
 [Install](#install) · [Docs](src/content/docs/self-hosting) · [Hosted version](https://linkedgrow.ai) · [Issues](https://github.com/DigiHold/LinkedGrow/issues) · [Contributing](CONTRIBUTING.md)
 
