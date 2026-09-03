@@ -1,5 +1,11 @@
-// Simple in-memory rate limiter for auth endpoints
-// For production with multiple instances, use Redis-based rate limiting
+// A rate limiter held in memory, for the auth endpoints.
+//
+// The store below is per process. One self hosted container is one process, so
+// there the counts are the whole truth. The hosted service runs many instances
+// and each keeps its own map, so every cap in this file is a cap per instance,
+// and a caller spread across instances gets a fresh count on each one. Read
+// every number here as the worst a single instance will allow, never as a
+// global total. A shared store is what would make them absolute.
 
 interface RateLimitEntry {
   count: number;
@@ -102,9 +108,12 @@ export const AUTH_RATE_LIMITS = {
     windowMs: 15 * 60 * 1000,
   },
   /**
-   * Wrong codes on one Google challenge, keyed by the challenge's own id. The
-   * window outlives the challenge itself, so the counter can never reset while
-   * the same challenge is still usable.
+   * Wrong codes on one Google challenge, keyed by the challenge's own id, which
+   * is minted by the server and cannot be chosen by the caller. The window
+   * outlives the challenge, so on the instance holding the count it lasts as
+   * long as the challenge is usable. The store is per process, so on the hosted
+   * service a retry landing on another instance starts from zero: read this as
+   * 5 wrong codes per challenge per instance, not 5 in total.
    */
   googleTwoFactorAttempts: {
     maxRequests: 5,
