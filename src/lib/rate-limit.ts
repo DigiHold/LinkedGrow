@@ -95,6 +95,21 @@ export const AUTH_RATE_LIMITS = {
     maxRequests: 20,
     windowMs: 15 * 60 * 1000,
   },
+  // The two factor step of Google sign in, per address. A person who mistyped
+  // starts over a handful of times at most.
+  googleTwoFactor: {
+    maxRequests: 10,
+    windowMs: 15 * 60 * 1000,
+  },
+  /**
+   * Wrong codes on one Google challenge, keyed by the challenge's own id. The
+   * window outlives the challenge itself, so the counter can never reset while
+   * the same challenge is still usable.
+   */
+  googleTwoFactorAttempts: {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000,
+  },
   // Login: 5 attempts per 15 minutes per IP
   login: {
     maxRequests: 5,

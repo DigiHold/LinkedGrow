@@ -3,9 +3,16 @@ import { exchangeGoogleCodeForToken, getGoogleUserInfo } from '@/lib/google';
 import { db, users, accounts } from '@/lib/db';
 import { eq, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { encode } from 'next-auth/jwt';
 import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
 import { newUserPolicy, SIGNUPS_CLOSED_MESSAGE } from '@/lib/registration';
+import { rateLimit, getClientIP, AUTH_RATE_LIMITS } from '@/lib/rate-limit';
+import { createSessionToken, sessionCookieName, sessionCookieOptions } from '@/lib/session-cookie';
+import {
+  TWO_FACTOR_CHALLENGE_COOKIE,
+  TWO_FACTOR_CHALLENGE_TTL_SECONDS,
+  mintTwoFactorChallenge,
+  requireAuthSecret,
+} from '@/lib/two-factor-challenge';
 
 
 function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
@@ -42,6 +49,54 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
   );
 }
 
+/**
+ * Google proved the address, nothing has proved the second factor yet, so the
+ * browser gets a challenge cookie and the sign in page's own two factor step
+ * rather than a session. In a popup the opener has to hear about it, or it sits
+ * on its spinner behind a window that just closed.
+ */
+function twoFactorChallengeResponse(userId: string, isPopup: boolean) {
+  const appOrigin = getAppUrl();
+  const signInUrl = `${appOrigin}/sign-in?google2fa=1`;
+
+  const response = isPopup
+    ? new NextResponse(
+        `<!DOCTYPE html>
+        <html>
+          <head><title>Google Login</title></head>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'google-2fa' }, '${appOrigin}');
+                window.close();
+              } else {
+                window.location.href = '${signInUrl}';
+              }
+            </script>
+          </body>
+        </html>`,
+        { headers: { 'Content-Type': 'text/html' } }
+      )
+    : NextResponse.redirect(signInUrl);
+
+  response.cookies.set(TWO_FACTOR_CHALLENGE_COOKIE, mintTwoFactorChallenge(userId, requireAuthSecret()), {
+    httpOnly: true,
+    secure: isSecureAppUrl(),
+    sameSite: 'lax',
+    maxAge: TWO_FACTOR_CHALLENGE_TTL_SECONDS,
+    path: '/',
+  });
+
+  // The OAuth exchange is finished. Only the callback url survives, because the
+  // two factor route still has to send the browser where it was going.
+  response.cookies.delete('google_oauth_state');
+  response.cookies.delete('google_oauth_mode');
+  response.cookies.delete('google_newsletter');
+  response.cookies.delete('google_popup');
+
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
@@ -53,6 +108,19 @@ export async function GET(request: NextRequest) {
   const mode = request.cookies.get('google_oauth_mode')?.value || 'login';
   const isPopup = request.cookies.get('google_popup')?.value === 'true';
   const callbackUrl = sanitizeCallbackUrl(request.cookies.get('google_callback_url')?.value);
+
+  // Public by design: Google sends the browser here. Counted on its own key,
+  // so a burst of callbacks never spends the budget of the outbound route.
+  const limit = rateLimit(`google-callback:${getClientIP(request)}`, AUTH_RATE_LIMITS.googleOAuth);
+  if (!limit.success) {
+    const message = 'Too many sign in attempts. Please try again later.';
+    if (isPopup) {
+      return createPopupResponse(false, { error: message });
+    }
+    return NextResponse.redirect(
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent(message)}`
+    );
+  }
 
   // Handle OAuth errors
   if (error) {
@@ -234,26 +302,17 @@ export async function GET(request: NextRequest) {
       throw new Error('Failed to create or find user');
     }
 
-    // Create session token using NextAuth JWT
-    // Salt is the cookie name used by NextAuth
-    const cookieName = isSecureAppUrl()
-      ? '__Secure-authjs.session-token'
-      : 'authjs.session-token';
+    // An account with two factor switched on gets no session here. Google
+    // proved the address; the code proves the device, and until it does this
+    // route hands out a 5 minute challenge instead. Registration always creates
+    // the row with two factor off, so only the login branch ever lands here.
+    if (user.twoFactorEnabled) {
+      return twoFactorChallengeResponse(user.id, isPopup);
+    }
 
-    const token = await encode({
-      token: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        image: user.image, // Only set if user connected LinkedIn
-        plan: user.plan,
-        twoFactorEnabled: user.twoFactorEnabled,
-        isAdmin: user.isAdmin,
-      },
-      secret: process.env.AUTH_SECRET!,
-      salt: cookieName,
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-    });
+    // Create session token using NextAuth JWT
+    const cookieName = sessionCookieName();
+    const token = await createSessionToken(user, requireAuthSecret());
 
     // Handle popup mode - return HTML that sets cookie and notifies parent
     if (isPopup) {
@@ -278,13 +337,7 @@ export async function GET(request: NextRequest) {
       );
 
       // Set the session cookie
-      response.cookies.set(cookieName, token, {
-        httpOnly: true,
-        secure: isSecureAppUrl(),
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        path: '/',
-      });
+      response.cookies.set(cookieName, token, sessionCookieOptions());
 
       // Clear OAuth cookies
       response.cookies.delete('google_oauth_state');
@@ -301,13 +354,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(`${getAppUrl()}${redirectUrl}`);
 
     // Set the session cookie (NextAuth v5 uses authjs.session-token)
-    response.cookies.set(cookieName, token, {
-      httpOnly: true,
-      secure: isSecureAppUrl(),
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: '/',
-    });
+    response.cookies.set(cookieName, token, sessionCookieOptions());
 
     // Clear OAuth cookies
     response.cookies.delete('google_oauth_state');
