@@ -30,6 +30,12 @@ export async function createSessionToken(account: SessionAccount, secret: string
   return encode({
     token: {
       id: account.id,
+      // The moment this session began. src/lib/auth.ts compares it against the
+      // account's passwordChangedAt on every call and drops the token when the
+      // password moved after it. Without the claim that comparison is skipped
+      // and the session outlives a password change, a two factor reset, and
+      // the recovery command, for its full 30 days.
+      issuedAt: Date.now(),
       email: account.email,
       name: account.name,
       image: account.image,

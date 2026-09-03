@@ -42,6 +42,9 @@ test("the session token carries the claims the app reads back", async () => {
   assert.equal(claims?.plan, "business");
   assert.equal(claims?.isAdmin, true);
   assert.equal(claims?.twoFactorEnabled, true);
+  // src/lib/auth.ts skips the passwordChangedAt check when this is missing, so
+  // a session without it survives a password change and the two factor reset.
+  assert.equal(typeof claims?.issuedAt, "number");
 
   process.env.NEXT_PUBLIC_APP_URL = original;
 });
