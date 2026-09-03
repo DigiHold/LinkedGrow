@@ -11,7 +11,35 @@ A Linux host on amd64, Docker with the Compose plugin, which the installer sets 
 
 The [requirements](/docs/self-hosting/requirements) page goes through all of that in detail, including the arm64 situation and everything the stack calls out to.
 
-## One command
+## Install with Docker Compose
+
+LinkedGrow is 3 containers and a compose file, so the install is the one every self hosted project uses. On a Linux host that already has Docker:
+
+```
+mkdir -p /opt/linkedgrow && cd /opt/linkedgrow
+curl -fsSLO https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/.env.example -o .env
+openssl rand -hex 32   # AUTH_SECRET
+openssl rand -hex 32   # ENCRYPTION_KEY
+docker compose pull && docker compose up -d
+```
+
+Before the last line, open `.env` and fill in 3 values. `APP_URL` is the address people will type in their browser: `http://localhost:3000` for a first try, `https://linkedgrow.example.com` behind a reverse proxy. `AUTH_SECRET` signs the sessions the app hands out. `ENCRYPTION_KEY` encrypts every stored credential and must be exactly 64 hex characters, which is what `openssl rand -hex 32` prints. Never change it after the first start, because everything encrypted with the old value becomes unreadable. The app refuses to start while either secret is still the placeholder.
+
+To let the stack serve https itself, download the Caddy configuration next to the compose file and set 2 more lines in `.env`:
+
+```
+curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker/Caddyfile -o Caddyfile
+```
+
+```
+DOMAIN=linkedgrow.example.com
+COMPOSE_PROFILES=https
+```
+
+`docker compose ps` then lists the 4 services. The app reports healthy once its migrations have run, and the worker waits for that before it starts.
+
+## Or let the installer do all of that
 
 ```
 curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh | sh
@@ -38,34 +66,6 @@ Running the installer again is safe. It keeps the `.env` it wrote, secrets inclu
 ## Let an AI agent do it
 
 An assistant with shell access to the server can run the whole install on its own, following [llms-install.md](https://github.com/DigiHold/LinkedGrow/blob/main/llms-install.md) in the repository. The [install with an AI agent](/docs/self-hosting/install-with-an-agent) page has the prompt to paste and the checks to run afterwards.
-
-## Manual install
-
-The installer writes 2 files and runs 2 commands, so you can do the same by hand:
-
-```
-mkdir -p /opt/linkedgrow && cd /opt/linkedgrow
-curl -fsSLO https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/.env.example -o .env
-openssl rand -hex 32   # AUTH_SECRET
-openssl rand -hex 32   # ENCRYPTION_KEY
-docker compose pull && docker compose up -d
-```
-
-Before the last line, open `.env` and fill in 3 values. `APP_URL` is the address people will type in their browser: `http://localhost:3000` for a first try, `https://linkedgrow.example.com` behind a reverse proxy. `AUTH_SECRET` signs the sessions the app hands out. `ENCRYPTION_KEY` encrypts every stored credential and must be exactly 64 hex characters, which is what `openssl rand -hex 32` prints. Never change it after the first start, because everything encrypted with the old value becomes unreadable. The app refuses to start while either secret is still the placeholder.
-
-To let the stack serve https itself, download the Caddy configuration next to the compose file and set 2 more lines in `.env`:
-
-```
-curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker/Caddyfile -o Caddyfile
-```
-
-```
-DOMAIN=linkedgrow.example.com
-COMPOSE_PROFILES=https
-```
-
-`docker compose ps` then lists the 4 services. The app reports healthy once its migrations have run, and the worker waits for that before it starts.
 
 ## Build from source
 

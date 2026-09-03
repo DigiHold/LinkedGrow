@@ -24,36 +24,7 @@ The posting side is the same product. A generator writes a first draft in your v
 
 ## Install
 
-On a fresh Linux server, as root:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh | sh
-```
-
-It asks one question, your domain, then installs Docker when the command is missing, writes an `.env` with fresh secrets, pulls the images and starts the stack in `/opt/linkedgrow`. Answer with an empty line to serve on the server address over plain http instead. Give it 2 or 3 minutes, most of that spent pulling the worker image, and open the address it prints at the end.
-
-The first account created on the instance administers it, and it runs the wizard below once, at its first sign in. Every value it asks for can be changed later in Settings, Instance.
-
-![The setup wizard asking for the AI key that runs the agents, with the models and the spending ceilings](docs/images/setup-wizard.png)
-
-The installer takes options for a run that should not ask anything.
-
-| Option | What it does |
-| --- | --- |
-| `--domain NAME` | Serves on that domain over https, with the Caddy that ships in the compose file. |
-| `--no-domain` | Serves on the server address over http, on the port below. |
-| `--dir PATH` | Where the stack lives. Default `/opt/linkedgrow` |
-| `--version TAG` | Image tag to run: `latest`, a release like `v1.0.0`, or `sha-1a2b3c4`. Default `latest` |
-| `--port NUMBER` | Port the app is published on. Default `3000` |
-| `--source` | Builds the images from the source instead of pulling them. |
-| `--yes` | Never asks anything, and needs `--domain` or `--no-domain`. |
-
-<details>
-<summary><b>Install by hand, with Docker Compose</b></summary>
-
-<br>
-
-The installer writes 2 files and runs 2 commands, so you can do the same yourself:
+LinkedGrow is 3 containers and a compose file, so the install is the one every self hoster already knows. On a Linux host with Docker:
 
 ```sh
 mkdir -p /opt/linkedgrow && cd /opt/linkedgrow
@@ -62,9 +33,9 @@ curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/.env.examp
 docker compose pull && docker compose up -d
 ```
 
-Before the last line, open `.env` and set 3 values. `APP_URL` is the address people will type in their browser. `AUTH_SECRET` signs the sessions the app hands out, and `ENCRYPTION_KEY` encrypts every stored credential; each holds the output of `openssl rand -hex 32`. Keep `ENCRYPTION_KEY` somewhere safe and never change it after the first start, because everything encrypted with the old value becomes unreadable. The app refuses to start while either secret is still the placeholder.
+Open `.env` before that last line and fill in 3 values. `APP_URL` is the address people will type in their browser. `AUTH_SECRET` signs the sessions, and `ENCRYPTION_KEY` encrypts every stored credential; each takes one output of `openssl rand -hex 32`. Keep `ENCRYPTION_KEY` somewhere safe and never change it after the first start, because everything encrypted with the old value becomes unreadable. The app refuses to start while either secret is still the placeholder.
 
-To let the stack serve https itself, download the Caddy configuration next to the compose file and set 2 more lines in `.env`:
+To let the stack serve https itself, take the Caddy configuration too and set 2 more lines in `.env`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker/Caddyfile -o Caddyfile
@@ -75,7 +46,29 @@ DOMAIN=linkedgrow.example.com
 COMPOSE_PROFILES=https
 ```
 
-</details>
+The first start pulls about 4 GB, most of it the browser the worker drives. Then open the address, create the first account, which administers the instance, and answer the wizard once.
+
+![The setup wizard asking for the AI key that runs the agents, with the models and the spending ceilings](docs/images/setup-wizard.png)
+
+### Or let the installer do all of that
+
+The script runs exactly the commands above, and adds the pieces a fresh server needs: it installs Docker when the command is missing, generates both secrets itself, picks `WORKER_SLOTS` from the memory of the machine, writes the `.env` readable only by its owner, starts Caddy when you give it a domain, and waits for the app to answer its health check before it prints the address.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh | sh
+```
+
+It asks one question, your domain, and an empty answer serves on the server address over plain http instead. Read it first if piping a script into a shell makes you uncomfortable, it is 500 lines of POSIX sh and it does nothing you have not seen above.
+
+| Option | What it does |
+| --- | --- |
+| `--domain NAME` | Serves on that domain over https, with the Caddy that ships in the compose file. |
+| `--no-domain` | Serves on the server address over http, on the port below. |
+| `--dir PATH` | Where the stack lives. Default `/opt/linkedgrow` |
+| `--version TAG` | Image tag to run: `latest`, a release like `v1.0.0`, or `sha-1a2b3c4`. Default `latest` |
+| `--port NUMBER` | Port the app is published on. Default `3000` |
+| `--source` | Builds the images from the source instead of pulling them. |
+| `--yes` | Never asks anything, and needs `--domain` or `--no-domain`. |
 
 <details>
 <summary><b>Build the images from the source</b></summary>
@@ -104,6 +97,7 @@ The whole run is written down for agents in [llms-install.md](llms-install.md), 
 Replace the domain with yours, or ask for the run without a domain to reach the app on the server address.
 
 </details>
+
 
 ## Finding the leads
 
