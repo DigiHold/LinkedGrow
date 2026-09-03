@@ -409,13 +409,17 @@ export async function GET(request: NextRequest) {
 
     return response;
 
-  } catch (err) {
-const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
+  } catch (error) {
+    // The reason stays in the log. It has said things like which environment
+    // variable is missing, and this route answers anyone who asks, signed in
+    // or not, so the browser only ever gets the same sentence.
+    console.error("[google-callback] Failed:", error);
+    const message = 'Failed to sign in with Google. Please try again.';
     if (isPopup) {
-      return createPopupResponse(false, { error: errorMessage });
+      return createPopupResponse(false, { error: message });
     }
     return NextResponse.redirect(
-      `${getAppUrl()}/sign-in?error=${encodeURIComponent(errorMessage)}`
+      `${getAppUrl()}/sign-in?error=${encodeURIComponent(message)}`
     );
   }
 }
