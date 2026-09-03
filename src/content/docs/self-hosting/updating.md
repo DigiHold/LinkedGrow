@@ -13,7 +13,7 @@ Take a [backup](/docs/self-hosting/backups) before an update that changes the da
 cd /opt/linkedgrow && ./install.sh update
 ```
 
-That pulls the images for the tag in `.env` and replaces the running containers, keeping `.env` and the 3 volumes. By hand it is the same 2 commands:
+That pulls the images for the tag in `.env` and replaces the running containers, keeping every volume, the generated secrets included. By hand it is the same 2 commands:
 
 ```
 docker compose pull && docker compose up -d
@@ -35,13 +35,13 @@ Release tags are also built for arm64. `latest` is built for amd64 only, so an a
 
 ## Pin a version
 
-Set the tag in `.env` and the stack stops following the main branch:
+Set the tag in a `.env` next to the compose file and the stack stops following the main branch:
 
 ```
 LINKEDGROW_VERSION=v1.0.0
 ```
 
-Then `docker compose up -d`, or `./install.sh update`, which keeps whatever is already written there. Going back to a previous release is the same edit with the older tag, so nothing has to be rebuilt on the server. The installer also takes `--version v1.0.0` and writes the line for you.
+Then `docker compose up -d`, or `./install.sh update`, which keeps whatever is already written there. An install with no `.env` at all gets one holding that single line. Going back to a previous release is the same edit with the older tag, so nothing has to be rebuilt on the server. The installer also takes `--version v1.0.0` and writes the line for you.
 
 ## Migrations run at boot
 

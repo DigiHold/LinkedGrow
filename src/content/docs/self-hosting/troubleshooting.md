@@ -12,13 +12,13 @@ docker compose logs app
 docker compose logs worker
 ```
 
-Run them in the stack folder, `/opt/linkedgrow` for an install that took the default. The installer runs as root, so the `.env` it wrote is owned by root and readable by root only, and every compose command on this page expects the same root account, or `sudo` in front of it.
+Run them in the stack folder, `/opt/linkedgrow` for an install that took the default. Every compose command on this page expects the root account that installed the stack, or `sudo` in front of it.
 
 Add `-f` to follow, or `--tail 200` for the last lines only. `docker compose ps` shows which of the 3 services is running and whether the app is healthy.
 
 ## The app refuses to start
 
-The app checks `.env` before anything else and stops with one line on the reason. `AUTH_SECRET is not set` means the value is still the `change-me` placeholder. `ENCRYPTION_KEY must be exactly 64 hex characters` means the key is missing, too short, or contains something other than the digits and letters `openssl rand -hex 32` prints. `APP_URL is not set` means the line is empty. Fix the value and run `docker compose up -d` again; nothing has been written yet.
+The app checks what it needs before anything else and stops with one line on the reason. A normal install has nothing to get wrong here, because it generates its own secrets and reads its address off each request. The 2 lines you can still see come from values you set yourself. `ENCRYPTION_KEY is set but is not 64 hex characters` means the value in the environment is wrong, and the app refuses rather than generating a replacement that would leave the database unreadable. `/data/config is not writable` or the same about `/data/uploads` means the volume came up owned by root, and the line itself carries the one command that fixes it. Correct the value and run `docker compose up -d` again.
 
 ## The two factor device is gone and nobody can sign in
 
@@ -32,7 +32,7 @@ It names the address it cleared, and it stops with a message when no account on 
 
 ## The worker keeps waiting for the app
 
-`worker: waiting for the app` repeating in the worker log is the worker polling the app's health check, which only passes once the database is reachable and the migrations have run. Look at the app log for the reason: an `.env` problem as above, or the database container still opening on a slow disk, which the app retries for a minute on its own. The worker starts by itself as soon as the app answers.
+`worker: waiting for the app` repeating in the worker log is the worker polling the app's health check, which only passes once the database is reachable and the migrations have run. Look at the app log for the reason: a configuration problem as above, or the database container still opening on a slow disk, which the app retries for a minute on its own. The worker starts by itself as soon as the app answers.
 
 ## Pulling the images fails
 
@@ -50,7 +50,7 @@ The installer warns when the domain resolves somewhere else, or nowhere, and sta
 
 ## Port 80 or 443 is already in use
 
-`bind: address already in use` on the caddy container means another web server holds the port, usually an nginx or an Apache installed with the machine. Either stop it (`systemctl stop nginx`), or keep it and let it do the https work, which means emptying `COMPOSE_PROFILES` in `.env`, running `docker compose up -d`, and pointing your existing server at port 3000 with one of the blocks on the [reverse proxy](/docs/self-hosting/reverse-proxy) page. `ss -tlnp | grep -E ':(80|443)'` names the process holding the port.
+`bind: address already in use` on the caddy container means another web server holds the port, usually an nginx or an Apache installed with the machine. Either stop it (`systemctl stop nginx`), or keep it and let it do the https work, which means emptying `COMPOSE_PROFILES`, running `docker compose up -d`, and pointing your existing server at port 3000 with one of the blocks on the [reverse proxy](/docs/self-hosting/reverse-proxy) page. `ss -tlnp | grep -E ':(80|443)'` names the process holding the port.
 
 ## The Proxy-Seller test fails
 

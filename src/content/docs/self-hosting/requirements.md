@@ -13,14 +13,14 @@ Docker with the Compose plugin is the only software you install yourself, and th
 
 ## Memory
 
-Memory is the number that decides the shape of your install, because the memory goes to the browsers. `WORKER_SLOTS` in `.env` says how many LinkedIn browsers the worker may keep open at the same time, and the compose file hands the worker 2 GB of shared memory for them on top of whatever the host has.
+Memory is the number that decides the shape of your install, because the memory goes to the browsers. `WORKER_SLOTS` says how many LinkedIn browsers the worker may keep open at the same time, it defaults to 2, and the compose file hands the worker 2 GB of shared memory for them on top of whatever the host has.
 
 | Concurrent browsers | Memory on the host |
 | --- | --- |
 | 2 | 4 GB |
 | 12 | 16 GB |
 
-The installer does not aim for the top of that range. It reads the machine and writes `WORKER_SLOTS=2` below 8 GB, `4` at 8 GB and `8` at 16 GB, which leaves the app, the database and everything else on the box some air. Raise the number in `.env` yourself when the machine has nothing else to do.
+The installer does not aim for the top of that range. It reads the machine and writes `WORKER_SLOTS=2` below 8 GB, `4` at 8 GB and `8` at 16 GB into a `.env` next to the compose file, which leaves the app, the database and everything else on the box some air. A plain `docker compose up -d` install has no such file and runs 2, and raising it means writing that one line yourself.
 
 Nothing in the stack asks for a set number of processor cores. Chrome is what spends them, one browser per busy slot, so the count that sized your memory also sizes your processor.
 
@@ -33,14 +33,15 @@ About 10 GB of free disk is enough to begin with. Most of that goes to the worke
 | `db-data` | The libSQL database file | Your leads, your posts and their history |
 | `uploads` | Files attached to posts | Whatever you attach |
 | `profiles` | One signed in Chrome profile for every LinkedIn account | Each account you connect, and then its own cache and cookies |
+| `config` | The 2 secrets the app generated on its first start | Nothing, it stays at a few hundred bytes |
 
 Two more volumes, `caddy-data` and `caddy-config`, appear when the built in https is switched on. They hold the certificate and none of your data.
 
 ## Ports
 
-The app publishes one port, `3000` unless `APP_PORT` says otherwise, bound to `127.0.0.1` unless `APP_BIND` says otherwise. On the loopback address it is reachable only by a reverse proxy running on the same machine. The installer writes `APP_BIND=0.0.0.0` when you run it without a domain, which is what opens that port to the network.
+The app publishes one port, `3000` unless `APP_PORT` says otherwise, on every address of the machine unless `APP_BIND` says otherwise. That default is what lets a fresh install be opened from your laptop with nothing else set up. Put a proxy in front and `APP_BIND=127.0.0.1` moves the port to the loopback address, where only that proxy reaches it, which is what the installer writes whenever you give it a domain.
 
-Caddy takes ports 80 and 443, and only when `COMPOSE_PROFILES=https` is in `.env`. Give the installer a domain and it writes that line for you, so both ports have to be free before you start.
+Caddy takes ports 80 and 443, and only when `COMPOSE_PROFILES=https` is set. Give the installer a domain and it writes that line for you, so both ports have to be free before you start.
 
 The database and the worker publish nothing at all. The database answers at `http://db:8080` on the network Compose creates, and that network exists only between the containers.
 
@@ -54,7 +55,7 @@ The app also asks api.ipify.org for its own public address, which is how the wiz
 
 ## What you bring
 
-An address people can open, which means a domain with an A record pointing at the server. That gets you https from the Caddy inside the stack, and without one the app answers on the server's own address over plain http.
+An address people can open, and you do not write it down anywhere, because the app reads it off each request. A domain with an A record pointing at the server gets you https from the Caddy inside the stack, and without one the app answers on the server's own address over plain http, on port 3000.
 
 An AI key, from Anthropic, OpenAI, Google, Grok or Kimi. That single key runs every agent on the instance, and the wizard copies it into your own AI settings so the post generator works for you from the first day. Everyone else on the instance adds a key of their own in Settings before the generator will answer them. The wizard refuses to finish without it.
 

@@ -9,7 +9,7 @@ The wizard runs once, at the administrator's first sign in, and every value it a
 
 ## Instance
 
-The instance name is shown in the sidebar and in the emails the instance sends. The app URL is the address in your browser bar without a path, the same as `APP_URL` in `.env`. The timezone decides when daily limits and reports reset. The admin email receives operational alerts: a supplier balance running low, a renewal that failed, a LinkedIn control that stopped answering.
+The instance name is shown in the sidebar and in the emails the instance sends. The app URL is the address in your browser bar without a path, prefilled with the address you opened. Pages and redirects follow each request on their own; this value is the one used in emails, which have no request to read. The timezone decides when daily limits and reports reset. The admin email receives operational alerts: a supplier balance running low, a renewal that failed, a LinkedIn control that stopped answering.
 
 ## AI key
 
