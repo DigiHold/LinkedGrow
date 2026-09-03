@@ -68,4 +68,4 @@ An email provider, Resend or any SMTP server, for the notifications: a lead repl
 
 S3 compatible storage, such as Cloudflare R2 or MinIO, for when you would rather files did not sit on the server. The local disk is the default and it is the right answer for a single machine.
 
-Google sign in, which needs an OAuth client of your own. Read the [configuration](/docs/self-hosting/configuration) page before you count on it, because the switch that shows the button is read while the image is built rather than while it starts.
+Google sign in, which needs an OAuth client of your own. Paste its 2 values into `.env` and the button appears on the sign in page, as the [configuration](/docs/self-hosting/configuration) page describes.

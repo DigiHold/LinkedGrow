@@ -79,7 +79,7 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 
 Fill in the same 3 values before the last line as you would for a manual install, because a copied `.env.example` still says `change-me` and the app refuses to start on it.
 
-The override replaces the 2 published images with a build of this checkout, and everything else in the compose file stays the same. `./install.sh --source` does all of it from the clone, secrets included. Building yourself is also the only way to turn the Google sign in button on, since that switch is read while the image is built; the [configuration](/docs/self-hosting/configuration) page has the detail.
+The override replaces the 2 published images with a build of this checkout, and everything else in the compose file stays the same. `./install.sh --source` does all of it from the clone, secrets included.
 
 ## The first account
 

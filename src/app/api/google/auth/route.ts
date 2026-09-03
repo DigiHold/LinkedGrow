@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleAuthUrl, isGoogleConfigured } from '@/lib/google';
 import { randomBytes } from 'crypto';
 import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 function sanitizeCallbackUrl(url: string | null): string | null {
   if (!url) return null;
@@ -11,13 +12,21 @@ function sanitizeCallbackUrl(url: string | null): string | null {
 }
 
 export async function GET(request: NextRequest) {
+  // Public by design: anyone may ask for the redirect to Google. 20 in a quarter
+  // of an hour per address sits well above a person retrying a blocked popup,
+  // and well below a script minting state cookies in a loop.
+  const limit = rateLimit(`google-auth:${getClientIP(request)}`, { maxRequests: 20, windowMs: 15 * 60 * 1000 });
+  if (!limit.success) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const mode = searchParams.get('mode') || 'login'; // 'login' or 'register'
   const newsletter = searchParams.get('newsletter') === 'true';
   const popup = searchParams.get('popup') === 'true';
   const callbackUrl = sanitizeCallbackUrl(searchParams.get('callbackUrl'));
 
-  // The pages hide the button unless NEXT_PUBLIC_GOOGLE_SIGNIN is set; a direct
+  // The pages hide the button unless both credentials are set; a direct
   // request to an instance without Google gets a plain answer.
   if (!process.env.GOOGLE_CLIENT_ID) {
     return NextResponse.json({ error: 'Google sign in is not configured' }, { status: 404 });

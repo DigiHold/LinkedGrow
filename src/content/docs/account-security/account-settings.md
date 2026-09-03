@@ -30,7 +30,7 @@ The standard login method. You sign in with your email address and a password yo
 
 ### Google sign in
 
-Sign in with your Google account when the administrator has configured it (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `NEXT_PUBLIC_GOOGLE_SIGNIN=1` in the instance's `.env`). Google sign in only reads your name and email address, and the instance never touches your Google Drive, contacts or other data.
+Sign in with your Google account when the administrator has configured it (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the instance's `.env`). Google sign in only reads your name and email address, and the instance never touches your Google Drive, contacts or other data.
 
 ### Using Multiple Login Methods
 

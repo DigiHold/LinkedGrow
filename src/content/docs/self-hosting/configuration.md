@@ -31,9 +31,8 @@ These all have working defaults, and most installs touch 2 or 3 of them at most.
 | `APP_BIND` | `127.0.0.1` | Which address the app's port is published on. The loopback address keeps it behind a proxy on the same machine, and `0.0.0.0` opens it to the network |
 | `APP_PORT` | `3000` | The port on the host the app is published on. Inside the container it is always 3000 |
 | `WORKER_SLOTS` | `2` | How many LinkedIn browsers the worker may keep open at once. Read the [requirements](/docs/self-hosting/requirements) page before raising it |
-| `GOOGLE_CLIENT_ID` | empty | The OAuth client that makes Google sign in work at all. Without it the route answers 404 |
-| `GOOGLE_CLIENT_SECRET` | empty | The other half of that OAuth client |
-| `NEXT_PUBLIC_GOOGLE_SIGNIN` | empty | Set to `1` to show the Google button on the sign in and sign up pages. See the note below before you rely on it |
+| `GOOGLE_CLIENT_ID` | empty | Half of the OAuth client that turns Google sign in on. Without it the route answers 404 |
+| `GOOGLE_CLIENT_SECRET` | empty | The other half of that OAuth client. Set both and the button appears |
 | `CHROME_PATH` | empty | The browser binary the worker drives. Empty means Google Chrome, which exists on amd64 only, and the worker entrypoint fills it with `/usr/bin/chromium` on every other architecture |
 | `TURSO_DATABASE_URL` | set by compose | Where the database is. The compose file pins it to `http://db:8080`, and you would only change it to point at a database you run yourself |
 | `TURSO_AUTH_TOKEN` | set by compose | Empty inside the stack, because the database is reachable only from the other containers |
@@ -44,9 +43,9 @@ These all have working defaults, and most installs touch 2 or 3 of them at most.
 
 The last 6 are already set correctly by `docker-compose.yml` for a normal install. They are listed because they exist, and because a worker running outside the stack needs every one of them.
 
-## A note on the Google sign in switch
+## The Google sign in button
 
-`NEXT_PUBLIC_GOOGLE_SIGNIN` is read in the browser, which in Next.js means it is baked in when the image is built rather than read when the container starts. Setting it in `.env` therefore does nothing to a published image, and the button stays hidden. The sign in itself works: `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are read at runtime, and `/api/google/auth` accepts a request. To get the button, build the images yourself with the variable set, as described on the [install](/docs/self-hosting/install) page.
+Fill in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` and the button appears on the sign in and sign up pages of the published images, with nothing to rebuild. Both are read when the container starts, and the pages ask for them on every request rather than remembering an answer from build time. Leave either one empty and the button stays hidden, while `/api/google/auth` answers 404 to anyone who calls it directly. The OAuth client you create at Google needs `APP_URL` followed by `/api/google/callback` in its list of authorised redirect URIs.
 
 ## Everything else is in the instance settings
 
