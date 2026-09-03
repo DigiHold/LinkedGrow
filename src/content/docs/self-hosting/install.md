@@ -17,31 +17,21 @@ An assistant with shell access to the server can run the whole install on its ow
 
 ## Install with Docker Compose
 
-LinkedGrow is 3 containers and a compose file, so the install is the one every self hosted project uses. On a Linux host that already has Docker:
+LinkedGrow is 3 containers and a compose file, and the install is 3 lines with nothing to edit. On a Linux host that already has Docker:
 
 ```
 mkdir -p /opt/linkedgrow && cd /opt/linkedgrow
 curl -fsSLO https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/.env.example -o .env
-openssl rand -hex 32   # AUTH_SECRET
-openssl rand -hex 32   # ENCRYPTION_KEY
-docker compose pull && docker compose up -d
+docker compose up -d
 ```
 
-Before the last line, open `.env` and fill in 3 values. `APP_URL` is the address people will type in their browser: `http://localhost:3000` for a first try, `https://linkedgrow.example.com` behind a reverse proxy. `AUTH_SECRET` signs the sessions the app hands out. `ENCRYPTION_KEY` encrypts every stored credential and must be exactly 64 hex characters, which is what `openssl rand -hex 32` prints. Never change it after the first start, because everything encrypted with the old value becomes unreadable. The app refuses to start while either secret is still the placeholder.
+Open `http://<your server address>:3000` when it comes up. There is no file to write before that last line and no secret to generate.
 
-To let the stack serve https itself, download the Caddy configuration next to the compose file and set 2 more lines in `.env`:
+The first start writes the 2 secrets itself. `AUTH_SECRET` signs the sessions the app hands out and `ENCRYPTION_KEY` encrypts every stored credential, and both are 64 hex characters generated in the container and saved to `/data/config/secrets.env` inside the `config` volume, readable by the app user alone. The worker reads the same file, which is how the 2 sides hold the same key. Every later start reads what is already there and generates nothing. That volume belongs in your [backups](/docs/self-hosting/backups): a database restored beside a different `ENCRYPTION_KEY` is unreadable, and there is no way to recover it.
 
-```
-curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker/Caddyfile -o Caddyfile
-```
+The address is not configuration either. The app answers with whatever address the request arrived on, so the same container serves `http://203.0.113.10:3000` today and `https://linkedgrow.example.com` the day you put a proxy in front, and the wizard stores the address it should use in emails. To pin one anyway, or to change the port, see the [configuration](/docs/self-hosting/configuration) page. To serve https, see the [reverse proxy](/docs/self-hosting/reverse-proxy) page, which covers both the Caddy that ships with the stack and a proxy you already run.
 
-```
-DOMAIN=linkedgrow.example.com
-COMPOSE_PROFILES=https
-```
-
-`docker compose ps` then lists the 4 services. The app reports healthy once its migrations have run, and the worker waits for that before it starts.
+`docker compose ps` lists the 3 services once they are up. The app reports healthy only after its migrations have run, and the worker waits for that before it starts.
 
 ## Or one command
 
@@ -49,7 +39,7 @@ COMPOSE_PROFILES=https
 curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh | sh
 ```
 
-Run it as root on a fresh server. It asks one question, your domain, and does the rest on its own. It installs Docker when the command is missing, creates `/opt/linkedgrow`, generates `AUTH_SECRET` and `ENCRYPTION_KEY`, writes them into `.env` with the address people will open, reads the memory of the machine to pick `WORKER_SLOTS`, pulls the 3 images and starts everything. With a domain it also starts Caddy, which gets the certificate and renews it. Answer the question with an empty line to serve on the server address over plain http instead, on port 3000.
+Run it as root on a fresh server. It asks one question, your domain, and does the rest on its own. It installs Docker when the command is missing, creates `/opt/linkedgrow`, reads the memory of the machine to pick `WORKER_SLOTS`, pulls the 3 images and starts everything. With a domain it also starts Caddy, which gets the certificate and renews it. Answer the question with an empty line to serve on the server address over plain http instead, on port 3000. It writes no secret and no address, because the app takes care of both.
 
 Expect 2 or 3 minutes, most of it spent pulling the worker image, which carries a full Chrome. The last lines print the address to open.
 
@@ -65,7 +55,7 @@ The options, for a run that should not ask anything:
 | `--source` | Builds the images from the source instead of pulling them. |
 | `--yes` | Never asks anything, and needs `--domain` or `--no-domain`. |
 
-Running the installer again is safe. It keeps the `.env` it wrote, secrets included, and only rewrites the address lines when you pass a different domain.
+Running the installer again is safe. It keeps the `.env` it wrote and only rewrites the domain lines when you pass a different domain, and the secrets on the `config` volume are never touched by it at all.
 
 ## Build from source
 
@@ -73,17 +63,14 @@ Building on the server takes about 10 minutes and needs 8 GB of RAM to be comfor
 
 ```
 git clone https://github.com/DigiHold/LinkedGrow.git /opt/linkedgrow && cd /opt/linkedgrow
-cp .env.example .env
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
-Fill in the same 3 values before the last line as you would for a manual install, because a copied `.env.example` still says `change-me` and the app refuses to start on it.
-
-The override replaces the 2 published images with a build of this checkout, and everything else in the compose file stays the same. `./install.sh --source` does all of it from the clone, secrets included.
+Nothing to fill in here either. The override replaces the 2 published images with a build of this checkout, and everything else in the compose file stays the same. `./install.sh --source` does all of it from the clone.
 
 ## The first account
 
-Open `APP_URL` and create an account with an email and a password. The first account on an instance is the administrator, the only one that can run the wizard and change the instance settings later. Anyone who signs in before the wizard is finished sees a page saying that the instance is still being set up.
+Open the address the install printed and create an account with an email and a password. The first account on an instance is the administrator, the only one that can run the wizard and change the instance settings later. Anyone who signs in before the wizard is finished sees a page saying that the instance is still being set up.
 
 ## The wizard
 

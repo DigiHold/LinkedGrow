@@ -10,6 +10,7 @@ import {
   apiSuccessResponse,
 } from "@/lib/api-auth";
 import { uploadToR2, deleteFromR2, isR2Configured, absoluteMediaUrl } from "@/lib/storage/r2";
+import { requestAppUrl } from "@/lib/app-url-server";
 import { PLANS, PlanId } from "@/lib/plans";
 import { users } from "@/lib/db/schema";
 import sharp from "sharp";
@@ -22,7 +23,8 @@ const MAX_FIRST_COMMENT_LENGTH = 1250; // LinkedIn comment limit
 // Serialize a post with its media for API response
 function serializePost(
   post: typeof posts.$inferSelect,
-  postMedia: (typeof media.$inferSelect)[]
+  postMedia: (typeof media.$inferSelect)[],
+  base: string
 ) {
   return {
     id: post.id,
@@ -38,7 +40,7 @@ function serializePost(
     errorMessage: post.errorMessage,
     media: postMedia.map((m) => ({
       id: m.id,
-      storageUrl: absoluteMediaUrl(m.storageUrl),
+      storageUrl: absoluteMediaUrl(m.storageUrl, base),
       mimeType: m.mimeType,
       fileSize: m.fileSize,
       width: m.width,
@@ -148,7 +150,7 @@ export async function GET(
       .where(and(eq(media.postId, id), eq(media.status, "ready")))
       .orderBy(media.sortOrder);
 
-    return apiSuccessResponse(serializePost(post, postMedia));
+    return apiSuccessResponse(serializePost(post, postMedia, await requestAppUrl()));
   } catch (error) {
 return apiErrorResponse("Failed to fetch post", 500);
   }
@@ -383,7 +385,7 @@ export async function PATCH(
       .where(and(eq(media.postId, id), eq(media.status, "ready")))
       .orderBy(media.sortOrder);
 
-    return apiSuccessResponse(serializePost(updatedPost!, postMedia));
+    return apiSuccessResponse(serializePost(updatedPost!, postMedia, await requestAppUrl()));
   } catch (error) {
 return apiErrorResponse("Failed to update post", 500);
   }

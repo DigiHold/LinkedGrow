@@ -35,17 +35,17 @@ the address to open once it answers on its health check.
 
 It fetches that page, then runs the installer in the mode the page names, `--yes --domain yourdomain.com` or `--yes --no-domain`. The `--yes` is what makes the run ask nothing, and the installer refuses to run with it unless one of those 2 address options is present.
 
-From there the script installs Docker when the command is missing, creates `/opt/linkedgrow`, generates a fresh `AUTH_SECRET` and `ENCRYPTION_KEY` and writes them into a `.env` with mode 600, reads the memory of the machine to choose `WORKER_SLOTS`, pulls the app, worker and database images, starts everything, and waits up to 3 minutes for the app to answer its health check. With a domain it also starts Caddy, which fetches the certificate on its own. The whole run is 2 or 3 minutes on a normal connection, most of it spent pulling the worker image.
+From there the script installs Docker when the command is missing, creates `/opt/linkedgrow`, reads the memory of the machine to choose `WORKER_SLOTS`, pulls the app, worker and database images, starts everything, and waits up to 3 minutes for the app to answer its health check. It writes no secret and no address: the app generates its own signing and encryption keys on the first start and answers on whatever address the request came in on. With a domain it also starts Caddy, which fetches the certificate on its own. The whole run is 2 or 3 minutes on a normal connection, most of it spent pulling the worker image.
 
 ## What it must never do
 
-Write its own values for `AUTH_SECRET` or `ENCRYPTION_KEY`. The installer generates both, and an agent inventing them tends to invent something short.
+Write its own values for `AUTH_SECRET` or `ENCRYPTION_KEY`. The app generates both inside the container on its first start, and an agent inventing them tends to invent something short.
 
-Change `ENCRYPTION_KEY` after the first start. Every stored credential is encrypted with it and none of them survives a new value.
+Change `ENCRYPTION_KEY` after the first start. Every stored credential is encrypted with it and none of them survives a new value. It lives in the `config` volume, which is the one thing a backup must not miss.
 
-Put an AI key, a LinkedIn password or a proxy credential into `.env`. Those are yours, they belong in the wizard, and no key of the agent's own has any business on your server.
+Put an AI key, a LinkedIn password or a proxy credential into a `.env`. Those are yours, they belong in the wizard, and no key of the agent's own has any business on your server.
 
-Print the contents of `.env` into a chat or a log. The file exists, and that is all a transcript needs to say about it.
+Print the secrets file, or a `.env`, into a chat or a log. They exist, and that is all a transcript needs to say about them.
 
 Create the first account on the instance. Whoever creates it becomes the administrator, and that has to be a person rather than an assistant.
 

@@ -9,7 +9,7 @@ npm install
 cp .env.example .env.local
 ```
 
-In `.env.local`, add `TURSO_DATABASE_URL=file:linkedgrow.db` and set the 3 values the example asks for: `APP_URL` (`http://localhost:3000`), `AUTH_SECRET` and `ENCRYPTION_KEY`, each secret from `openssl rand -hex 32`. Then:
+In `.env.local`, add `TURSO_DATABASE_URL=file:linkedgrow.db`, plus `AUTH_SECRET` and `ENCRYPTION_KEY` from `openssl rand -hex 32` each. The container generates those 2 for itself, and `npm run dev` has no container to generate them in. Leave `APP_URL` out and the dev server answers on whatever address you open it at, which is what a self hosted instance does. Then:
 
 ```
 npm run db:migrate

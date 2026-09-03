@@ -16,10 +16,9 @@ import { TableOfContents } from "@/components/docs/table-of-contents";
 import { ArticleFeedback } from "@/components/docs/article-feedback";
 import { ProseContent } from "@/components/docs/prose-content";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
-import { getAppUrl } from "@/lib/app-url";
+import { requestAppUrl } from "@/lib/app-url-server";
 import { isCloud } from "@/lib/edition";
 
-const APP_URL = getAppUrl();
 // The default OG image lives on the cloud's R2 bucket.
 const CLOUD_OG_IMAGE = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp";
 
@@ -48,6 +47,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const APP_URL = await requestAppUrl();
 
   if (slug.length === 1) {
     const categories = getAllCategories();
@@ -114,10 +114,12 @@ function CategoryPage({
   category,
   articles,
   searchIndex,
+  APP_URL,
 }: {
   category: { slug: string; title: string; description: string; overview?: string[] };
   articles: { slug: string; title: string; description: string; order: number }[];
   searchIndex: { title: string; description: string; category: string; categoryTitle: string; slug: string }[];
+  APP_URL: string;
 }) {
   return (
     <>
@@ -194,6 +196,7 @@ function ArticlePage({
   nextArticle,
   sidebarArticles,
   searchIndex,
+  APP_URL,
 }: {
   article: {
     slug: string;
@@ -208,6 +211,7 @@ function ArticlePage({
   nextArticle: { slug: string; title: string; category: string } | null;
   sidebarArticles: { slug: string; title: string }[];
   searchIndex: { title: string; description: string; category: string; categoryTitle: string; slug: string }[];
+  APP_URL: string;
 }) {
   return (
     <>
@@ -325,6 +329,7 @@ function ArticlePage({
 
 export default async function DocsSlugPage({ params }: PageProps) {
   const { slug } = await params;
+  const APP_URL = await requestAppUrl();
   const allArticles = getAllArticleMetas();
   const searchIndex = allArticles.map((a) => ({
     title: a.title,
@@ -343,7 +348,7 @@ export default async function DocsSlugPage({ params }: PageProps) {
     const articles = getArticlesForCategory(slug[0]);
     if (articles.length === 0) notFound();
 
-    return <CategoryPage category={category} articles={articles} searchIndex={searchIndex} />;
+    return <CategoryPage category={category} articles={articles} searchIndex={searchIndex} APP_URL={APP_URL} />;
   }
 
   // Article page: /docs/[category]/[article]
@@ -363,6 +368,7 @@ export default async function DocsSlugPage({ params }: PageProps) {
         nextArticle={next}
         sidebarArticles={sidebarArticles}
         searchIndex={searchIndex}
+        APP_URL={APP_URL}
       />
     );
   }

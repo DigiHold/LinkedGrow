@@ -7,7 +7,7 @@ order: 1
 
 ## Reach your instance
 
-LinkedGrow runs on a server of yours, at the address whoever installed it set as `APP_URL`, or on the hosted service at linkedgrow.ai. The first account created on a self hosted instance is the administrator, and it lands on the setup wizard right after signing in: instance name and address, the AI key the agents run on, dedicated addresses, email, storage. The [self hosting](/docs/self-hosting/install) pages cover the installation and each step of the wizard.
+LinkedGrow runs on a server of yours, at the address whoever installed it gave you, or on the hosted service at linkedgrow.ai. The first account created on a self hosted instance is the administrator, and it lands on the setup wizard right after signing in: instance name and address, the AI key the agents run on, dedicated addresses, email, storage. The [self hosting](/docs/self-hosting/install) pages cover the installation and each step of the wizard.
 
 Everyone else creates an account with an email and a password, or with Google when the administrator switched it on. When sign ups are closed, which the wizard does by default, the administrator invites people from the Team page instead. Anyone who signs in before the wizard is finished sees a page saying the instance is still being set up.
 

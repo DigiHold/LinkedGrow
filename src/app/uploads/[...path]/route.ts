@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Readable } from "node:stream";
-import { getAppUrl } from "@/lib/app-url";
+import { requestAppUrl } from "@/lib/app-url-server";
 import { isCloud } from "@/lib/edition";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { contentTypeForKey, LocalStorage, storageRoot } from "@/lib/storage/local";
@@ -39,7 +39,7 @@ export async function GET(
 
     // The same resolve check the driver applies on write: a key that lands
     // outside the root is refused before the disk is touched.
-    const storage = new LocalStorage(storageRoot(), getAppUrl());
+    const storage = new LocalStorage(storageRoot(), await requestAppUrl());
     let file: { size: number; stream: Readable } | null;
     try {
       file = await storage.open(key);

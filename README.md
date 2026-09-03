@@ -41,31 +41,19 @@ Drop the domain from that prompt to serve on the server address over plain http 
 
 ### Docker Compose
 
-The install every self hosted project uses. On a Linux host that already has Docker:
+The install every self hosted project uses, and it is 3 lines with nothing to edit. On a Linux host that already has Docker:
 
 ```sh
 mkdir -p /opt/linkedgrow && cd /opt/linkedgrow
 curl -fsSLO https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/.env.example -o .env
-docker compose pull && docker compose up -d
+docker compose up -d
 ```
 
-Open `.env` before that last line and fill in 3 values. `APP_URL` is the address people will type in their browser. `AUTH_SECRET` signs the sessions, and `ENCRYPTION_KEY` encrypts every stored credential; each takes one output of `openssl rand -hex 32`. Keep `ENCRYPTION_KEY` somewhere safe and never change it after the first start, because everything encrypted with the old value becomes unreadable.
-
-To let the stack serve https itself, take the Caddy configuration too and set 2 more lines in `.env`:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker/Caddyfile -o Caddyfile
-```
-
-```sh
-DOMAIN=linkedgrow.example.com
-COMPOSE_PROFILES=https
-```
+When it comes up, open `http://<your server address>:3000` in a browser. There is no `.env` to write, no secret to generate and no address to declare. The app generates its own signing and encryption secrets on the first start and keeps them in a Docker volume, it answers on whatever address you opened, and the wizard at first login asks for everything else. To pin a version, change the port or run https, see [configuration](src/content/docs/self-hosting/configuration.md) and [reverse proxy](src/content/docs/self-hosting/reverse-proxy.md).
 
 ### One command
 
-The script runs exactly those commands and adds what a bare server needs: it installs Docker when the command is missing, generates both secrets, sizes `WORKER_SLOTS` from the memory of the machine, writes the `.env` readable only by its owner, starts Caddy when you give it a domain, and waits for the health check before printing the address.
+The script runs exactly those commands and adds what a bare server needs: it installs Docker when the command is missing, sizes `WORKER_SLOTS` from the memory of the machine, starts Caddy for https when you give it a domain, and waits for the health check before printing the address.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh | sh
@@ -90,7 +78,7 @@ The first start pulls about 4 GB, most of it the browser the worker drives. Open
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
-It replaces the 2 published images with a build of the working tree and leaves everything else alone. Local development, tests and the database rules live in [CONTRIBUTING.md](CONTRIBUTING.md).
+It replaces the 2 published images with a build of the working tree and leaves everything else alone, secrets and address included. Local development, tests and the database rules live in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 </details>
 
@@ -122,9 +110,9 @@ The carousel editor ships 25 preset templates across 6 styles, with text, shapes
 | Service | What it is |
 | --- | --- |
 | `app` | The Next.js dashboard and API on port 3000. It runs the migrations at boot and serves uploads from the `uploads` volume. |
-| `worker` | A Node 24 process driving one Chrome per LinkedIn account under Xvfb. `WORKER_SLOTS` in `.env` sets how many run at once. |
+| `worker` | A Node 24 process driving one Chrome per LinkedIn account under Xvfb. `WORKER_SLOTS` sets how many run at once, and it defaults to 2. |
 | `db` | A libSQL server with its data in `db-data`, reached at `http://db:8080` inside the stack, with no published port. |
-| `caddy` | Optional. With a domain in `.env` it takes ports 80 and 443, gets the certificate and forwards to the app. |
+| `caddy` | Optional, off unless you ask for it. With a domain it takes ports 80 and 443, gets the certificate and forwards to the app. |
 
 ## Requirements
 
@@ -137,9 +125,9 @@ The carousel editor ships 25 preset templates across 6 styles, with text, shapes
 
 ## Running it
 
-`cd /opt/linkedgrow && ./install.sh update` pulls the current images and restarts the stack, which is what `docker compose pull && docker compose up -d` does by hand. Database migrations run when the app starts, and setting `LINKEDGROW_VERSION=v1.0.0` in `.env` pins a release instead of following the main branch. The [updating page](src/content/docs/self-hosting/updating.md) covers the tags and the rollbacks.
+`cd /opt/linkedgrow && ./install.sh update` pulls the current images and restarts the stack, which is what `docker compose pull && docker compose up -d` does by hand. Database migrations run when the app starts, and setting `LINKEDGROW_VERSION=v1.0.0` in a `.env` next to the compose file pins a release instead of following the main branch. The [updating page](src/content/docs/self-hosting/updating.md) covers the tags and the rollbacks.
 
-Three volumes hold everything: `db-data` for the database, `uploads` for files, and `profiles` for the signed in browser sessions. Back them up together with the `.env` next to them, because a database restored beside a different `ENCRYPTION_KEY` is unreadable. The [backups page](src/content/docs/self-hosting/backups.md) has the archive and restore commands, and the [reverse proxy page](src/content/docs/self-hosting/reverse-proxy.md) has the nginx and Caddy blocks for a proxy you already run.
+Four volumes hold everything: `db-data` for the database, `uploads` for files, `profiles` for the signed in browser sessions, and `config` for the 2 secrets the app generated on its first start. Back up all 4 together, because a database restored beside a different `ENCRYPTION_KEY` is unreadable and that key lives in `config`. The [backups page](src/content/docs/self-hosting/backups.md) has the archive and restore commands, and the [reverse proxy page](src/content/docs/self-hosting/reverse-proxy.md) has the nginx and Caddy blocks, both for the bundled Caddy and for a proxy you already run.
 
 Google Chrome ships for amd64 only on Linux, so on arm64 the worker image falls back to Chromium, which LinkedIn can tell apart from Chrome more easily. Release tags carry an arm64 image and `latest` does not, so an arm64 host runs a release tag or builds from source. Treat it as a way to try the product and run production on amd64. When something refuses to start, the [troubleshooting page](src/content/docs/self-hosting/troubleshooting.md) lists what the logs say and what to do about it.
 

@@ -1,3 +1,11 @@
+# LinkedGrow, self hosted. This file is the whole install:
+#
+#   docker compose up -d
+#
+# No .env, no secret to generate, no address to declare. The app writes its own
+# secrets on the first start and answers on whatever address you open. Every
+# other setting lives in the wizard at first login. The variables below are for
+# people who want them, and each one already has the right default.
 services:
   db:
     image: ghcr.io/tursodatabase/libsql-server:latest
@@ -11,18 +19,27 @@ services:
   app:
     image: ghcr.io/digihold/linkedgrow:${LINKEDGROW_VERSION:-latest}
     restart: unless-stopped
-    # Bound to the loopback address by default, so only the reverse proxy on this
-    # machine reaches it. APP_BIND=0.0.0.0 in .env opens the port to the network.
+    # Published on every address of the machine, because a first install has no
+    # reverse proxy in front of it. APP_BIND=127.0.0.1 puts it back behind one.
     ports:
-      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
-    env_file: .env
+      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:3000"
+    # Optional. Compose reads the file when it is there and says nothing when
+    # it is not, so an empty directory holding this file alone still starts.
+    env_file:
+      - path: .env
+        required: false
     environment:
       TURSO_DATABASE_URL: http://db:8080
       TURSO_AUTH_TOKEN: ""
       LINKEDGROW_EDITION: self-hosted
       STORAGE_ROOT: /data/uploads
+      CONFIG_DIR: /data/config
     volumes:
       - uploads:/data/uploads
+      # AUTH_SECRET and ENCRYPTION_KEY, generated here on the first start and
+      # read by the worker. Back it up with the database: without it every
+      # stored LinkedIn password, 2FA secret and API key is unreadable.
+      - config:/data/config
     depends_on:
       - db
     healthcheck:
@@ -35,7 +52,9 @@ services:
   worker:
     image: ghcr.io/digihold/linkedgrow-worker:${LINKEDGROW_VERSION:-latest}
     restart: unless-stopped
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       TURSO_DATABASE_URL: http://db:8080
       TURSO_AUTH_TOKEN: ""
@@ -43,16 +62,21 @@ services:
       WORKER_ENV: production
       APP_INTERNAL_URL: http://app:3000
       WORKER_SLOTS: ${WORKER_SLOTS:-2}
+      CONFIG_DIR: /data/config
     shm_size: "2gb"
     volumes:
       - profiles:/data/profiles
       - uploads:/data/uploads
+      # Read only: the app owns this file and always starts first, because this
+      # container waits for the app's health check before it runs.
+      - config:/data/config:ro
     depends_on:
       app:
         condition: service_healthy
 
-  # Runs only with COMPOSE_PROFILES=https in .env, which the installer sets when
-  # you give it a domain. It gets the certificate and renews it on its own.
+  # Runs only with COMPOSE_PROFILES=https, and then it needs DOMAIN and the
+  # Caddyfile next to this file. The reverse proxy page of the documentation
+  # has the commands. Nothing about the plain install needs it.
   caddy:
     image: caddy:2
     restart: unless-stopped
@@ -73,5 +97,6 @@ volumes:
   db-data:
   uploads:
   profiles:
+  config:
   caddy-data:
   caddy-config:

@@ -40,7 +40,7 @@ A LinkedGrow install is 4 containers on one machine, and only 2 of them do anyth
 
 The Next.js application, published on port 3000, and the only container with a port you reach. It serves the dashboard, the API, the docs you are reading and the files under `/uploads` when storage is the local disk.
 
-Its entrypoint runs before the server does, and it refuses to start on a bad configuration rather than starting badly. It checks that `AUTH_SECRET` is no longer the placeholder, that `ENCRYPTION_KEY` is exactly 64 hex characters, that `APP_URL` is set and that the uploads directory is writable. Then it applies every database migration the database has not recorded yet, and only then does it listen. Compose watches `/api/health` and calls the container healthy once that answers, which gives the migrations up to 90 seconds before anything starts counting failures.
+Its entrypoint runs before the server does. It reads `AUTH_SECRET` and `ENCRYPTION_KEY` from `secrets.env` on the `config` volume, generating both and writing that file the first time nothing is there, and it takes a value from the environment over the file when one is given. Then it checks that the uploads directory is writable, and it refuses to start on an `ENCRYPTION_KEY` that is set and is not 64 hex characters rather than replacing it with a generated one. After that it applies every database migration the database has not recorded yet, and only then does it listen. Compose watches `/api/health` and calls the container healthy once that answers, which gives the migrations up to 90 seconds before anything starts counting failures.
 
 ## worker
 
@@ -58,7 +58,7 @@ Migrations are numbered SQL files inside the app image, applied at boot and reco
 
 ## caddy
 
-Only present when `COMPOSE_PROFILES=https` is in `.env`, which is what the installer writes when you give it a domain. It takes ports 80 and 443, reads your domain from `DOMAIN`, gets the certificate from Let's Encrypt, renews it on its own and forwards everything to the app over the internal network. Its whole configuration is the 4 line `Caddyfile` next to the compose file. Leave the profile empty when you already run a proxy of your own, and the container never starts.
+Only present when `COMPOSE_PROFILES=https` is set, which is what the installer writes when you give it a domain. It takes ports 80 and 443, reads your domain from `DOMAIN`, gets the certificate from Let's Encrypt, renews it on its own and forwards everything to the app over the internal network. Its whole configuration is the 4 line `Caddyfile` next to the compose file. Leave the profile empty when you already run a proxy of your own, and the container never starts.
 
 ## The app queues, the worker acts
 
@@ -72,9 +72,11 @@ The database is the first shared thing, and it is how the app and the worker tal
 
 The `profiles` volume belongs to the worker alone. One directory per LinkedIn account holds that account's signed in Chrome profile, which is what keeps a session alive between passes instead of signing in again every time.
 
+The `config` volume is the third, and the smallest. It holds one file, `secrets.env`, written by the app on its first start with mode 600 and mounted read only by the worker. Compose starts the worker only once the app answers its health check, so the file is always there by the time the worker looks for it.
+
 ## Where the credentials live
 
-Every credential stored in the database is encrypted with `ENCRYPTION_KEY` from `.env`: the LinkedIn passwords, the LinkedIn 2FA secrets, the AI key the agents run on, the proxy supplier key, the email password, the S3 keys, the AI keys individual users add for their own writing, and the shared secret the worker signs its scheduled calls with. The one value that is not a credential and is not encrypted is the TOTP secret behind two factor on a LinkedGrow account, which sits in the users table as plain text, so a stolen copy of the database is enough to generate codes for an account that uses it. The app and the worker both read that one `.env` through `env_file`, so the 2 sides always hold the same key.
+Every credential stored in the database is encrypted with `ENCRYPTION_KEY` from the `config` volume: the LinkedIn passwords, the LinkedIn 2FA secrets, the AI key the agents run on, the proxy supplier key, the email password, the S3 keys, the AI keys individual users add for their own writing, and the shared secret the worker signs its scheduled calls with. The one value that is not a credential and is not encrypted is the TOTP secret behind two factor on a LinkedGrow account, which sits in the users table as plain text, so a stolen copy of the database is enough to generate codes for an account that uses it. The app and the worker mount that one volume, the worker read only, so the 2 sides always hold the same key.
 
 Change it after the first start and none of that is readable again, by anybody, ever. There is no recovery path and no second copy. It is the one line of your configuration that deserves a backup somewhere the server is not.
 

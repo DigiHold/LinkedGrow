@@ -23,7 +23,7 @@ COPY worker .
 COPY docker/entrypoint-worker.sh /app/entrypoint.sh
 # The same fixed uid and gid as the app image, for the shared uploads volume.
 RUN chmod +x /app/entrypoint.sh && groupadd -g 10001 linkedgrow && useradd -u 10001 -g linkedgrow -m -d /home/linkedgrow linkedgrow \
-    && mkdir -p /data/profiles /data/uploads && chown -R linkedgrow:linkedgrow /app /data
+    && mkdir -p /data/profiles /data/uploads /data/config && chown -R linkedgrow:linkedgrow /app /data
 USER linkedgrow
-ENV DISPLAY=:99 SCREEN_SIZE=1920x1080 PROFILE_ROOT=/data/profiles STORAGE_ROOT=/data/uploads HOME=/home/linkedgrow WORKER_ENV=production LINKEDGROW_EDITION=self-hosted
+ENV DISPLAY=:99 SCREEN_SIZE=1920x1080 PROFILE_ROOT=/data/profiles STORAGE_ROOT=/data/uploads CONFIG_DIR=/data/config HOME=/home/linkedgrow WORKER_ENV=production LINKEDGROW_EDITION=self-hosted
 ENTRYPOINT ["/app/entrypoint.sh"]

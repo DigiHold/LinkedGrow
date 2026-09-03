@@ -12,6 +12,14 @@ The person also needs an AI key from Anthropic, OpenAI, Google, Grok or Kimi, an
 
 ## The command
 
+The shortest install is 3 lines of Docker Compose with no file to edit, and the script below is that plus what a bare server needs. Use the script unless the person asked for the compose route:
+
+```
+mkdir -p /opt/linkedgrow && cd /opt/linkedgrow
+curl -fsSLO https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker-compose.yml
+docker compose up -d
+```
+
 With a domain, over https:
 
 ```
@@ -43,7 +51,7 @@ In this order, stopping at the first failure:
 
 1. Installs Docker from get.docker.com when the `docker` command is missing, on an apt or dnf based distribution only.
 2. Creates the stack folder, `/opt/linkedgrow` unless `--dir` says otherwise, and puts `docker-compose.yml`, the `Caddyfile` and a copy of `install.sh` in it.
-3. Writes `.env` with mode 600, holding a fresh `AUTH_SECRET` and `ENCRYPTION_KEY`, the address the app answers on, and a `WORKER_SLOTS` it chose by reading the memory of the machine: 2 below 8 GB, 4 at 8 GB, 8 at 16 GB. An `.env` that already exists is kept as it is.
+3. Writes `.env` with mode 600, holding the domain when one was given and a `WORKER_SLOTS` it chose by reading the memory of the machine: 2 below 8 GB, 4 at 8 GB, 8 at 16 GB. No secret and no address go in it. An `.env` that already exists is kept as it is.
 4. Warns, without stopping, when the domain resolves somewhere other than this server, because Caddy cannot get a certificate until the A record is right.
 5. Pulls the app, worker and database images and starts the containers, plus Caddy when a domain was given.
 6. Polls `/api/health` for up to 3 minutes, then prints the address to open. If the app never answers it prints the last 50 lines of the app log and stops with the stack still running.
@@ -60,13 +68,15 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/api/health
 
 ## What you must not do
 
-Never write your own values for `AUTH_SECRET` and `ENCRYPTION_KEY`. The installer generates both and writes them into `.env`, where the app reads them.
+Never write your own values for `AUTH_SECRET` and `ENCRYPTION_KEY`. The app generates both inside the container on its first start and keeps them in `/data/config/secrets.env` on the `config` volume, which the worker reads too.
 
-Never change `ENCRYPTION_KEY` after the first start. Every stored credential is encrypted with it, and a new value makes all of them unreadable for good, with no way back.
+Never change `ENCRYPTION_KEY` after the first start. Every stored credential is encrypted with it, and a new value makes all of them unreadable for good, with no way back. Tell the person that the `config` volume has to be in their backups for the same reason.
 
-Never put an AI key, a LinkedIn password or a proxy credential of your own into `.env`. Those belong to the person, and they enter them in the wizard.
+Never set an `APP_URL` of your own for them. The app answers on whatever address the request arrived on, so the same install works on the server address today and behind a domain tomorrow. The person confirms the address in the wizard.
 
-Never print the contents of `.env` into a chat or a log. Say that the file exists and move on.
+Never put an AI key, a LinkedIn password or a proxy credential of your own into a `.env`. Those belong to the person, and they enter them in the wizard.
+
+Never print the secrets file, or a `.env`, into a chat or a log. Say that they exist and move on.
 
 Never create the first account yourself. The first account created on the instance becomes its administrator, and that has to be the person, not you.
 
@@ -76,13 +86,13 @@ The person opens the address the installer printed and creates an account with a
 
 ## Update and uninstall
 
-The update pulls the current images and restarts the stack, keeping `.env` and the 3 volumes:
+The update pulls the current images and restarts the stack, keeping every volume:
 
 ```
 cd /opt/linkedgrow && ./install.sh update
 ```
 
-The uninstall removes the containers and every volume, which deletes the database, the uploaded files and the signed in browser profiles. Ask the person before you run it:
+The uninstall removes the containers and every volume, which deletes the database, the uploaded files, the signed in browser profiles and the encryption key that makes the database readable. Ask the person before you run it:
 
 ```
 cd /opt/linkedgrow && docker compose down -v && rm -rf /opt/linkedgrow

@@ -32,7 +32,7 @@ export {
 
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";
-import { getAppUrl } from "@/lib/app-url";
+import { backgroundAppUrl } from "@/lib/app-url-server";
 import { instanceBrandName } from "./brand-name";
 import {
   resetPasswordEmailTemplate,
@@ -62,7 +62,7 @@ export async function sendPasswordResetEmail({
   name,
   resetToken,
 }: SendPasswordResetEmailParams) {
-  const resetUrl = `${getAppUrl()}/reset-password?token=${resetToken}`;
+  const resetUrl = `${await backgroundAppUrl()}/reset-password?token=${resetToken}`;
 
   const instanceName = await instanceBrandName();
   return sendEmail({
@@ -88,7 +88,7 @@ export async function sendTeamInviteEmail({
   role,
   inviteToken,
 }: SendTeamInviteEmailParams) {
-  const inviteUrl = `${getAppUrl()}/team/invite?token=${inviteToken}`;
+  const inviteUrl = `${await backgroundAppUrl()}/team/invite?token=${inviteToken}`;
 
   const instanceName = await instanceBrandName();
   return sendEmail({
@@ -112,7 +112,7 @@ export async function sendNetworkNotificationInviteEmail({
   groupName,
   inviteToken,
 }: SendNetworkNotificationInviteEmailParams) {
-  const inviteUrl = `${getAppUrl()}/network-notifications/invite?token=${inviteToken}`;
+  const inviteUrl = `${await backgroundAppUrl()}/network-notifications/invite?token=${inviteToken}`;
 
   const instanceName = await instanceBrandName();
   return sendEmail({

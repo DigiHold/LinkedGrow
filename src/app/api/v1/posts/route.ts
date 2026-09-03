@@ -10,6 +10,7 @@ import {
   apiSuccessResponse,
 } from "@/lib/api-auth";
 import { uploadToR2, isR2Configured, absoluteMediaUrl } from "@/lib/storage/r2";
+import { requestAppUrl } from "@/lib/app-url-server";
 import { PLANS, effectivePlan } from "@/lib/plans";
 import { users } from "@/lib/db/schema";
 import sharp from "sharp";
@@ -22,7 +23,8 @@ const MAX_FIRST_COMMENT_LENGTH = 1250; // LinkedIn comment limit
 // Serialize a post with its media for API response
 function serializePost(
   post: typeof posts.$inferSelect,
-  postMedia: (typeof media.$inferSelect)[]
+  postMedia: (typeof media.$inferSelect)[],
+  base: string
 ) {
   return {
     id: post.id,
@@ -38,7 +40,7 @@ function serializePost(
     metadata: post.metadata ? JSON.parse(post.metadata) : null,
     media: postMedia.map((m) => ({
       id: m.id,
-      storageUrl: absoluteMediaUrl(m.storageUrl),
+      storageUrl: absoluteMediaUrl(m.storageUrl, base),
       mimeType: m.mimeType,
       fileSize: m.fileSize,
       width: m.width,
@@ -176,9 +178,10 @@ export async function GET(request: NextRequest) {
           .orderBy(media.sortOrder)
       : [];
 
+    const base = await requestAppUrl();
     return apiSuccessResponse({
       posts: userPosts.map((post) =>
-        serializePost(post, postMedia.filter((m) => m.postId === post.id))
+        serializePost(post, postMedia.filter((m) => m.postId === post.id), base)
       ),
       pagination: {
         total: allPosts.length,
@@ -433,7 +436,7 @@ export async function POST(request: NextRequest) {
       where: eq(posts.id, postId),
     });
 
-    return apiSuccessResponse(serializePost(newPost!, postMediaRecords), 201);
+    return apiSuccessResponse(serializePost(newPost!, postMediaRecords, await requestAppUrl()), 201);
   } catch (error) {
 return apiErrorResponse("Failed to create post", 500);
   }
