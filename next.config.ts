@@ -124,8 +124,9 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // The pages a signed out visitor reaches, and no others - CDN cache 1 hour, stale-while-revalidate
-        source: "/:path(sign-in|sign-up|docs|docs/.*)",
+        // The documentation, the only pages that are the same for every visitor.
+        // The sign in and sign up pages read their configuration at request time.
+        source: "/:path(docs|docs/.*)",
         headers: [
           {
             key: "Cache-Control",

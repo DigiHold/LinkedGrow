@@ -238,7 +238,7 @@ const imageProviders = [
   {
     id: "replicate",
     name: "Replicate",
-    description: "FLUX.2 Pro, FLUX.2 Pro, FLUX Schnell",
+    description: "FLUX.2 Max, FLUX.2 Pro, FLUX Schnell",
     placeholder: "r8_...",
     icon: ReplicateIcon,
     apiKeyUrl: "https://replicate.com/account/api-tokens",
@@ -249,7 +249,7 @@ const imageProviders = [
     hasAspectRatio: true,
     hasGuidanceScale: true,
     models: [
-      { id: "flux-2-max", name: "FLUX.2 Pro", tag: "Highest Fidelity" },
+      { id: "flux-2-max", name: "FLUX.2 Max", tag: "Highest Fidelity" },
       { id: "flux-2-pro", name: "FLUX.2 Pro", tag: "Best Quality + 8 refs" },
       { id: "flux-2-flex", name: "FLUX.2 Flex", tag: "Typography + 10 refs" },
       { id: "flux-2-dev", name: "FLUX.2 Dev", tag: "Standard + refs" },
