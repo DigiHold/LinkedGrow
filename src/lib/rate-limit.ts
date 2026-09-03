@@ -85,6 +85,16 @@ export const AUTH_RATE_LIMITS = {
     maxRequests: 10,
     windowMs: 60 * 60 * 1000,
   },
+  /**
+   * Google sign in: 20 in a quarter of an hour per address, on the route that
+   * asks for the redirect and on the callback that comes back, each counted on
+   * its own key. Well above a person retrying a blocked popup, well below a
+   * script minting state cookies in a loop.
+   */
+  googleOAuth: {
+    maxRequests: 20,
+    windowMs: 15 * 60 * 1000,
+  },
   // Login: 5 attempts per 15 minutes per IP
   login: {
     maxRequests: 5,

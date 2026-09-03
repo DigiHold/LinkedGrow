@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleAuthUrl, isGoogleConfigured } from '@/lib/google';
 import { randomBytes } from 'crypto';
 import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
-import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { rateLimit, getClientIP, AUTH_RATE_LIMITS } from '@/lib/rate-limit';
 
 function sanitizeCallbackUrl(url: string | null): string | null {
   if (!url) return null;
@@ -11,20 +11,49 @@ function sanitizeCallbackUrl(url: string | null): string | null {
   return url;
 }
 
-export async function GET(request: NextRequest) {
-  // Public by design: anyone may ask for the redirect to Google. 20 in a quarter
-  // of an hour per address sits well above a person retrying a blocked popup,
-  // and well below a script minting state cookies in a loop.
-  const limit = rateLimit(`google-auth:${getClientIP(request)}`, { maxRequests: 20, windowMs: 15 * 60 * 1000 });
-  if (!limit.success) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-  }
+/**
+ * A popup has no page to read: whatever comes back runs a script or the opener
+ * sits on its spinner until the user closes the window. Every refusal on this
+ * route goes home the same way.
+ */
+function popupErrorResponse(message: string, status: number, headers: Record<string, string> = {}) {
+  const appOrigin = getAppUrl();
+  return new NextResponse(
+    `<!DOCTYPE html>
+    <html>
+      <head><title>Google Login Error</title></head>
+      <body>
+        <script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'google-error', error: ${JSON.stringify(message)} }, '${appOrigin}');
+            window.close();
+          } else {
+            document.body.textContent = ${JSON.stringify(message)};
+          }
+        </script>
+      </body>
+    </html>`,
+    { status, headers: { 'Content-Type': 'text/html', ...headers } }
+  );
+}
 
+export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const mode = searchParams.get('mode') || 'login'; // 'login' or 'register'
   const newsletter = searchParams.get('newsletter') === 'true';
   const popup = searchParams.get('popup') === 'true';
   const callbackUrl = sanitizeCallbackUrl(searchParams.get('callbackUrl'));
+
+  // Public by design: anyone may ask for the redirect to Google.
+  const limit = rateLimit(`google-auth:${getClientIP(request)}`, AUTH_RATE_LIMITS.googleOAuth);
+  if (!limit.success) {
+    const message = 'Too many sign in attempts. Please try again later.';
+    const retryAfter = String(Math.ceil((limit.resetAt - Date.now()) / 1000));
+    if (popup) {
+      return popupErrorResponse(message, 429, { 'Retry-After': retryAfter });
+    }
+    return NextResponse.json({ error: message }, { status: 429, headers: { 'Retry-After': retryAfter } });
+  }
 
   // The pages hide the button unless both credentials are set; a direct
   // request to an instance without Google gets a plain answer.
@@ -36,24 +65,7 @@ export async function GET(request: NextRequest) {
   if (!isGoogleConfigured()) {
     const errorMessage = 'Google login is not configured';
     if (popup) {
-      const appOrigin = getAppUrl();
-      return new NextResponse(
-        `<!DOCTYPE html>
-        <html>
-          <head><title>Google Login Error</title></head>
-          <body>
-            <script>
-              if (window.opener) {
-                window.opener.postMessage({ type: 'google-error', error: '${errorMessage}' }, '${appOrigin}');
-                window.close();
-              } else {
-                document.body.textContent = '${errorMessage}';
-              }
-            </script>
-          </body>
-        </html>`,
-        { headers: { 'Content-Type': 'text/html' } }
-      );
+      return popupErrorResponse(errorMessage, 200);
     }
     return NextResponse.redirect(
       `${getAppUrl()}/sign-in?error=${encodeURIComponent(errorMessage)}`
