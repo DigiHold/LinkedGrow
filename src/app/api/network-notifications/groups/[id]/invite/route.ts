@@ -65,8 +65,9 @@ export async function POST(
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Enforce member limits based on plan
-    const memberLimit = userPlan === "business" ? 20 : 10; // Pro = 10, Business = 20
+    // The cap on one group. Self hosted accounts are all created on business,
+    // so 20 is the number every instance you run yourself actually enforces.
+    const memberLimit = userPlan === "business" ? 20 : 10;
     const [memberCountResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(networkNotificationMembers)
@@ -81,7 +82,7 @@ export async function POST(
     if (currentMemberCount >= memberLimit) {
       return NextResponse.json(
         {
-          error: `This group has reached the maximum of ${memberLimit} members for the ${userPlan === "business" ? "Business" : "Pro"} plan`,
+          error: `This group has reached its maximum of ${memberLimit} members`,
         },
         { status: 400 }
       );
