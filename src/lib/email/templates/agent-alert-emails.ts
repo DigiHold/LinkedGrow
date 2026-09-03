@@ -1,5 +1,4 @@
 import { baseEmailTemplate } from "./base-template";
-import { getAppUrl } from "@/lib/app-url";
 import { p, lead, small, button, quote, personRow, figures } from "./parts";
 
 /**
@@ -16,8 +15,6 @@ import { p, lead, small, button, quote, personRow, figures } from "./parts";
  * person, opens drop 8 to 12% per extra send. So urgency is spent only on the
  * three that genuinely cannot wait.
  */
-
-const APP = getAppUrl();
 
 export type Lead = {
   name: string;
@@ -37,6 +34,8 @@ export const leadsDigestSubject = (count: number) =>
   count === 1 ? "\u{1F3AF} 1 new lead this week" : `\u{1F3AF} ${count} new leads, all scored`;
 
 export function leadsDigestEmailTemplate(params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   count: number;
   best: Lead[];
@@ -53,7 +52,7 @@ ${p(`Hello ${firstName},`)}
 ${lead(`Your agent found ${count} ${count === 1 ? "person" : "people"} this week and scored every one of them against the audience you described.`)}
 ${best.length ? p("The strongest of them:") : ""}
 ${best.map((b) => personRow(b.name, b.title, b.why, b.score)).join("")}
-${button(`${APP}/dashboard/agents/${agentId}`, "See all of them")}
+${button(`${params.app}/dashboard/agents/${agentId}`, "See all of them")}
 ${
   queuedNext > 0
     ? p(
@@ -66,6 +65,8 @@ ${
 }
 
 export const leadsDigestEmailText = (params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   count: number;
   best: Lead[];
@@ -77,13 +78,15 @@ Your agent found ${params.count} people this week and scored every one against t
 
 ${params.best.map((b) => `${b.name} (${b.score ?? "unscored"}) - ${b.title}. ${b.why}`).join("\n")}
 
-See all of them: ${APP}/dashboard/agents/${params.agentId}`;
+See all of them: ${params.app}/dashboard/agents/${params.agentId}`;
 
 // ---------------------------------------------------------- verification needed
 
 export const verificationSubject = "Your LinkedIn needs 2 minutes";
 
 export function verificationEmailTemplate(params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   accountName: string;
   agentId: string;
@@ -98,13 +101,15 @@ ${p(`Hello ${firstName},`)}
 ${lead(`LinkedIn asked ${accountName} to verify itself, so your agent has stopped until that is answered.`)}
 ${p("Nothing was lost while it waited and nobody was contacted. Your leads and your conversations are exactly where you left them.")}
 ${p("Open LinkedIn, answer what it asks, then press Start on your agent. It signs itself back in within seconds and carries on.")}
-${button(`${APP}/dashboard/agents/${agentId}`, "Open my agent")}
+${button(`${params.app}/dashboard/agents/${agentId}`, "Open my agent")}
 ${small("This happens to accounts that have been quiet for a while and then start reaching out. It is a check rather than a penalty, and it clears the moment you answer it.")}
 `,
   });
 }
 
 export const verificationEmailText = (params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   accountName: string;
   agentId: string;
@@ -115,13 +120,15 @@ LinkedIn asked ${params.accountName} to verify itself, so your agent has stopped
 
 Open LinkedIn, answer what it asks, then press Start on your agent. It signs itself back in within seconds.
 
-${APP}/dashboard/agents/${params.agentId}`;
+${params.app}/dashboard/agents/${params.agentId}`;
 
 // ------------------------------------------------------------------ agent stopped
 
 export const agentStoppedSubject = "Your agent stopped";
 
 export function agentStoppedEmailTemplate(params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   reason: string;
   retrying: boolean;
@@ -143,12 +150,14 @@ ${
     ? p("It is already trying to start itself again and usually succeeds within a minute. This email exists so that you know, rather than finding out on Friday.")
     : p("It will not start again on its own. Opening it and pressing Start re-checks the account.")
 }
-${button(`${APP}/dashboard/agents/${agentId}`, "Check my agent")}
+${button(`${params.app}/dashboard/agents/${agentId}`, "Check my agent")}
 `,
   });
 }
 
 export const agentStoppedEmailText = (params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   reason: string;
   agentId: string;
@@ -157,13 +166,15 @@ export const agentStoppedEmailText = (params: {
 
 Your agent stopped and has not sent anything since. What it reported: ${params.reason}
 
-${APP}/dashboard/agents/${params.agentId}`;
+${params.app}/dashboard/agents/${params.agentId}`;
 
 // ------------------------------------------------------------------ someone replied
 
 export const replySubject = (name: string) => `\u{1F4AC} ${name} replied`;
 
 export function replyEmailTemplate(params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   from: string;
   body: string;
@@ -183,25 +194,27 @@ ${
     ? p("Your agent reads it and answers on its next pass, the way it would answer anybody. You do not have to do anything.")
     : p("Your agent has stopped writing to this person for good. The conversation is yours from here.")
 }
-${button(`${APP}/dashboard/replies`, "Read the whole thread")}
+${button(`${params.app}/dashboard/replies`, "Read the whole thread")}
 `,
   });
 }
 
-export const replyEmailText = (params: { firstName: string; from: string; body: string }) =>
+export const replyEmailText = (params: { firstName: string; from: string; body: string; app: string }) =>
   `Hello ${params.firstName},
 
 ${params.from} answered:
 
 "${params.body}"
 
-Read the whole thread: ${APP}/dashboard/replies`;
+Read the whole thread: ${params.app}/dashboard/replies`;
 
 // -------------------------------------------------------------------- first day
 
 export const firstDaySubject = "\u{26A1} Your agent just started";
 
 export function firstDayEmailTemplate(params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   found: number;
   sources: number;
@@ -222,13 +235,15 @@ ${figures([
   { label: "Invitations a day this week", value: String(perDay) },
 ])}
 ${p(`It sends ${perDay} invitations a day this week and climbs from there. That is deliberate: an account that suddenly sends at full speed is the one LinkedIn restricts.`)}
-${button(`${APP}/dashboard/agents/${agentId}`, "Watch it work")}
+${button(`${params.app}/dashboard/agents/${agentId}`, "Watch it work")}
 ${small("From here you get one email a week with what it found, and an immediate one whenever somebody replies or something needs you.")}
 `,
   });
 }
 
 export const firstDayEmailText = (params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   firstName: string;
   found: number;
   perDay: number;
@@ -238,4 +253,4 @@ export const firstDayEmailText = (params: {
 
 Your agent signed in and went to work. It found ${params.found} people on its first pass and sends ${params.perDay} invitations a day this week.
 
-${APP}/dashboard/agents/${params.agentId}`;
+${params.app}/dashboard/agents/${params.agentId}`;

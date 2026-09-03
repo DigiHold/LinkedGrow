@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAppUrl } from "@/lib/app-url";
+import { requestAppUrl } from "@/lib/app-url-server";
 import { auth } from "@/lib/auth";
 import { isCloud, isSelfHosted } from "@/lib/edition";
 import { getStorage } from "@/lib/storage";
@@ -21,12 +21,12 @@ function placeholder(): NextResponse {
 }
 
 /** The image, with the CORS header the canvas needs to read its pixels. */
-function image(body: BodyInit, contentType: string): NextResponse {
+function image(body: BodyInit, contentType: string, origin: string): NextResponse {
   return new NextResponse(body, {
     headers: {
       "Content-Type": contentType,
       "Cache-Control": "public, max-age=31536000, immutable",
-      "Access-Control-Allow-Origin": getAppUrl(),
+      "Access-Control-Allow-Origin": origin,
     },
   });
 }
@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
     ];
 
     // A local file's URL is relative, and parses only against this instance.
-    const urlObj = new URL(url, getAppUrl());
+    const appOrigin = await requestAppUrl();
+    const urlObj = new URL(url, appOrigin);
     const storage = await getStorage();
     const key = storage.keyFromUrl(url);
     const isAllowed =
@@ -75,14 +76,14 @@ export async function GET(request: NextRequest) {
       } catch {
         file = null;
       }
-      return file ? image(new Uint8Array(file.body), file.contentType) : placeholder();
+      return file ? image(new Uint8Array(file.body), file.contentType, appOrigin) : placeholder();
     }
 
     const imageResponse = await fetch(url);
     if (!imageResponse.ok) return placeholder();
 
     const contentType = imageResponse.headers.get("content-type") || "image/webp";
-    return image(await imageResponse.arrayBuffer(), contentType);
+    return image(await imageResponse.arrayBuffer(), contentType, appOrigin);
   } catch (error) {
 return NextResponse.json(
       { error: "Failed to proxy image" },

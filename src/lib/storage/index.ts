@@ -1,4 +1,4 @@
-import { getAppUrl } from "@/lib/app-url";
+import { backgroundAppUrl } from "@/lib/app-url-server";
 import { isCloud } from "@/lib/edition";
 import { getInstanceSettings, instanceSecrets, type InstanceSettings } from "@/lib/instance-settings";
 import { LocalStorage, storageRoot } from "./local";
@@ -51,7 +51,7 @@ function cloudStorage(): S3Storage {
 
 async function selfHostedStorage(settings: InstanceSettings): Promise<StorageDriver> {
   if (settings.storageProvider !== "s3") {
-    return new LocalStorage(storageRoot(), getAppUrl());
+    return new LocalStorage(storageRoot(), await backgroundAppUrl());
   }
   const secrets = await instanceSecrets();
   return new S3Storage({
@@ -187,8 +187,9 @@ export async function isR2Configured(): Promise<boolean> {
  * A stored media URL as a client outside the instance can fetch it. The local
  * driver stores relative URLs (`/uploads/<key>`) so one image works at any
  * address; the public API and the MCP server put the instance origin in front
- * at response time. Bucket URLs are already absolute and pass through.
+ * at response time, and the origin is the one the caller reached us on. Bucket
+ * URLs are already absolute and pass through.
  */
-export function absoluteMediaUrl(url: string): string {
-  return url.startsWith("/") ? `${getAppUrl()}${url}` : url;
+export function absoluteMediaUrl(url: string, base: string): string {
+  return url.startsWith("/") ? `${base}${url}` : url;
 }

@@ -8,6 +8,7 @@
 
 import { sendEmail, opsRecipient } from "./ses-client";
 import { instanceBrandName } from "./brand-name";
+import { backgroundAppUrl } from "@/lib/app-url-server";
 import {
   type Lead,
   leadsDigestSubject,
@@ -49,11 +50,12 @@ export async function sendLeadsDigestEmail(params: {
 }) {
   const firstName = firstNameOf(params.name);
   const instanceName = await instanceBrandName();
+  const app = await backgroundAppUrl();
   return sendEmail({
     to: params.to,
     subject: leadsDigestSubject(params.count),
-    html: leadsDigestEmailTemplate({ ...params, firstName, instanceName }),
-    text: leadsDigestEmailText({ ...params, firstName }),
+    html: leadsDigestEmailTemplate({ ...params, firstName, instanceName, app }),
+    text: leadsDigestEmailText({ ...params, firstName, app }),
   });
 }
 
@@ -65,11 +67,12 @@ export async function sendVerificationNeededEmail(params: {
 }) {
   const firstName = firstNameOf(params.name);
   const instanceName = await instanceBrandName();
+  const app = await backgroundAppUrl();
   return sendEmail({
     to: params.to,
     subject: verificationSubject,
-    html: verificationEmailTemplate({ ...params, firstName, instanceName }),
-    text: verificationEmailText({ ...params, firstName }),
+    html: verificationEmailTemplate({ ...params, firstName, instanceName, app }),
+    text: verificationEmailText({ ...params, firstName, app }),
   });
 }
 
@@ -82,11 +85,12 @@ export async function sendAgentStoppedEmail(params: {
 }) {
   const firstName = firstNameOf(params.name);
   const instanceName = await instanceBrandName();
+  const app = await backgroundAppUrl();
   return sendEmail({
     to: params.to,
     subject: agentStoppedSubject,
-    html: agentStoppedEmailTemplate({ ...params, firstName, instanceName }),
-    text: agentStoppedEmailText({ ...params, firstName }),
+    html: agentStoppedEmailTemplate({ ...params, firstName, instanceName, app }),
+    text: agentStoppedEmailText({ ...params, firstName, app }),
   });
 }
 
@@ -99,11 +103,12 @@ export async function sendReplyEmail(params: {
 }) {
   const firstName = firstNameOf(params.name);
   const instanceName = await instanceBrandName();
+  const app = await backgroundAppUrl();
   return sendEmail({
     to: params.to,
     subject: replySubject(params.from),
-    html: replyEmailTemplate({ ...params, firstName, instanceName }),
-    text: replyEmailText({ ...params, firstName }),
+    html: replyEmailTemplate({ ...params, firstName, instanceName, app }),
+    text: replyEmailText({ ...params, firstName, app }),
   });
 }
 
@@ -117,11 +122,12 @@ export async function sendFirstDayEmail(params: {
 }) {
   const firstName = firstNameOf(params.name);
   const instanceName = await instanceBrandName();
+  const app = await backgroundAppUrl();
   return sendEmail({
     to: params.to,
     subject: firstDaySubject,
-    html: firstDayEmailTemplate({ ...params, firstName, instanceName }),
-    text: firstDayEmailText({ ...params, firstName }),
+    html: firstDayEmailTemplate({ ...params, firstName, instanceName, app }),
+    text: firstDayEmailText({ ...params, firstName, app }),
   });
 }
 
@@ -140,10 +146,11 @@ export async function sendSelectorAlertEmail(params: {
   const to = await opsRecipient();
   if (!to) return { success: true, skipped: true as const, messageId: null };
   const instanceName = await instanceBrandName();
+  const app = await backgroundAppUrl();
   return sendEmail({
     to,
     subject: selectorAlertSubject,
-    html: selectorAlertEmailTemplate({ ...params, instanceName }),
+    html: selectorAlertEmailTemplate({ ...params, instanceName, app }),
     text: selectorAlertEmailText(params),
   });
 }

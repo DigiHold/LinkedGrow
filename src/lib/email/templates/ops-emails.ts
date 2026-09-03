@@ -1,5 +1,4 @@
 import { baseEmailTemplate } from "./base-template";
-import { getAppUrl } from "@/lib/app-url";
 import { p, lead, small, button, figures, quote } from "./parts";
 
 /**
@@ -15,11 +14,11 @@ import { p, lead, small, button, figures, quote } from "./parts";
  * something up before they know whether it matters.
  */
 
-const APP = getAppUrl();
-
 export const selectorAlertSubject = "\u{1F6A8} Publishing is failing across accounts";
 
 export function selectorAlertEmailTemplate(params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
   windowHours: number;
   published: number;
   failed: number;
@@ -50,7 +49,7 @@ ${figures([
 ${p("What could not be found:")}
 ${params.missing.map((line) => quote(line)).join("")}
 ${p("The screen captures from the moment each one gave up are on the worker box under /opt/linkedgrow/debug. The selectors themselves live in SEL at the top of src/linkedin/publish.ts.")}
-${button(`${APP}/dashboard/admin/users`, "Open the dashboard")}
+${button(`${params.app}/dashboard/admin/users`, "Open the dashboard")}
 ${small("You get this once a day at most, however many passes find it.")}
 `,
   });

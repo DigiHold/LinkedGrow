@@ -1,4 +1,5 @@
-import NextAuth, { CredentialsSignin } from "next-auth";
+import NextAuth, { CredentialsSignin, type NextAuthConfig } from "next-auth";
+import type { NextRequest } from "next/server";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db, users } from "./db";
@@ -7,7 +8,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { verifyTOTP } from "./totp";
 import { effectivePlan } from "./plans";
-import { isSecureAppUrl } from "./app-url";
+import { isSecureRequest, pinnedAppUrl } from "./app-url";
 
 // Custom error classes for better error messages
 class InvalidCredentialsError extends CredentialsSignin {
@@ -22,11 +23,23 @@ class InvalidTwoFactorError extends CredentialsSignin {
   code = "Invalid 2FA code";
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+/**
+ * The Secure flag and the __Secure- cookie prefix follow the scheme of the
+ * request being served, never NODE_ENV and never a value fixed when the image
+ * was built. A pinned address decides it outright, which is the cloud and any
+ * operator who set one. With no request in hand the answer is undefined on
+ * purpose: next-auth then reads the forwarded headers itself, and both sides
+ * reach the same conclusion for the same visit.
+ */
+function secureCookiesFor(request: NextRequest | undefined): boolean | undefined {
+  const pinned = pinnedAppUrl();
+  if (pinned) return pinned.startsWith("https://");
+  if (!request) return undefined;
+  return isSecureRequest(request.headers, request.url);
+}
+
+const authConfig: NextAuthConfig = {
   adapter: DrizzleAdapter(db),
-  // The Secure flag and the __Secure- cookie prefix follow the public url, not
-  // NODE_ENV, so a self hosted instance on plain http can sign in.
-  useSecureCookies: isSecureAppUrl(),
   session: {
     strategy: "jwt",
   },
@@ -206,7 +219,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
-});
+};
+
+export const { handlers, signIn, signOut, auth } = NextAuth((request) => ({
+  ...authConfig,
+  useSecureCookies: secureCookiesFor(request),
+}));
 
 // Extend session types
 declare module "next-auth" {

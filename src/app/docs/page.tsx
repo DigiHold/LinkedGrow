@@ -14,7 +14,7 @@ import {
   Server,
 } from "lucide-react";
 import { getAllCategories, getAllArticleMetas } from "@/lib/docs";
-import { getAppUrl } from "@/lib/app-url";
+import { requestAppUrl } from "@/lib/app-url-server";
 import { isCloud } from "@/lib/edition";
 import { DocsHeader } from "@/components/docs/docs-header";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
@@ -25,34 +25,36 @@ import {
   H1, HERO_FIELD, HERO_ORB_A, HERO_ORB_B, HERO_RINGS, LEAD, RV, SEC, WRAP, WSPLIT,
 } from "@/components/v3/kit";
 
-const APP_URL = getAppUrl();
 const DOCS_TITLE = "Documentation - LinkedGrow Help Center";
 const DOCS_DESCRIPTION =
   "Learn how to use LinkedGrow to find leads on LinkedIn and to create, schedule, and optimize your LinkedIn content. Guides for agents, BYOK setup, content creation, scheduling, and more.";
 // The default OG image lives on the cloud's R2 bucket.
 const CLOUD_OG_IMAGE = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp";
 
-export const metadata: Metadata = {
-  title: DOCS_TITLE,
-  description: DOCS_DESCRIPTION,
-  alternates: { canonical: `${APP_URL}/docs` },
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  const APP_URL = await requestAppUrl();
+  return {
     title: DOCS_TITLE,
     description: DOCS_DESCRIPTION,
-    url: `${APP_URL}/docs`,
-    siteName: "LinkedGrow",
-    type: "website",
-    ...(isCloud()
-      ? { images: [{ url: CLOUD_OG_IMAGE, width: 1200, height: 630, alt: "LinkedGrow Documentation" }] }
-      : {}),
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: DOCS_TITLE,
-    description: DOCS_DESCRIPTION,
-    ...(isCloud() ? { images: [CLOUD_OG_IMAGE] } : {}),
-  },
-};
+    alternates: { canonical: `${APP_URL}/docs` },
+    openGraph: {
+      title: DOCS_TITLE,
+      description: DOCS_DESCRIPTION,
+      url: `${APP_URL}/docs`,
+      siteName: "LinkedGrow",
+      type: "website",
+      ...(isCloud()
+        ? { images: [{ url: CLOUD_OG_IMAGE, width: 1200, height: 630, alt: "LinkedGrow Documentation" }] }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: DOCS_TITLE,
+      description: DOCS_DESCRIPTION,
+      ...(isCloud() ? { images: [CLOUD_OG_IMAGE] } : {}),
+    },
+  };
+}
 
 const categoryIcons: Record<string, React.ReactNode> = {
   "self-hosting": <Server className="w-6 h-6" />,
@@ -68,7 +70,8 @@ const categoryIcons: Record<string, React.ReactNode> = {
   faq: <HelpCircle className="w-6 h-6" />,
 };
 
-export default function DocsPage() {
+export default async function DocsPage() {
+  const APP_URL = await requestAppUrl();
   const categories = getAllCategories();
   const allArticles = getAllArticleMetas();
 

@@ -182,8 +182,15 @@ const authProxy = auth(async (req) => {
 
 // Main export: signout is handled by NextAuth's client-side signOut() which
 // clears both client session state and server cookies properly.
-export default function proxy(req: NextRequest) {
-  return authProxy(req, {} as any);
+//
+// The await is not decoration. src/lib/auth.ts builds its configuration per
+// request, so that the Secure cookie flag follows the scheme the request came
+// in on, and next-auth answers a wrapper like this one with a promise of the
+// handler rather than the handler itself. Calling it without awaiting made
+// every request 500, health check included.
+export default async function proxy(req: NextRequest) {
+  const handler = await authProxy;
+  return handler(req, {} as any);
 }
 
 export const config = {

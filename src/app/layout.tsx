@@ -12,7 +12,7 @@ import {
   SoftwareApplicationJsonLd,
 } from "@/components/seo/json-ld";
 import { isCloud } from "@/lib/edition";
-import { getAppUrl } from "@/lib/app-url";
+import { requestAppUrl } from "@/lib/app-url-server";
 import "./globals.css";
 
 // Sora - premium geometric sans-serif, bold and futuristic for headings
@@ -51,7 +51,6 @@ const caveat = Caveat({
   weight: ["400", "600"],
 });
 
-const APP_URL = getAppUrl();
 const TITLE = "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow";
 const DESCRIPTION =
   "Lead generation on LinkedIn, run by an agent that finds your leads, sends the invitation and opens the conversation, inside limits that keep your account safe.";
@@ -60,40 +59,47 @@ const DESCRIPTION =
 // has no public image to offer, so it advertises none.
 const CLOUD_OG_IMAGE = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/home.webp";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(APP_URL),
-  title: TITLE,
-  description: DESCRIPTION,
-  authors: [{ name: "LinkedGrow" }],
-  openGraph: {
+// The address is the one this request arrived on, so a self hosted instance
+// answers with its own canonical whatever address somebody put in front of it.
+// The cloud reads its pinned value and no header, so nothing it prerenders
+// today starts rendering per request.
+export async function generateMetadata(): Promise<Metadata> {
+  const APP_URL = await requestAppUrl();
+  return {
+    metadataBase: new URL(APP_URL),
     title: TITLE,
     description: DESCRIPTION,
-    url: APP_URL,
-    siteName: "LinkedGrow",
-    type: "website",
-    ...(isCloud()
-      ? {
-          images: [
-            {
-              url: CLOUD_OG_IMAGE,
-              width: 1200,
-              height: 630,
-              alt: "LinkedGrow, the LinkedIn AI agent that finds leads and opens conversations",
-            },
-          ],
-        }
-      : {}),
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-    ...(isCloud() ? { images: [CLOUD_OG_IMAGE] } : {}),
-  },
-  alternates: {
-    canonical: APP_URL,
-  },
-};
+    authors: [{ name: "LinkedGrow" }],
+    openGraph: {
+      title: TITLE,
+      description: DESCRIPTION,
+      url: APP_URL,
+      siteName: "LinkedGrow",
+      type: "website",
+      ...(isCloud()
+        ? {
+            images: [
+              {
+                url: CLOUD_OG_IMAGE,
+                width: 1200,
+                height: 630,
+                alt: "LinkedGrow, the LinkedIn AI agent that finds leads and opens conversations",
+              },
+            ],
+          }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: TITLE,
+      description: DESCRIPTION,
+      ...(isCloud() ? { images: [CLOUD_OG_IMAGE] } : {}),
+    },
+    alternates: {
+      canonical: APP_URL,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
