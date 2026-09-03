@@ -19,7 +19,7 @@ Every feature is open on an instance you run. There is no tier, no metering and 
 
 ## Who builds it
 
-Nicolas Lecocq and Maria Lecocq build LinkedGrow, husband and wife, working under Vayalis Sàrl. Nicolas writes the code and has spent 16+ years on the web; he created the OceanWP WordPress theme in 2016, built it to 500,000 installs and sold it in 2019. Maria Lecocq runs operations and community.
+Nicolas Lecocq and Maria Lecocq build LinkedGrow, husband and wife, working under Vayalis. Nicolas writes the code and has spent 16+ years on the web; he created the OceanWP WordPress theme in 2016, built it to 500,000 installs and sold it in 2019. Maria Lecocq runs operations and community.
 
 ## The hosted service
 

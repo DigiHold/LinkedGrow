@@ -57,6 +57,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: `${category.title} - LinkedGrow Docs`,
       description: category.description,
+      // Without this every documentation page inherits metadataBase and tells
+      // a crawler it is a copy of the home page.
+      alternates: { canonical: `${APP_URL}/docs/${slug[0]}` },
       openGraph: {
         title: `${category.title} - LinkedGrow Docs`,
         description: category.description,
@@ -83,6 +86,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: `${article.title} - LinkedGrow Docs`,
       description: article.description,
+      alternates: { canonical: `${APP_URL}/docs/${slug[0]}/${slug[1]}` },
       openGraph: {
         title: `${article.title} - LinkedGrow Docs`,
         description: article.description,

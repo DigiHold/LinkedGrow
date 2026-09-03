@@ -161,4 +161,4 @@ LinkedIn restricts accounts that automate, and no tool changes that. LinkedGrow 
 
 The full documentation lives on your instance at `/docs`, with the self hosting chapter under [src/content/docs/self-hosting](src/content/docs/self-hosting). Local development, the test commands and the rules a change has to follow are in [CONTRIBUTING.md](CONTRIBUTING.md). Bugs and requests go to [GitHub issues](https://github.com/DigiHold/LinkedGrow/issues), and anything security related goes to the address in [SECURITY.md](SECURITY.md) rather than a public issue.
 
-Built by [Nicolas Lecocq](https://linkedgrow.ai) and Maria Lecocq, copyright 2026 Vayalis Sàrl, licensed under the AGPL-3.0, see [LICENSE](LICENSE). A hosted version runs at [linkedgrow.ai](https://linkedgrow.ai) for people who would rather not run a server.
+Built by [Nicolas Lecocq](https://linkedgrow.ai) and Maria Lecocq, copyright 2026 Vayalis, licensed under the AGPL-3.0, see [LICENSE](LICENSE). A hosted version runs at [linkedgrow.ai](https://linkedgrow.ai) for people who would rather not run a server.

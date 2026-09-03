@@ -35,6 +35,7 @@ const CLOUD_OG_IMAGE = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/link
 export const metadata: Metadata = {
   title: DOCS_TITLE,
   description: DOCS_DESCRIPTION,
+  alternates: { canonical: `${APP_URL}/docs` },
   openGraph: {
     title: DOCS_TITLE,
     description: DOCS_DESCRIPTION,
