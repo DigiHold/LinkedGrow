@@ -15,10 +15,12 @@ RUN npx next build
 
 FROM node:24-bookworm-slim AS run
 WORKDIR /app
-ENV NODE_ENV=production LINKEDGROW_EDITION=self-hosted NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0 STORAGE_ROOT=/data/uploads
+ENV NODE_ENV=production LINKEDGROW_EDITION=self-hosted NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0 STORAGE_ROOT=/data/uploads CONFIG_DIR=/data/config
 # One fixed uid and gid, the same in the worker image: the two share the uploads
-# volume, and a system uid picked at build time differs between the two images.
-RUN groupadd -g 10001 linkedgrow && useradd -u 10001 -g linkedgrow -d /app -M linkedgrow && mkdir -p /data/uploads && chown -R linkedgrow:linkedgrow /data
+# and config volumes, and a system uid picked at build time differs between the
+# two images. Both directories exist here so a fresh named volume inherits this
+# ownership instead of coming up owned by root and unwritable.
+RUN groupadd -g 10001 linkedgrow && useradd -u 10001 -g linkedgrow -d /app -M linkedgrow && mkdir -p /data/uploads /data/config && chown -R linkedgrow:linkedgrow /data
 COPY --from=build --chown=linkedgrow:linkedgrow /app/.next/standalone ./
 COPY --from=build --chown=linkedgrow:linkedgrow /app/.next/static ./.next/static
 COPY --from=build --chown=linkedgrow:linkedgrow /app/public ./public

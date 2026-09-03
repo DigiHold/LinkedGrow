@@ -5,9 +5,10 @@
 #   ./install.sh --domain linkedgrow.example.com
 #   ./install.sh update
 #
-# It installs Docker when it is missing, writes .env with fresh secrets, pulls the
-# published images and starts the stack. Run it again any time; it keeps the .env
-# it already wrote.
+# It installs Docker when it is missing, fetches the compose file, pulls the
+# published images, starts the stack and waits for it to answer. It writes no
+# secret and no address: the app generates its own secrets on the first start
+# and answers on whatever address you open. Run it again any time.
 set -eu
 
 REPO="DigiHold/LinkedGrow"
@@ -22,7 +23,6 @@ VERSION="${LINKEDGROW_VERSION:-latest}"
 VERSION_GIVEN=0
 PORT="${LINKEDGROW_PORT:-3000}"
 PORT_GIVEN=0
-EXPLICIT_ADDRESS=0
 SOURCE=0
 ASSUME_YES=0
 SUDO=""
@@ -30,8 +30,8 @@ DOCKER="docker"
 PROFILE_ARGS=""
 [ -z "${LINKEDGROW_DIR:-}" ] || DIR_GIVEN=1
 [ -z "${LINKEDGROW_VERSION:-}" ] || VERSION_GIVEN=1
-[ -z "${LINKEDGROW_PORT:-}" ] || { PORT_GIVEN=1; EXPLICIT_ADDRESS=1; }
-[ -z "${LINKEDGROW_DOMAIN:-}" ] || { DOMAIN_GIVEN=1; EXPLICIT_ADDRESS=1; }
+[ -z "${LINKEDGROW_PORT:-}" ] || PORT_GIVEN=1
+[ -z "${LINKEDGROW_DOMAIN:-}" ] || DOMAIN_GIVEN=1
 
 say() { printf '%s\n' "$1"; }
 fail() { printf 'linkedgrow: %s\n' "$1" >&2; exit 1; }
@@ -63,15 +63,15 @@ USAGE
 while [ "$#" -gt 0 ]; do
   case "$1" in
     update) MODE="update"; shift ;;
-    --domain) [ "$#" -ge 2 ] || fail "The --domain option needs a domain name."; DOMAIN="$2"; DOMAIN_GIVEN=1; EXPLICIT_ADDRESS=1; shift 2 ;;
-    --domain=*) DOMAIN="${1#--domain=}"; DOMAIN_GIVEN=1; EXPLICIT_ADDRESS=1; shift ;;
-    --no-domain) DOMAIN=""; DOMAIN_GIVEN=1; EXPLICIT_ADDRESS=1; shift ;;
+    --domain) [ "$#" -ge 2 ] || fail "The --domain option needs a domain name."; DOMAIN="$2"; DOMAIN_GIVEN=1; shift 2 ;;
+    --domain=*) DOMAIN="${1#--domain=}"; DOMAIN_GIVEN=1; shift ;;
+    --no-domain) DOMAIN=""; DOMAIN_GIVEN=1; shift ;;
     --dir) [ "$#" -ge 2 ] || fail "The --dir option needs a folder path."; DIR="$2"; DIR_GIVEN=1; shift 2 ;;
     --dir=*) DIR="${1#--dir=}"; DIR_GIVEN=1; shift ;;
     --version) [ "$#" -ge 2 ] || fail "The --version option needs an image tag."; VERSION="$2"; VERSION_GIVEN=1; shift 2 ;;
     --version=*) VERSION="${1#--version=}"; VERSION_GIVEN=1; shift ;;
-    --port) [ "$#" -ge 2 ] || fail "The --port option needs a port number."; PORT="$2"; PORT_GIVEN=1; EXPLICIT_ADDRESS=1; shift 2 ;;
-    --port=*) PORT="${1#--port=}"; PORT_GIVEN=1; EXPLICIT_ADDRESS=1; shift ;;
+    --port) [ "$#" -ge 2 ] || fail "The --port option needs a port number."; PORT="$2"; PORT_GIVEN=1; shift 2 ;;
+    --port=*) PORT="${1#--port=}"; PORT_GIVEN=1; shift ;;
     --source) SOURCE=1; shift ;;
     --yes|-y) ASSUME_YES=1; shift ;;
     --help|-h) usage; exit 0 ;;
@@ -274,14 +274,17 @@ if [ "$SOURCE" = "1" ]; then
 fi
 
 compose() {
+  # A stack installed by hand has no .env at all, and --env-file on a missing
+  # file stops Compose, so the flag is only passed when the file is there.
+  env_arg=""
+  [ -f "$ENV_FILE" ] && env_arg="--env-file $ENV_FILE"
   # shellcheck disable=SC2086
-  $DOCKER compose --project-directory "$DIR" $COMPOSE_FILES --env-file "$ENV_FILE" $PROFILE_ARGS "$@"
+  $DOCKER compose --project-directory "$DIR" $COMPOSE_FILES $env_arg $PROFILE_ARGS "$@"
 }
 
 # ---------- update ----------
 
 if [ "$MODE" = "update" ]; then
-  [ -f "$ENV_FILE" ] || fail "There is no .env file in $DIR. Run the installer without the update argument first."
   [ -f "$DIR/docker-compose.yml" ] || fail "There is no docker-compose.yml in $DIR. Run the installer without the update argument first."
   if [ "$(env_get COMPOSE_PROFILES)" = "https" ]; then
     PROFILE_ARGS="--profile https"
@@ -311,15 +314,11 @@ fi
 
 # ---------- the domain question ----------
 
+# A rerun in a folder that already has a .env asks nothing: an empty DOMAIN in
+# that file means this instance serves on the server address, and that stands.
 if [ "$DOMAIN_GIVEN" = "0" ] && [ -f "$ENV_FILE" ]; then
-  previous=$(env_get DOMAIN)
-  if [ -n "$previous" ]; then
-    DOMAIN="$previous"
-    DOMAIN_GIVEN=1
-  elif [ -n "$(env_get APP_URL)" ]; then
-    DOMAIN=""
-    DOMAIN_GIVEN=1
-  fi
+  DOMAIN=$(env_get DOMAIN)
+  DOMAIN_GIVEN=1
 fi
 
 if [ "$DOMAIN_GIVEN" = "0" ]; then
@@ -340,14 +339,6 @@ case "$DOMAIN" in
 esac
 
 # ---------- the machine ----------
-
-gen_secret() {
-  if command -v openssl >/dev/null 2>&1; then
-    openssl rand -hex 32
-  else
-    od -An -vN 32 -tx1 /dev/urandom | tr -d ' \n'
-  fi
-}
 
 detect_ip() {
   ip=$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || true)
@@ -392,21 +383,20 @@ worker_slots() {
 IP=$(detect_ip)
 
 PREVIOUS_PROFILES=$(env_get COMPOSE_PROFILES)
-STORED_APP_URL=$(env_get APP_URL)
 
+# The address is what this run prints at the end, and nothing else. The app
+# never reads it: it answers on whatever address the browser asked for.
 if [ -n "$DOMAIN" ]; then
-  APP_URL="https://$DOMAIN"
+  APP_ADDRESS="https://$DOMAIN"
   BIND="127.0.0.1"
   PROFILES="https"
 else
   BIND="0.0.0.0"
   PROFILES=""
-  if [ "$EXPLICIT_ADDRESS" = "0" ] && [ -n "$STORED_APP_URL" ]; then
-    # A rerun that says nothing about the address keeps the one people already use.
-    APP_URL="$STORED_APP_URL"
+  if [ -n "$IP" ]; then
+    APP_ADDRESS="http://$IP:$PORT"
   else
-    [ -n "$IP" ] || fail "Could not work out the address of this server. Rerun with --domain example.com, or write APP_URL into .env yourself."
-    APP_URL="http://$IP:$PORT"
+    APP_ADDRESS="port $PORT of this server"
   fi
 fi
 
@@ -418,11 +408,9 @@ else
   (
   umask 077
   cat > "$ENV_FILE" <<ENVFILE
-# Written by install.sh. Keep this file: every stored credential is encrypted
-# with ENCRYPTION_KEY and unreadable without it.
-APP_URL=$APP_URL
-AUTH_SECRET=$(gen_secret)
-ENCRYPTION_KEY=$(gen_secret)
+# Written by install.sh, and every line of it is optional. The 2 secrets are
+# not here: the app generates them on its first start and keeps them inside the
+# config volume, which is the one thing your backup must not miss.
 WORKER_SLOTS=$(worker_slots)
 LINKEDGROW_VERSION=$VERSION
 DOMAIN=$DOMAIN
@@ -432,13 +420,10 @@ COMPOSE_PROFILES=$PROFILES
 ENVFILE
   )
   chmod 600 "$ENV_FILE" 2>/dev/null || true
-  say "Wrote $ENV_FILE with a new AUTH_SECRET and ENCRYPTION_KEY."
+  say "Wrote $ENV_FILE with the settings this run worked out."
 fi
 
-[ -n "$(env_get AUTH_SECRET)" ] || env_set AUTH_SECRET "$(gen_secret)"
-[ -n "$(env_get ENCRYPTION_KEY)" ] || env_set ENCRYPTION_KEY "$(gen_secret)"
 [ -n "$(env_get WORKER_SLOTS)" ] || env_set WORKER_SLOTS "$(worker_slots)"
-env_set APP_URL "$APP_URL"
 env_set DOMAIN "$DOMAIN"
 env_set APP_BIND "$BIND"
 env_set APP_PORT "$PORT"
@@ -504,8 +489,8 @@ if [ "$ready" != "1" ]; then
 fi
 
 say ""
-say "LinkedGrow is running, so open $APP_URL in your browser."
+say "LinkedGrow is running, so open $APP_ADDRESS in your browser."
 say "The first account you create there is the administrator of this instance."
 say "The wizard then asks for an AI key and for how you buy one dedicated address per LinkedIn account."
 say "Update it later by running ./install.sh update inside $DIR."
-say "The compose file and the .env of this instance live in $DIR."
+say "The compose file and the settings of this instance live in $DIR."
