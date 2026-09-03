@@ -108,19 +108,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Write the env file
+      # The install a person actually runs: the compose file on its own, in a
+      # directory with nothing else in it. Only the image tag is pinned, so a
+      # build tests itself rather than whatever latest happens to be.
+      - name: The compose file, and nothing else
         run: |
-          {
-            echo "LINKEDGROW_VERSION=sha-$(echo "${GITHUB_SHA}" | cut -c1-7)"
-            echo "APP_URL=http://localhost:3000"
-            echo "AUTH_SECRET=$(openssl rand -hex 32)"
-            echo "ENCRYPTION_KEY=$(openssl rand -hex 32)"
-            echo "APP_BIND=127.0.0.1"
-            echo "APP_PORT=3000"
-            echo "WORKER_SLOTS=1"
-          } > .env
+          mkdir -p /home/runner/lgsmoke
+          cp docker-compose.yml /home/runner/lgsmoke/
+          echo "LINKEDGROW_VERSION=sha-$(echo "${GITHUB_SHA}" | cut -c1-7)" >> "$GITHUB_ENV"
+          ls -a /home/runner/lgsmoke
 
       - name: Start the stack
+        working-directory: /home/runner/lgsmoke
         run: docker compose up -d
 
       - name: Wait for the health check
@@ -146,8 +145,10 @@ jobs:
 
       - name: Logs
         if: failure()
+        working-directory: /home/runner/lgsmoke
         run: docker compose logs
 
       - name: Tear down
         if: always()
+        working-directory: /home/runner/lgsmoke
         run: docker compose down -v
