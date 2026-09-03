@@ -23,6 +23,22 @@ function sanitizeCallbackUrl(url: string | undefined | null): string | undefined
   return url;
 }
 
+/**
+ * A value on its way into a <script> block.
+ *
+ * encodeURIComponent is not enough on its own: it leaves the apostrophe alone,
+ * so a quoted interpolation lets a crafted error message close the string and
+ * run its own code on our own origin. JSON.stringify quotes the value properly,
+ * and the angle bracket escape stops a payload closing the element from the
+ * inside, which quoting alone does not prevent.
+ */
+function js(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 function createPopupResponse(success: boolean, data: { error?: string; callbackUrl?: string }) {
   const redirectUrl = data.callbackUrl || '/dashboard';
   const message = success
@@ -30,6 +46,9 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
     : { type: 'google-error', error: data.error };
 
   const appOrigin = getAppUrl();
+  const fallbackUrl = success
+    ? redirectUrl
+    : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`;
 
   return new NextResponse(
     `<!DOCTYPE html>
@@ -38,10 +57,10 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
       <body>
         <script>
           if (window.opener) {
-            window.opener.postMessage(${JSON.stringify(message)}, '${appOrigin}');
+            window.opener.postMessage(${js(message)}, ${js(appOrigin)});
             window.close();
           } else {
-            window.location.href = '${success ? redirectUrl : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
+            window.location.href = ${js(fallbackUrl)};
           }
         </script>
       </body>
@@ -68,10 +87,10 @@ function twoFactorChallengeResponse(userId: string, isPopup: boolean) {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'google-2fa' }, '${appOrigin}');
+                window.opener.postMessage({ type: 'google-2fa' }, ${js(appOrigin)});
                 window.close();
               } else {
-                window.location.href = '${signInUrl}';
+                window.location.href = ${js(signInUrl)};
               }
             </script>
           </body>
@@ -329,10 +348,10 @@ export async function GET(request: NextRequest) {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'google-success', callbackUrl: '${redirectUrl}', isNewUser: ${mode === 'register'} }, '${appOrigin}');
+                window.opener.postMessage(${js({ type: 'google-success', callbackUrl: redirectUrl, isNewUser: mode === 'register' })}, ${js(appOrigin)});
                 window.close();
               } else {
-                window.location.href = '${redirectUrl}';
+                window.location.href = ${js(redirectUrl)};
               }
             </script>
           </body>
