@@ -228,10 +228,13 @@ function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
             <p className="text-slate-600 dark:text-slate-400">
               Start growing your LinkedIn presence today
             </p>
-            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 text-xs font-medium text-cyan-700 dark:text-cyan-300">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Includes 7-day Pro trial - everything included</span>
-            </div>
+            {/* An instance you run yourself sells nothing, so it promises no trial. */}
+            {isCloud() && (
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 text-xs font-medium text-cyan-700 dark:text-cyan-300">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Includes 7-day Pro trial - everything included</span>
+              </div>
+            )}
           </div>
 
           {/* Form Content */}

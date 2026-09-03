@@ -61,7 +61,7 @@ Image generation is shown below the text section.
 
 - **Google AI** - Nano Banana Pro, Nano Banana 2, Nano Banana 2 Lite
 - **OpenAI** - GPT Image 2, GPT Image 1.5, GPT Image 1, GPT Image 1 Mini
-- **Replicate** - FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX.2 Klein 4B, FLUX 1.1 Pro Ultra, FLUX Schnell
+- **Replicate** - FLUX.2 Max, FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX.2 Klein 4B, FLUX 1.1 Pro Ultra, FLUX Schnell
 
 ### Image-specific settings
 

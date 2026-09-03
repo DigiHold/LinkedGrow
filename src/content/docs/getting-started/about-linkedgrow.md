@@ -1,45 +1,34 @@
 ---
 title: "About LinkedGrow"
-description: Learn about LinkedGrow, its founders, company story, mission, and core values.
+description: What LinkedGrow is, the licence it ships under, who builds it, and where the hosted service fits alongside an instance you run yourself.
 category: "getting-started"
 order: 5
 ---
 
-## Who Created LinkedGrow?
+## What LinkedGrow is
 
-LinkedGrow was founded by Nicolas Lecocq, a full-stack developer with 15+ years of experience in web development. Nicolas previously created OceanWP, a WordPress theme that powers over 500,000 websites worldwide. LinkedGrow is built by DigiHold, based in France.
+LinkedGrow does 2 jobs from one install. Agents drive a real Chrome signed in to your LinkedIn account to find the people who match who you sell to, invite them and hold the conversation that follows, and a set of content tools writes, schedules and publishes the posts that make your profile worth landing on.
 
-## The Team
+There is no LinkedIn API anywhere in it, which is why the agents can invite and message at all, and it is also why the pace they work at is deliberately slow.
 
-**Nicolas Lecocq** - Founder and Developer. He handles all development, from the React frontend to the AI integrations, performance optimization, and infrastructure. Nicolas is based in Paris, France.
+## Open source, on your own server
 
-**Maria Lecocq** - PhD, Operations and Community. Maria manages operations, gathers user feedback, and ensures every LinkedGrow user feels heard. She shapes the product roadmap based on real creator needs and is the voice of the community.
+The code is licensed under the AGPL-3.0 and the whole stack installs on a machine you control with Docker Compose. Your leads, your drafts, your database and the signed in browser sessions all stay on that machine, and nothing in the product reports anything back to us. The [requirements](/docs/self-hosting/requirements) page lists every address the stack calls out to, and every one of them is a service you chose and pay for yourself.
 
-## Our Story
+Every feature is open on an instance you run. There is no tier, no metering and nothing held back for a paid version.
 
-- **2010** - Nicolas starts his WordPress journey, building themes and plugins.
-- **2016** - OceanWP launches and grows to power 500,000+ websites worldwide.
-- **2024** - Recognizing the AI revolution, LinkedGrow development begins as a new product focused on LinkedIn content creation.
-- **2025** - LinkedGrow private beta launches with the BYOK (Bring Your Own Key) model.
-- **2026** - LinkedGrow opens to the public.
+## Who builds it
 
-## Our Mission
+Nicolas Lecocq and Maria Lecocq build LinkedGrow, husband and wife, working under Vayalis Sàrl. Nicolas writes the code and has spent 16+ years on the web; he created the OceanWP WordPress theme in 2016, built it to 500,000 installs and sold it in 2019. Maria Lecocq runs operations and community.
 
-LinkedGrow's mission is to democratize LinkedIn success by giving everyone access to AI-powered content creation without the hidden costs or complexity of traditional tools. We believe AI should amplify your voice, not replace it.
+## The hosted service
 
-## Core Values
+The same product runs as a subscription at [linkedgrow.ai](https://linkedgrow.ai), for people who would rather not run and update a server. Running it yourself costs you the machine and your own AI key instead of that subscription, and both editions are built from this repository.
 
-- **Creator-First** - Every feature starts with one question: will this help creators grow their LinkedIn presence faster?
-- **Privacy by Design** - Your AI keys stay yours. Your content stays yours. We never train on your data.
-- **Radical Transparency** - BYOK means the AI bill comes from your own provider, so you see exactly what you pay for AI.
-- **Results-Obsessed** - We measure success by your follower growth and engagement rates, not vanity metrics.
-- **Human + AI** - AI amplifies your unique voice. You stay in control of your content and brand.
-- **Continuous Innovation** - Monthly updates ensure you always have access to the latest LinkedIn growth strategies.
+## Where your data lives
 
-## Where is LinkedGrow Based?
+On your server, wherever you decided to put it, which is not a decision anyone here gets to make for you. No copy of your leads or your drafts is kept anywhere else.
 
-LinkedGrow is developed in France by DigiHold. The self hosted edition runs on your own server, so where your data lives is your decision.
+## Questions?
 
-## Other Products
-
-The team behind LinkedGrow also builds DigiHold, a suite of premium WordPress products available at digihold.me.
+Everything the product does has a page in this documentation. If something is broken or missing, open an issue on the [LinkedGrow GitHub repository](https://github.com/DigiHold/LinkedGrow/issues).

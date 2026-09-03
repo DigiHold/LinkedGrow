@@ -39,7 +39,7 @@ The Algorithm Score is a real-time rating that evaluates how well your post is o
 - **No LinkedIn API** - the agents work in a real Chrome signed in to your account, which is why they can invite, message and publish at all
 - **Voice training** - the generator learns how you write instead of producing a house tone
 - **Your own AI key** - the bill arrives from your provider for exactly what you used, and you pick the model it runs on
-- **No tier to unlock** - every feature is available to every user of the instance, and the only limits are the ones the administrator sets
+- **No tier above yours** - every feature is available to every user of the instance, and the only limits are the ones the administrator sets, apart from one cap in the code: a network notification group holds 20 members
 
 ## Can I use multiple AI providers?
 
@@ -55,7 +55,7 @@ Start with this documentation, which has a guide for every LinkedGrow feature. I
 
 ## What AI models are supported?
 
-Through the BYOK system LinkedGrow supports 35 text models across 6 providers, and image generation across 3 more:
+Through the BYOK system LinkedGrow supports 35 text models across 6 providers. Images come from Google and OpenAI on the same keys, plus Replicate, which is the one provider you add for images alone:
 
 - **OpenAI** - GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna, GPT-5.5, GPT-5.4, and more
 - **Anthropic** - Claude Fable 5.1, Claude Opus 5, Claude Sonnet 5, Claude Haiku 4.5, and more
@@ -68,7 +68,7 @@ You choose which model to use in your BYOK settings. Different models offer diff
 
 ## Can I schedule posts for LinkedIn company pages?
 
-Yes, and when you connect your LinkedIn account you can choose to post to your personal profile or any company page where you have admin access. You can set a default posting target in your settings or choose the destination for each post individually.
+No, and there is no picker for a company page anywhere in the product. A post goes out from the account the agent is signed in to. Connect a second LinkedIn account if you want its posts scheduled, and that account publishes from itself in the same way.
 
 ## I have a question that is not listed here
 

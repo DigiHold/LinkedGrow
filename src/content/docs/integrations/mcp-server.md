@@ -81,7 +81,7 @@ Lead names, headlines, post text and inbound replies come back wrapped in an `un
 
 ## Limits and costs
 
-Each key is allowed 120 requests a minute, which ordinary conversation never comes close to spending.
+Each key is allowed 60 requests a minute. The MCP route keeps a counter of its own set at 120, but the key is authenticated before that counter is ever read and the authentication stops at 60, so 60 is the number you would actually meet. Ordinary conversation never comes close to spending it.
 
 Everything your agent does runs on the instance key the administrator pasted in the setup wizard, inside the daily ceiling per agent and the monthly ceiling per LinkedIn account. The tools that write content for you are the exception: they run on your own provider key, the one you added under Settings, AI keys. If no key is connected, those tools say so and nothing is spent.
 

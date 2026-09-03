@@ -11,11 +11,11 @@ order: 7
 
 ## Overview
 
-LinkedGrow supports AI image generation from three providers. You can set up more than one image provider and switch between them depending on what you need.
+LinkedGrow supports AI image generation from 3 providers. You can set up more than one image provider and switch between them depending on what you need.
 
 ## Google AI (Nano Banana)
 
-Google AI offers three image models, and they use the same API key as your Gemini text models.
+Google AI offers 3 image models, and they use the same API key as your Gemini text models.
 
 **API key URL:** [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 
@@ -37,7 +37,7 @@ If you already have a Google AI key for text, you do not need a separate key for
 
 ## OpenAI (GPT Image)
 
-OpenAI offers four image models using the same API key as its text models.
+OpenAI offers 4 image models using the same API key as its text models.
 
 **API key URL:** [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
@@ -93,4 +93,4 @@ Replicate provides the FLUX models, which are open-weight image models known for
 
 ## Which provider should you choose?
 
-Google AI makes the most sense if you already have a Gemini key, and Nano Banana 2 Lite at roughly $0.03 per image is its cheapest option. OpenAI is the natural pick if you already run GPT for text, where GPT Image 2 starts around $0.006 per image at the lowest quality setting. Replicate is worth the separate account when you want open weight models, or the control that comes from passing your own reference images, and FLUX Schnell at roughly $0.003 per image is the cheapest option across all three providers.
+Google AI makes the most sense if you already have a Gemini key, and Nano Banana 2 Lite at roughly $0.03 per image is its cheapest option. OpenAI is the natural pick if you already run GPT for text, where GPT Image 2 starts around $0.006 per image at the lowest quality setting. Replicate is worth the separate account when you want open weight models, or the control that comes from passing your own reference images, and FLUX Schnell at roughly $0.003 per image is the cheapest option across all 3 providers.

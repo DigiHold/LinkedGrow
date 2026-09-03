@@ -31,7 +31,7 @@ About 10 GB of free disk is enough to begin with. Most of that goes to the worke
 | Volume | What is in it | What makes it grow |
 | --- | --- | --- |
 | `db-data` | The libSQL database file | Your leads, your posts and their history |
-| `uploads` | Files attached to posts, plus an encrypted archive of each browser session | Whatever you attach |
+| `uploads` | Files attached to posts | Whatever you attach |
 | `profiles` | One signed in Chrome profile for every LinkedIn account | Each account you connect, and then its own cache and cookies |
 
 Two more volumes, `caddy-data` and `caddy-config`, appear when the built in https is switched on. They hold the certificate and none of your data.
@@ -56,7 +56,7 @@ The app also asks api.ipify.org for its own public address, which is how the wiz
 
 An address people can open, which means a domain with an A record pointing at the server. That gets you https from the Caddy inside the stack, and without one the app answers on the server's own address over plain http.
 
-An AI key, from Anthropic, OpenAI, Google, Grok or Kimi. That single key runs every agent on the instance, and it also drives the post generator until somebody adds a key of their own in Settings. The wizard refuses to finish without it.
+An AI key, from Anthropic, OpenAI, Google, Grok or Kimi. That single key runs every agent on the instance, and the wizard copies it into your own AI settings so the post generator works for you from the first day. Everyone else on the instance adds a key of their own in Settings before the generator will answer them. The wizard refuses to finish without it.
 
 A source of one dedicated address per LinkedIn account. LinkedGrow buys them through your own Proxy-Seller account when you paste that account's API key, in the country you pick as you connect each account, and you can bring proxies you already own instead. The wizard lets you skip the step, but no agent starts until an address exists.
 

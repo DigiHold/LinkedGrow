@@ -78,7 +78,7 @@ The posts endpoint lets you manage your LinkedIn posts:
 GET /api/v1/posts
 ```
 
-Returns a list of all your posts. You can filter by status (draft, scheduled, published).
+Returns a list of all your posts, which you can filter by status (draft, scheduled, published).
 
 Required scope: `posts:read`
 
@@ -88,22 +88,29 @@ Query parameters:
 - `limit` - number of posts to return (default: 20, max: 100)
 - `offset` - pagination offset
 
-Example response:
+Every successful call comes back inside the same envelope, with the payload under `data` and a `success` flag beside it:
 
 ```json
 {
-  "posts": [
-    {
-      "id": "post_abc123",
-      "content": "Your post content here...",
-      "status": "draft",
-      "createdAt": "2025-01-15T10:30:00Z",
-      "updatedAt": "2025-01-15T10:30:00Z"
+  "data": {
+    "posts": [
+      {
+        "id": "post_abc123",
+        "content": "Your post content here...",
+        "status": "draft",
+        "media": [],
+        "createdAt": "2025-01-15T10:30:00Z",
+        "updatedAt": "2025-01-15T10:30:00Z"
+      }
+    ],
+    "pagination": {
+      "total": 42,
+      "limit": 20,
+      "offset": 0,
+      "hasMore": true
     }
-  ],
-  "total": 42,
-  "limit": 20,
-  "offset": 0
+  },
+  "success": true
 }
 ```
 
@@ -123,7 +130,7 @@ Required scope: `posts:read`
 POST /api/v1/posts
 ```
 
-Creates a new post. Send the content in the request body:
+Creates a new post from the content you send in the request body:
 
 ```json
 {
@@ -142,7 +149,7 @@ Required scope: `posts:write`
 PUT /api/v1/posts/:id
 ```
 
-Updates an existing post. Send only the fields you want to change:
+Updates an existing post, and you send only the fields you want to change:
 
 ```json
 {
@@ -158,18 +165,15 @@ Required scope: `posts:write`
 DELETE /api/v1/posts/:id
 ```
 
-Permanently deletes a post. This action cannot be undone.
+Permanently deletes a post, and nothing about that can be undone afterwards.
 
 Required scope: `posts:delete`
 
 ## Rate Limits
 
-To ensure fair usage, the API has the following rate limits:
+Each API key is allowed 60 requests a minute, counted against the key rather than the address it comes from. That is the only quota the code enforces, and there is no hourly or daily one behind it.
 
-- **60 requests per minute** per API key
-- **1,000 requests per hour** per API key
-
-If you exceed the rate limit, you will receive a 429 Too Many Requests response with a `Retry-After` header indicating when you can make requests again.
+Go past the minute and the next call answers 429, with the number of seconds left written into the error message. Nothing sends a `Retry-After` header, so read the message rather than waiting on a header that does not arrive.
 
 ## Error Handling
 
@@ -184,14 +188,12 @@ The API uses standard HTTP status codes:
 - **429** - Too many requests (rate limit exceeded)
 - **500** - Internal server error
 
-Error responses include a JSON body with details:
+Every error carries the message as a plain string, next to the same `success` flag the successful calls use. There is no error code and no nested object to read:
 
 ```json
 {
-  "error": {
-    "code": "INVALID_CONTENT",
-    "message": "Post content cannot be empty"
-  }
+  "error": "Content is required",
+  "success": false
 }
 ```
 
@@ -203,7 +205,7 @@ From **Settings** > **API**, you can:
 - Create new API keys with descriptive names and scoped permissions
 - Revoke API keys that are no longer needed
 
-Revoking an API key is immediate. Any integrations using that key will stop working right away.
+Revoking an API key takes effect immediately, and any integration using that key stops working right away.
 
 ## Security Best Practices
 
