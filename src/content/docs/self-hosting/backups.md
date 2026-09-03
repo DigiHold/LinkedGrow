@@ -2,7 +2,7 @@
 title: Backups
 description: The 3 volumes that hold everything, one command to archive them, and how to restore on a new server
 category: self-hosting
-order: 5
+order: 9
 ---
 
 ## What to back up

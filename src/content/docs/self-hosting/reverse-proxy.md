@@ -2,7 +2,7 @@
 title: Reverse proxy
 description: The Caddy that ships with the stack, an external Caddy or nginx in front of it, APP_URL on https, and why the cookies care
 category: self-hosting
-order: 3
+order: 7
 ---
 
 Anything reachable from the internet should answer over https. The stack can do that itself, and it can also sit behind the proxy you already run.

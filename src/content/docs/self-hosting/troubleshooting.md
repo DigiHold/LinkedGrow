@@ -2,7 +2,7 @@
 title: Troubleshooting
 description: Pulling the images fails, the domain does not resolve, ports 80 and 443 are taken, the app refuses to start, the worker keeps waiting, and where the logs are
 category: self-hosting
-order: 6
+order: 10
 ---
 
 ## Where the logs are

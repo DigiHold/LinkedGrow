@@ -2,7 +2,7 @@
 title: Setup wizard
 description: What each step of the first login wizard asks for and why the agents need it
 category: self-hosting
-order: 2
+order: 4
 ---
 
 The wizard runs once, at the administrator's first sign in, and every value it asks for can be changed later in Settings, Instance.

@@ -1,6 +1,11 @@
 {
   "title": "Self Hosting",
   "description": "Install LinkedGrow on your own server with Docker Compose, run the setup wizard, put it behind https, update it and back it up.",
+  "overview": [
+    "Running your own instance means the whole thing is yours: the code under the AGPL-3.0, the database on your own disk, the leads your agents find, and the LinkedIn sessions they keep signed in. Nothing is metered, no feature is held back for a higher tier, and the only limits on the instance are the ones its administrator sets.",
+    "What it asks in return is attention. You need a Linux server with enough memory for the browsers you want open at once, an AI key from a provider of your choice, and one dedicated address for every LinkedIn account you connect. It also leaves you holding the risk that LinkedIn restricts an account that automates, which no tool anywhere removes, so the limits that ship with the product are deliberately slow.",
+    "The pages below are in the order you need them. What the machine has to be, how to install it yourself or hand the job to an AI agent, what the setup wizard asks for, what is actually running once it is up, every environment variable in one table, and then https, updates, backups and the things that go wrong."
+  ],
   "order": 0,
   "icon": "server"
 }
