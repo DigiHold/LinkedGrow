@@ -142,7 +142,7 @@ The carousel editor ships 25 preset templates across 6 styles, with text, shapes
 - Docker with the Compose plugin, which the installer sets up when the command is missing.
 - 4 GB of RAM for 2 concurrent browsers (`WORKER_SLOTS=2`), 16 GB for 12, and about 10 GB of free disk.
 - A domain pointing at the server for https, or an open port 3000 for a plain http trial.
-- An AI key from Anthropic, OpenAI, Google, Grok or Kimi, which runs the agents and the generator.
+- An AI key from Anthropic, OpenAI, Google, Grok or Kimi, which runs every agent on the instance.
 - A Proxy-Seller account for one dedicated address per LinkedIn account, or proxies of your own.
 
 ## Running it
