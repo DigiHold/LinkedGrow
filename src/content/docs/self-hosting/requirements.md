@@ -67,5 +67,3 @@ The LinkedIn account itself, with its password and its 2FA code when you have on
 An email provider, Resend or any SMTP server, for the notifications: a lead replied, LinkedIn asked for a verification code, an agent stopped, the weekly list of people it found. Everything still shows in the dashboard without one.
 
 S3 compatible storage, such as Cloudflare R2 or MinIO, for when you would rather files did not sit on the server. The local disk is the default and it is the right answer for a single machine.
-
-Google sign in, which needs an OAuth client of your own. Paste its 2 values into `.env` and the button appears on the sign in page, as the [configuration](/docs/self-hosting/configuration) page describes.

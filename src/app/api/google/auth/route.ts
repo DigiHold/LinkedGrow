@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isCloud } from '@/lib/edition';
 import { getGoogleAuthUrl, isGoogleConfigured } from '@/lib/google';
 import { randomBytes } from 'crypto';
 import { getAppUrl, isSecureAppUrl } from '@/lib/app-url';
@@ -38,6 +39,9 @@ function popupErrorResponse(message: string, status: number, headers: Record<str
 }
 
 export async function GET(request: NextRequest) {
+  // Google sign in belongs to the hosted service; a self hosted instance has
+  // no Google flow at all, so the whole path answers as if it did not exist.
+  if (!isCloud()) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const searchParams = request.nextUrl.searchParams;
   const mode = searchParams.get('mode') || 'login'; // 'login' or 'register'
   const newsletter = searchParams.get('newsletter') === 'true';

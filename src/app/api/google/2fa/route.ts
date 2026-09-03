@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isCloud } from '@/lib/edition';
 import { db, users } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import { verifyTOTP } from '@/lib/totp';
@@ -27,6 +28,9 @@ function restart(message: string, status: number) {
 }
 
 export async function POST(request: NextRequest) {
+  // Google sign in belongs to the hosted service; a self hosted instance has
+  // no Google flow at all, so the whole path answers as if it did not exist.
+  if (!isCloud()) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   try {
     const limit = rateLimit(`google-2fa:${getClientIP(request)}`, AUTH_RATE_LIMITS.googleTwoFactor);
     if (!limit.success) {

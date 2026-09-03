@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isCloud } from '@/lib/edition';
 import { exchangeGoogleCodeForToken, getGoogleUserInfo } from '@/lib/google';
 import { db, users, accounts } from '@/lib/db';
 import { eq, and } from 'drizzle-orm';
@@ -98,6 +99,9 @@ function twoFactorChallengeResponse(userId: string, isPopup: boolean) {
 }
 
 export async function GET(request: NextRequest) {
+  // Google sign in belongs to the hosted service; a self hosted instance has
+  // no Google flow at all, so the whole path answers as if it did not exist.
+  if (!isCloud()) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const state = searchParams.get('state');

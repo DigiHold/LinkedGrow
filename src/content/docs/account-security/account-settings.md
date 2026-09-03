@@ -20,23 +20,9 @@ The profile section at the top of the Settings page displays your account detail
 - **Name** - you can update your display name at any time
 - **Email** - your email address is displayed but cannot be changed. The email field is disabled with a note that reads "Email cannot be changed".
 
-## Login Methods
+## How you sign in
 
-LinkedGrow supports 2 login methods, and you can use one or both of them to reach your account:
-
-### Email and Password
-
-The standard login method, where you sign in with your email address and a password you set during registration or through the forgot password flow. See [Password Management](/docs/account-security/password-management) for details on managing your password.
-
-### Google sign in
-
-Sign in with your Google account when the administrator has configured it (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the instance's `.env`). Google sign in only reads your name and email address, and the instance never touches your Google Drive, contacts or other data.
-
-### Using Multiple Login Methods
-
-You can have both login methods active at the same time, which gives you a backup if one of them becomes unavailable. For example, if you forget your password, you can still sign in with Google.
-
-You must always have at least one active login method. If you try to disconnect a login method and it is the only one connected, you will be prompted to set up an alternative first.
+You sign in with your email address and the password you set when you registered, or the one you set through the forgot password flow. See [Password Management](/docs/account-security/password-management) for changing it, and [Two Factor Authentication](/docs/account-security/two-factor-auth) for adding a code on top of it.
 
 ## LinkedIn Connection
 
