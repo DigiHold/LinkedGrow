@@ -86,10 +86,13 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.name }}-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}-${{ matrix.arch }}
 
+      # The file name is the digest without its algorithm prefix, because an
+      # artifact name cannot hold a colon.
       - name: Keep the digest
         run: |
           mkdir -p /tmp/digests
-          touch "/tmp/digests/${{ matrix.name }}-${{ matrix.arch }}-${{ steps.build.outputs.digest }}"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -146,7 +149,7 @@ jobs:
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ matrix.image }}@sha256:%s ' $(ls | sed 's/^.*-sha256://'))
+            $(printf '${{ matrix.image }}@sha256:%s ' *)
         env:
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
 
