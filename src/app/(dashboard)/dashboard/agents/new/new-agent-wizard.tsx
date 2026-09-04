@@ -33,6 +33,8 @@ import {
 } from "@/components/dashboard/linkedin/accounts-panel";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { countryName, normaliseCountries } from "@shared/countries.ts";
+import { CountryPicker } from "@/components/dashboard/agents/country-picker";
 import { RAMP } from "@/lib/agent-pace";
 import { UPGRADE_PATH } from "@/lib/plans";
 
@@ -177,7 +179,8 @@ export function NewAgentWizard() {
   const [keywordDraft, setKeywordDraft] = useState("");
   const [jobRoles, setJobRoles] = useState("");
   const [industries, setIndustries] = useState("");
-  const [locations, setLocations] = useState("");
+  // ISO codes, never text. Empty is worldwide, which is what a new agent is.
+  const [locations, setLocations] = useState<string[]>([]);
   const [matchLevel, setMatchLevel] = useState<string>("balanced");
   const [companySizes, setCompanySizes] = useState<string[]>([]);
   const [suggesting, setSuggesting] = useState(false);
@@ -375,7 +378,7 @@ export function NewAgentWizard() {
           if (Array.isArray(c.keywords)) setKeywords(c.keywords);
           if (typeof c.jobRoles === "string") setJobRoles(c.jobRoles);
           if (typeof c.industries === "string") setIndustries(c.industries);
-          if (typeof c.locations === "string") setLocations(c.locations);
+          if (Array.isArray(c.locations)) setLocations(normaliseCountries(c.locations));
           if (typeof c.matchLevel === "string") setMatchLevel(c.matchLevel);
           if (Array.isArray(c.companySizes)) setCompanySizes(c.companySizes);
           if (typeof c.smartLeadFinder === "boolean") setSmartLeadFinder(c.smartLeadFinder);
@@ -483,7 +486,7 @@ export function NewAgentWizard() {
           icpSummary: companyInfo.trim() || null,
           jobRoles: splitList(jobRoles),
           industries: splitList(industries),
-          locations: splitList(locations),
+          locations,
           matchLevel,
           goal,
           tone,
@@ -872,14 +875,10 @@ export function NewAgentWizard() {
             </div>
 
             <Field
-              label="Locations"
-              hint="Comma separated. Countries or cities. Leave empty to target any country."
+              label="Countries"
+              hint="Worldwide by default. Pick a region or single countries, and the agent will never contact anybody outside them."
             >
-              <Input
-                value={locations}
-                onChange={(e) => setLocations(e.target.value)}
-                placeholder="Switzerland, France"
-              />
+              <CountryPicker value={locations} onChange={setLocations} />
             </Field>
 
             <Field
@@ -1157,7 +1156,14 @@ export function NewAgentWizard() {
               <SummaryRow label="Topics" value={keywords.join(", ") || "None"} />
               <SummaryRow label="Job titles" value={jobRoles || "Any"} />
               <SummaryRow label="Industries" value={industries || "Any"} />
-              <SummaryRow label="Locations" value={locations || "Anywhere"} />
+              <SummaryRow
+                label="Countries"
+                value={
+                  locations.length === 0
+                    ? "Worldwide"
+                    : locations.map((c) => countryName(c)).join(", ")
+                }
+              />
               <SummaryRow label="Company size" value={companySizes.join(", ") || "Any"} />
               <SummaryRow
                 label="Match level"

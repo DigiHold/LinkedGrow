@@ -21,6 +21,7 @@ import {
   isNull,
 } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
+import { normaliseCountries } from "@shared/countries.ts";
 
 async function resolveWorkspaceId(userId: string) {
   const data = await loadSessionUser(userId);
@@ -434,6 +435,18 @@ export async function PATCH(
           );
         }
         patch.name = value.trim();
+      } else if (field === "locations") {
+        /**
+         * Countries are the one list that is validated rather than trimmed.
+         *
+         * The generic branch below keeps any string and cuts the tail at 25,
+         * which would store "Americas" (a place LinkedIn never prints, so it
+         * filtered nobody) and would silently drop 32 of the 57 countries in
+         * that region for anybody who picked it properly. An empty array is a
+         * real answer here and means worldwide.
+         */
+        if (!Array.isArray(value)) continue;
+        patch.locations = JSON.stringify(normaliseCountries(value));
       } else if (LIST_FIELDS.includes(field)) {
         // Stored as JSON in a text column, so an array arrives as one and is written as one.
         if (!Array.isArray(value)) continue;
@@ -479,6 +492,19 @@ export async function PATCH(
         patch[field] = value;
       }
     }
+
+    /**
+     * Changing the countries throws away what the agent worked out to search for.
+     *
+     * derived_targeting is a cache of queries, topics and competitors the model
+     * invented from the business, and it is computed once per agent because it
+     * costs a model call. It is computed FROM the countries now, so an agent
+     * that was worldwide yesterday and targets Colombia today would otherwise
+     * keep searching the queries it built for the world. Clearing it costs one
+     * model call on the next pass and is the difference between the setting
+     * being obeyed and merely being stored.
+     */
+    if ("locations" in patch) patch.derivedTargeting = null;
 
     // Status is separate: it is an action, not a field, and it is the one
     // change that has real-world consequences.

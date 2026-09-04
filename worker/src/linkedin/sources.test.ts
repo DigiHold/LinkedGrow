@@ -9,7 +9,7 @@ import {
   unsupportedSearch,
   type SignalKind,
 } from "./sources.ts";
-import { matchesIcp, matchesLocation, parseCard, saysWord } from "./miner.ts";
+import { matchesIcp, placeOf, parseCard, saysWord } from "./miner.ts";
 import type { Config } from "../config.ts";
 import { splitHeadline } from "./sourcing.ts";
 
@@ -258,38 +258,53 @@ test("word matching survives the punctuation headlines are made of", () => {
 });
 
 /**
- * The locations the wizard asks for, which filtered nobody.
+ * The countries the wizard asks for, which used to filter nobody.
  *
  * `a.locations` was read in exactly one place: to write "You are Jane, based
  * in Lisbon" into the message prompts. That is the SENDER's location. No
  * prospect was ever dropped for being on the wrong continent, so an agent aimed
- * at France claimed founders in Bangalore and Sofia, and the customer read that
- * as bad targeting because it is.
+ * at France claimed founders in Bangalore and Sofia, and a customer aiming at
+ * the Americas was handed Asia and the Middle East, which is how this was
+ * finally reported on 2026-09-04.
+ *
+ * The countries are ISO codes now and the answer has three values, because a
+ * card with no place on it is not the same as a card in the right country.
+ * shared/countries.test.ts holds the reading of a place; this holds what the
+ * miner does with the answer.
  */
-test("somebody outside the chosen places is dropped", () => {
-  const france = ["France", "Paris"];
-  assert.equal(matchesLocation(france, "Lyon, Auvergne-Rhone-Alpes, France"), true);
-  assert.equal(matchesLocation(france, "Greater Paris Metropolitan Region"), true);
-  assert.equal(matchesLocation(france, "Bengaluru, Karnataka, India"), false);
-  assert.equal(matchesLocation(france, "Sofia, Sofia City, Bulgaria"), false);
+const FRANCE = { locations: ["FR"] };
+
+test("somebody outside the chosen countries is out", () => {
+  assert.equal(placeOf(FRANCE, "Lyon, Auvergne-Rhone-Alpes, France"), "in");
+  assert.equal(placeOf(FRANCE, "Bengaluru, Karnataka, India"), "out");
+  assert.equal(placeOf(FRANCE, "Sofia, Sofia City, Bulgaria"), "out");
+  assert.equal(placeOf(FRANCE, "Dubai, United Arab Emirates"), "out");
 });
 
-test("naming no place means anywhere, which is the default", () => {
-  assert.equal(matchesLocation([], "Bengaluru, Karnataka, India"), true);
-  assert.equal(matchesLocation([], null), true);
+test("choosing no country means worldwide, which is the default", () => {
+  assert.equal(placeOf({ locations: [] }, "Bengaluru, Karnataka, India"), "in");
+  assert.equal(placeOf({ locations: [] }, null), "in");
 });
 
-test("a card with no place on it still passes", () => {
-  // Reaction and comment rows carry no location at all. Dropping everybody
-  // LinkedIn happened not to label would throw away most of the pipeline to
-  // enforce a preference.
-  assert.equal(matchesLocation(["France"], null), true);
-  assert.equal(matchesLocation(["France"], ""), true);
-  assert.equal(matchesLocation(["France"], "   "), true);
+/**
+ * The answer that did not exist, and the whole reason the bug survived.
+ *
+ * Reaction and comment rows carry no location at all, so the old boolean read
+ * most of the pipeline as allowed. Unknown is neither allowed nor refused: the
+ * fence in safety/geo-fence.ts opens the profile and settles it before anybody
+ * is contacted, and refuses them if it still cannot tell.
+ */
+test("a card with no place on it is unknown, not allowed", () => {
+  assert.equal(placeOf(FRANCE, null), "unknown");
+  assert.equal(placeOf(FRANCE, ""), "unknown");
+  assert.equal(placeOf(FRANCE, "   "), "unknown");
+  assert.equal(placeOf(FRANCE, "Greater Paris Metropolitan Region"), "unknown");
 });
 
-test("a one-letter place never matches everything by accident", () => {
-  assert.equal(matchesLocation(["F"], "Bengaluru, Karnataka, India"), false);
+test("the country is read whatever language LinkedIn printed it in", () => {
+  assert.equal(placeOf(FRANCE, "Lyon, Frankreich"), "in");
+  assert.equal(placeOf(FRANCE, "Lyon, Francia"), "in");
+  assert.equal(placeOf({ locations: ["DE"] }, "Berlin, Allemagne"), "in");
 });
 
 /**

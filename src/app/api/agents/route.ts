@@ -12,6 +12,7 @@ import { and, count, eq, inArray, isNull } from "drizzle-orm";
 import { resolveWorkspace } from "@/lib/workspace";
 import { parseLinkedInSource } from "@/lib/agent-sources";
 import { EXTRA_AGENT_PRICE, effectiveAgentQuota } from "@/lib/plans";
+import { normaliseCountries } from "@shared/countries.ts";
 
 // GET /api/agents - every agent in the workspace, with its funnel counts
 export async function GET() {
@@ -270,7 +271,16 @@ export async function POST(request: NextRequest) {
       icpSummary: text(body?.icpSummary, 2000),
       jobRoles: list(body?.jobRoles, 20),
       industries: list(body?.industries, 20),
-      locations: list(body?.locations, 20),
+      /**
+       * Countries, not text, and not capped at 20.
+       *
+       * `list` keeps whatever strings arrive and trims the tail, which is wrong
+       * twice here. It let "Americas" be stored, which matched no place
+       * LinkedIn prints and filtered nobody, and the cap would have silently
+       * dropped 37 of the 57 countries in that region anyway. normaliseCountries
+       * keeps ISO codes and nothing else.
+       */
+      locations: JSON.stringify(normaliseCountries(body?.locations)),
       companySizes: list(body?.companySizes, 10),
       matchLevel: pick(body?.matchLevel, ["precision", "balanced", "volume"] as const, "balanced"),
       goal: pick(body?.goal, ["conversations", "meetings"] as const, "conversations"),

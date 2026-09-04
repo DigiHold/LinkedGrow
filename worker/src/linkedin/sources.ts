@@ -8,7 +8,7 @@ import { book } from "../safety/reading.ts";
 import type { DB } from "../store.ts";
 import { judgeAsking, judgeIcpFit } from "../messages/generate.ts";
 import { AGENT } from "./agent-meta.ts";
-import { mine, type Engager, matchesIcp, matchesLocation, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile, readMeter } from "./miner.ts";
+import { mine, type Engager, matchesIcp, placeOf, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile, readMeter } from "./miner.ts";
 
 /**
  * Lead sources beyond competitor engagement. Each one reads a different intent signal, all through
@@ -185,8 +185,9 @@ export function toViewer(row: { href: string; text: string }): Engager | null {
      *
      * "Lyon, Auvergne-Rhone-Alpes, France", "Greater Paris Metropolitan
      * Region", "Zurich, Switzerland". Profile-viewer rows do not carry one and
-     * neither do reaction rows, so this is often absent, and matchesLocation
-     * treats absent as passing rather than throwing the person away.
+     * neither do reaction rows, so this is often absent. An absent place is
+     * read as unknown rather than as allowed, and the profile settles it before
+     * anybody is contacted.
      */
     location: lines[2] ?? undefined,
     source: "viewer",
@@ -345,9 +346,16 @@ export async function minePeople(
         offIcp++;
         continue;
       }
-      // Where the customer said their buyers are. A people-search row is the one
-      // card that carries a place, and it is also the widest door the agent has.
-      if (!matchesLocation(cfg.leads.locations ?? [], lead.location)) {
+      /**
+       * Where the customer said their buyers are.
+       *
+       * A people-search row is the one card that reliably carries a place, so
+       * this is where a wrong country is cheapest to refuse: before the profile
+       * is ever opened. Only a place read as OUT is dropped here. A row whose
+       * place LinkedIn did not print stays, and claimAll sends it to be
+       * resolved on the profile rather than guessing from a blank.
+       */
+      if (placeOf(cfg.leads, lead.location) === "out") {
         offPlace++;
         continue;
       }

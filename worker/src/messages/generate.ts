@@ -1,5 +1,6 @@
 import type { AgentContext } from "../config.ts";
 import { generate, models } from "../ai.ts";
+import { countryName } from "../../../shared/countries.ts";
 
 /**
  * The two model calls that decide whether a person is worth contacting at all.
@@ -71,8 +72,10 @@ export async function judgeIcpFit(
     ctx.cfg.leads.industries?.length
       ? `Industries worth having: ${ctx.cfg.leads.industries.join(", ")}`
       : "",
+    // Named, never as codes: a model reading "US, MX, BR" judges worse than one
+    // reading "United States, Mexico, Brazil", and the row stores codes now.
     ctx.cfg.leads.locations?.length
-      ? `Where the buyers should be: ${ctx.cfg.leads.locations.join(", ")}. Somebody clearly outside this is a weaker match however good their title reads.`
+      ? `Where the buyers should be: ${ctx.cfg.leads.locations.map((c) => countryName(c)).join(", ")}. Somebody clearly outside this is a weaker match however good their title reads.`
       : "",
     "",
     `Person's headline: ${headline}`,

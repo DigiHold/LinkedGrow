@@ -12,6 +12,8 @@ import {
 } from "@/components/dashboard/ui/page";
 import { LinkedInAccountsPanel } from "@/components/dashboard/linkedin/accounts-panel";
 import { RAMP, dayPace, workingDays } from "@/lib/agent-pace";
+import { normaliseCountries } from "@shared/countries.ts";
+import { CountryPicker } from "@/components/dashboard/agents/country-picker";
 
 /**
  * Agent settings.
@@ -299,7 +301,7 @@ export function SettingsTab({
         observeOnly: form.observeOnly,
         jobRoles: parseList(form.jobRoles),
         industries: parseList(form.industries),
-        locations: parseList(form.locations),
+        locations: normaliseCountries(form.locations),
         companySizes: parseList(form.companySizes),
         timezone: form.timezone,
         workdayDays: parseDays(form.workdayDays),
@@ -459,11 +461,14 @@ export function SettingsTab({
               className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
             />
           </Field>
-          <Field label="Locations" hint="Comma separated. Empty means anywhere.">
-            <input
-              value={parseList(form.locations).join(", ")}
-              onChange={(e) => set("locations", JSON.stringify(splitCsv(e.target.value)))}
-              className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
+          {/* Free text until 2026-09-04, and free text is why an agent aimed at
+              the Americas returned Asia: "Americas" matched no place LinkedIn
+              prints, and a country typed in the wrong language matched nothing
+              either. Codes only now, chosen from the list. */}
+          <Field label="Countries" hint="Worldwide by default. Nobody outside these is ever contacted.">
+            <CountryPicker
+              value={normaliseCountries(form.locations)}
+              onChange={(codes) => set("locations", JSON.stringify(codes))}
             />
           </Field>
 

@@ -1,5 +1,6 @@
 import type { Locator, Page } from "patchright";
 import type { Config } from "../config.ts";
+import { placeVerdict, type PlaceVerdict } from "../../../shared/countries.ts";
 import { log } from "../logger.ts";
 import { openSession, hasSessionCookie } from "../browser/driver.ts";
 import { dwell, scrollHuman, clickHumanLocator, sleep, randInt } from "../browser/human.ts";
@@ -673,32 +674,23 @@ export function saysWord(hay: string, keyword: string): boolean {
 /**
  * Is this person where the customer said their buyers are.
  *
- * The wizard asks for locations and the answer filtered nobody: `a.locations`
- * was read once, to write "You are Jane, based in Lisbon" into the message
- * prompts, which is the SENDER's location. An agent aimed at France was
- * therefore claiming founders in Bangalore and Sofia, and the customer read
- * that as bad targeting because it is.
+ * Rewritten on 2026-09-04 after a customer aimed an agent at the Americas and
+ * the Caribbean and was handed people in Asia and the Middle East every day.
+ * The old version took free text and answered a bare boolean, and the boolean
+ * is the half that mattered: it said true for somebody in the right country,
+ * true for somebody whose place LinkedIn never printed, and true for everybody
+ * when no country was chosen. Nothing downstream could tell the three apart, so
+ * nothing downstream could refuse anybody.
  *
- * Loose on purpose. LinkedIn prints a place, not a country code: "Lyon,
- * Auvergne-Rhone-Alpes, France", "Greater Paris Metropolitan Region", "Zurich,
- * Switzerland". A substring is the honest match for that, and a word-boundary
- * check would fail on the accented and hyphenated forms.
- *
- * Empty means anywhere, which is the default and must stay permissive: a
- * customer who named no place has not asked to be filtered.
- *
- * A card with NO place on it passes. Most reaction rows carry no location at
- * all, and dropping everybody LinkedIn happened not to label would throw away
- * most of the pipeline to enforce a preference.
+ * The countries are ISO codes now, picked from a list rather than typed, and
+ * the answer is in, out or unknown. See shared/countries.ts for how a place
+ * string is read back to a country, in whichever language LinkedIn printed it.
  */
-export function matchesLocation(wanted: string[], place: string | null | undefined): boolean {
-  if (!wanted.length) return true;
-  const where = (place ?? "").trim().toLowerCase();
-  if (!where) return true;
-  return wanted.some((w) => {
-    const want = w.trim().toLowerCase();
-    return want.length > 1 && where.includes(want);
-  });
+export function placeOf(
+  cfg: Pick<Config["leads"], "locations"> | Config["leads"],
+  place: string | null | undefined
+): PlaceVerdict {
+  return placeVerdict(cfg.locations ?? [], place);
 }
 
 export function matchesIcp(

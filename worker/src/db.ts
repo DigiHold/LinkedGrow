@@ -6,6 +6,7 @@ import { timezoneForCountry } from "./browser/fingerprint.ts";
 import { firstNameOf } from "./names.ts";
 import { minimumScore } from "./linkedin/competitor.ts";
 import { EDITION, type Edition } from "./edition.ts";
+import { countryName, normaliseCountries } from "../../shared/countries.ts";
 
 /**
  * The worker's view of the database.
@@ -263,16 +264,21 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
         icpKeywords: parseList(r.job_roles),
         industries: parseList(r.industries),
         /**
-         * Where the customer wants their buyers, which filtered nobody.
+         * The countries the customer chose, as ISO codes. Empty is worldwide.
          *
          * `a.locations` was selected, and used in exactly one place: to write
          * "You are Jane, based in Lisbon" into the message prompts. It is
          * the SENDER's location. No prospect was ever dropped for being on the
          * wrong continent, so an agent aimed at France was claiming people in
-         * Bangalore and Sofia, and the customer read that as bad targeting
-         * because it is.
+         * Bangalore and Sofia, and a customer aiming at the Americas was handed
+         * Asia and the Middle East. Both halves are fixed: the sender's country
+         * comes from the account below, and these now gate every lead through
+         * safety/geo-fence.ts.
+         *
+         * Run through normaliseCountries rather than trusted, so an agent still
+         * carrying free text from before the picker targets nobody by accident.
          */
-        locations: parseList(r.locations),
+        locations: normaliseCountries(r.locations),
         intentQueries: [],
       },
       product: {
@@ -360,10 +366,17 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
         // so signing with anything else would read as a different person.
         firstName: String(r.account_full_name ?? "").trim().split(/\s+/)[0] ?? "",
         companyInfo: String(r.company_info ?? ""),
-        // locations is a JSON array in the row, and reading it raw put the
-        // literal string "[]" into the prompt as "based in []". First real
-        // entry or nothing; the 2-letter account country is never prose.
-        location: parseList(r.locations)[0] ?? "",
+        /**
+         * The country this account really sends from, named.
+         *
+         * It used to be the first of the TARGET countries, which is where the
+         * buyers are and not where the sender is: an agent selling into Germany
+         * introduced its owner as based in Germany whatever their passport
+         * said. The account's own country is the honest answer, it was already
+         * selected, and it was skipped only because a bare "CH" is not prose.
+         * shared/countries.ts turns it into one.
+         */
+        location: countryName(String(r.country ?? "")) || "",
       },
       cfg,
     };
@@ -657,7 +670,7 @@ export type ReplyIntent = "interested" | "neutral" | "refused";
  */
 export async function unscoredLeads(ctx: AgentContext, limit: number) {
   const { rows } = await db().execute({
-    sql: `SELECT id, full_name, headline, company, signal_text, signal_hits, signal_kinds
+    sql: `SELECT id, full_name, headline, company, location, signal_text, signal_hits, signal_kinds
           FROM agent_leads
           WHERE workspace_id = ? AND agent_id = ? AND match_score IS NULL
             /* Rejected by the customer, so there is nothing left to judge and

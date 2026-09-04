@@ -107,10 +107,40 @@ const OBEYED: Array<{ setting: string; provenBy: RegExp; where: string }> = [
     provenBy: /if \(db\.reviewMode\)\s*\{[\s\S]{0,200}?holdForApproval/,
     where: "sequence.ts parks the draft before sendDm is reached",
   },
+  /**
+   * The entry that passed while the setting did nothing, and why it is now four.
+   *
+   * It asserted that the string `matchesLocation(cfg.leads.locations` appeared
+   * somewhere in the tree. It did, in exactly one lead source out of nine, and
+   * the other eight let anybody through. So the check reported a setting obeyed
+   * while a customer aiming at the Americas was handed Asia every day for
+   * weeks. The header of this file says a setting being mentioned is not the
+   * same as a setting being obeyed, and this is the entry that proved it about
+   * itself.
+   *
+   * Presence is not the claim any more. The claim is that the countries are
+   * enforced where nothing can go round them: once at the point every source
+   * meets, and once on every way there is of touching a person.
+   */
   {
-    setting: "locations filter a prospect",
-    provenBy: /matchesLocation\(cfg\.leads\.locations/,
-    where: "sources.ts drops somebody outside the chosen places",
+    setting: "the countries gate every lead, from every source",
+    provenBy: /placeOf\(ctx\.cfg\.leads, person\.location\) === "out"/,
+    where: "sourcing.ts refuses in claimAll, which every source passes through",
+  },
+  {
+    setting: "the countries gate every write to a person",
+    provenBy: /export function onlyInCountries\(/,
+    where: "safety/geo-fence.ts wraps the actions the way the test allowlist does",
+  },
+  {
+    setting: "the fence is actually wrapped around the live actions",
+    provenBy: /onlyInCountries\(browserActions\(session\.page\), ctx, session\.page\)/,
+    where: "worker.ts builds the actions through it, so nothing bypasses it",
+  },
+  {
+    setting: "a place that cannot be read is never treated as allowed",
+    provenBy: /answer === "in"\) return actions\.sendConnect/,
+    where: "geo-fence.ts sends only on `in`, never on `unknown`",
   },
   {
     setting: "industries reach the fit judge",
@@ -133,5 +163,42 @@ test("review mode cannot be bypassed by an unhooked queue writer", () => {
   assert.ok(
     /holdForApproval\(/.test(all),
     "the hold exists but nothing calls it, which is how this broke the first time"
+  );
+});
+
+/**
+ * A write the fence does not cover is a way out of the country rule.
+ *
+ * Both guards wrap the same three methods and they have to keep wrapping the
+ * same three. Comparing them to each other is not enough on its own: a fourth
+ * way to touch somebody, wrapped by neither, would leave the two agreeing and
+ * the guarantee gone. So the interface is read as well, and anything on it that
+ * writes to a person has to be handled by both.
+ *
+ * withdrawInvite is deliberately not a write here, for the reason the allowlist
+ * already gives about itself: it can only ever undo something this agent did.
+ */
+const WRITES = ["sendConnect", "sendDm", "warmUp"];
+
+function wrappedIn(file: string): string[] {
+  const src = readFileSync(new URL(file, import.meta.url), "utf8");
+  return [...src.matchAll(/^ {4}([a-zA-Z]+): async \(/gm)].map((m) => m[1] as string).sort();
+}
+
+test("both guards wrap every way of writing to a person, and the same ones", () => {
+  assert.deepEqual(wrappedIn("./safety/allowlist.ts"), [...WRITES].sort());
+  assert.deepEqual(wrappedIn("./safety/geo-fence.ts"), [...WRITES].sort());
+});
+
+test("no new way of writing to a person appeared unguarded", () => {
+  const actions = readFileSync(new URL("./linkedin/actions.ts", import.meta.url), "utf8");
+  const declared = [...actions.matchAll(/^ {2}([a-zA-Z]+)\(p: ProspectRow/gm)].map((m) => m[1] as string);
+  // Reads are free: they open a page and change nothing about the person.
+  const reads = ["canMessageNow", "readThread", "withdrawInvite"];
+  const unguarded = declared.filter((name) => !WRITES.includes(name) && !reads.includes(name));
+  assert.deepEqual(
+    unguarded,
+    [],
+    `these touch a prospect and neither guard wraps them: ${unguarded.join(", ")}`
   );
 });

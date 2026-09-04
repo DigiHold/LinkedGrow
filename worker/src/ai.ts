@@ -4,6 +4,7 @@ import { log } from "./logger.ts";
 import { chat, type AgentProvider } from "../../shared/ai-client.ts";
 import { AGENT_PROVIDERS, isAgentProvider, priceFor } from "../../shared/ai-models.ts";
 import { instance } from "./instance.ts";
+import { countryName } from "../../shared/countries.ts";
 
 /**
  * Every model call in the worker goes through here.
@@ -382,6 +383,16 @@ export async function scoreLead(
      */
     hits?: number;
     kinds?: string;
+    /**
+     * Where LinkedIn says they are, as it printed it.
+     *
+     * The scorer was never told, and it was never told which countries the
+     * customer had chosen either, so a founder in Dubai could score 90 on an
+     * agent aimed at Colombia and be invited on the strength of it. The fence
+     * in safety/geo-fence.ts is what actually refuses them; this is so the
+     * score the customer reads agrees with the decision the product made.
+     */
+    location?: string;
   }
 ,
   /**
@@ -418,6 +429,19 @@ export async function scoreLead(
           .join(", ")}. Turning up repeatedly through different routes is hard evidence of being active in this market, and it is worth more than any headline.`
       : "";
 
+  /**
+   * The countries the agent targets, named rather than coded.
+   *
+   * Somebody outside them never reaches an invitation, because the fence stops
+   * it. Telling the scorer as well keeps the number on the dashboard honest:
+   * without this line it would show a 90 next to a person the product had
+   * already decided it would never write to.
+   */
+  const places = ctx.cfg.leads.locations ?? [];
+  const wantedPlaces = places.length
+    ? `The customer only sells to people in: ${places.map((c) => countryName(c)).join(", ")}. Anybody outside those scores 0, whatever their title reads.`
+    : "";
+
   const m = await models();
   const answer = await generate(
     ctx,
@@ -428,6 +452,8 @@ Prospect:
 Name: ${profile.name}
 Headline: ${profile.headline}
 Company: ${profile.company ?? "unknown"}
+${profile.location ? `Where LinkedIn says they are: ${profile.location}` : ""}
+${wantedPlaces}
 ${profile.signal ? `How they were found: ${profile.signal}` : ""}${repeats}
 ${profile.about ? `About: ${profile.about.slice(0, 600)}` : ""}
 

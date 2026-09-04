@@ -2,6 +2,7 @@ import type { AgentContext } from "../config.ts";
 import { generate, models } from "../ai.ts";
 import { db } from "../db.ts";
 import { log } from "../logger.ts";
+import { countryName } from "../../../shared/countries.ts";
 
 /**
  * What to search for when the customer did not say.
@@ -163,6 +164,19 @@ function prompt(ctx: AgentContext, site: string): string {
     // roles are ever matched against a headline; see matchesIcp.
     ctx.cfg.leads.icpKeywords.length || ctx.cfg.leads.industries?.length
       ? `Roles and industries they named: ${[...ctx.cfg.leads.icpKeywords, ...(ctx.cfg.leads.industries ?? [])].join(", ")}`
+      : "",
+    /**
+     * The countries, which this prompt never carried.
+     *
+     * Every query, topic and competitor it invented was therefore global, and
+     * LinkedIn answers a global query with its biggest populations. An agent
+     * aimed at the Americas was fed searches that could only return the world,
+     * and then judged on the results. The fence refuses the wrong countries
+     * either way; this is so the agent stops looking for them in the first
+     * place and spends its searches where the customer sells.
+     */
+    ctx.cfg.leads.locations?.length
+      ? `Where their buyers are: ${ctx.cfg.leads.locations.map((c) => countryName(c)).join(", ")}. Everything you return has to be aimed at those countries: use the language and the vocabulary spoken there, name competitors that actually sell there, and prefer local terms over global ones.`
       : "",
     ctx.website ? `Their website: ${ctx.website}` : "",
     site ? `\nTheir homepage text, truncated:\n"""\n${site}\n"""` : "",

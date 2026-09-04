@@ -1143,6 +1143,15 @@ export const agents = sqliteTable("agents", {
   icpSummary: text("icp_summary"),
   jobRoles: text("job_roles"),
   industries: text("industries"),
+  /**
+   * The countries this agent may look in, as a JSON array of ISO 3166-1 alpha-2
+   * codes. Empty or null is worldwide, which is the default.
+   *
+   * Free text until 2026-09-04, and free text is why the setting did nothing:
+   * "Americas" matches no place LinkedIn prints and "Allemagne" never equals
+   * "Germany", so an agent aimed at one continent worked the whole world. Only
+   * normaliseCountries from shared/countries.ts writes here now.
+   */
   locations: text("locations"),
   companySizes: text("company_sizes"),
   matchLevel: text("match_level", {

@@ -32,6 +32,7 @@ import { ensureProfileCaptured } from "./linkedin/profile.ts";
 import { refreshTier } from "./linkedin/tier.ts";
 import { tierOf } from "./safety/reading.ts";
 import { onlyContact } from "./safety/allowlist.ts";
+import { onlyInCountries } from "./safety/geo-fence.ts";
 import {
   RELATIONSHIP_STEPS,
   helloMessage,
@@ -176,12 +177,18 @@ async function runAgent(ctx: AgentContext): Promise<void> {
     // read from. Cheap to call: one indexed SELECT says there is nothing to do.
     await ensureProfileCaptured(session.page, ctx.linkedinAccountId);
 
-    // Every write funnels through here, so the test allowlist is applied once rather than checked
-    // at five call sites, any one of which could be forgotten.
+    /**
+     * Every write funnels through here, so the guarantees are applied once
+     * rather than checked at five call sites, any one of which could be
+     * forgotten.
+     *
+     * The country fence is the inner wrapper and the test allowlist the outer
+     * one, so a run restricted to a handful of profiles refuses them before the
+     * fence would spend a profile visit working out where they live.
+     */
+    const fenced = onlyInCountries(browserActions(session.page), ctx, session.page);
     const actions =
-      ctx.testRecipients.length > 0
-        ? onlyContact(browserActions(session.page), ctx.testRecipients)
-        : browserActions(session.page);
+      ctx.testRecipients.length > 0 ? onlyContact(fenced, ctx.testRecipients) : fenced;
     const key = groupKey(ctx.linkedinAccountId);
 
     // Finding people comes before writing to them, for two reasons. The queue

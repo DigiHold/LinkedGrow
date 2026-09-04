@@ -11,7 +11,7 @@ import {
 import { BudgetExceededError, NoAiKeyError, scoreLead } from "../ai.ts";
 import { announce, keepAlive } from "../store.ts";
 import { log } from "../logger.ts";
-import { mine, mineIntent, readMeter, type Engager } from "./miner.ts";
+import { mine, mineIntent, placeOf, readMeter, type Engager } from "./miner.ts";
 import {
   disableSource,
   learn,
@@ -328,7 +328,27 @@ async function claimAll(
   found: Engager[]
 ): Promise<number> {
   let claimed = 0;
+  let offPlace = 0;
   for (const person of found) {
+    /**
+     * The countries the customer chose, enforced once, where every source meets.
+     *
+     * This gate used to live inside the people search and nowhere else, so it
+     * covered one door out of nine. Competitor engagers, group commenters, the
+     * customer's own audience, intent posts, buying signals and profile viewers
+     * all arrived here having been judged on their job title alone, and an
+     * agent aimed at the Americas filled up with people in Asia. claimAll is
+     * the one place every person from every source passes through, which is why
+     * the check belongs here and not in each miner.
+     *
+     * Only OUT is refused. Somebody whose place LinkedIn did not print is
+     * unknown rather than allowed, and they are claimed so the profile can
+     * settle it before anything is ever sent to them. See resolvePlaces.
+     */
+    if (placeOf(ctx.cfg.leads, person.location) === "out") {
+      offPlace += 1;
+      continue;
+    }
     const ok = await claimLead(ctx, {
       profileId: person.profileId,
       profileUrl: person.profileUrl,
@@ -373,6 +393,12 @@ async function claimAll(
       "lead",
       `Found ${person.fullName}${person.headline ? `, ${person.headline}` : ""}, via ${sourceLabel}`
     ).catch(() => {});
+  }
+  if (offPlace > 0) {
+    log(`Dropped ${offPlace} people outside the chosen countries.`, {
+      countries: ctx.cfg.leads.locations,
+      source: sourceLabel,
+    });
   }
   return claimed;
 }
@@ -1201,6 +1227,7 @@ export async function scorePass(ctx: AgentContext): Promise<void> {
           // used to throw the second and third away entirely.
           hits: Number(row.signal_hits ?? 1),
           kinds: row.signal_kinds ? String(row.signal_kinds) : undefined,
+          location: row.location ? String(row.location) : undefined,
         },
         memory
       );

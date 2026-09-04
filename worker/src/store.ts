@@ -35,6 +35,12 @@ export interface ProspectRow {
   company: string | null;
   /** Their photo, on our own bucket. The live ticker puts a face on the row. */
   avatar_url: string | null;
+  /**
+   * Where LinkedIn says they are, as it printed it: "Austin, Texas, United
+   * States", "Greater Paris Metropolitan Region", or nothing at all. Read back
+   * to a country by shared/countries.ts, never compared as text.
+   */
+  location: string | null;
   website: string | null;
   source: string | null;
   angle: string | null;
@@ -101,6 +107,7 @@ function toRow(r: Record<string, unknown>): ProspectRow {
     headline: (r.headline as string) ?? null,
     company: (r.company as string) ?? null,
     avatar_url: (r.avatar_url as string) ?? null,
+    location: ((r.location as string) ?? "").trim() || null,
     website: null,
     source: (r.signal_type as string) ?? null,
     angle: (r.angle as string) ?? null,
@@ -221,6 +228,41 @@ export async function setProspectReplyIntent(
     sql: `UPDATE agent_leads SET reply_intent = ?, updated_at = ?
            WHERE id = ? AND workspace_id = ?`,
     args: [intent, Math.floor(Date.now() / 1000), uuidFor(id), ctx.workspaceId],
+  });
+}
+
+/**
+ * The place LinkedIn showed on the profile, kept so it is read once.
+ *
+ * Most leads arrive with no place at all: a reaction row carries a name and a
+ * headline and nothing else. The fence opens the profile to settle it, and
+ * storing the answer is what stops the next pass paying for the same page.
+ */
+export async function setProspectPlace(ctx: DB, id: number, place: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE agent_leads SET location = ?, updated_at = ?
+           WHERE id = ? AND workspace_id = ?`,
+    args: [place.trim().slice(0, 200), Math.floor(Date.now() / 1000), uuidFor(id), ctx.workspaceId],
+  });
+}
+
+/**
+ * Closes a lead the agent is not allowed to contact, with the reason on the row.
+ *
+ * `excluded_reason` has been a column since the table was written and nothing
+ * ever filled it, so a lead that quietly stopped moving looked identical to one
+ * still waiting its turn. A person held back for being in the wrong country is
+ * exactly the case the column was for: the customer should be able to see it
+ * and understand it without asking anybody.
+ */
+export async function excludeProspect(ctx: DB, id: number, reason: string): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  await db().execute({
+    sql: `UPDATE agent_leads
+             SET sequence_status = 'skipped', step = 'skipped', step_at = ?,
+                 excluded_reason = ?, updated_at = ?
+           WHERE id = ? AND workspace_id = ?`,
+    args: [now, reason.slice(0, 200), now, uuidFor(id), ctx.workspaceId],
   });
 }
 
