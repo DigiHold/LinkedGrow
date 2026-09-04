@@ -38,6 +38,24 @@ const WAIT_FOR_CODE_MS = 5 * 60 * 1000;
  * enough that a browser is never left holding a slot all afternoon.
  */
 const WAIT_FOR_APPROVAL_MS = 10 * 60 * 1000;
+/**
+ * How long the tap is given on its own before a code is asked for instead.
+ *
+ * Two minutes is long enough for somebody who has their phone in their hand and
+ * short enough that somebody who is never going to get the notification is not
+ * left staring at a spinner. The customer whose account this exists for waited
+ * ten minutes six times between 2026-08-24 and 2026-09-03 and no notification
+ * ever reached his phone, so the tap was never coming and nothing else was ever
+ * tried.
+ */
+const APPROVAL_GRACE_MS = 2 * 60 * 1000;
+/** Between two attempts at leaving the tap behind, so one click is given time to land. */
+const SWITCH_EVERY_MS = 45_000;
+/** How many controls this is allowed to press. Enough for a chooser page, not enough for a loop. */
+const MAX_SWITCH_CLICKS = 3;
+/** How long a code field is waited for after pressing the way out. */
+const CODE_APPEARS_MS = 25_000;
+
 /** A TOTP code lasts 30 seconds, so the poll has to be tight. */
 const POLL_MS = 2_000;
 
@@ -110,6 +128,43 @@ const RESTRICTED_NOTICE =
 /** Words for "we sent a notification to your app", in the languages we sell into. */
 const APP_APPROVAL =
   /(linkedin app|appli linkedin|app linkedin|linkedin-app|aplicación de linkedin|app di linkedin|tap yes|touchez oui|toque en sí|tippen sie auf ja|tocca sì|benachrichtigung|notification|notificación|notifica)/i;
+
+/**
+ * The controls that lead to a code, and the one control that must never be pressed.
+ *
+ * LinkedIn's device check is answered with a tap in the mobile app, and when
+ * that notification does not arrive there is nothing on the page to type. Its
+ * own help says what to do next: "If you are still unable to see the prompt,
+ * select Verify using SMS". So the page carries a way out and the worker has to
+ * find it, in whatever language the account is served, which follows the
+ * country the account signs in from rather than ours.
+ *
+ * `NEVER_CLICK` is the important half. The same page carries "No, it's not me",
+ * which tells LinkedIn the account is compromised and costs the customer their
+ * password. A control matching it is skipped whatever else it says, and word
+ * boundaries matter: "another" contains "no".
+ */
+const ANOTHER_WAY =
+  /(sms|correo|e-?mail|another way|different way|another (verification )?method|otra (forma|manera)|otro m(é|e)todo|autre (m(é|e)thode|mani(è|e)re)|verify using|verificar (mediante|con)|v(é|e)rifier (autrement|par)|andere methode|per (e-?mail|sms))/i;
+
+const NEVER_CLICK =
+  /\b(no|not me|n'est pas moi|no soy yo|n(ã|a)o sou eu|nein|cancel|annuler|cancelar|abbrechen|sign out|d(é|e)connexion|report|denunciar|signaler|resend|reenviar|renvoyer)\b/i;
+
+/**
+ * True when this control offers another way of verifying, and is safe to press.
+ *
+ * Pure so the whole decision can be tested without a browser, which is the only
+ * way to be sure the denial control is never the one that matches. The length
+ * cap is the second guard: a <div role="button"> wrapping the page has the
+ * whole page as its accessible name, every word in it, and pressing that
+ * presses whatever sits underneath.
+ */
+export function isAnotherWayControl(name: string): boolean {
+  const clean = name.trim().replace(/\s+/g, " ");
+  if (!clean || clean.length > 60) return false;
+  if (NEVER_CLICK.test(clean)) return false;
+  return ANOTHER_WAY.test(clean);
+}
 
 /** The box that stops this happening on every future sign-in. */
 const REMEMBER_DEVICE =
@@ -259,13 +314,109 @@ async function askForCode(
 }
 
 /**
- * Waits for the tap on the phone, having asked for it in the dashboard.
+ * Everything this checkpoint is offering, named the way a screen reader names it.
  *
- * Nothing is typed and nothing is submitted. LinkedIn moves the page itself the
- * moment the notification is answered, so the only job here is to notice, and
- * to tick "remember this device" first so the account is never asked again.
+ * The page that stops an account is the one nobody can see, and until this
+ * existed the only record of it was the sentence the worker guessed at. Reading
+ * the controls costs nothing, works in every language, and is what tells us
+ * whether LinkedIn is offering a way out at all.
  *
- * Returns true when the checkpoint clears.
+ * Anything shaped like an address is masked before it is logged. LinkedIn masks
+ * them itself on that page, and the journal is not the place to find out it
+ * missed one.
+ */
+async function offeredControls(page: Page): Promise<string[]> {
+  const names = await page
+    .evaluate(() => {
+      const out: string[] = [];
+      const nodes = document.querySelectorAll(
+        "button, a, [role='button'], [role='link'], input[type='submit'], input[type='button']"
+      );
+      for (const node of Array.from(nodes)) {
+        const el = node as HTMLElement;
+        const box = el.getBoundingClientRect();
+        if (box.width === 0 || box.height === 0) continue;
+        const label = (
+          el.innerText ||
+          el.getAttribute("aria-label") ||
+          (el as HTMLInputElement).value ||
+          ""
+        ).trim();
+        if (label) out.push(label.slice(0, 120));
+      }
+      return out;
+    })
+    .catch(() => [] as string[]);
+  return names.map((name) => name.replace(/\S*@\S*/g, "<address>"));
+}
+
+/**
+ * Leaves the tap behind and asks LinkedIn for something the customer can type.
+ *
+ * Pressed only after the grace period, so the accounts where the notification
+ * does arrive, which is most of them, are untouched. Each control is pressed at
+ * most once: the SMS button sends a text every time it is clicked and three of
+ * those is a customer wondering which code is the real one.
+ *
+ * Returns true when a code field appears, which is the caller's signal to run
+ * the ordinary code flow and put the box in front of the customer.
+ */
+async function switchToACode(
+  page: Page,
+  accountId: string,
+  pressed: Set<string>
+): Promise<boolean> {
+  const controls = await offeredControls(page);
+  log("what the checkpoint is offering", { accountId, controls });
+
+  const wanted = controls.find((name) => isAnotherWayControl(name) && !pressed.has(name));
+  if (!wanted) return false;
+  pressed.add(wanted);
+
+  const byButton = page.getByRole("button", { name: wanted, exact: true }).first();
+  const byLink = page.getByRole("link", { name: wanted, exact: true }).first();
+  const target = (await byButton.isVisible().catch(() => false)) ? byButton : byLink;
+  if (!(await target.isVisible().catch(() => false))) return false;
+
+  log("the notification never came, asking LinkedIn for a code instead", {
+    accountId,
+    control: wanted,
+  });
+  await clickHumanLocator(page, target);
+  await page.waitForLoadState("domcontentloaded").catch(() => {});
+
+  const until = Date.now() + CODE_APPEARS_MS;
+  while (Date.now() < until) {
+    if (await page.locator(SEL.codeInput).first().isVisible().catch(() => false)) {
+      await capturePage(page, accountId, "the code page reached from the app checkpoint");
+      return true;
+    }
+    await sleep(POLL_MS);
+  }
+  // Not a code page. Most likely a list of methods to choose from, which the
+  // next pass can press in turn, and the capture is what tells us which.
+  await capturePage(page, accountId, "pressed the way out of the app checkpoint");
+  return false;
+}
+
+/**
+ * Waits for the tap on the phone, and asks for a code when it does not come.
+ *
+ * Nothing is typed and nothing is submitted while the tap is still possible.
+ * LinkedIn moves the page itself the moment the notification is answered, so
+ * the job for the first two minutes is only to notice, and to tick "remember
+ * this device" first so the account is never asked again.
+ *
+ * After that the wait becomes an action. A notification that has not arrived in
+ * two minutes is usually not going to: the phone is signed into another
+ * account, notifications are off, or LinkedIn simply did not deliver it. One
+ * customer met that from 2026-08-24 to 2026-09-03, six sign-ins, every one of
+ * them ten minutes of silence and then a dead end, with disconnecting and
+ * reconnecting the account landing straight back on the same page. So the page
+ * is read, the control that leads to a code is pressed, and the customer gets
+ * something they can actually answer.
+ *
+ * Returns true when the checkpoint clears or a code field appears.
  */
 async function waitForApproval(
   page: Page,
@@ -278,6 +429,11 @@ async function waitForApproval(
   if (await remember.isVisible().catch(() => false)) {
     await remember.check().catch(() => {});
   }
+
+  // The page itself, kept. This branch used to be the only one that failed
+  // without recording anything, so the exact wording of the checkpoint that
+  // blocks an account was the one thing nobody could look up.
+  await capturePage(page, accountId, "the checkpoint asking for a tap in the app");
 
   await db().execute({
     sql: `UPDATE linkedin_accounts
@@ -292,7 +448,7 @@ async function waitForApproval(
       // launch morning, 2026-08-19, on Nicolas's own account).
       Math.floor(Date.now() / 1000),
       Math.floor(Date.now() / 1000),
-      "LinkedIn sent a notification to the LinkedIn app on your phone. Open it and tap Yes, and this finishes on its own.",
+      "LinkedIn sent a notification to the LinkedIn app on your phone. Open the app and tap Yes, and this finishes on its own. If nothing shows up there within two minutes, a code will be asked for instead and this page will tell you where to find it.",
       Math.floor(Date.now() / 1000),
       accountId,
       workspaceId,
@@ -300,7 +456,11 @@ async function waitForApproval(
   });
   log("waiting for the tap on the phone", { accountId });
 
-  const until = Date.now() + WAIT_FOR_APPROVAL_MS;
+  const started = Date.now();
+  const until = started + WAIT_FOR_APPROVAL_MS;
+  const pressed = new Set<string>();
+  let nextSwitchAt = started + APPROVAL_GRACE_MS;
+
   while (Date.now() < until) {
     await sleep(POLL_MS);
     if (!CHECKPOINT_URL.test(page.url())) return true;
@@ -309,7 +469,14 @@ async function waitForApproval(
     if (await page.locator(SEL.codeInput).first().isVisible().catch(() => false)) {
       return true;
     }
+
+    if (Date.now() >= nextSwitchAt && pressed.size < MAX_SWITCH_CLICKS) {
+      nextSwitchAt = Date.now() + SWITCH_EVERY_MS;
+      if (await switchToACode(page, accountId, pressed)) return true;
+    }
   }
+
+  await capturePage(page, accountId, "nobody could answer the app checkpoint");
   return false;
 }
 
@@ -572,7 +739,7 @@ export async function signIn(input: SignInInput): Promise<void> {
                    SET challenge_state = 'failed', status_reason = ?, updated_at = ?
                  WHERE id = ?`,
           args: [
-            "Nobody confirmed the sign-in in the LinkedIn app, so it stopped. Press Try again whenever you have your phone.",
+            "Nothing confirmed this sign-in. LinkedIn asked for a tap in its mobile app, the notification never arrived, and the page offered no other way to verify. Open the LinkedIn app on the phone that is signed in to this account and look for the prompt inside the app itself, then press Try again. If the app shows nothing at all, turn on two step verification in your LinkedIn settings, under Sign in and security, and LinkedIn will ask for a code here instead.",
             Math.floor(Date.now() / 1000),
             accountId,
           ],

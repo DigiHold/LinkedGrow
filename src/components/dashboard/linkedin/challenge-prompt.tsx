@@ -131,9 +131,11 @@ export function ChallengePrompt({
    *
    * LinkedIn's usual checkpoint for an account signing in somewhere new sends a
    * notification to the phones already carrying the LinkedIn app. There is
-   * nothing to type, so showing a code box here would ask for something that
-   * does not exist and leave the person hunting for it. The browser is holding
-   * the page open and finishes on its own the moment they tap Yes.
+   * nothing to type while the tap is still possible, so a code box here would
+   * ask for something that does not exist. The browser holds the page open and
+   * finishes on its own the moment they tap Yes, and when no notification
+   * arrives it presses LinkedIn's own way out and this box becomes the code
+   * form below.
    */
   if (info.state === "awaiting_approval") {
     return (
@@ -144,9 +146,10 @@ export function ChallengePrompt({
             Open the LinkedIn app on your phone and tap Yes.
           </span>{" "}
           LinkedIn sent it a notification to confirm this sign-in for {label}.
-          Nothing to type here, and it finishes on its own once you tap. We tick
-          the box that tells LinkedIn to remember the device, so it only asks
-          the once.
+          It finishes on its own once you tap, and we tick the box that tells
+          LinkedIn to remember the device so it only asks the once. If nothing
+          shows up in the app within two minutes, we ask LinkedIn for a code
+          instead and this box turns into the place to type it.
         </p>
       </div>
     );
