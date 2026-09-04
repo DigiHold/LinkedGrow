@@ -22,6 +22,9 @@ The worker needs Google Chrome, or Chromium with `CHROME_PATH` pointing at the b
 cd worker && npm install && npx patchright install chrome && cp .env.example .env && npm run worker
 ```
 
+
+The 2 browser libraries in this repository do different jobs, and mixing them up is easy. **Patchright** is a dependency of the worker and it is the only one that ever touches LinkedIn: it drives a real Chrome, signed in to the customer's own account, on that account's dedicated address. **Playwright** never touches LinkedIn. It is a development dependency of the app, used by the browser tests under `tests/`, which walk the setup wizard and the agent screens on a throwaway instance. Nothing under `tests/` and no Playwright configuration ships in the Docker images, both are excluded by `.dockerignore`.
+
 In `worker/.env`, point `TURSO_DATABASE_URL` at the same file (`file:../linkedgrow.db`) and paste the same `ENCRYPTION_KEY` as the app; the worker cannot read a credential encrypted with a different one.
 
 ## The stack from this checkout
