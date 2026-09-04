@@ -78,6 +78,7 @@ export function CountryPicker({ value, onChange }: CountryPickerProps) {
           <Button
             variant="outline"
             role="combobox"
+            data-testid="country-picker"
             aria-expanded={open}
             className="h-11 w-full justify-between text-sm font-normal"
           >
@@ -134,6 +135,7 @@ export function CountryPicker({ value, onChange }: CountryPickerProps) {
                       <CommandItem
                         key={group.id}
                         value={group.id}
+                        data-testid={`group-${group.id}`}
                         onSelect={() => toggleGroup(group.codes)}
                         className="cursor-pointer"
                       >
@@ -156,6 +158,7 @@ export function CountryPicker({ value, onChange }: CountryPickerProps) {
                     <CommandItem
                       key={country.code}
                       value={country.code}
+                      data-testid={`country-${country.code}`}
                       onSelect={() => toggle(country.code)}
                       className="cursor-pointer"
                     >
