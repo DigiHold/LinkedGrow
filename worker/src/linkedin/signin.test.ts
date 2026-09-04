@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isAnotherWayControl, loginPageShape } from "./signin.ts";
+import { isAnotherWayControl, isProceedControl, loginPageShape } from "./signin.ts";
 
 /**
  * The page shape that stopped every re-sign-in this product ever attempted.
@@ -117,4 +117,29 @@ test("a whole paragraph is not a control, however many of the words match", () =
     ),
     false
   );
+});
+
+/**
+ * The button that only exists after the tap has been left behind.
+ *
+ * LinkedIn can answer "verify another way" with a list of methods and a button
+ * under it. Pressing that button on the checkpoint page itself would be a blind
+ * click on a page nobody has read, so it is only ever pressed once another
+ * control has already moved the page along.
+ */
+
+test("a chooser page's own button is recognised, and only exact labels count", () => {
+  for (const name of ["Continue", "Send code", "Enviar código", "Envoyer le code"]) {
+    assert.equal(isProceedControl(name), true, name);
+  }
+  // A sentence containing the word is not the button.
+  assert.equal(isProceedControl("Continue on your phone to finish signing in"), false);
+  assert.equal(isProceedControl("No, cancel"), false);
+});
+
+test("the way out is found even when its label carries the masked address", () => {
+  // The label is what the click matches on, so masking it before the click is
+  // what stops the locator from ever finding it.
+  assert.equal(isAnotherWayControl("Send a code to e***@thedigitalangels.com"), true);
+  assert.equal(isAnotherWayControl("Verify using SMS ending in 42"), true);
 });

@@ -145,7 +145,7 @@ const APP_APPROVAL =
  * boundaries matter: "another" contains "no".
  */
 const ANOTHER_WAY =
-  /(sms|correo|e-?mail|another way|different way|another (verification )?method|otra (forma|manera)|otro m(é|e)todo|autre (m(é|e)thode|mani(è|e)re)|verify using|verificar (mediante|con)|v(é|e)rifier (autrement|par)|andere methode|per (e-?mail|sms))/i;
+  /(sms|correo|e-?mail|another way|different way|another (verification )?method|otra (forma|manera)|otro m(é|e)todo|autre (m(é|e)thode|mani(è|e)re)|verify using|verificar (mediante|con)|v(é|e)rifier (autrement|par)|andere methode|per (e-?mail|sms)|send (a |the )?code|enviar (un |el )?c(ó|o)digo|envoyer (un |le )?code)/i;
 
 const NEVER_CLICK =
   /\b(no|not me|n'est pas moi|no soy yo|n(ã|a)o sou eu|nein|cancel|annuler|cancelar|abbrechen|sign out|d(é|e)connexion|report|denunciar|signaler|resend|reenviar|renvoyer)\b/i;
@@ -164,6 +164,25 @@ export function isAnotherWayControl(name: string): boolean {
   if (!clean || clean.length > 60) return false;
   if (NEVER_CLICK.test(clean)) return false;
   return ANOTHER_WAY.test(clean);
+}
+
+/**
+ * The button that moves a chooser page along, once the tap has been left behind.
+ *
+ * LinkedIn sometimes answers "verify another way" with a list of methods and a
+ * button under it rather than with the code field itself. Nothing here is
+ * pressed on the checkpoint page: it only applies after another control has
+ * already been pressed, so the worst it can do is move a page that is already
+ * on its way to a code.
+ */
+const PROCEED =
+  /^(send( a| the)? code|continue|next|submit|enviar( el)? c(ó|o)digo|continuar|siguiente|envoyer( le)? code|continuer|suivant|weiter|code senden)$/i;
+
+export function isProceedControl(name: string): boolean {
+  const clean = name.trim().replace(/\s+/g, " ");
+  if (!clean || clean.length > 40) return false;
+  if (NEVER_CLICK.test(clean)) return false;
+  return PROCEED.test(clean);
 }
 
 /** The box that stops this happening on every future sign-in. */
@@ -347,6 +366,19 @@ async function offeredControls(page: Page): Promise<string[]> {
       return out;
     })
     .catch(() => [] as string[]);
+  return names;
+}
+
+/**
+ * The same names, safe for the journal.
+ *
+ * The label of the way out often carries the masked address or phone number
+ * LinkedIn would send the code to, and the journal is not where that belongs.
+ * The raw name is what the click needs, so the masking happens here and not in
+ * the reader above: masking before the click is what stops the locator from
+ * ever matching.
+ */
+function maskAddresses(names: string[]): string[] {
   return names.map((name) => name.replace(/\S*@\S*/g, "<address>"));
 }
 
@@ -367,9 +399,14 @@ async function switchToACode(
   pressed: Set<string>
 ): Promise<boolean> {
   const controls = await offeredControls(page);
-  log("what the checkpoint is offering", { accountId, controls });
+  log("what the checkpoint is offering", { accountId, controls: maskAddresses(controls) });
 
-  const wanted = controls.find((name) => isAnotherWayControl(name) && !pressed.has(name));
+  // A chooser page is only ever reached by having pressed something first, so
+  // its button is only ever pressable then.
+  const left = pressed.size > 0;
+  const wanted = controls.find(
+    (name) => !pressed.has(name) && (isAnotherWayControl(name) || (left && isProceedControl(name)))
+  );
   if (!wanted) return false;
   pressed.add(wanted);
 
@@ -380,7 +417,7 @@ async function switchToACode(
 
   log("the notification never came, asking LinkedIn for a code instead", {
     accountId,
-    control: wanted,
+    control: maskAddresses([wanted])[0],
   });
   await clickHumanLocator(page, target);
   await page.waitForLoadState("domcontentloaded").catch(() => {});
