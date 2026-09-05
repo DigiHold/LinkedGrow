@@ -53,7 +53,40 @@ The options, for a run that should not ask anything:
 | `--version TAG` | Image tag to run: `latest`, a release like `v1.0.0`, or `sha-1a2b3c4`. Default `latest` |
 | `--port NUMBER` | Port the app is published on. Default `3000` |
 | `--source` | Builds the images from the source instead of pulling them. |
+| `--keep-data` | With `uninstall`, removes the containers and keeps the volumes. |
 | `--yes` | Never asks anything, and needs `--domain` or `--no-domain`. |
+
+The installer sizes `WORKER_SLOTS` from the memory free on the machine at the time it runs, not from
+the memory the machine has in total, because each slot is a Chrome and a Chrome wants roughly 1.5 GB.
+A server with 8 GB of which 1.3 GB is free gets 1 slot, and that is the right answer.
+
+It also refuses to start when the port it is about to publish on is already used by something else,
+and tells you how to move it rather than letting Docker fail with a message that names neither this
+project nor the way out.
+
+`APP_BIND` belongs to you once it is in the `.env`. A rerun without `--domain` or `--no-domain` keeps
+whatever is there, so an instance you deliberately bound to `127.0.0.1` behind your own nginx is not
+reopened to the whole internet by an update.
+
+## Removing it
+
+```sh
+cd /opt/linkedgrow && ./install.sh uninstall
+```
+
+It asks you to type `remove`, then takes the containers, their volumes and the 2 images. Everything
+goes with the volumes: the accounts, the agents, the leads, and the secrets that decrypt the stored
+keys. There is no undo.
+
+```sh
+./install.sh uninstall --keep-data
+```
+
+That one stops and removes the containers and leaves the volumes alone, so running the installer again
+brings the instance back exactly as it was.
+
+Neither of them removes the folder itself, which still holds your `docker-compose.yml` and your `.env`.
+The script prints the single line that does.
 
 Running the installer again is safe. It keeps the `.env` it wrote and only rewrites the domain lines when you pass a different domain, and the secrets on the `config` volume are never touched by it at all.
 

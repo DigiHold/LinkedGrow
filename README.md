@@ -49,7 +49,16 @@ curl -fsSLO https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/docker-co
 docker compose up -d
 ```
 
-When it comes up, open `http://<your server address>:3000` in a browser. There is no `.env` to write, no secret to generate and no address to declare. The app generates its own signing and encryption secrets on the first start and keeps them in a Docker volume, it answers on whatever address you opened, and the wizard at first login asks for everything else. To pin a version, change the port or run https, see [configuration](src/content/docs/self-hosting/configuration.md) and [reverse proxy](src/content/docs/self-hosting/reverse-proxy.md).
+When it comes up, open `http://<your server address>:3000` in a browser. There is no `.env` to write, no secret to generate and no address to declare. The app generates its own signing and encryption secrets on the first start and keeps them in a Docker volume, it answers on whatever address you opened, and the wizard at first login asks for everything else.
+
+If your server already uses port 3000, the third line stops on a message from Docker about the address being in use. Write the port you want into a `.env` next to the compose file and run it again:
+
+```sh
+echo APP_PORT=3001 >> .env
+docker compose up -d
+```
+
+To pin a version or run https, see [configuration](src/content/docs/self-hosting/configuration.md) and [reverse proxy](src/content/docs/self-hosting/reverse-proxy.md).
 
 ### One command
 
@@ -60,6 +69,14 @@ curl -fsSL https://raw.githubusercontent.com/DigiHold/LinkedGrow/main/install.sh
 ```
 
 It asks one question, your domain, and an empty answer serves over plain http on the server address. Read it first if piping a script into a shell makes you uncomfortable, it is 500 lines of POSIX sh and it does nothing you have not seen above. Its options are in the [install page](src/content/docs/self-hosting/install.md), including `--yes` for a run that asks nothing.
+
+### Removing it
+
+```sh
+cd /opt/linkedgrow && ./install.sh uninstall
+```
+
+It asks you to type `remove`, then takes the containers, the volumes and the images with it. Add `--keep-data` to keep the volumes, so reinstalling later brings the instance back exactly as it was. The folder itself stays, with your compose file and your `.env`, and the script tells you the one line that removes it.
 
 ### After any of the 3
 

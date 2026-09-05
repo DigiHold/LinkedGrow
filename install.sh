@@ -25,6 +25,7 @@ PORT="${LINKEDGROW_PORT:-3000}"
 PORT_GIVEN=0
 SOURCE=0
 ASSUME_YES=0
+KEEP_DATA=0
 SUDO=""
 DOCKER="docker"
 PROFILE_ARGS=""
@@ -43,6 +44,7 @@ LinkedGrow self hosted installer.
 Usage:
   install.sh [options]
   install.sh update [options]
+  install.sh uninstall [--keep-data] [--yes]
 
 Options:
   --domain NAME    Serve on this domain over https, with the built in Caddy.
@@ -51,6 +53,7 @@ Options:
   --version TAG    Image tag to run: latest, v1.0.0, sha-1a2b3c4. Default latest
   --port NUMBER    Port the app is published on. Default 3000
   --source         Build the images from the source instead of pulling them.
+  --keep-data      With uninstall: stop and remove the containers, keep the volumes.
   --yes            Never ask anything. Needs --domain or --no-domain.
   --help           Print this and stop.
 
@@ -63,6 +66,7 @@ USAGE
 while [ "$#" -gt 0 ]; do
   case "$1" in
     update) MODE="update"; shift ;;
+    uninstall) MODE="uninstall"; shift ;;
     --domain) [ "$#" -ge 2 ] || fail "The --domain option needs a domain name."; DOMAIN="$2"; DOMAIN_GIVEN=1; shift 2 ;;
     --domain=*) DOMAIN="${1#--domain=}"; DOMAIN_GIVEN=1; shift ;;
     --no-domain) DOMAIN=""; DOMAIN_GIVEN=1; shift ;;
@@ -72,6 +76,7 @@ while [ "$#" -gt 0 ]; do
     --version=*) VERSION="${1#--version=}"; VERSION_GIVEN=1; shift ;;
     --port) [ "$#" -ge 2 ] || fail "The --port option needs a port number."; PORT="$2"; PORT_GIVEN=1; shift 2 ;;
     --port=*) PORT="${1#--port=}"; PORT_GIVEN=1; shift ;;
+    --keep-data) KEEP_DATA=1; shift ;;
     --source) SOURCE=1; shift ;;
     --yes|-y) ASSUME_YES=1; shift ;;
     --help|-h) usage; exit 0 ;;
@@ -82,6 +87,10 @@ done
 case "$PORT" in
   ''|*[!0-9]*) fail "The port must be a number, and $PORT is not." ;;
 esac
+
+# Whether the operator chose how to serve on THIS run, before the .env fills the
+# blanks in. It decides if APP_BIND is allowed to move.
+DOMAIN_GIVEN_ON_THIS_RUN="$DOMAIN_GIVEN"
 
 # ---------- where this script sits ----------
 
@@ -138,6 +147,15 @@ if [ "$VERSION_GIVEN" = "0" ]; then
   previous_version=$(env_get LINKEDGROW_VERSION)
   if [ -n "$previous_version" ]; then
     VERSION="$previous_version"
+  fi
+fi
+# Same rule for the domain, so a rerun with no domain option keeps the one this
+# instance already serves instead of silently dropping back to plain http.
+if [ "$DOMAIN_GIVEN" = "0" ]; then
+  previous_domain=$(env_get DOMAIN)
+  if [ -n "$previous_domain" ]; then
+    DOMAIN="$previous_domain"
+    DOMAIN_GIVEN=1
   fi
 fi
 
@@ -282,6 +300,48 @@ compose() {
   $DOCKER compose --project-directory "$DIR" $COMPOSE_FILES $env_arg $PROFILE_ARGS "$@"
 }
 
+# ---------- uninstall ----------
+
+# Trying a self hosted thing and being unable to remove it is a reason not to try
+# the next one. This does what a reader would otherwise have to guess.
+if [ "$MODE" = "uninstall" ]; then
+  [ -f "$DIR/docker-compose.yml" ] || fail "There is no docker-compose.yml in $DIR, so there is nothing to remove here. Point at the right folder with --dir."
+  if [ "$(env_get COMPOSE_PROFILES)" = "https" ]; then
+    PROFILE_ARGS="--profile https"
+  fi
+  if [ "$KEEP_DATA" = "1" ]; then
+    say "This removes the LinkedGrow containers in $DIR and keeps the volumes, so your accounts, agents and leads stay."
+  else
+    say "This removes the LinkedGrow containers in $DIR AND their volumes."
+    say "Everything goes with them: your accounts, your agents, your leads, and the secrets that decrypt the stored keys."
+    say "There is no undo. Add --keep-data to keep the volumes."
+  fi
+  if [ "$ASSUME_YES" != "1" ]; then
+    [ -t 0 ] || fail "There is no terminal here to confirm. Add --yes if you mean it."
+    printf 'Type "remove" to go ahead: '
+    read -r answer
+    [ "$answer" = "remove" ] || fail "Nothing was removed."
+  fi
+  if [ "$KEEP_DATA" = "1" ]; then
+    compose down --remove-orphans || say "Could not stop the stack cleanly, carrying on."
+  else
+    compose down -v --remove-orphans || say "Could not stop the stack cleanly, carrying on."
+  fi
+  for image in ghcr.io/digihold/linkedgrow-app ghcr.io/digihold/linkedgrow-worker; do
+    ids=$($DOCKER images -q "$image" 2>/dev/null || true)
+    [ -n "$ids" ] && $DOCKER rmi -f $ids >/dev/null 2>&1 || true
+  done
+  say ""
+  if [ "$KEEP_DATA" = "1" ]; then
+    say "The containers and the images are gone. The volumes are still there, so running the installer again brings the instance back as it was."
+  else
+    say "The containers, the volumes and the images are gone."
+  fi
+  say "What is left is the folder $DIR, which holds docker-compose.yml and your .env. Remove it yourself when you are sure:"
+  say "  rm -rf $DIR"
+  exit 0
+fi
+
 # ---------- update ----------
 
 if [ "$MODE" = "update" ]; then
@@ -361,22 +421,30 @@ resolved_ip() {
   fi
 }
 
+# Each slot is a Chrome, and a Chrome wants roughly 1.5 GB. What decides how many
+# fit is the memory free right now, not the memory the machine was sold with: a
+# box with 8 GB total and 1.3 GB free cannot run 4 of them, it will be killed.
 worker_slots() {
   mb=0
   if [ -r /proc/meminfo ]; then
-    mb=$(awk '/^MemTotal:/ {print int($2 / 1024); exit}' /proc/meminfo)
+    mb=$(awk '/^MemAvailable:/ {print int($2 / 1024); exit}' /proc/meminfo)
+    case "$mb" in
+      ''|*[!0-9]*|0) mb=$(awk '/^MemTotal:/ {print int($2 / 1024); exit}' /proc/meminfo) ;;
+    esac
   elif command -v sysctl >/dev/null 2>&1; then
     mb=$(sysctl -n hw.memsize 2>/dev/null | awk '{print int($1 / 1048576)}')
   fi
   case "$mb" in
     ''|*[!0-9]*) mb=0 ;;
   esac
-  if [ "$mb" -ge 16384 ]; then
+  if [ "$mb" -ge 12288 ]; then
     printf '8'
-  elif [ "$mb" -ge 8192 ]; then
+  elif [ "$mb" -ge 6144 ]; then
     printf '4'
-  else
+  elif [ "$mb" -ge 3072 ]; then
     printf '2'
+  else
+    printf '1'
   fi
 }
 
@@ -397,6 +465,36 @@ else
     APP_ADDRESS="http://$IP:$PORT"
   else
     APP_ADDRESS="port $PORT of this server"
+  fi
+fi
+
+# ---------- is the port free ----------
+
+# Docker's own message when the port is taken names neither this project nor the
+# way out, and it is the first thing a reader meets on a server that already runs
+# something. Say it before the stack tries and fails.
+port_taken() {
+  if command -v ss >/dev/null 2>&1; then
+    ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE "[:.]$1$"
+  elif command -v netstat >/dev/null 2>&1; then
+    netstat -an 2>/dev/null | grep -i listen | awk '{print $4}' | grep -qE "[:.]$1$"
+  elif command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+  else
+    return 1
+  fi
+}
+
+if [ "$MODE" = "install" ] && port_taken "$PORT"; then
+  if [ -f "$DIR/docker-compose.yml" ] && $DOCKER compose --project-directory "$DIR" ps -q 2>/dev/null | grep -q .; then
+    : # our own stack already holds it, which is what a rerun looks like
+  else
+    say "Port $PORT is already used by something else on this server."
+    say "Pick another one and the app follows, for example:"
+    say "  ./install.sh --port 3001 --no-domain"
+    say "With the compose file alone, write the port into .env next to docker-compose.yml instead:"
+    say "  echo APP_PORT=3001 >> .env && docker compose up -d"
+    fail "Nothing was changed. Rerun with a free port."
   fi
 fi
 
@@ -425,7 +523,17 @@ fi
 
 [ -n "$(env_get WORKER_SLOTS)" ] || env_set WORKER_SLOTS "$(worker_slots)"
 env_set DOMAIN "$DOMAIN"
-env_set APP_BIND "$BIND"
+# APP_BIND belongs to the operator once it exists. Somebody running their own
+# nginx sets it to 127.0.0.1, and a rerun of this script used to reopen the port
+# to the whole internet without saying so. It only moves when this run was told
+# to change how the app is served.
+previous_bind=$(env_get APP_BIND)
+if [ -z "$previous_bind" ] || [ "$DOMAIN_GIVEN_ON_THIS_RUN" = "1" ]; then
+  env_set APP_BIND "$BIND"
+else
+  BIND="$previous_bind"
+  say "Keeping APP_BIND=$previous_bind from the .env. Pass --domain or --no-domain to change it."
+fi
 env_set APP_PORT "$PORT"
 env_set COMPOSE_PROFILES "$PROFILES"
 env_set LINKEDGROW_VERSION "$VERSION"
