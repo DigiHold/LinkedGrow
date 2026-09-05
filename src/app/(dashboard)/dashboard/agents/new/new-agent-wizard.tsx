@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { VideoModal } from "@/components/dashboard/video-modal";
@@ -397,6 +397,7 @@ export function NewAgentWizard() {
           if (typeof c.warmupStartPerDay === "number") setWarmupStartPerDay(c.warmupStartPerDay);
           if (typeof c.warmupIncrementPerWeek === "number") setWarmupIncrementPerWeek(c.warmupIncrementPerWeek);
           if (typeof c.warmupWeeks === "number") setWarmupWeeks(c.warmupWeeks);
+          if (typeof c.step === "number" && c.step >= 1 && c.step <= STEPS.length) setStep(c.step);
           if (d.agentSubscription && searchParams.get("resume") === "1") setStep(4);
         }
     };
@@ -411,6 +412,10 @@ export function NewAgentWizard() {
   const draftPayload = () => ({
     name: name.trim() || null,
     config: {
+      // The step is saved with the rest. Without it, anything that remounts this component sent the
+      // reader back to the first screen with every answer still filled in, which is what connecting a
+      // LinkedIn account used to do at step 4.
+      step,
       website: website.trim(),
       sources, sourceTargets, buyingEvents, keywords,
       jobRoles, industries, locations, matchLevel, companySizes,
@@ -420,6 +425,27 @@ export function NewAgentWizard() {
       customWarmup, warmupStartPerDay, warmupIncrementPerWeek, warmupWeeks,
     },
   });
+
+  // Saved as he moves rather than only on the way to checkout, so the answers and the place in the
+  // wizard both survive a reload, a remount or a closed tab. Debounced, because every keystroke in a
+  // text field would otherwise be a request.
+  const draftRef = useRef(draftPayload);
+  draftRef.current = draftPayload;
+  useEffect(() => {
+    if (step === 1 && !website.trim() && !name.trim()) return;
+    const t = setTimeout(() => {
+      void fetch("/api/agents/drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftRef.current()),
+      }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, website, name, sources, sourceTargets, buyingEvents, keywords, jobRoles, industries,
+      locations, matchLevel, companySizes, smartLeadFinder, companyInfo, goal, tone, skipConnected,
+      reviewMode, observeOnly, testRecipients, workdayDays, workdayStart, workdayEnd, timezone,
+      customWarmup, warmupStartPerDay, warmupIncrementPerWeek, warmupWeeks]);
 
   const addKeyword = useCallback(() => {
     const value = keywordDraft.trim();
@@ -520,7 +546,11 @@ export function NewAgentWizard() {
                 }));
               }
               const target = (sourceTargets[id] ?? "").trim();
-              if (!target) return [{ type: id, label: labelForSource(id) }];
+              // A source that asks for a target IS its target: a competitor row with no company to
+              // read watches nothing. Sending it with its own display name as the label made the API
+              // try to read "creator" as a LinkedIn address and refuse the whole agent, which is not
+              // a reason to stop somebody who simply did not want to name a competitor.
+              if (!target) return SOURCE_TARGET[id] ? [] : [{ type: id, label: labelForSource(id) }];
               return target
                 .split(",")
                 .map((v) => v.trim())

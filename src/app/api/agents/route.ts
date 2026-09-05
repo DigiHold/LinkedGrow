@@ -343,6 +343,13 @@ export async function POST(request: NextRequest) {
       const label = (r as { label?: string })?.label;
       if ((type !== "competitor" && type !== "creator") || typeof label !== "string") continue;
       if ((r as { config?: { url?: string } })?.config?.url) continue;
+      // A row whose label is the source's own name carries no target. An older wizard sent those
+      // when the field was left empty, and refusing the agent over it stopped people who simply did
+      // not want to name anyone. Drop the row instead.
+      if (!label.trim() || label.trim().toLowerCase() === type) {
+        (r as { drop?: boolean }).drop = true;
+        continue;
+      }
       const parsed = parseLinkedInSource(label, type);
       if (!parsed) {
         badTargets.push(label);
@@ -361,7 +368,7 @@ export async function POST(request: NextRequest) {
     }
     const rows = sources
       .filter((r: unknown): r is { type: string; label: string; config?: unknown } =>
-        !!r && typeof r === "object" &&
+        !!r && typeof r === "object" && !(r as { drop?: boolean }).drop &&
         SOURCE_TYPES.includes((r as { type?: string }).type as (typeof SOURCE_TYPES)[number]) &&
         typeof (r as { label?: unknown }).label === "string")
       .map((r: { type: string; label: string; config?: unknown }) => ({
