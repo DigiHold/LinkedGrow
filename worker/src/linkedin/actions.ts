@@ -9,6 +9,7 @@ import {
   randInt,
   typeHumanHere,
 } from "../browser/human.ts";
+import { byIcon, byView, ICON, VIEW } from "./locate.ts";
 
 /**
  * Everything the sequence engine needs LinkedIn to do, behind one interface so the engine is
@@ -77,14 +78,32 @@ export interface LinkedInActions {
 // - a message from the other party carries .msg-s-event-listitem--other; our own does not; body is
 //   in .msg-s-event-listitem__body
 const SEL = {
-  addNote: 'button[aria-label*="Add a note"]',
-  noteBox: 'textarea[name="message"], #custom-message',
-  sendInvite: 'button[aria-label*="Send invitation"], button[aria-label*="Send now"], button[aria-label*="Send"]',
+  /* The invite dialog is the one place LinkedIn gives nothing to hold on to:
+     its buttons carry no icon and no view name, only "Add a note" and "Send
+     without a note" in the account's own language (read off a live French
+     account on 2026-09-05, where they read "Ajouter une note" and "Envoyer
+     sans note"). So they are taken by their place in the dialog, the same
+     structural rule publish.ts already presses Post with: the dismiss control
+     is the one with the close icon, the note control is the first of the rest,
+     and the send control is the last enabled one. */
+  dialogDismiss: byIcon(...ICON.close),
+  noteBox: 'textarea[name="message"], #custom-message, [role="dialog"] textarea',
+  dialogButton: '[role="dialog"] button, [role="alertdialog"] button',
   // Renamed by LinkedIn: the control now reads "Reaction button state: Like".
   // The old names are kept behind it because they cost nothing and an older
   // layout should still work. Verified on the live page 2026-07-31.
-  likeFirstPost:
-    'button[aria-label*="Reaction button state: Like" i], button[aria-label="React Like"], button[aria-label^="React Like"]',
+  /* Was three spellings of the English accessible name, which LinkedIn has
+     already renamed once and which does not exist at all on an account served
+     in another language. The markup calls this control `reaction-button` on
+     the rebuilt pages and hangs a thumbs-up icon on it everywhere else. */
+  /* The icon alone, and not the view name beside it. `reaction-button` names
+     the control on the rebuilt pages but says nothing about whether this
+     account has already reacted, so pairing the two with a comma matched liked
+     posts as well: the proof warmUp relies on could never fire, and the agent
+     could take a reaction back off a post it liked yesterday. The outline
+     icon is the un-reacted state itself, and LinkedIn serves it on both the
+     old pages and the new ones. */
+  likeFirstPost: byIcon(...ICON.like),
   msgBox: '.msg-form__contenteditable, div[role="textbox"][contenteditable="true"]',
   msgSend: "button.msg-form__send-button",
   firstDegree: "span.dist-value, .distance-badge .dist-value",
@@ -110,13 +129,32 @@ const SEL = {
 export function canMessageFromCard(topcardText: string): boolean {
   const card = (topcardText ?? "").replace(/\s+/g, " ").trim();
   if (!card) return false;
-  if (/\bpending\b/i.test(card)) return false;
-  return /·\s*1st\b/i.test(card);
+  /* The degree is written differently in every language, "1st" in English,
+     "1er" in French, "1." in German, and reading the English spelling made a
+     French account treat every first degree connection as unreachable. The
+     digit is the same everywhere, so that is what is read, immediately after
+     the separator LinkedIn puts in front of it. */
+  const degree = card.match(/[·•]\s*(\d)/);
+  return degree?.[1] === "1";
 }
 
-const MESSAGE_BTN =
-  'main button[aria-label^="Message"]:not([aria-label*="Messaging"]):not([aria-label*="Premium"]), ' +
-  'main a[aria-label^="Message"]:not([aria-label*="Messaging"]):not([aria-label*="Premium"])';
+/*
+ * The profile's own Message control.
+ *
+ * It used to be found by an accessible name starting with "Message", with the
+ * global nav "Messaging" and the "Message with Premium" upsell excluded by
+ * name as well. All three names are translated, so on a French account the
+ * lookup matched nothing and messaging simply never happened.
+ *
+ * The icon separates them with no words at all: the profile control carries
+ * `send-privately-medium`, the nav carries `messages-medium`, and the Premium
+ * upsell carries neither. Scoped to <main>, so the message overlay in the
+ * corner is never it.
+ */
+const MESSAGE_BTN = byIcon("send-privately-medium", "send-privately-small")
+  .split(", ")
+  .map((sel) => `main ${sel}`)
+  .join(", ");
 
 /**
  * Types a message that contains line breaks into the LinkedIn composer.
@@ -188,40 +226,68 @@ async function clickThrough(page: Page, loc: Locator): Promise<boolean> {
  * href and navigating to it is far more reliable than clicking a menu row, whose centre is covered by
  * its own icon and rejects real mouse clicks.
  */
-export async function inviteHref(page: Page, fullName: string): Promise<string | null> {
-  const exact = `a[aria-label="Invite ${fullName} to connect"]`;
-  // Some profiles label the row, others render the very same link bare, so the href is what to trust.
-  const byHref = 'a[href*="/preload/custom-invite/"]';
+/** The slug LinkedIn puts in a profile URL, which is also its invite key. */
+export function inviteSlug(profileUrl: string, profileId?: string | null): string | null {
+  if (profileId) return profileId;
+  return profileUrl.match(/\/in\/([^/?#]+)/)?.[1] ?? null;
+}
+
+/**
+ * The link that invites THIS person, and nobody else.
+ *
+ * A profile page carries one invite link per person it shows, and it shows
+ * plenty: the sidebar of similar members alone put 9 of them on one page read
+ * on 2026-09-05. The first attempt at removing the English "Invite <Name> to
+ * connect" from this lookup replaced it with the first link on the page, which
+ * is a stranger's whenever the profile's own Connect sits inside its overflow
+ * menu. Nothing was ever sent to the right person, and the failure was silent.
+ *
+ * The href carries the answer: `?vanityName=<slug>`, the same slug that is in
+ * the profile URL. That identifies the person exactly, in every language, and
+ * it is stricter than the accessible name it replaces, because two members can
+ * share a name and cannot share a slug.
+ */
+export async function inviteHref(
+  page: Page,
+  slug: string | null
+): Promise<string | null> {
+  if (!slug) return null;
+  const mine = `a[href*="/preload/custom-invite/"][href*="vanityName=${slug}"]`;
   const read = async () => {
-    const labelled = page.locator(exact).first();
-    if ((await labelled.count()) > 0) return labelled.getAttribute("href").catch(() => null);
-    const bare = page.locator(byHref).first();
-    if ((await bare.count()) > 0) return bare.getAttribute("href").catch(() => null);
-    return null;
+    const link = page.locator(mine).first();
+    if ((await link.count()) === 0) return null;
+    return link.getAttribute("href").catch(() => null);
   };
 
-  if ((await page.locator(`${exact}, ${byHref}`).count()) > 0) return read();
+  const found = await read();
+  if (found) return found;
 
-  // Not rendered yet: open the profile's overflow menu, which mounts the dropdown contents.
-  const buttons = page.locator("main button");
-  const n = await buttons.count();
+  /* Not rendered yet: a profile whose primary action is Follow keeps Connect
+     inside its overflow menu, and that menu has to be opened before the link
+     exists in the DOM at all. The trigger used to be recognised by the word
+     "More", which is "Plus" in French and made every such profile look
+     follow-only. It carries no icon and no view name, so what identifies it is
+     that it opens something: LinkedIn marks every dropdown trigger with
+     aria-haspopup or aria-expanded, in every language. Each candidate is tried
+     in turn and the first that mounts THIS person's invite link wins. */
+  const triggers = page.locator(
+    'main button[aria-haspopup], main button[aria-expanded], main [role="button"][aria-haspopup]'
+  );
+  const n = await triggers.count();
   for (let i = 0; i < n; i++) {
-    const b = buttons.nth(i);
-    const text = (await b.innerText().catch(() => "")).trim();
-    const aria = (await b.getAttribute("aria-label").catch(() => "")) ?? "";
-    if (!(text === "More" || aria === "More" || /^more actions/i.test(aria))) continue;
+    const b = triggers.nth(i);
     if (!(await b.isVisible().catch(() => false))) continue;
     const box = await b.boundingBox().catch(() => null);
     if (!box || box.height < 24) continue; // skip the 18px "…more" post expander
     await clickThrough(page, b);
-    // The dropdown mounts in a portal a moment after the click, so wait for the link rather than a
-    // fixed delay: a short sleep here is what made most profiles look follow-only.
-    await page
-      .waitForSelector(`${exact}, ${byHref}`, { timeout: 5000, state: "attached" })
-      .catch(() => {});
-    break;
+    const appeared = await page
+      .waitForSelector(mine, { timeout: 5000, state: "attached" })
+      .then(() => true)
+      .catch(() => false);
+    if (appeared) return read();
+    await page.keyboard.press("Escape").catch(() => {});
   }
-  return read();
+  return null;
 }
 
 /**
@@ -242,10 +308,89 @@ async function inviteModal(page: Page): Promise<Locator | null> {
 }
 
 /** True when the profile shows the invite already went out. */
-async function invitePending(page: Page): Promise<boolean> {
-  if ((await page.locator('button[aria-label*="Pending" i]').count()) > 0) return true;
-  const main = await page.locator("main").innerText().catch(() => "");
-  return /\bpending\b/i.test(main);
+/**
+ * Whether an invitation to this person is already out, asked of LinkedIn.
+ *
+ * Read off the profile at first, by the absence of a connect control, and that
+ * was wrong twice: the control is missing on a follow-only profile that was
+ * never invited, and it is missing on the invite dialog itself, where the
+ * check reported every attempt as already sent before a single button had been
+ * pressed. LinkedIn keeps the list, so the list is what answers, and a slug in
+ * a link is the same in every language.
+ */
+async function inviteIsOut(page: Page, slug: string | null): Promise<boolean> {
+  if (!slug) return false;
+  await page
+    .goto("https://www.linkedin.com/mynetwork/invitation-manager/sent/", { waitUntil: "domcontentloaded" })
+    .catch(() => {});
+  await page.waitForSelector("main", { timeout: 15_000 }).catch(() => {});
+  await dwell(1500, 3000);
+  return (await page.locator(`main a[href*="/in/${slug}"]`).count().catch(() => 0)) > 0;
+}
+
+/**
+ * The two controls of a LinkedIn dialog, found by what its design system calls
+ * them rather than by their wording or their place.
+ *
+ * artdeco is LinkedIn's own component library, and it marks the action that
+ * commits with `artdeco-button--primary`, the one that opens a further step
+ * with `artdeco-button--secondary`, and the dismiss with `--circle --muted`.
+ * Those names are semantic, unhashed and identical in every language, which is
+ * exactly what the wording of the buttons is not: the invite dialog reads
+ * "Ajouter une note" and "Envoyer sans note" on a French account.
+ *
+ * Position was the first attempt at this and it is wrong. Read off the live
+ * dialog on 2026-09-05, the send button is `disabled` for a moment after the
+ * dialog opens, so "the last enabled button" was the note button, and an
+ * invitation meant to go out with no note would have pressed Add a note and
+ * stopped there. Hence the wait below: the commit control is waited for rather
+ * than swapped for whichever sibling happens to be pressable first.
+ *
+ * The positional reading stays underneath for a dialog with no artdeco classes
+ * on it, where the dismiss is the one carrying a close icon, the further step
+ * is the first of the rest and the commit is the last.
+ */
+async function dialogControls(
+  modal: Locator,
+  dismiss: string
+): Promise<{ commit: Locator | null; secondary: Locator | null }> {
+  const primary = modal.locator("button.artdeco-button--primary");
+  const secondary = modal.locator("button.artdeco-button--secondary");
+  if ((await primary.count().catch(() => 0)) > 0) {
+    return {
+      commit: primary.first(),
+      secondary: (await secondary.count().catch(() => 0)) > 0 ? secondary.first() : null,
+    };
+  }
+
+  const buttons = modal.locator(SEL.dialogButton);
+  const count = await buttons.count().catch(() => 0);
+  const usable: Locator[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const button = buttons.nth(i);
+    if (!(await button.isVisible().catch(() => false))) continue;
+    if ((await button.locator(dismiss).count().catch(() => 0)) > 0) continue;
+    const closes = await button
+      .evaluate((el) => !!el.querySelector("svg[id*='close'], svg[data-test-icon*='close']"))
+      .catch(() => false);
+    if (closes) continue;
+    usable.push(button);
+  }
+  return {
+    commit: usable[usable.length - 1] ?? null,
+    secondary: usable.length > 1 ? (usable[0] ?? null) : null,
+  };
+}
+
+/** Waits for a control to become pressable, because LinkedIn enables it late. */
+async function pressable(button: Locator | null, ms = 8000): Promise<boolean> {
+  if (!button) return false;
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    if (await button.isEnabled().catch(() => false)) return true;
+    await sleep(300);
+  }
+  return false;
 }
 
 /** The real browser-driven actions. */
@@ -282,7 +427,11 @@ export function browserActions(page: Page): LinkedInActions {
    */
   async function closeOpenThreads(): Promise<void> {
     for (let i = 0; i < 6; i++) {
-      const closer = await firstVisibleLoc(page.locator('button[aria-label^="Close your conversation"]'));
+      /* "Close your conversation" is English only. The overlay's close control
+         carries the close icon, which every language serves the same. */
+      const closer = await firstVisibleLoc(
+        page.locator(`.msg-overlay-conversation-bubble ${byIcon(...ICON.close).split(", ").join(", .msg-overlay-conversation-bubble ")}`)
+      );
       if (!closer) return;
       await closer.click().catch(() => {});
       await dwell(400, 900);
@@ -423,58 +572,67 @@ export function browserActions(page: Page): LinkedInActions {
     },
 
     async sendConnect(p, note) {
+      const slug = inviteSlug(p.profile_url, p.profile_id);
       await goToProfile(p);
-      const name = p.full_name ?? "";
-      if (await invitePending(page)) {
-        // Not a failure: an invitation is out there, our record of it was lost.
-        log(`sendConnect: invite to ${p.first_name} is already pending.`);
-        return "already-pending";
-      }
-      const href = await inviteHref(page, name);
+
+      /* The invite link for this exact person, found on the profile or inside
+         its overflow menu. Its absence is the only thing the page can say, and
+         it says two different things: an invitation already out, or a profile
+         that offers nothing but Follow. LinkedIn's own sent list separates
+         them, and it is only asked when the answer matters. */
+      const href = await inviteHref(page, slug);
       if (!href) {
+        if (await inviteIsOut(page, slug)) {
+          log(`sendConnect: invite to ${p.first_name} is already pending.`);
+          return "already-pending";
+        }
         log(`sendConnect: Connect control not found for ${p.first_name} (likely follow-only).`);
         return "cannot-connect";
       }
+
       await dwell(700, 1500);
       await page.goto(new URL(href, "https://www.linkedin.com").toString(), { waitUntil: "domcontentloaded" }).catch(() => {});
       await dwell(2000, 3200);
-
-      // Some profiles send straight through with no modal at all.
-      if (await invitePending(page)) return "sent";
 
       const modal = await inviteModal(page);
       if (!modal) {
         log(`sendConnect: no invite modal appeared for ${p.first_name}.`);
         return "failed";
       }
-      if (note) {
-        const addNote = modal.locator(SEL.addNote).first();
-        if ((await addNote.count()) > 0) {
-          await clickThrough(page, addNote);
-          await dwell(500, 1200);
-          const box = page.locator(SEL.noteBox).first();
-          if ((await box.count()) > 0) {
-            await box.click().catch(() => {});
-            await typeHumanHere(page, note).catch(() => {});
-          }
-          await dwell(500, 1200);
+      let controls = await dialogControls(modal, SEL.dialogDismiss);
+      if (note && controls.secondary) {
+        await clickThrough(page, controls.secondary);
+        await dwell(500, 1200);
+        const box = page.locator(SEL.noteBox).first();
+        if ((await box.count()) > 0) {
+          await box.click().catch(() => {});
+          await typeHumanHere(page, note).catch(() => {});
         }
+        await dwell(500, 1200);
+        // The note screen is a different dialog with its own commit control.
+        controls = await dialogControls(modal, SEL.dialogDismiss);
       }
-      // "Send", "Send now" or "Send without a note" depending on the profile and account type.
-      const send = await firstVisibleLoc(modal.locator("button").filter({ hasText: /^send/i }));
-      const sendBtn = send ?? (await firstVisibleLoc(modal.locator(SEL.sendInvite)));
+      const sendBtn = (await pressable(controls.commit)) ? controls.commit : null;
       if (!sendBtn) {
         const seen = await modal.locator("button").allInnerTexts().catch(() => []);
-        log(`sendConnect: no Send button for ${p.first_name}. Modal buttons: ${seen.join(" | ")}`);
+        log(`sendConnect: nothing pressable in the invite dialog for ${p.first_name}. Buttons: ${seen.join(" | ")}`);
         return "failed";
       }
       await clickThrough(page, sendBtn);
       await dwell(1500, 2500);
-      // Confirm it left: the modal closes and the profile flips to Pending.
-      const stillOpen = (await inviteModal(page)) !== null;
-      const sent = !stillOpen || (await invitePending(page));
-      if (!sent) log(`sendConnect: clicked Send but the invite did not register for ${p.first_name}.`);
-      return sent ? "sent" : "failed";
+
+      /* Asked, not assumed. A closing dialog used to count as proof and it is
+         not: on 2026-09-05 this reported "sent" for an invitation LinkedIn had
+         never received, and the customer found out by asking the person. The
+         profile is loaded again, and an invitation that left takes the invite
+         link with it. */
+      await goToProfile(p);
+      const stillInvitable = await inviteHref(page, slug);
+      if (stillInvitable) {
+        log(`sendConnect: pressed Send but ${p.first_name} can still be invited, so nothing left.`);
+        return "failed";
+      }
+      return "sent";
     },
 
     async canMessageNow(p) {
@@ -650,13 +808,18 @@ export function browserActions(page: Page): LinkedInActions {
       const name = p.full_name ?? "";
       if (!name) return false;
       const card = page.locator("li").filter({ hasText: name }).first();
-      const withdrawBtn = card.locator('button[aria-label*="Withdraw"], button:has-text("Withdraw")').first();
+      /* "Withdraw" in English, "Retirer" in French. The sent-invitations card
+         carries exactly one action button, so it is taken by its place rather
+         than by its wording. */
+      const withdrawBtn = card.locator("button").last();
       if ((await withdrawBtn.count()) === 0) return false;
       try {
         await clickHumanLocator(page, withdrawBtn);
         await dwell(600, 1400);
-        const confirm = page.locator('div[role="dialog"] button', { hasText: /withdraw/i }).first();
-        if ((await confirm.count()) > 0) await clickHumanLocator(page, confirm);
+        // The confirmation dialog's action is its last enabled button, the same
+        // structural rule the invite dialog uses.
+        const confirm = await dialogControls(page.locator('div[role="dialog"]').first(), SEL.dialogDismiss);
+        if (await pressable(confirm.commit)) await clickHumanLocator(page, confirm.commit!);
         return true;
       } catch {
         return false;

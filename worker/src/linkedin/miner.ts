@@ -10,6 +10,7 @@ import { claimLead } from "../db.ts";
 import { judgeAsking } from "../messages/generate.ts";
 import { resolveCompetitorUrls } from "./resolve.ts";
 import { AGENT } from "./agent-meta.ts";
+import { byIcon, byView, ICON, VIEW } from "./locate.ts";
 
 /** A person who engaged with a competitor's content, scored later against the ICP. */
 export interface Engager {
@@ -727,7 +728,12 @@ async function mineTarget(
    * and reported a short feed. One bounded press, only when the depth asks.
    */
   if (skip > 0) {
-    const more = page.getByRole("button", { name: /show more results/i }).first();
+    /* Not by name: "Show more results" is "Afficher plus de resultats" on a
+       French account and the press never happened, which read as a short feed
+       rather than as a selector that stopped matching (2026-09-05). */
+    const more = page
+      .locator(`${byView("search-results-show-more")}, ${byIcon("chevron-down-small", "chevron-down-medium")}`)
+      .last();
     if (await more.isVisible().catch(() => false)) {
       await clickHumanLocator(page, more).catch(() => {});
       await dwell(1500, 3000);
@@ -804,9 +810,19 @@ async function extractCommenters(
   maxPerPost: number,
   skip = 0
 ): Promise<Engager[]> {
-  // The "N comments on X's post" count button loads the thread in place. The plain "Comment" button
-  // only opens the composer, so we match the count button by its accessible name, not a class.
-  const buttons = page.getByRole("button", { name: /comments? on /i });
+  /* The comment COUNT control loads the thread in place; the plain Comment
+     button only opens the composer, so the two must not be confused. This was
+     matched on the accessible name "N comments on X's post", which exists in
+     English only: on a French account it reads "N commentaires sur le post
+     de X", nothing matched, and every company page came back with zero
+     commenters while being full of them (2026-09-05). LinkedIn names this
+     control `feed-comment-count` in the markup, in every language, and the
+     older pages that carry no view name at all, a company page among them,
+     put it in an unhashed class instead. Both are machine names, neither is
+     a word anybody reads. */
+  const buttons = page.locator(
+    `${byView(VIEW.commentCount)}, button.social-details-social-counts__count-value`
+  );
   const range = reactionRange(await buttons.count(), maxPosts, skip);
   const engagers: Engager[] = [];
   for (const i of range) {
@@ -851,9 +867,9 @@ async function extractCommenters(
         )
         .first();
       if (!(await loadMore.isVisible().catch(() => false))) {
-        loadMore = page
-          .getByRole("button", { name: /(see|load|show|view)\b.*\b(more|previous) comments/i })
-          .first();
+        /* "Voir 27 autres commentaires" on a French account, and the English
+           regex below it never fired. The markup calls it `more-comments`. */
+        loadMore = page.locator(byView(VIEW.moreComments)).first();
       }
       if (!(await loadMore.isVisible().catch(() => false))) break;
       try {
@@ -1144,7 +1160,7 @@ async function closeDialog(page: Page): Promise<void> {
   const close = page
     .locator(
       DIALOG.split(", ")
-        .flatMap((d) => [`${d} button[aria-label*="Dismiss"]`, `${d} button[aria-label*="Close"]`])
+        .flatMap((d) => [`${d} ${byIcon(...ICON.close).split(", ").join(`, ${d} `)}`])
         .join(", ")
     )
     .first();
@@ -1178,7 +1194,29 @@ export function toEngager(row: { href: string; text: string; aria: string; photo
 
   const fullName = cleanName(row.aria) || lines[0] || "";
   if (!fullName) return null;
-  const headline = lines.find((l) => l !== fullName) ?? "";
+  /* The row carries a link to the person, and its text is that person's name
+     wrapped in a sentence: "View Sue Maisano's profile" in English, "Voir le
+     profil de Candice Howell" in French. isRowNoise only knew the English
+     wording, so on a French account that sentence became the headline and the
+     ICP was scored against a navigation label; 27 real engagers were read off
+     LinkedIn on 2026-09-05 and all 27 were dropped as off-target.
+     No wording is needed to recognise it: the line is not the name, and it
+     contains the name. A headline never does. */
+  /* Read from the END, not the start.
+     A reactor row is name, profile link, network status, degree, headline, in
+     that order, and the first two of those are not the only chrome in it: an
+     account with no connections gets an "Out of network" line as well, which
+     is what the forward scan settled on. 33 real engagers were read off
+     LinkedIn on 2026-09-05 and every one of them was stored with that phrase
+     as their job title, so no ICP keyword could ever match, including the one
+     whose headline actually opened with "Founder".
+     The headline is the last line LinkedIn writes, so it is found by walking
+     back until something that is not the name, not a line built around the
+     name, and not a degree marker turns up. No wording is involved, which is
+     what makes it work in any language, and it costs nothing when a row has
+     no headline at all: everything is skipped and the headline stays empty. */
+  const headline =
+    [...lines].reverse().find((l) => l !== fullName && !l.includes(fullName) && !isDegreeLine(l)) ?? "";
   const firstName = fullName.split(/\s+/)[0] ?? fullName;
 
   return {
@@ -1190,6 +1228,25 @@ export function toEngager(row: { href: string; text: string; aria: string; photo
     source,
     avatarUrl: row.photo || undefined,
   };
+}
+
+/**
+ * A connection-degree line, in any language.
+ *
+ * English writes "3rd+", "· 1st" and "3rd degree connection"; French writes
+ * "3e et +" and "relation de 3e niveau"; German writes "3. Grad". What they
+ * share is that the line is short and built around a single digit, which is
+ * enough to tell it from a job title. Matching the English ordinal suffixes
+ * alone let every localised variant through as if it were a headline.
+ */
+function isDegreeLine(line: string): boolean {
+  const bare = line.replace(/^[\u00b7\u2022]\s*/, "").trim();
+  if (!bare || bare.length > 28) return false;
+  // A digit, its ordinal ending in whatever language, and at most a couple of
+  // words after it: "3rd+", "1st", "3e et +", "3. Grad", "3rd degree connection".
+  // A headline that opens on a number, "10x Founder", is not one of these,
+  // because the character after the digit there is another digit.
+  return /^\d\s*[\p{L}.]{0,4}\b[\p{L}\s+.]{0,20}$/u.test(bare);
 }
 
 /** Drops the UI chrome LinkedIn renders inside a reactor row: the profile link, action buttons and the connection degree. */

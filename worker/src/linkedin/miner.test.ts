@@ -197,3 +197,56 @@ test("the backfill never exceeds the post's own allowance", () => {
 test("no reaction lists means the base share, for the caller that logs it", () => {
   assert.equal(reactionAllowance(24, 0, 5), 7);
 });
+
+test("a reactor row served in French yields a headline, not the profile link sentence", () => {
+  // Read off a live French account on 2026-09-05, where 27 real engagers were
+  // mined and every one of them was dropped as off-target, because the line
+  // "Voir le profil de X" became the headline and no ICP keyword ever matched.
+  const row = {
+    href: "https://www.linkedin.com/in/candice-howell-privacy/",
+    text: [
+      "Candice Howell",
+      "Voir le profil de Candice Howell",
+      "3e et +",
+      "Privacy Program Manager chez Acme",
+    ].join("\n"),
+    aria: "",
+  };
+  const e = toEngager(row, "reaction:onetrust");
+  assert.ok(e, "the row is a real person");
+  assert.equal(e.fullName, "Candice Howell");
+  assert.equal(e.headline, "Privacy Program Manager chez Acme");
+});
+
+test("the same row in English still reads the same way", () => {
+  const row = {
+    href: "https://www.linkedin.com/in/sue-maisano/",
+    text: ["Sue Maisano", "View Sue Maisano's profile", "· 3rd+", "Trusted Expert in Privacy"].join("\n"),
+    aria: "",
+  };
+  const e = toEngager(row, "reaction:onetrust");
+  assert.ok(e);
+  assert.equal(e.fullName, "Sue Maisano");
+  assert.equal(e.headline, "Trusted Expert in Privacy");
+});
+
+test("an out-of-network reactor row still yields the real headline", () => {
+  // The exact row shape read off a live French account with no connections on
+  // 2026-09-05, where LinkedIn adds a network-status line of its own.
+  const row = {
+    href: "https://www.linkedin.com/in/ed-kost/",
+    text: [
+      "Ed Kost",
+      "Voir le profil de Ed Kost",
+      "Out of network",
+      "· 3e et +",
+      "Founder CookieInfo & CookieMeister | The Cookiebot Governance Suite",
+    ].join("\n"),
+    aria: "",
+  };
+  const e = toEngager(row, "reaction:usercentrics");
+  assert.ok(e);
+  assert.equal(e.fullName, "Ed Kost");
+  assert.ok(e.headline.startsWith("Founder CookieInfo"), `got: ${e.headline}`);
+  assert.ok(matchesIcp(["founder", "marketing manager"], e.headline), "the ICP now sees a real title");
+});

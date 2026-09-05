@@ -14,6 +14,7 @@ import {
   sleep,
   typeHumanHere,
 } from "../browser/human.ts";
+import { byIcon as byIconShared, byView, VIEW } from "./locate.ts";
 
 /**
  * Posting to LinkedIn by using LinkedIn, because there is no API any more.
@@ -149,11 +150,17 @@ const SEL = {
    * the languages we sell into. `:text-is` is exact and matches the innermost
    * element, which keeps it off the container wrapping half the page.
    */
+  /* The machine name first. The 7 spellings that follow were an attempt to
+     cover the languages one at a time, which only ever works for the ones
+     somebody thought of; `share-sharebox-focus` is what LinkedIn calls this
+     control in every language, and the draft element id is the same
+     everywhere too. The wordings stay behind them for the older composer,
+     where neither exists, and nothing depends on them being complete. */
   startPost:
+    byView(VIEW.composerTrigger) + ", " +
     '[role="button"]:has(#draft-text-replaceable-component), #draft-text-replaceable-component, ' +
     'button.share-box-feed-entry__trigger, button:has-text("Start a post"), ' +
-    'button[aria-label*="Start a post" i], button[aria-label*="Create a post" i], ' +
-    '[role="button"]:has-text("Start a post"), [role="button"]:has-text("Commencer un post"), ' +
+    '[role="button"]:has-text("Commencer un post"), ' +
     '[role="button"]:has-text("Créer un post"), [role="button"]:has-text("Beitrag beginnen"), ' +
     '[role="button"]:has-text("Empezar una publicación"), [role="button"]:has-text("Crea un post"), ' +
     '[role="button"]:has-text("Começar publicação"), [role="button"]:has-text("Bericht schrijven")',
@@ -205,16 +212,10 @@ const SEL = {
    * (document, video) sits behind "Expand content types".
    */
   addMedia:
-    'button.share-promoted-detour-button:has(svg[data-test-icon="image-medium"]), ' +
-    'button.share-promoted-detour-button:has(svg[data-test-icon="video-medium"]), ' +
-    'button[aria-label="Photo" i], button[aria-label*="Add media" i], ' +
-    'button[aria-label*="add a photo" i], button[aria-label*="Add a photo" i], ' +
-    'button[aria-label*="video" i], button[aria-label*="photo" i], ' +
-    'button[aria-label*="image" i]',
+    byView(VIEW.composerImage, VIEW.composerVideo) + ", " +
+    byIcon("image-medium", "video-medium", "images-medium"),
   /** Document and video hide behind this on the new composer. */
-  moreMediaTypes:
-    'button.share-promoted-detour-button:has(svg[data-test-icon="add-medium"]), ' +
-    '[aria-label*="Expand content types" i]',
+  moreMediaTypes: byIcon("add-medium", "plus-medium"),
   /** The document screen's own picker, which is what creates the file input. */
   chooseFile:
     '[aria-label*="Choose file" i], button:has-text("Choose file"), ' +
@@ -822,6 +823,15 @@ async function logAxView(page: Page, why: string): Promise<void> {
       hasProgress: view.hasProgress,
       buttons: view.buttons.map((b) => `${b.name}${b.disabled ? "(off)" : ""}`).join(" | ").slice(0, 1800),
     });
+    /* The accessible name is translated, so it cannot be what a fix is written
+       against. The icon name can, so the dump carries it for every control. */
+    const icons = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('[role="dialog"] svg[id], [role="dialog"] svg[data-test-icon]'))
+        .map((svg) => svg.getAttribute("data-test-icon") || svg.getAttribute("id") || "")
+        .filter(Boolean)
+        .slice(0, 40)
+    );
+    log(`${why}, icons`, { icons });
   } catch {
     // A diagnostic that fails must never mask the real error.
   }
@@ -829,6 +839,37 @@ async function logAxView(page: Page, why: string): Promise<void> {
 
 function namedButton(scope: Page | Locator, name: RegExp): Locator {
   return scope.getByRole("button", { name });
+}
+
+/**
+ * Every control on the composer that this file has to press is identified by
+ * the name of its icon, because that name is the only thing on the element
+ * that does not change.
+ *
+ * The class is hashed per build (`_34d25300`), so it says nothing. The
+ * aria-label is served in the account's own language, so keying on it means
+ * the product works for English accounts and silently refuses to attach a
+ * file for everyone else; a French composer on 2026-09-05 offered "Medias"
+ * and matched none of "Media", "Photo" or "Add media". The icon name is the
+ * same in every language.
+ *
+ * LinkedIn carries that name on the svg, and it has moved which attribute
+ * holds it: older composers use `data-test-icon`, the one served on
+ * 2026-09-05 uses `id`. Both are matched, so a rename of the attribute does
+ * not take the product down again, and neither is ever trusted alone.
+ */
+function byIcon(...icons: string[]): string {
+  const svgs = icons.flatMap((icon) => [
+    `svg[data-test-icon="${icon}" i]`,
+    `svg[id="${icon}" i]`,
+  ]);
+  return svgs
+    .flatMap((svg) => [
+      `button:has(${svg})`,
+      `[role="menuitem"]:has(${svg})`,
+      `[role="button"]:has(${svg})`,
+    ])
+    .join(", ");
 }
 
 async function firstVisible(loc: Locator): Promise<Locator | null> {
@@ -1128,21 +1169,10 @@ async function attachMedia(
   const entry = async () => {
     for (const name of wantedNames) {
       const icon = iconFor[name];
-      if (icon) {
-        const byIcon = await firstVisible(
-          page.locator(
-            `button.share-promoted-detour-button:has(svg[data-test-icon="${icon}"]), ` +
-              `[role="menuitem"]:has(svg[data-test-icon="${icon}"]), ` +
-              `button:has(svg[data-test-icon="${icon}"])`
-          )
-        );
-        if (byIcon) return byIcon;
-      }
-    }
-    for (const name of wantedNames) {
+      if (!icon) continue;
       const found =
-        (await firstVisible(page.locator(`[aria-label="${name}" i]`))) ??
-        (await firstVisible(dialog.locator(`[aria-label="${name}" i]`)));
+        (await firstVisible(page.locator(byIcon(icon)))) ??
+        (await firstVisible(dialog.locator(byIcon(icon))));
       if (found) return found;
     }
     return null;
