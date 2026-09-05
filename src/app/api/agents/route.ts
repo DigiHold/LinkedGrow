@@ -261,6 +261,67 @@ export async function POST(request: NextRequest) {
       return Number.isInteger(n) && n >= min && n <= max ? n : null;
     };
 
+    const SOURCE_TYPES = [
+      "keyword", "market", "competitor", "brand",
+      "own_posts", "creator", "group", "buying_event", "linkedin_search", "csv",
+    ] as const;
+    const sources = Array.isArray(body?.sources) ? body.sources.slice(0, 15) : [];
+
+    /**
+     * Companies and creators arrive as addresses and are stored as addresses.
+     * The wizard used to pass whatever was typed straight through as a label,
+     * so a pasted URL became the source's name and the worker had to resolve
+     * it by search anyway, which costs a search and fails on any slug with
+     * digits in it.
+     */
+    const badTargets: string[] = [];
+    for (const r of sources) {
+      const type = (r as { type?: string })?.type;
+      const label = (r as { label?: string })?.label;
+      if ((type !== "competitor" && type !== "creator") || typeof label !== "string") continue;
+      if ((r as { config?: { url?: string } })?.config?.url) continue;
+      // A row whose label is the source's own name carries no target. An older wizard sent those
+      // when the field was left empty, and refusing the agent over it stopped people who simply did
+      // not want to name anyone. Drop the row instead.
+      if (!label.trim() || label.trim().toLowerCase() === type) {
+        (r as { drop?: boolean }).drop = true;
+        continue;
+      }
+      const parsed = parseLinkedInSource(label, type);
+      if (!parsed) {
+        badTargets.push(label);
+        continue;
+      }
+      (r as { label: string; config: unknown }).label = parsed.label;
+      (r as { label: string; config: unknown }).config = { url: parsed.url };
+    }
+    if (badTargets.length) {
+      return NextResponse.json(
+        {
+          error: `Paste LinkedIn addresses rather than names: ${badTargets.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
+    const rows = sources
+      .filter((r: unknown): r is { type: string; label: string; config?: unknown } =>
+        !!r && typeof r === "object" && !(r as { drop?: boolean }).drop &&
+        SOURCE_TYPES.includes((r as { type?: string }).type as (typeof SOURCE_TYPES)[number]) &&
+        typeof (r as { label?: unknown }).label === "string")
+      .map((r: { type: string; label: string; config?: unknown }) => ({
+        id: crypto.randomUUID(),
+        workspaceId: workspace.workspaceId,
+        agentId: id,
+        type: r.type as (typeof SOURCE_TYPES)[number],
+        label: r.label.trim().slice(0, 120),
+        config: r.config ? JSON.stringify(r.config).slice(0, 4000) : null,
+        createdAt: now,
+        updatedAt: now,
+      }))
+      .filter((r: { label: string }) => r.label);
+
+    // Nothing is written until every row above has passed. The agent used to be inserted
+    // first, so a submit refused for an unreadable source still left an agent behind.
     await db.insert(agents).values({
       id,
       workspaceId: workspace.workspaceId,
@@ -323,65 +384,6 @@ export async function POST(request: NextRequest) {
       createdAt: now,
       updatedAt: now,
     });
-
-    const SOURCE_TYPES = [
-      "keyword", "market", "competitor", "brand",
-      "own_posts", "creator", "group", "buying_event", "linkedin_search", "csv",
-    ] as const;
-    const sources = Array.isArray(body?.sources) ? body.sources.slice(0, 15) : [];
-
-    /**
-     * Companies and creators arrive as addresses and are stored as addresses.
-     * The wizard used to pass whatever was typed straight through as a label,
-     * so a pasted URL became the source's name and the worker had to resolve
-     * it by search anyway, which costs a search and fails on any slug with
-     * digits in it.
-     */
-    const badTargets: string[] = [];
-    for (const r of sources) {
-      const type = (r as { type?: string })?.type;
-      const label = (r as { label?: string })?.label;
-      if ((type !== "competitor" && type !== "creator") || typeof label !== "string") continue;
-      if ((r as { config?: { url?: string } })?.config?.url) continue;
-      // A row whose label is the source's own name carries no target. An older wizard sent those
-      // when the field was left empty, and refusing the agent over it stopped people who simply did
-      // not want to name anyone. Drop the row instead.
-      if (!label.trim() || label.trim().toLowerCase() === type) {
-        (r as { drop?: boolean }).drop = true;
-        continue;
-      }
-      const parsed = parseLinkedInSource(label, type);
-      if (!parsed) {
-        badTargets.push(label);
-        continue;
-      }
-      (r as { label: string; config: unknown }).label = parsed.label;
-      (r as { label: string; config: unknown }).config = { url: parsed.url };
-    }
-    if (badTargets.length) {
-      return NextResponse.json(
-        {
-          error: `Paste LinkedIn addresses rather than names: ${badTargets.join(", ")}`,
-        },
-        { status: 400 }
-      );
-    }
-    const rows = sources
-      .filter((r: unknown): r is { type: string; label: string; config?: unknown } =>
-        !!r && typeof r === "object" && !(r as { drop?: boolean }).drop &&
-        SOURCE_TYPES.includes((r as { type?: string }).type as (typeof SOURCE_TYPES)[number]) &&
-        typeof (r as { label?: unknown }).label === "string")
-      .map((r: { type: string; label: string; config?: unknown }) => ({
-        id: crypto.randomUUID(),
-        workspaceId: workspace.workspaceId,
-        agentId: id,
-        type: r.type as (typeof SOURCE_TYPES)[number],
-        label: r.label.trim().slice(0, 120),
-        config: r.config ? JSON.stringify(r.config).slice(0, 4000) : null,
-        createdAt: now,
-        updatedAt: now,
-      }))
-      .filter((r: { label: string }) => r.label);
 
     if (rows.length) await db.insert(agentSources).values(rows);
 
