@@ -4,11 +4,14 @@
 
 # LinkedGrow
 
-**AI agents that find your leads and clients on LinkedIn, running on a server you own.**
+**Autonomous agents that find your clients on LinkedIn, on a server you own.**
+
+**An MCP server with 26 tools, so Claude, Cursor or ChatGPT can run the whole thing.**
 
 [![License AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-1d4ed8.svg)](LICENSE)
 [![Self hosted, one command](https://img.shields.io/badge/self%20hosted-one%20command-00b8db)](#install)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![MCP server, 26 tools](https://img.shields.io/badge/MCP-26%20tools-7c3aed)](src/content/docs/integrations/mcp-server.md)
 
 [Install](#install) · [Docs](src/content/docs/self-hosting) · [Hosted version](https://linkedgrow.ai) · [Issues](https://github.com/DigiHold/LinkedGrow/issues) · [Contributing](CONTRIBUTING.md)
 
@@ -21,6 +24,12 @@
 You describe who you sell to, and an agent goes looking for those people where they already are: under a competitor's post, inside a search you already trust, among the people who reacted to a topic. It reads the profile, scores the fit, likes something real, and sends an invitation with no note attached. Once the person accepts, it runs a short conversation in your name and hands you the ones who want to talk. Every lead keeps the post or the search that produced it, so you always know where it came from.
 
 The posting side is the same product. A generator writes a first draft in your voice, an editor scores the hook and the length before anything goes out, a calendar hands each post to LinkedIn's own scheduler, and the numbers on the analytics page are the ones LinkedIn showed on your posts. All of it, the agents and the publishing, happens in a real Chrome signed in to your account, on one dedicated address reserved for that account, moving at a human pace. There is no LinkedIn API in this product, because LinkedIn revokes the apps that do what this one does.
+
+Everything above is also a tool your own assistant can call. LinkedGrow is an MCP server: 26 tools
+covering the agents, the leads and the posting, behind one URL and one key. Point Claude, Cursor or
+ChatGPT at `/api/mcp` and ask for your warmest leads, or for next week's posts to be written and
+spaced out, and it calls LinkedGrow to do it. The [MCP page](src/content/docs/integrations/mcp-server.md)
+has the configuration, which is three lines.
 
 ## Install
 
@@ -118,7 +127,7 @@ Publishing goes through the worker rather than through an API. Press Publish and
 
 ## Carousels and the rest of it
 
-The carousel editor ships 25 preset templates across 6 styles, with text, shapes, frames, image upload and generation, and it exports to PDF for LinkedIn or to images. Around it sit the calendar, A/B testing, network notifications, team seats on one workspace, your own branding, and an API you can point your own tools at: a REST API under `/api/v1` and an MCP endpoint at `/api/mcp`, both keyed by a token you create in Settings. The self hosted edition has every feature on, with no plan gate anywhere.
+The carousel editor ships 25 preset templates across 6 styles, with text, shapes, frames, image upload and generation, and it exports to PDF for LinkedIn or to images. Around it sit the calendar, A/B testing, network notifications, team seats on one workspace, your own branding, and an API you can point your own tools at: a REST API under `/api/v1` and the MCP server described above, both keyed by a token you create in Settings. The self hosted edition has every feature on, with no plan gate anywhere.
 
 ![The carousel editor with a template loaded on the canvas](docs/images/carousel.png)
 
