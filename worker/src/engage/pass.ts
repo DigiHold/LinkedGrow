@@ -147,7 +147,8 @@ async function notificationPosts(page: import("patchright").Page): Promise<strin
             /* a malformed escape still matches the plain form */
           }
           if (/\/analytics\//.test(text)) continue;
-          for (const hit of text.match(/urn:li:activity:\d{6,25}/g) ?? []) hits.add(hit);
+          /* Both link shapes, the urn and the readable /posts/ slug. See urn.ts. */
+          for (const hit of text.match(/(?:urn:li:activity:|activity[-:])\d{6,25}/g) ?? []) hits.add(hit);
         }
       }
       return [...hits];

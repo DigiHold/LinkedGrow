@@ -59,6 +59,29 @@ test("an id is read whether the href escapes it or not", () => {
   );
 });
 
+/**
+ * The link shape a bell notification actually uses. Missing it made every "somebody you follow has
+ * posted" notification invisible, which is the one kind this feature exists to read.
+ */
+test("the readable /posts/ link carries an id too", () => {
+  assert.deepEqual(
+    activityIdsIn("/posts/samdunning_29-months-ago-i-started-activity-7486877915989843968-bmCs"),
+    ["7486877915989843968"]
+  );
+  assert.deepEqual(
+    activityIdsIn(
+      "https://www.linkedin.com/posts/jasonmlemkin_could-block-be-the-death-of-the-ai-sdr-activity-7307862245307228160-A4mo"
+    ),
+    ["7307862245307228160"]
+  );
+});
+
+test("both spellings of one post in a single href yield it once", () => {
+  const href =
+    "/posts/x_y-activity-7501989520926593026-ab?u=urn%3Ali%3Aactivity%3A7501989520926593026";
+  assert.deepEqual(activityIdsIn(href), ["7501989520926593026"]);
+});
+
 test("the account's own post statistics are never a post to comment on", () => {
   assert.deepEqual(activityIdsIn("/analytics/post-summary/urn:li:activity:7501989520926593026"), []);
   assert.deepEqual(activityIdsIn("/analytics/profile-views"), []);

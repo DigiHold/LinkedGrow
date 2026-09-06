@@ -34,8 +34,20 @@
  */
 const TIMESTAMP_SHIFT = 22n;
 
-/** Ids only ever appear as digits, and LinkedIn writes them 19 characters long today. */
-const ACTIVITY = /urn:li:activity:(\d{6,25})/g;
+/**
+ * The two ways LinkedIn writes a post identifier in a link.
+ *
+ * `urn:li:activity:7501989520926593026` is the one the permalink and the trending notification use,
+ * and it was the only one this file looked for. A notification saying somebody you follow has
+ * posted links to the readable form instead:
+ *
+ *   /posts/samdunning_some-words-here-activity-7502444594626830336-Ab1c
+ *
+ * There is no urn in that at all, so every bell notification, which is the entire point of the
+ * feature, was invisible. Nicolas found it by looking at his own notifications and seeing the post
+ * this code said was not there.
+ */
+const ACTIVITY = /(?:urn:li:activity:|activity[-:])(\d{6,25})/g;
 
 /**
  * Pages that carry an id without ever meaning "somebody published this".
