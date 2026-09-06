@@ -32,6 +32,7 @@ import { ensureProfileCaptured } from "./linkedin/profile.ts";
 import { refreshTier } from "./linkedin/tier.ts";
 import { tierOf } from "./safety/reading.ts";
 import { onlyContact } from "./safety/allowlist.ts";
+import { commentPass } from "./engage/pass.ts";
 import { onlyInCountries } from "./safety/geo-fence.ts";
 import {
   RELATIONSHIP_STEPS,
@@ -78,6 +79,15 @@ const PUBLISH_INTERVAL_MS = 60 * 1000;
 
 /** Reading back how posts did is never urgent, and the numbers move slowly. */
 const INSIGHTS_INTERVAL_MS = 30 * 60 * 1000;
+
+/**
+ * The commenting loop, on the same tick as the agent pass.
+ *
+ * Five minutes is not a metronome here for the same reason it is not one there: the pass reads the
+ * rhythm first and returns without opening anything when the account is not meant to be on
+ * LinkedIn. The tick costs one indexed query, and outside a visit that is all it ever costs.
+ */
+const COMMENT_INTERVAL_MS = 5 * 60 * 1000;
 
 /**
  * Connecting is the only loop with somebody watching a spinner in real time.
@@ -597,6 +607,18 @@ async function connectLoop(): Promise<void> {
  * true. The slowest of the three: nothing here is urgent, and an account with
  * no recent posts never opens a browser for it.
  */
+async function commentLoop(): Promise<void> {
+  for (;;) {
+    if (shuttingDown()) return;
+    try {
+      await commentPass();
+    } catch (error) {
+      logError("comment pass failed", error);
+    }
+    await sleep(COMMENT_INTERVAL_MS);
+  }
+}
+
 async function insightsLoop(): Promise<void> {
   for (;;) {
     if (shuttingDown()) return;
@@ -642,7 +664,7 @@ async function main(): Promise<void> {
   // No loop ever returns, and none may take the others down: a thrown error
   // inside one is already handled per pass, and Promise.all here only keeps the
   // process alive.
-  await Promise.all([agentLoop(), connectLoop(), publishLoop(), insightsLoop(), cronLoop(sleep, shuttingDown)]);
+  await Promise.all([agentLoop(), connectLoop(), publishLoop(), insightsLoop(), commentLoop(), cronLoop(sleep, shuttingDown)]);
 }
 
 if (import.meta.filename === process.argv[1]) {
