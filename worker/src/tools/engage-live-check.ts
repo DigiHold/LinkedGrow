@@ -112,29 +112,45 @@ async function main(): Promise<void> {
      * discover.ts will take, proven on the real page before it becomes a loop.
      */
     if (mode === "feed") {
-      await page.goto("https://www.linkedin.com/feed/", { waitUntil: "domcontentloaded" }).catch(() => {});
-      await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
-      await dwell(2500, 4500);
-      await scrollHuman(page, 3);
-      await dwell(1500, 3000);
       /**
-       * Every attribute on the page, not only the hrefs.
+       * Both pages, because only one of them answers.
        *
-       * The feed came back with 104 links and no post at all: unlike the notifications page, it
-       * does not put the identifier in an href. It hangs it on the post container instead, so the
-       * only reliable way to find one is to look wherever LinkedIn chose to put it.
+       * The feed on the rebuilt build carries exactly one identifier for a whole page of posts, so
+       * it cannot be the source. The notifications page puts one in the href of every card, which
+       * is why the bell is not a convenience here but the mechanism itself.
        */
-      const carriers = await page.evaluate(() => {
-        const found = new Set<string>();
-        for (const el of Array.from(document.querySelectorAll("*"))) {
-          for (const attr of Array.from(el.attributes)) {
-            for (const hit of attr.value.match(/urn:li:activity:\d{6,25}/g) ?? []) found.add(hit);
+      const pages = [
+        "https://www.linkedin.com/notifications/",
+        "https://www.linkedin.com/feed/",
+      ];
+      const carriers = new Set<string>();
+      for (const url of pages) {
+        await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
+        await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
+        await dwell(2500, 4500);
+        await scrollHuman(page, 3);
+        await dwell(1500, 3000);
+        const found = await page.evaluate(() => {
+          const hits = new Set<string>();
+          const add = (value: string) => {
+            let text = value;
+            try {
+              text = decodeURIComponent(value);
+            } catch {
+              /* a malformed escape still matches the plain form below */
+            }
+            for (const hit of text.match(/urn:li:activity:\d{6,25}/g) ?? []) hits.add(hit);
+          };
+          for (const el of Array.from(document.querySelectorAll("*"))) {
+            for (const attr of Array.from(el.attributes)) add(attr.value);
           }
-        }
-        return [...found];
-      });
-      const fresh = freshPosts(carriers, { maxAgeMinutes: 60 * 48 });
-      console.log(`\n${carriers.length} identifiers on the page, ${fresh.length} under 48h:\n`);
+          return [...hits];
+        });
+        console.log(`${url} -> ${found.length} identifiers`);
+        for (const hit of found) carriers.add(hit);
+      }
+      const fresh = freshPosts([...carriers], { maxAgeMinutes: 60 * 48 });
+      console.log(`\n${carriers.size} identifiers in total, ${fresh.length} under 48h:\n`);
       for (const p of fresh.slice(0, 25)) {
         console.log(`${String(p.minutesOld).padStart(5)} min  ${p.url}`);
       }
