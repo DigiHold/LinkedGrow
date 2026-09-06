@@ -12,6 +12,9 @@ const draft = (over: Partial<CommentDraft> = {}): CommentDraft => ({
   postAuthor: "Alex Garcia",
   postExcerpt: "Last night I had a nightmare about a bill.",
   comment: "We watch that number every week now, it moves faster than anyone expects.",
+  originalComment: "We watch that number every week now, it moves faster than anyone expects.",
+  verifyOk: true,
+  verifyNote: "",
   status: "pending",
   minutesOldAtDraft: 12,
   createdAt: 0,
@@ -47,6 +50,24 @@ test("author names and comments are escaped", () => {
   );
   assert.ok(!html.includes("<script>"));
   assert.ok(html.includes("&amp;"));
+});
+
+/**
+ * The fact check advises rather than blocks, so its worry has to travel with the comment. A warning
+ * that stays in a log is a warning nobody acts on.
+ */
+test("a comment the fact check doubted says so in the mail", () => {
+  const { html } = buildEmail(
+    [draft({ verifyOk: false, verifyNote: "This says something that is not on your fact sheet." })],
+    "https://linkedgrow.ai"
+  );
+  assert.ok(html.includes("not on your fact sheet"));
+  assert.ok(html.includes("Read it before you approve it."));
+});
+
+test("a clean comment carries no warning", () => {
+  const { html } = buildEmail([draft()], "https://linkedgrow.ai");
+  assert.ok(!html.includes("Read it before you approve it."));
 });
 
 test("the link points at the page where the decision is made", () => {

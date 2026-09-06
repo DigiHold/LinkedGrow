@@ -8,7 +8,7 @@ import { readPost } from "../engage/read.ts";
 import { readLanguage } from "../engage/language.ts";
 import { freshPosts } from "../engage/urn.ts";
 import { commentPass } from "../engage/pass.ts";
-import { inventsNothing } from "../engage/verify.ts";
+import { checkFacts } from "../engage/verify.ts";
 import { engagePost } from "../engage/act.ts";
 
 /**
@@ -224,12 +224,8 @@ async function main(): Promise<void> {
       return;
     }
 
-    const clean = await inventsNothing(ctx, outcome.posted, facts);
-    console.log(`fact check: ${clean ? "CLEAN" : "INVENTED, refused"}`);
-    if (!clean) {
-      console.log("SKIP: the fact check refused it");
-      return;
-    }
+    const verdict = await checkFacts(ctx, outcome.posted, facts);
+    console.log(`fact check: ${verdict.clean ? "CLEAN" : `unsure. ${verdict.note}`}`);
     console.log(`\nCOMMENT (${outcome.posted.split(/\s+/).length} words):\n${outcome.posted}\n`);
     console.log("Nothing was posted. Run the same command with `post` and this exact text to publish it.");
   } finally {

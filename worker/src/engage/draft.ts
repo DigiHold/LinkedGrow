@@ -161,7 +161,47 @@ export interface PostToAnswer {
   text: string;
 }
 
-export function buildPrompt(post: PostToAnswer, shape: Shape, recentOpenings: readonly string[]): string {
+export interface Lesson {
+  written: string;
+  rewritten: string;
+}
+
+/**
+ * What a person did with the last comments, put in front of the model before it writes the next.
+ *
+ * A rewrite is worth far more than an approval. Approval says the comment was acceptable; a rewrite
+ * says what was wrong and what right looks like, in the same voice, on the same kind of post. This
+ * is the only correction this feature gets, and it is why the approval step can eventually go.
+ */
+function lessonsBlock(lessons: readonly Lesson[]): string[] {
+  if (lessons.length === 0) return [];
+  const approved = lessons.filter((l) => !l.rewritten).slice(0, 6);
+  const rewritten = lessons.filter((l) => l.rewritten).slice(0, 6);
+  const out: string[] = [""];
+
+  if (rewritten.length) {
+    out.push("Comments of yours that were REWRITTEN before going up. Study these hardest: the second");
+    out.push("line is what should have been written, in your own voice.");
+    for (const l of rewritten) {
+      out.push(`- you wrote: "${l.written}"`);
+      out.push(`  it went up as: "${l.rewritten}"`);
+    }
+    out.push("");
+  }
+  if (approved.length) {
+    out.push("Comments of yours that went up exactly as written. This is the target:");
+    for (const l of approved) out.push(`- "${l.written}"`);
+    out.push("");
+  }
+  return out;
+}
+
+export function buildPrompt(
+  post: PostToAnswer,
+  shape: Shape,
+  recentOpenings: readonly string[],
+  lessons: readonly Lesson[] = []
+): string {
   return [
     `Post by ${post.author}${post.headline ? ` (${post.headline})` : ""}.`,
     "",
@@ -173,6 +213,7 @@ export function buildPrompt(post: PostToAnswer, shape: Shape, recentOpenings: re
     `Ceiling: about ${shape.words} words.`,
     `Emoji: ${shape.emoji ? `${shape.emoji}, used once, where a person would put it` : "none, do not use any"}`,
     "",
+    ...lessonsBlock(lessons),
     "Openings you have used recently. Yours must not resemble any of them:",
     recentOpenings.length ? recentOpenings.map((o) => `- "${o}"`).join("\n") : "- (none yet)",
   ].join("\n");
@@ -223,7 +264,12 @@ export interface DraftOutcome {
 export async function draftComment(
   ctx: AgentContext,
   post: PostToAnswer,
-  opts: { facts: string; recentOpenings?: readonly string[]; rand?: () => number }
+  opts: {
+    facts: string;
+    recentOpenings?: readonly string[];
+    lessons?: readonly { written: string; rewritten: string }[];
+    rand?: () => number;
+  }
 ): Promise<DraftOutcome> {
   const recentOpenings = opts.recentOpenings ?? [];
   const rejections: string[][] = [];
@@ -242,7 +288,7 @@ export async function draftComment(
      */
     let raw: string;
     try {
-      raw = await generate(ctx, buildPrompt(post, shape, recentOpenings), {
+      raw = await generate(ctx, buildPrompt(post, shape, recentOpenings, opts.lessons ?? []), {
         systemPrompt: buildSystem(opts.facts),
         maxTokens: 1500,
         purpose: "comment",

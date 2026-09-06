@@ -61,6 +61,13 @@ export function buildEmail(drafts: readonly CommentDraft[], appUrl: string): { s
           Under a post by <strong>${escape(d.postAuthor)}</strong>, published ${d.minutesOldAtDraft} minutes before it was written
         </div>
         <div style="font-size:16px;line-height:1.5;margin:0 0 10px">${escape(d.comment)}</div>
+        ${
+          d.verifyOk
+            ? ""
+            : `<div style="background:#fef3c7;color:#92400e;border-radius:6px;padding:8px 10px;font-size:13px;margin:0 0 10px">
+                 ${escape(d.verifyNote)} Read it before you approve it.
+               </div>`
+        }
         <a href="${escape(d.postUrl)}" style="color:#0f766e;font-size:13px">See the post</a>
       </div>`
     )

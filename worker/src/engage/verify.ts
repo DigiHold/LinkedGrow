@@ -64,20 +64,37 @@ export function readVerdict(raw: string): boolean {
   return /^clean[.!]?$/i.test(answer);
 }
 
-export async function inventsNothing(
+export interface FactVerdict {
+  clean: boolean;
+  /** What the check answered, kept so a person can see why it worried. */
+  note: string;
+}
+
+/**
+ * The verdict, which advises rather than blocks.
+ *
+ * It blocked at first, and on 2026-09-06 it refused nine drafts out of eleven, about half of them
+ * wrongly, including a restatement of its own fact sheet. A check that strict produces nothing.
+ *
+ * It sits behind a person who reads every comment before it goes up, so the useful thing it can do
+ * is tell them where to look. The draft reaches the page either way, carrying this note, and the
+ * decision stays with the human. When the human stops disagreeing with it, it can block again.
+ */
+export async function checkFacts(
   ctx: AgentContext,
   comment: string,
   facts: string
-): Promise<boolean> {
+): Promise<FactVerdict> {
   try {
     const m = await models();
     const raw = await generate(ctx, buildVerifyPrompt(comment, facts), {
-      maxTokens: 8,
+      maxTokens: 16,
       purpose: "comment-verify",
       model: m.fast,
     });
-    return readVerdict(raw);
-  } catch {
-    return false;
+    const clean = readVerdict(raw);
+    return { clean, note: clean ? "" : "This says something that is not on your fact sheet." };
+  } catch (error) {
+    return { clean: false, note: "The fact check could not run, so nothing was checked." };
   }
 }

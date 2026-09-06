@@ -29,7 +29,12 @@ export interface CommentDraft {
   postAuthor: string;
   postExcerpt: string;
   comment: string;
+  /** What the model wrote, kept even after a person rewrites it. The pair is the lesson. */
+  originalComment: string;
   status: DraftStatus;
+  /** What the fact check thought. It advises, it does not block. */
+  verifyOk: boolean;
+  verifyNote: string;
   minutesOldAtDraft: number;
   createdAt: number;
 }
@@ -44,7 +49,10 @@ function row(r: Record<string, unknown>): CommentDraft {
     postAuthor: String(r.post_author ?? ""),
     postExcerpt: String(r.post_excerpt ?? ""),
     comment: String(r.comment),
+    originalComment: String(r.original_comment ?? r.comment),
     status: String(r.status) as DraftStatus,
+    verifyOk: Number(r.verify_ok ?? 1) === 1,
+    verifyNote: String(r.verify_note ?? ""),
     minutesOldAtDraft: Number(r.minutes_old_at_draft ?? 0),
     createdAt: Number(r.created_at ?? 0),
   };
@@ -58,14 +66,15 @@ function row(r: Record<string, unknown>): CommentDraft {
  * conflict is an ordinary outcome rather than an error.
  */
 export async function saveDraft(
-  draft: Omit<CommentDraft, "id" | "status" | "createdAt">
+  draft: Omit<CommentDraft, "id" | "status" | "createdAt" | "originalComment">
 ): Promise<string | null> {
   const id = randomUUID();
   const result = await db().execute({
     sql: `INSERT INTO comment_drafts
             (id, agent_id, linkedin_account_id, activity_id, post_url, post_author,
-             post_excerpt, comment, status, minutes_old_at_draft, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+             post_excerpt, comment, original_comment, verify_ok, verify_note,
+             status, minutes_old_at_draft, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
           ON CONFLICT (linkedin_account_id, activity_id) DO NOTHING`,
     args: [
       id,
@@ -76,6 +85,9 @@ export async function saveDraft(
       draft.postAuthor.slice(0, 200),
       draft.postExcerpt.slice(0, 1000),
       draft.comment,
+      draft.comment,
+      draft.verifyOk ? 1 : 0,
+      draft.verifyNote,
       draft.minutesOldAtDraft,
       Math.floor(Date.now() / 1000),
     ],
@@ -142,4 +154,36 @@ export async function expireStaleDrafts(): Promise<number> {
     args: [cutoff],
   });
   return result.rowsAffected;
+}
+
+/**
+ * What a person did with the last few comments, so the next ones are written from it.
+ *
+ * The rewrites matter more than the approvals. An approval says the comment was acceptable; a
+ * rewrite says exactly what was wrong with it and exactly what right looks like, in the same
+ * context, in the person's own words. That pair is the only correction signal this feature has, and
+ * it is the road to running without a person at all.
+ *
+ * Rejections are deliberately not here. "No" without a rewrite says the post was wrong, or the
+ * angle was, or the day was, and a model given a wrong answer with no reason learns superstition.
+ */
+export interface Lesson {
+  /** What the model wrote. */
+  written: string;
+  /** What went up, when a person changed it. Empty when they approved it as written. */
+  rewritten: string;
+}
+
+export async function recentLessons(linkedinAccountId: string, limit = 12): Promise<Lesson[]> {
+  const { rows } = await db().execute({
+    sql: `SELECT comment, original_comment FROM comment_drafts
+           WHERE linkedin_account_id = ? AND status IN ('approved', 'posted')
+           ORDER BY decided_at DESC LIMIT ?`,
+    args: [linkedinAccountId, limit],
+  });
+  return rows.map((r) => {
+    const written = String(r.original_comment ?? r.comment);
+    const final = String(r.comment);
+    return { written, rewritten: final === written ? "" : final };
+  });
 }

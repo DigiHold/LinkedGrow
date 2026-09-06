@@ -10,10 +10,11 @@ import { freshPosts } from "./urn.ts";
 import { readPost } from "./read.ts";
 import { readLanguage } from "./language.ts";
 import { draftComment } from "./draft.ts";
-import { inventsNothing } from "./verify.ts";
+import { checkFacts } from "./verify.ts";
 import { engagePost } from "./act.ts";
 import {
   saveDraft,
+  recentLessons,
   seenActivityIds,
   approvedDrafts,
   pendingDrafts,
@@ -250,6 +251,14 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
       await humanGap();
     }
 
+    /**
+     * What this person did with the last dozen comments, read once per pass.
+     *
+     * It goes into every draft below, so a rewrite from this morning shapes what is written this
+     * afternoon. That loop is what eventually makes the approval step unnecessary.
+     */
+    const lessons = await recentLessons(agent.ctx.linkedinAccountId);
+
     const candidates = opts.onlyPostUrl
       ? freshPosts([opts.onlyPostUrl], { maxAgeMinutes: Number.MAX_SAFE_INTEGER })
       : freshPosts(await notificationPosts(page), {
@@ -308,7 +317,7 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
         continue;
       }
 
-      const outcome = await draftComment(agent.ctx, post, { facts: agent.facts });
+      const outcome = await draftComment(agent.ctx, post, { facts: agent.facts, lessons });
       if (!outcome.posted) {
         log("comments: the agent passed on this one", {
           author: post.author,
@@ -317,9 +326,20 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
         });
         continue;
       }
-      if (!(await inventsNothing(agent.ctx, outcome.posted, agent.facts))) {
-        log("comments: the fact check refused it", { author: post.author, draft: outcome.posted });
-        continue;
+      /**
+       * The fact check advises here rather than refusing.
+       *
+       * It blocked at first and turned down nine drafts out of eleven, about half of them wrongly,
+       * including a restatement of the fact sheet itself. Behind a person who reads every comment
+       * before it goes up, the useful thing it can do is say where to look. Its worry travels with
+       * the draft to the page and to the email, and the decision stays with the human.
+       */
+      const verdict = await checkFacts(agent.ctx, outcome.posted, agent.facts);
+      if (!verdict.clean) {
+        log("comments: the fact check is unsure about this one", {
+          author: post.author,
+          draft: outcome.posted,
+        });
       }
 
       const id = await saveDraft({
@@ -330,6 +350,8 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
         postAuthor: post.author,
         postExcerpt: post.text.slice(0, 400),
         comment: outcome.posted,
+        verifyOk: verdict.clean,
+        verifyNote: verdict.note,
         minutesOldAtDraft: candidate.minutesOld,
       });
       if (id) {

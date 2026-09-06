@@ -42,6 +42,32 @@ test("the shape and the ceiling reach the prompt, the floor never does", () => {
   assert.ok(!/\bat least\b/i.test(prompt), "the prompt must never suggest a minimum length");
 });
 
+/**
+ * A rewrite is the only correction this feature gets, so it has to be the loudest thing in the
+ * prompt. An approval says the comment was acceptable; a rewrite says what right looks like.
+ */
+test("a rewrite reaches the prompt, marked as the target", () => {
+  const prompt = buildPrompt(
+    { author: "A", headline: "", text: "a post" },
+    drawShape(seq(0.5)),
+    [],
+    [
+      { written: "We capped ours at a fixed number.", rewritten: "Ours runs on a flat subscription." },
+      { written: "One agent broke and we caught it late.", rewritten: "" },
+    ]
+  );
+  assert.ok(prompt.includes("REWRITTEN"));
+  assert.ok(prompt.includes('you wrote: "We capped ours at a fixed number."'));
+  assert.ok(prompt.includes('it went up as: "Ours runs on a flat subscription."'));
+  assert.ok(prompt.includes('- "One agent broke and we caught it late."'));
+});
+
+test("no lessons yet means no lesson block at all", () => {
+  const prompt = buildPrompt({ author: "A", headline: "", text: "a post" }, drawShape(seq(0.5)), []);
+  assert.ok(!prompt.includes("REWRITTEN"));
+  assert.ok(!prompt.includes("went up exactly as written"));
+});
+
 test("a post with no recent openings still builds a prompt", () => {
   const prompt = buildPrompt({ author: "A", headline: "", text: "x" }, drawShape(seq(0.5)), []);
   assert.ok(prompt.includes("(none yet)"));

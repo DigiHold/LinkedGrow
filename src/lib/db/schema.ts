@@ -1757,6 +1757,11 @@ export const commentDrafts = sqliteTable("comment_drafts", {
   postAuthor: text("post_author"),
   postExcerpt: text("post_excerpt"),
   comment: text("comment").notNull(),
+  /** What the model wrote, kept after a person rewrites it. The pair is what the agent learns from. */
+  originalComment: text("original_comment"),
+  /** The fact check advises rather than blocks, so its verdict travels with the draft. */
+  verifyOk: integer("verify_ok"),
+  verifyNote: text("verify_note"),
   status: text("status", {
     enum: ["pending", "approved", "rejected", "posted", "expired", "failed"],
   })
