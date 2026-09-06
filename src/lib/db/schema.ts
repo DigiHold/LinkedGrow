@@ -1192,6 +1192,23 @@ export const agents = sqliteTable("agents", {
    * Null or empty means no restriction, which is the normal state.
    */
   testRecipients: text("test_recipients"),
+  /**
+   * Whether this agent may comment on other people's posts.
+   *
+   * Off for every agent, and turned on one at a time. The pass that comments loads only agents
+   * carrying a 1, so an agent without it never enters that code at all rather than entering it and
+   * being turned away.
+   */
+  commentEnabled: integer("comment_enabled", { mode: "boolean" }).notNull().default(false),
+  /**
+   * The closed list of true things this agent's owner may say about themselves.
+   *
+   * Data rather than code, deliberately. It is somebody's biography, so compiling it in would put a
+   * private history into a public repository, and every self hosted instance would run an agent
+   * claiming to have lived the same life. An agent with nothing here makes no personal claim and
+   * still holds opinions.
+   */
+  commentFacts: text("comment_facts"),
   smartLeadFinder: integer("smart_lead_finder", { mode: "boolean" })
     .notNull()
     .default(true),

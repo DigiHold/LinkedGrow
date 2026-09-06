@@ -1,6 +1,6 @@
 import type { AgentContext } from "../config.ts";
 import { generate, models } from "../ai.ts";
-import { FACTS } from "./draft.ts";
+import { NO_FACTS } from "./draft.ts";
 
 /**
  * The check no regular expression can perform: is anything in this comment made up.
@@ -20,12 +20,12 @@ import { FACTS } from "./draft.ts";
  * publishing nothing, and there is always another post.
  */
 
-export function buildVerifyPrompt(comment: string): string {
+export function buildVerifyPrompt(comment: string, facts: string): string {
   return [
     "Below is a closed list of true facts about a person, then a comment written in their name.",
     "",
     "FACTS",
-    FACTS,
+    facts.trim() || NO_FACTS,
     "",
     "COMMENT",
     comment,
@@ -56,10 +56,14 @@ export function readVerdict(raw: string): boolean {
   return /^clean[.!]?$/i.test(answer);
 }
 
-export async function inventsNothing(ctx: AgentContext, comment: string): Promise<boolean> {
+export async function inventsNothing(
+  ctx: AgentContext,
+  comment: string,
+  facts: string
+): Promise<boolean> {
   try {
     const m = await models();
-    const raw = await generate(ctx, buildVerifyPrompt(comment), {
+    const raw = await generate(ctx, buildVerifyPrompt(comment, facts), {
       maxTokens: 8,
       purpose: "comment-verify",
       model: m.fast,

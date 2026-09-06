@@ -47,22 +47,38 @@ async function account(accountId: string) {
 }
 
 /** An agent on this account, so the model spend is metered where it belongs rather than nowhere. */
-async function contextFor(accountId: string, workspaceId: string, profileUrl: string): Promise<AgentContext> {
+async function contextFor(
+  accountId: string,
+  workspaceId: string,
+  profileUrl: string
+): Promise<{ ctx: AgentContext; facts: string }> {
   const { rows } = await db().execute({
-    sql: `SELECT id FROM agents WHERE linkedin_account_id = ? ORDER BY created_at LIMIT 1`,
+    sql: `SELECT id, comment_facts, comment_enabled FROM agents
+           WHERE linkedin_account_id = ? ORDER BY created_at LIMIT 1`,
     args: [accountId],
   });
-  const agentId = rows[0] ? String(rows[0].id) : "";
+  const row = rows[0];
+  const agentId = row ? String(row.id) : "";
   if (!agentId) throw new Error("That account has no agent, so there is nothing to meter against.");
+  if (!Number(row?.comment_enabled ?? 0)) {
+    throw new Error("comment_enabled is 0 on that agent. The feature is off for it, on purpose.");
+  }
+  const facts = row?.comment_facts ? String(row.comment_facts) : "";
+  if (!facts.trim()) {
+    console.log("WARNING: this agent has no fact sheet, so it may make no personal claim at all.");
+  }
   return {
-    agentId,
-    workspaceId,
-    linkedinAccountId: accountId,
-    ownProfileUrl: profileUrl,
-    country: "FR",
-    tier: "free",
-    agentsOnAccount: 1,
-  } as AgentContext;
+    facts,
+    ctx: {
+      agentId,
+      workspaceId,
+      linkedinAccountId: accountId,
+      ownProfileUrl: profileUrl,
+      country: "FR",
+      tier: "free",
+      agentsOnAccount: 1,
+    } as AgentContext,
+  };
 }
 
 /**
@@ -124,8 +140,8 @@ async function main(): Promise<void> {
     console.log(`\n--- post as the agent reads it (${post.text.length} chars) ---`);
     console.log(post.text.slice(0, 1200));
 
-    const ctx = await contextFor(accountId, acct.workspaceId, acct.profileUrl);
-    const outcome = await draftComment(ctx, post);
+    const { ctx, facts } = await contextFor(accountId, acct.workspaceId, acct.profileUrl);
+    const outcome = await draftComment(ctx, post, { facts });
     console.log(`\n--- draft ---`);
     console.log(`attempts=${outcome.attempts}`);
     for (const fails of outcome.rejections) console.log(`gate refused: ${fails.join(" | ")}`);
@@ -134,7 +150,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    const clean = await inventsNothing(ctx, outcome.posted);
+    const clean = await inventsNothing(ctx, outcome.posted, facts);
     console.log(`fact check: ${clean ? "CLEAN" : "INVENTED, refused"}`);
     if (!clean) {
       console.log("SKIP: the fact check refused it");

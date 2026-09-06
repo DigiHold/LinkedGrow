@@ -18,39 +18,29 @@ import { gate, type GateResult } from "./gate.ts";
  * closed rather than indicative. On the first run it wrote "one bad batch cost us weeks" and
  * "agent number ten", both of which read perfectly and neither of which happened.
  */
-export const FACTS = `
-Who you are, and the only facts about yourself you may ever use:
-- Nicolas Lecocq, French developer, 16 years building for the web, based in Paris.
-- You built OceanWP, a WordPress theme: started 2016, released free when other developers said to
-  sell it at $59, passed 500,000 installs, sold in 2019. You answered every support ticket yourself
-  for two years. It generated more than $1.5M over its life and you lost a large amount of that to
-  bad management, taxes and problems you created yourself. Never say you lost all of it.
-- You work with your wife Maria. You are never a solo founder.
-- You run more than 15 agents for your own marketing, counting subagents: 91 skills and 24 scheduled
-  jobs, running unattended since June 2026. They cost about $200 a month.
-- Things that actually went wrong, and you may tell any of them:
-  - A test account was restricted for an unusually high volume of profile data after 15 invitations
-    in its whole life. The cause was 189 evenly spaced visits a day, not the outreach. Always a test
-    account, never a customer's.
-  - 11 connection attempts out of 13 came back as failures and the same people were retried forever,
-    because one boolean collapsed three different situations.
-  - LinkedIn's invite dialog buttons carry no stable identifier, only text in the account's own
-    language. Say it is fixed, because it is.
-
-You never invent a number, a date, a customer, a result or a story outside this list. When nothing
-here fits the post, you write with no number at all, or you skip.
-`.trim();
-
 /**
- * The product is never named.
+ * The fact sheet is DATA, not code, and it deliberately does not live in this file.
  *
- * Nicolas, 2026-09-06: the comment is a shop window and the selling happens in DM. Naming the tool
- * under somebody else's post reads as an advert, and the first four drafts all did it.
+ * It holds one person's biography: what they built, what it earned, what went wrong, the names of
+ * the people around them. Two reasons that cannot sit in the repository. This one is published as
+ * the open source product, so a hardcoded sheet is somebody's private history in a public git
+ * history, where it does not come back out. And every self hosted instance would then run an agent
+ * claiming to have built the same theme in 2016.
+ *
+ * So it is stored per agent and passed in. An agent with no sheet writes no personal claim at all,
+ * which is the safe default rather than an error: opinions and questions still work without one.
  */
-export const SYSTEM = `
+export const NO_FACTS = [
+  "You have no verified facts on file.",
+  "Say nothing about what you have built, measured, earned or lived through.",
+  "You may still hold an opinion and ask a real question.",
+].join("\n");
+
+export function buildSystem(facts: string): string {
+  return `
 You are writing a LinkedIn comment as Nicolas Lecocq, under somebody else's post.
 
-${FACTS}
+${facts.trim() || NO_FACTS}
 
 ## Decide whether to comment at all
 
@@ -113,6 +103,7 @@ fails, however good the content is.
 Return only JSON and nothing else:
 {"decision":"comment"|"skip","reason":"one short line","comment":"the comment, or empty when skipping"}
 `.trim();
+}
 
 export interface Shape {
   shape: string;
@@ -231,7 +222,7 @@ export interface DraftOutcome {
 export async function draftComment(
   ctx: AgentContext,
   post: PostToAnswer,
-  opts: { recentOpenings?: readonly string[]; rand?: () => number } = {}
+  opts: { facts: string; recentOpenings?: readonly string[]; rand?: () => number }
 ): Promise<DraftOutcome> {
   const recentOpenings = opts.recentOpenings ?? [];
   const rejections: string[][] = [];
@@ -240,7 +231,7 @@ export async function draftComment(
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     const shape = drawShape(opts.rand);
     const raw = await generate(ctx, buildPrompt(post, shape, recentOpenings), {
-      systemPrompt: SYSTEM,
+      systemPrompt: buildSystem(opts.facts),
       maxTokens: 400,
       purpose: "comment",
       model: m.writer,

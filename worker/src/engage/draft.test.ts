@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { drawShape, buildPrompt, parseDraft, SYSTEM, FACTS } from "./draft.ts";
+import { drawShape, buildPrompt, parseDraft, buildSystem, NO_FACTS } from "./draft.ts";
 
 /** A deterministic stand-in for Math.random, so a draw can be pinned. */
 function seq(...values: number[]): () => number {
@@ -74,10 +74,27 @@ test("a skip never carries a comment through", () => {
 
 /** The rules Nicolas set in conversation have to survive an edit to the prompt. */
 test("the prompt still carries the rules that took four rounds to find", () => {
-  assert.ok(/NEVER name LinkedGrow/.test(SYSTEM));
-  assert.ok(/no line break, ever/i.test(SYSTEM));
-  assert.ok(/Under 20 words/.test(SYSTEM));
-  assert.ok(/never the word "part"|Never the word "part"/i.test(SYSTEM));
-  assert.ok(/never a customer/i.test(FACTS));  // wrapped across lines in the template
-  assert.ok(/Never say you lost all of it/.test(FACTS));
+  const system = buildSystem("You once shipped a theme that reached 500 installs.");
+  assert.ok(/NEVER name LinkedGrow/.test(system));
+  assert.ok(/no line break, ever/i.test(system));
+  assert.ok(/Under 20 words/.test(system));
+  assert.ok(/never the word "part"|Never the word "part"/i.test(system));
+});
+
+/**
+ * The sheet is per agent data and must never be compiled in. This repository is published as the
+ * open source product, so a biography in this file is a private history in a public git history.
+ */
+test("the fact sheet comes from the caller, never from this file", () => {
+  const system = buildSystem("You built a boat in 1998 and it sank.");
+  assert.ok(system.includes("You built a boat in 1998 and it sank."));
+  // "OceanWP" appears in the ban list on purpose, which is a rule and not a biography.
+  assert.ok(!/Maria|1\.5M|500,000|bad management|sold in 2019/i.test(system),
+    "no biography may be compiled into the prompt");
+});
+
+test("an agent with no sheet is told to make no personal claim, not left to invent one", () => {
+  const system = buildSystem("   ");
+  assert.ok(system.includes(NO_FACTS));
+  assert.ok(/Say nothing about what you have built/.test(system));
 });
