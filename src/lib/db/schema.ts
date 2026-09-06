@@ -1755,6 +1755,9 @@ export const commentDrafts = sqliteTable("comment_drafts", {
   activityId: text("activity_id").notNull(),
   postUrl: text("post_url").notNull(),
   postAuthor: text("post_author"),
+  /** The author's profile address. Analytics group by this, never by the display name. */
+  postAuthorUrl: text("post_author_url"),
+  /** Nulled 7 days after a decision: half a row's weight, and nobody reads it twice. */
   postExcerpt: text("post_excerpt"),
   comment: text("comment").notNull(),
   /** What the model wrote, kept after a person rewrites it. The pair is what the agent learns from. */
@@ -1772,5 +1775,17 @@ export const commentDrafts = sqliteTable("comment_drafts", {
   createdAt: integer("created_at").notNull(),
   decidedAt: integer("decided_at"),
   postedAt: integer("posted_at"),
+  /** Whether the agent also liked the post on its way out. */
+  weLiked: integer("we_liked"),
+  /**
+   * What the comment earned, re-read hours later.
+   *
+   * The point of the feature is not how many comments went up, it is which creators put the account
+   * in front of people who react. Without these two numbers there is no way to tell a creator worth
+   * ten minutes a week from one worth none, and follower counts do not answer it.
+   */
+  commentLikes: integer("comment_likes"),
+  commentReplies: integer("comment_replies"),
+  insightsReadAt: integer("insights_read_at"),
   error: text("error"),
 });

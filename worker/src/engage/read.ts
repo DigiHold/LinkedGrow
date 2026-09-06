@@ -90,11 +90,11 @@ export function splitAuthor(text: string): PostToAnswer {
  * lying around.
  */
 export async function readPost(page: Page): Promise<PostToAnswer | null> {
-  const raw = await page
+  const found = await page
     .evaluate((iconSelector: string) => {
       const icons = Array.from(document.querySelectorAll(iconSelector));
       const first = icons[0];
-      if (!first) return "";
+      if (!first) return { text: "", authorUrl: "" };
       const second = icons[1] ?? null;
 
       /**
@@ -119,9 +119,24 @@ export async function readPost(page: Page): Promise<PostToAnswer | null> {
         if (((node as HTMLElement).innerText ?? "").length > CEILING) break;
         best = node;
       }
-      return (best as HTMLElement).innerText ?? "";
+      /**
+       * The author's own profile link, taken from inside the post block.
+       *
+       * A display name is not a key: people rename themselves, and two Sams are two Sams. The slug
+       * in the URL is what stays the same, so it is what the analytics group by.
+       */
+      const link = (best as HTMLElement).querySelector('a[href*="/in/"]');
+      const href = link?.getAttribute("href") ?? "";
+      const slug = /\/in\/([^/?#]+)/.exec(decodeURIComponent(href))?.[1] ?? "";
+
+      return {
+        text: (best as HTMLElement).innerText ?? "",
+        authorUrl: slug ? `https://www.linkedin.com/in/${slug}/` : "",
+      };
     }, COMMENT_ICON)
-    .catch(() => "");
+    .catch(() => ({ text: "", authorUrl: "" }));
+
+  const raw = found.text;
 
   const cleaned = cleanPostText(raw);
   if (cleaned.length < 80) return null;
@@ -135,5 +150,5 @@ export async function readPost(page: Page): Promise<PostToAnswer | null> {
    * answering the page instead of the person.
    */
   if (LOOKS_LIKE_CHROME.test(post.author)) return null;
-  return post;
+  return { ...post, authorUrl: found.authorUrl };
 }

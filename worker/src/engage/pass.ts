@@ -21,6 +21,7 @@ import {
   markPosted,
   markFailed,
   expireStaleDrafts,
+  trimDecidedRows,
 } from "./store.ts";
 import { notifyPending } from "./notify.ts";
 
@@ -240,7 +241,7 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
       try {
         const result = await engagePost(page, draft.postUrl, draft.comment);
         if (result.commented) {
-          await markPosted(draft.id);
+          await markPosted(draft.id, result.liked);
           log("comments: posted an approved comment", { id: draft.id, liked: result.liked });
         } else {
           await markFailed(draft.id, "the comment box did not take it");
@@ -348,6 +349,7 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
         activityId: candidate.activityId,
         postUrl: candidate.url,
         postAuthor: post.author,
+        postAuthorUrl: post.authorUrl ?? "",
         postExcerpt: post.text.slice(0, 400),
         comment: outcome.posted,
         verifyOk: verdict.clean,
@@ -373,6 +375,13 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
 export async function commentPass(opts: PassOptions = {}): Promise<void> {
   const expired = await expireStaleDrafts();
   if (expired > 0) log("comments: dropped drafts nobody answered in time", { expired });
+
+  /**
+   * Half of a decided row is the post excerpt, which nobody reads again once the decision is made.
+   * Everything the analytics need survives: who was answered, what was written, and what it earned.
+   */
+  const trimmed = await trimDecidedRows();
+  if (trimmed > 0) log("comments: trimmed rows nobody will read again", { trimmed });
 
   const agents = await enabledAgents();
   if (agents.length === 0) return;

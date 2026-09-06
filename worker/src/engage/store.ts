@@ -27,6 +27,8 @@ export interface CommentDraft {
   activityId: string;
   postUrl: string;
   postAuthor: string;
+  /** Stable key for analytics: people rename themselves, their slug does not. */
+  postAuthorUrl: string;
   postExcerpt: string;
   comment: string;
   /** What the model wrote, kept even after a person rewrites it. The pair is the lesson. */
@@ -47,6 +49,7 @@ function row(r: Record<string, unknown>): CommentDraft {
     activityId: String(r.activity_id),
     postUrl: String(r.post_url),
     postAuthor: String(r.post_author ?? ""),
+    postAuthorUrl: String(r.post_author_url ?? ""),
     postExcerpt: String(r.post_excerpt ?? ""),
     comment: String(r.comment),
     originalComment: String(r.original_comment ?? r.comment),
@@ -72,9 +75,9 @@ export async function saveDraft(
   const result = await db().execute({
     sql: `INSERT INTO comment_drafts
             (id, agent_id, linkedin_account_id, activity_id, post_url, post_author,
-             post_excerpt, comment, original_comment, verify_ok, verify_note,
+             post_author_url, post_excerpt, comment, original_comment, verify_ok, verify_note,
              status, minutes_old_at_draft, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
           ON CONFLICT (linkedin_account_id, activity_id) DO NOTHING`,
     args: [
       id,
@@ -83,6 +86,7 @@ export async function saveDraft(
       draft.activityId,
       draft.postUrl,
       draft.postAuthor.slice(0, 200),
+      draft.postAuthorUrl.slice(0, 300),
       draft.postExcerpt.slice(0, 1000),
       draft.comment,
       draft.comment,
@@ -126,10 +130,10 @@ export async function pendingDrafts(linkedinAccountId: string): Promise<CommentD
   return rows.map((r) => row(r as Record<string, unknown>));
 }
 
-export async function markPosted(id: string): Promise<void> {
+export async function markPosted(id: string, weLiked: boolean): Promise<void> {
   await db().execute({
-    sql: `UPDATE comment_drafts SET status = 'posted', posted_at = ? WHERE id = ?`,
-    args: [Math.floor(Date.now() / 1000), id],
+    sql: `UPDATE comment_drafts SET status = 'posted', posted_at = ?, we_liked = ? WHERE id = ?`,
+    args: [Math.floor(Date.now() / 1000), weLiked ? 1 : 0, id],
   });
 }
 
@@ -186,4 +190,100 @@ export async function recentLessons(linkedinAccountId: string, limit = 12): Prom
     const final = String(r.comment);
     return { written, rewritten: final === written ? "" : final };
   });
+}
+
+/**
+ * What the commenting is actually producing, grouped by the person whose posts were answered.
+ *
+ * This is the question the feature has to answer once it is somebody's product rather than an
+ * experiment: not "how many comments", but "which of these people is worth my minutes". A creator
+ * whose posts earn twenty likes on a comment is worth ten of a creator whose posts earn none,
+ * whatever their follower count says, and only this table knows which is which.
+ *
+ * Grouped by the profile address rather than the display name. People rename themselves.
+ */
+export interface CreatorPerformance {
+  authorUrl: string;
+  authorName: string;
+  posted: number;
+  likes: number;
+  replies: number;
+  /** How fresh the posts were when the agent answered them, which is what earns the top slot. */
+  medianMinutesOld: number;
+}
+
+export async function creatorPerformance(
+  linkedinAccountId: string,
+  sinceDays = 90
+): Promise<CreatorPerformance[]> {
+  const since = Math.floor(Date.now() / 1000) - sinceDays * 86_400;
+  const { rows } = await db().execute({
+    sql: `SELECT COALESCE(NULLIF(post_author_url, ''), post_author) AS key,
+                 MAX(post_author) AS name,
+                 COUNT(*) AS posted,
+                 COALESCE(SUM(comment_likes), 0) AS likes,
+                 COALESCE(SUM(comment_replies), 0) AS replies,
+                 CAST(AVG(minutes_old_at_draft) AS INTEGER) AS avg_age
+            FROM comment_drafts
+           WHERE linkedin_account_id = ? AND status = 'posted' AND posted_at >= ?
+           GROUP BY key
+           ORDER BY likes DESC, posted DESC`,
+    args: [linkedinAccountId, since],
+  });
+  return rows.map((r) => ({
+    authorUrl: String(r.key ?? ""),
+    authorName: String(r.name ?? ""),
+    posted: Number(r.posted ?? 0),
+    likes: Number(r.likes ?? 0),
+    replies: Number(r.replies ?? 0),
+    medianMinutesOld: Number(r.avg_age ?? 0),
+  }));
+}
+
+/** The headline numbers, for the analytics page and for anything reading over MCP. */
+export async function commentTotals(
+  linkedinAccountId: string,
+  sinceDays = 30
+): Promise<{ posted: number; likes: number; replies: number; approved: number; rejected: number; expired: number }> {
+  const since = Math.floor(Date.now() / 1000) - sinceDays * 86_400;
+  const { rows } = await db().execute({
+    sql: `SELECT
+            SUM(status = 'posted') AS posted,
+            SUM(status = 'approved') AS approved,
+            SUM(status = 'rejected') AS rejected,
+            SUM(status = 'expired') AS expired,
+            COALESCE(SUM(comment_likes), 0) AS likes,
+            COALESCE(SUM(comment_replies), 0) AS replies
+          FROM comment_drafts
+          WHERE linkedin_account_id = ? AND created_at >= ?`,
+    args: [linkedinAccountId, since],
+  });
+  const r = (rows[0] ?? {}) as Record<string, unknown>;
+  return {
+    posted: Number(r.posted ?? 0),
+    approved: Number(r.approved ?? 0),
+    rejected: Number(r.rejected ?? 0),
+    expired: Number(r.expired ?? 0),
+    likes: Number(r.likes ?? 0),
+    replies: Number(r.replies ?? 0),
+  };
+}
+
+/**
+ * Drops the half of a row that stops being useful the moment a decision is made.
+ *
+ * The post excerpt is 400 of a row's 864 bytes and it exists so somebody can decide without opening
+ * a tab. Once they have decided it is dead weight, and at a thousand accounts it would be two
+ * gigabytes a year of text nobody ever reads again. Everything the analytics need survives: who was
+ * answered, what was written, when, and what it earned.
+ */
+export async function trimDecidedRows(olderThanDays = 7): Promise<number> {
+  const cutoff = Math.floor(Date.now() / 1000) - olderThanDays * 86_400;
+  const result = await db().execute({
+    sql: `UPDATE comment_drafts
+             SET post_excerpt = NULL, verify_note = NULL
+           WHERE created_at < ? AND post_excerpt IS NOT NULL AND status != 'pending'`,
+    args: [cutoff],
+  });
+  return result.rowsAffected;
 }

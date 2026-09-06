@@ -157,6 +157,8 @@ export function drawShape(rand: () => number = Math.random): Shape {
 
 export interface PostToAnswer {
   author: string;
+  /** The author's profile address, which is the key analytics group by rather than their name. */
+  authorUrl?: string;
   headline: string;
   text: string;
 }

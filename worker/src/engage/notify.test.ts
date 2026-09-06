@@ -10,6 +10,7 @@ const draft = (over: Partial<CommentDraft> = {}): CommentDraft => ({
   activityId: "7502221755894222848",
   postUrl: "https://www.linkedin.com/feed/update/urn:li:activity:7502221755894222848/",
   postAuthor: "Alex Garcia",
+  postAuthorUrl: "https://www.linkedin.com/in/alexgarcia/",
   postExcerpt: "Last night I had a nightmare about a bill.",
   comment: "We watch that number every week now, it moves faster than anyone expects.",
   originalComment: "We watch that number every week now, it moves faster than anyone expects.",
