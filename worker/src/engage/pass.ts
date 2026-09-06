@@ -162,6 +162,14 @@ export interface PassOptions {
   ignoreVisit?: boolean;
   /** Only this account, for the same reason. */
   onlyAccountId?: string;
+  /**
+   * A wider age limit, again only for a supervised run.
+   *
+   * 45 minutes is a policy about what is worth commenting on, not a safety rule, and on a quiet
+   * evening it means nothing to look at. Widening it proves the chain end to end; the loop keeps
+   * the real number.
+   */
+  maxAgeMinutes?: number;
 }
 
 async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
@@ -232,7 +240,7 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
     }
 
     const candidates = freshPosts(await notificationPosts(page), {
-      maxAgeMinutes: MAX_POST_AGE_MINUTES,
+      maxAgeMinutes: opts.maxAgeMinutes ?? MAX_POST_AGE_MINUTES,
       seen,
     });
     if (candidates.length === 0) {

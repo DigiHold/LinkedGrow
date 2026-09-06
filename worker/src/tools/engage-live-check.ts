@@ -102,7 +102,12 @@ async function main(): Promise<void> {
    * the worker.
    */
   if (mode === "pass") {
-    await commentPass({ ignoreVisit: true, onlyAccountId: accountId });
+    const maxAge = Number(process.argv[5] ?? 0);
+    await commentPass({
+      ignoreVisit: true,
+      onlyAccountId: accountId,
+      ...(maxAge > 0 ? { maxAgeMinutes: maxAge } : {}),
+    });
     console.log("pass finished. Check /dashboard/comments and your inbox.");
     return;
   }
