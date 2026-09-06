@@ -1738,3 +1738,34 @@ export const instanceSettings = sqliteTable("instance_settings", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
+
+/**
+ * Comments the agent wrote and a person has not answered yet.
+ *
+ * The feature is approval first while it is new: the worker drafts, the owner approves, rewrites or
+ * refuses, and only then does anything reach LinkedIn. One row per post per account, enforced by a
+ * unique index in the database, because commenting twice under one post is the most recognisable
+ * thing an automated account does.
+ */
+export const commentDrafts = sqliteTable("comment_drafts", {
+  id: text("id").primaryKey(),
+  agentId: text("agent_id").notNull(),
+  linkedinAccountId: text("linkedin_account_id").notNull(),
+  /** The post's own identifier, which also carries the time it was published. */
+  activityId: text("activity_id").notNull(),
+  postUrl: text("post_url").notNull(),
+  postAuthor: text("post_author"),
+  postExcerpt: text("post_excerpt"),
+  comment: text("comment").notNull(),
+  status: text("status", {
+    enum: ["pending", "approved", "rejected", "posted", "expired", "failed"],
+  })
+    .notNull()
+    .default("pending"),
+  /** How old the post was when the comment was written, which is what makes it worth posting. */
+  minutesOldAtDraft: integer("minutes_old_at_draft"),
+  createdAt: integer("created_at").notNull(),
+  decidedAt: integer("decided_at"),
+  postedAt: integer("posted_at"),
+  error: text("error"),
+});
