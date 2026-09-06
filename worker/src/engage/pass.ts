@@ -248,6 +248,11 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
       return;
     }
 
+    log("comments: candidates found", {
+      count: candidates.length,
+      freshest: candidates[0]?.minutesOld ?? null,
+    });
+
     let written = 0;
     for (const candidate of candidates) {
       if (written >= DRAFTS_PER_PASS) break;
@@ -258,13 +263,38 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
       await scrollHuman(page, 1);
       await dwell(1500, 3000);
 
+      /**
+       * Every reason a post is dropped is said out loud.
+       *
+       * The first supervised run produced no drafts and no explanation: the candidates were there,
+       * every one was refused somewhere in this block, and each refusal was a bare `continue`. A
+       * pass that does nothing has to be able to say why, or the only way to find out is to add
+       * these lines afterwards, which is what happened.
+       */
       const post = await readPost(page);
-      if (!post) continue;
-      if (!readLanguage(post.text).english) continue;
+      if (!post) {
+        log("comments: dropped, the post block was not found", { url: candidate.url });
+        continue;
+      }
+      const language = readLanguage(post.text);
+      if (!language.english) {
+        log("comments: dropped, not English", { author: post.author, why: language.reason });
+        continue;
+      }
 
       const outcome = await draftComment(agent.ctx, post, { facts: agent.facts });
-      if (!outcome.posted) continue;
-      if (!(await inventsNothing(agent.ctx, outcome.posted, agent.facts))) continue;
+      if (!outcome.posted) {
+        log("comments: the agent passed on this one", {
+          author: post.author,
+          why: outcome.reason,
+          refused: outcome.rejections.flat(),
+        });
+        continue;
+      }
+      if (!(await inventsNothing(agent.ctx, outcome.posted, agent.facts))) {
+        log("comments: the fact check refused it", { author: post.author, draft: outcome.posted });
+        continue;
+      }
 
       const id = await saveDraft({
         agentId: agent.ctx.agentId,
@@ -276,7 +306,10 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
         comment: outcome.posted,
         minutesOldAtDraft: candidate.minutesOld,
       });
-      if (id) written += 1;
+      if (id) {
+        written += 1;
+        log("comments: drafted", { author: post.author, minutesOld: candidate.minutesOld });
+      }
       await dwell(4000, 9000);
     }
 
