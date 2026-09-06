@@ -9,6 +9,17 @@ test("the prompt carries the closed fact list and the comment", () => {
   assert.ok(/When you are unsure, answer INVENTED/.test(p));
 });
 
+/**
+ * The failure that got through on the first live run: the sheet said the AI costs about $200 a
+ * month, and the comment came back as "I capped mine, $200 a month total". The number was true and
+ * the action was invented, and the first version of this prompt called that clean.
+ */
+test("the prompt refuses a method the sheet does not describe", () => {
+  const p = buildVerifyPrompt("I capped mine, $200 a month total.", "Their AI costs about $200 a month.");
+  assert.ok(/METHOD/.test(p));
+  assert.ok(/capping is an action|capped mine/i.test(p));
+});
+
 test("only a clean verdict passes", () => {
   assert.equal(readVerdict("CLEAN"), true);
   assert.equal(readVerdict(" clean "), true);
