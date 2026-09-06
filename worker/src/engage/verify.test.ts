@@ -6,7 +6,7 @@ test("the prompt carries the closed fact list and the comment", () => {
   const p = buildVerifyPrompt("We stopped that last year after it broke twice on us.", "You built a boat in 1998.");
   assert.ok(p.includes("You built a boat in 1998."), "the facts must be in the prompt");
   assert.ok(p.includes("We stopped that last year"), "the comment must be in the prompt");
-  assert.ok(/When you are unsure, answer INVENTED/.test(p));
+  assert.ok(/unsure whether a first\s+person claim is covered/.test(p.replace(/\n/g, " ")));
 });
 
 /**

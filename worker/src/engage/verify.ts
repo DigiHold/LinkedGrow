@@ -46,9 +46,13 @@ export function buildVerifyPrompt(comment: string, facts: string): string {
     "the list says they run X.",
     "",
     "Answer with exactly one word:",
-    "CLEAN - every personal claim is in the list, or the comment makes no personal claim at all.",
-    "INVENTED - at least one personal claim is not in the list.",
-    "When you are unsure, answer INVENTED.",
+    "CLEAN - every first person claim is in the list, or there is no first person claim at all.",
+    "INVENTED - at least one first person claim is not in the list, or is described a way the list",
+    "does not describe.",
+    "",
+    "Doubt applies to claims, never to their absence. If the comment says nothing about the person,",
+    "there is nothing to doubt and the answer is CLEAN. Only when you are unsure whether a first",
+    "person claim is covered by the list do you answer INVENTED.",
   ].join("\n");
 }
 

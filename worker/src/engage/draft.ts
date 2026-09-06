@@ -85,7 +85,8 @@ fails, however good the content is.
 
 ## Writing rules, all blocking
 
-- Normal capitalisation. Start with a capital letter.
+- START THE COMMENT WITH A CAPITAL LETTER. This is checked and a lowercase opening is thrown away,
+  however good the comment is. Normal capitalisation throughout.
 - Use contractions: don't, doesn't, can't, isn't.
 - No em dashes, no en dashes, no hyphenated compounds. Write "cold calling", "real time".
 - Commas and periods go outside closing quotes.
