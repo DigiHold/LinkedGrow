@@ -20,6 +20,10 @@ import type { PostToAnswer } from "./draft.ts";
  * language.
  */
 
+/** Interface text that turns up where a name should be when the wrong block was taken. */
+const LOOKS_LIKE_CHROME =
+  /^(\d+\s+\w+|skip to|linkedin|home|my network|jobs|messaging|notifications|feed|for business|try premium)/i;
+
 const COMMENT_ICON = 'svg[id="comment-small" i], svg[data-test-icon="comment-small" i]';
 
 /**
@@ -96,20 +100,40 @@ export async function readPost(page: Page): Promise<PostToAnswer | null> {
       /**
        * Climb while the next parent still leaves every other action bar outside. The block that
        * stops the climb is the post: its own bar is inside, the first comment's bar is not.
+       *
+       * A post with no comments yet has only one of those bars, so that test never fires and the
+       * climb used to run all the way to the page. On 2026-09-06 that handed the model the whole
+       * interface and reported the author as "0 notifications". Size is the second brake: a post is
+       * a few thousand characters, a page is far more, so the last block under the ceiling wins.
        */
+      const CEILING = 4000;
       let node: Element = first;
+      let best: Element = first;
       while (
         node.parentElement &&
         node.parentElement.tagName !== "BODY" &&
-        (!second || !node.parentElement.contains(second))
+        node.parentElement.tagName !== "MAIN" &&
+        !(second && node.parentElement.contains(second))
       ) {
         node = node.parentElement;
+        if (((node as HTMLElement).innerText ?? "").length > CEILING) break;
+        best = node;
       }
-      return (node as HTMLElement).innerText ?? "";
+      return (best as HTMLElement).innerText ?? "";
     }, COMMENT_ICON)
     .catch(() => "");
 
   const cleaned = cleanPostText(raw);
   if (cleaned.length < 80) return null;
-  return splitAuthor(cleaned.slice(0, 4000));
+  const post = splitAuthor(cleaned.slice(0, 4000));
+
+  /**
+   * A last check on the author, because the climb can still land on the wrong block.
+   *
+   * The first live run reported "0 notifications" as the person who wrote the post. Anything that
+   * reads as interface rather than a name means the block is wrong, and a wrong block is a comment
+   * answering the page instead of the person.
+   */
+  if (LOOKS_LIKE_CHROME.test(post.author)) return null;
+  return post;
 }

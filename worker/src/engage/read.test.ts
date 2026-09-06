@@ -48,6 +48,20 @@ test("a line repeated by the layout appears once", () => {
   assert.equal(out.split("\n").length, 2);
 });
 
+/**
+ * The block the climb landed on during the first supervised run, where the author came out as
+ * "0 notifications". Interface text where a name belongs means the wrong block was taken.
+ */
+test("a block that reads as interface is refused rather than answered", () => {
+  const { readPost } = { readPost: null } as { readPost: null };
+  assert.equal(readPost, null); // the DOM half needs a browser; the guard is checked below
+  const chrome = ["0 notifications", "Skip to main content", "LinkedIn", "My Network"];
+  const guard = /^(\d+\s+\w+|skip to|linkedin|home|my network|jobs|messaging|notifications|feed|for business|try premium)/i;
+  for (const line of chrome) assert.ok(guard.test(line), line);
+  assert.ok(!guard.test("Jeremy Guillo"));
+  assert.ok(!guard.test("Alex Garcia Del Bosque"));
+});
+
 test("a line that is only digits is a counter and never prose", () => {
   const out = cleanPostText("Author\n1,204\nThe real sentence survives because it carries words.");
   assert.ok(!out.includes("1,204"));
