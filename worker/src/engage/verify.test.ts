@@ -20,6 +20,16 @@ test("the prompt refuses a method the sheet does not describe", () => {
   assert.ok(/capping is an action|capped mine/i.test(p));
 });
 
+/**
+ * The over correction that came straight after the under correction. A comment with no first person
+ * claim was refused, and refusing every question is how the agent ends up posting nothing.
+ */
+test("a comment making no claim about the person needs nothing in the list", () => {
+  const p = buildVerifyPrompt("How do you separate high intent keywords from the rest?", "Anything.");
+  assert.ok(/no first person claim at all is CLEAN/.test(p));
+  assert.ok(/is CLEAN\./.test(p));
+});
+
 test("only a clean verdict passes", () => {
   assert.equal(readVerdict("CLEAN"), true);
   assert.equal(readVerdict(" clean "), true);
