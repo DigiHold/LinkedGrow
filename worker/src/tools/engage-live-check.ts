@@ -102,8 +102,14 @@ async function main(): Promise<void> {
    * the worker.
    */
   if (mode === "pass") {
-    const maxAge = Number(process.argv[5] ?? 0);
-    const only = process.argv[6] ?? "";
+    /**
+     * pass <accountId> [maxAgeMinutes] [postUrl]
+     *
+     * argv[4] is the fourth argument, which the earlier version read as argv[5] and therefore never
+     * saw: the wide window that looked like it worked was the 45 minute default all along.
+     */
+    const maxAge = Number(process.argv[4] ?? 0);
+    const only = process.argv[5] ?? "";
     await commentPass({
       ignoreVisit: true,
       onlyAccountId: accountId,
