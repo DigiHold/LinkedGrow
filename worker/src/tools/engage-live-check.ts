@@ -3,7 +3,9 @@ import { decryptSecret } from "../crypto.ts";
 import { openSession, closeSession, isSignedIn } from "../browser/driver.ts";
 import { dwell, scrollHuman } from "../browser/human.ts";
 import type { AgentContext } from "../config.ts";
-import { draftComment, type PostToAnswer } from "../engage/draft.ts";
+import { draftComment } from "../engage/draft.ts";
+import { readPost } from "../engage/read.ts";
+import { readLanguage } from "../engage/language.ts";
 import { inventsNothing } from "../engage/verify.ts";
 import { engagePost } from "../engage/act.ts";
 
@@ -81,27 +83,6 @@ async function contextFor(
   };
 }
 
-/**
- * The post, as the agent would read it.
- *
- * The whole visible text of the article region, trimmed. A permalink puts the post above its
- * comments, so the first part of it is the post; the comments that follow are context the model is
- * allowed to see and is told never to answer.
- */
-async function readPost(page: import("patchright").Page): Promise<PostToAnswer> {
-  const text = await page
-    .locator("main")
-    .innerText()
-    .catch(() => "");
-  const cleaned = text.replace(/\n{3,}/g, "\n\n").trim();
-  const lines = cleaned.split("\n").map((l) => l.trim()).filter(Boolean);
-  return {
-    author: lines[0] ?? "unknown",
-    headline: lines[1] ?? "",
-    text: cleaned.slice(0, 4000),
-  };
-}
-
 async function main(): Promise<void> {
   const mode = (process.argv[2] ?? "").toLowerCase();
   const accountId = process.argv[3] ?? "";
@@ -137,8 +118,20 @@ async function main(): Promise<void> {
     await dwell(1500, 3000);
 
     const post = await readPost(page);
+    if (!post) {
+      console.log("SKIP: the post block could not be found, so nothing was read and nothing written.");
+      return;
+    }
     console.log(`\n--- post as the agent reads it (${post.text.length} chars) ---`);
+    console.log(`author: ${post.author}`);
     console.log(post.text.slice(0, 1200));
+
+    const language = readLanguage(post.text);
+    console.log(`\nlanguage: ${language.english ? "English" : "not English"} (${language.reason})`);
+    if (!language.english) {
+      console.log("SKIP: the agent only comments in English, under English posts.");
+      return;
+    }
 
     const { ctx, facts } = await contextFor(accountId, acct.workspaceId, acct.profileUrl);
     const outcome = await draftComment(ctx, post, { facts });

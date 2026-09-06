@@ -230,12 +230,31 @@ export async function draftComment(
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     const shape = drawShape(opts.rand);
-    const raw = await generate(ctx, buildPrompt(post, shape, recentOpenings), {
-      systemPrompt: buildSystem(opts.facts),
-      maxTokens: 400,
-      purpose: "comment",
-      model: m.writer,
-    });
+    /**
+     * 1500 rather than the 400 this started with.
+     *
+     * On the first live run the call came back as "anthropic returned an empty answer": the model
+     * reasons before it writes, the reasoning spent the whole budget, and the response was cut off
+     * before a single text block existed. The comment itself is twenty words, so the ceiling is not
+     * about the answer, it is about what happens before it. Output is billed on what is produced,
+     * so a high ceiling that is never reached costs nothing.
+     */
+    let raw: string;
+    try {
+      raw = await generate(ctx, buildPrompt(post, shape, recentOpenings), {
+        systemPrompt: buildSystem(opts.facts),
+        maxTokens: 1500,
+        purpose: "comment",
+        model: m.writer,
+      });
+    } catch (error) {
+      /**
+       * A failed call is a skipped post, never a crash. There is always another post, and a tool
+       * that dies here leaves a browser open on somebody's account.
+       */
+      rejections.push([`model call failed: ${error instanceof Error ? error.message : String(error)}`]);
+      continue;
+    }
     const draft = parseDraft(raw);
     if (draft.decision === "skip") {
       return { posted: null, reason: draft.reason || "nothing to add", attempts: attempt, rejections };
