@@ -103,10 +103,12 @@ async function main(): Promise<void> {
    */
   if (mode === "pass") {
     const maxAge = Number(process.argv[5] ?? 0);
+    const only = process.argv[6] ?? "";
     await commentPass({
       ignoreVisit: true,
       onlyAccountId: accountId,
       ...(maxAge > 0 ? { maxAgeMinutes: maxAge } : {}),
+      ...(only ? { onlyPostUrl: only } : {}),
     });
     console.log("pass finished. Check /dashboard/comments and your inbox.");
     return;

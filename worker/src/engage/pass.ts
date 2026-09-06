@@ -173,6 +173,13 @@ export interface PassOptions {
    * the real number.
    */
   maxAgeMinutes?: number;
+  /**
+   * One named post instead of whatever the notifications hold, again only for a supervised run.
+   *
+   * Discovery and drafting are separate problems, and on a quiet evening the first can be empty
+   * while the second still needs proving. The loop never sets this.
+   */
+  onlyPostUrl?: string;
 }
 
 async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
@@ -242,10 +249,12 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
       await humanGap();
     }
 
-    const candidates = freshPosts(await notificationPosts(page), {
-      maxAgeMinutes: opts.maxAgeMinutes ?? MAX_POST_AGE_MINUTES,
-      seen,
-    });
+    const candidates = opts.onlyPostUrl
+      ? freshPosts([opts.onlyPostUrl], { maxAgeMinutes: Number.MAX_SAFE_INTEGER })
+      : freshPosts(await notificationPosts(page), {
+          maxAgeMinutes: opts.maxAgeMinutes ?? MAX_POST_AGE_MINUTES,
+          seen,
+        });
     if (candidates.length === 0) {
       log("comments: nothing fresh enough to answer");
       return;
