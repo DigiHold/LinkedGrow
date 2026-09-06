@@ -117,11 +117,24 @@ async function main(): Promise<void> {
       await dwell(2500, 4500);
       await scrollHuman(page, 3);
       await dwell(1500, 3000);
-      const hrefs = await page.evaluate(() =>
-        Array.from(document.querySelectorAll("a")).map((a) => a.getAttribute("href") ?? "")
-      );
-      const fresh = freshPosts(hrefs, { maxAgeMinutes: 60 * 48 });
-      console.log(`\n${hrefs.length} links, ${fresh.length} distinct posts under 48h:\n`);
+      /**
+       * Every attribute on the page, not only the hrefs.
+       *
+       * The feed came back with 104 links and no post at all: unlike the notifications page, it
+       * does not put the identifier in an href. It hangs it on the post container instead, so the
+       * only reliable way to find one is to look wherever LinkedIn chose to put it.
+       */
+      const carriers = await page.evaluate(() => {
+        const found = new Set<string>();
+        for (const el of Array.from(document.querySelectorAll("*"))) {
+          for (const attr of Array.from(el.attributes)) {
+            for (const hit of attr.value.match(/urn:li:activity:\d{6,25}/g) ?? []) found.add(hit);
+          }
+        }
+        return [...found];
+      });
+      const fresh = freshPosts(carriers, { maxAgeMinutes: 60 * 48 });
+      console.log(`\n${carriers.length} identifiers on the page, ${fresh.length} under 48h:\n`);
       for (const p of fresh.slice(0, 25)) {
         console.log(`${String(p.minutesOld).padStart(5)} min  ${p.url}`);
       }
