@@ -1085,7 +1085,7 @@ export function NewAgentWizard() {
                     Connecting reserves a dedicated residential address for your
                     account, in your country, and it stays yours. That is part of
                     the plan, so it comes just after the checkout: $0 today,
-                    7 days free, then $99/month. Cancel any time before day 7.
+                    7 days free, then $59/month. Cancel any time before day 7.
                   </p>
                 </div>
               ) : (
@@ -1223,7 +1223,7 @@ export function NewAgentWizard() {
               {agentSub === false ? (
                 <li>
                   Next screen is the trial checkout: $0 today, 7 days free, then
-                  $99/month, cancel any time before day 7. Right after it you
+                  $59/month, cancel any time before day 7. Right after it you
                   connect your LinkedIn and the agent starts warming up.
                 </li>
               ) : (

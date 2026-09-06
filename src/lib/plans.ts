@@ -59,7 +59,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     id: "pro",
     name: "Pro",
     description: "Two agents finding and messaging your leads every day",
-    price: 99,
+    price: 59,
     popular: true,
     limits: {
       postsPerMonth: -1,
@@ -77,7 +77,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     id: "business",
     name: "Business",
     description: "Three agents, your whole team, and the reporting behind it",
-    price: 179,
+    price: 89,
     limits: {
       postsPerMonth: -1,
       scheduledPosts: -1,
@@ -121,7 +121,7 @@ export const DUNNING_GRACE_DAYS = 2;
 export const UNCARDED_DELETE_DAYS = 14;
 
 /** Price per extra agent, monthly, on either plan and either billing period. */
-export const EXTRA_AGENT_PRICE = 49;
+export const EXTRA_AGENT_PRICE = 39;
 
 /**
  * The ceiling on add-on agents.
@@ -221,7 +221,7 @@ export function isUnlimitedQuota(n: number): boolean {
   return n >= Number.MAX_SAFE_INTEGER;
 }
 
-/** Agents included before the $49 add-on. Self hosted has no ceiling. */
+/** Agents included before the extra-agent add-on. Self hosted has no ceiling. */
 export function agentQuotaForEdition(edition: Edition, plan: PlanId): number {
   if (edition === "self-hosted") return Number.MAX_SAFE_INTEGER;
   return PLANS[plan].limits.agents;
