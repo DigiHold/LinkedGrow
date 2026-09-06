@@ -6,6 +6,7 @@ import type { AgentContext } from "../config.ts";
 import { draftComment } from "../engage/draft.ts";
 import { readPost } from "../engage/read.ts";
 import { readLanguage } from "../engage/language.ts";
+import { freshPosts } from "../engage/urn.ts";
 import { inventsNothing } from "../engage/verify.ts";
 import { engagePost } from "../engage/act.ts";
 
@@ -87,8 +88,8 @@ async function main(): Promise<void> {
   const mode = (process.argv[2] ?? "").toLowerCase();
   const accountId = process.argv[3] ?? "";
   const postUrl = process.argv[4] ?? "";
-  if (!["draft", "post"].includes(mode) || !accountId || !postUrl) {
-    console.log("usage: engage-live-check.ts draft|post <accountId> <postUrl> [approved text]");
+  if (!["draft", "post", "feed"].includes(mode) || !accountId || (mode !== "feed" && !postUrl)) {
+    console.log("usage: engage-live-check.ts feed|draft|post <accountId> [postUrl] [approved text]");
     process.exit(1);
   }
 
@@ -102,6 +103,30 @@ async function main(): Promise<void> {
   try {
     if (!(await isSignedIn(session.context))) throw new Error("that account is signed out");
     const page = session.page;
+
+    /**
+     * What is on the feed right now, newest first, with the age taken from each post's own
+     * identifier rather than from the "2h" LinkedIn writes in the reader's language.
+     *
+     * Read only: it opens one page, scrolls it the way a person does, and prints. This is the shape
+     * discover.ts will take, proven on the real page before it becomes a loop.
+     */
+    if (mode === "feed") {
+      await page.goto("https://www.linkedin.com/feed/", { waitUntil: "domcontentloaded" }).catch(() => {});
+      await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
+      await dwell(2500, 4500);
+      await scrollHuman(page, 3);
+      await dwell(1500, 3000);
+      const hrefs = await page.evaluate(() =>
+        Array.from(document.querySelectorAll("a")).map((a) => a.getAttribute("href") ?? "")
+      );
+      const fresh = freshPosts(hrefs, { maxAgeMinutes: 60 * 48 });
+      console.log(`\n${hrefs.length} links, ${fresh.length} distinct posts under 48h:\n`);
+      for (const p of fresh.slice(0, 25)) {
+        console.log(`${String(p.minutesOld).padStart(5)} min  ${p.url}`);
+      }
+      return;
+    }
 
     if (mode === "post") {
       const approved = process.argv[5] ?? "";
