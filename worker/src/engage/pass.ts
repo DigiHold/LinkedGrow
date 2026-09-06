@@ -49,6 +49,8 @@ async function humanGap(): Promise<void> {
 interface Enabled {
   ctx: AgentContext;
   facts: string;
+  /** The account's own name, so it never answers itself. */
+  ownName: string;
   timezone: string;
   businessDays: number[];
   startMin: number;
@@ -67,7 +69,7 @@ async function enabledAgents(): Promise<Enabled[]> {
   const { rows } = await db().execute({
     sql: `SELECT a.id AS agent_id, a.comment_facts, a.last_run_at,
                  a.timezone, a.workday_start, a.workday_end, a.workday_days,
-                 l.id AS account_id, l.workspace_id, l.country, l.profile_url,
+                 l.id AS account_id, l.workspace_id, l.country, l.profile_url, l.full_name,
                  p.host, p.port, p.username_encrypted, p.password_encrypted, p.last_exit_ip
             FROM agents a
             JOIN linkedin_accounts l ON l.id = a.linkedin_account_id
@@ -96,6 +98,7 @@ async function enabledAgents(): Promise<Enabled[]> {
     }
     return {
       facts: r.comment_facts ? String(r.comment_facts) : "",
+      ownName: String(r.full_name ?? "").trim(),
       timezone: String(r.timezone ?? "Europe/Paris"),
       businessDays: days.length ? days : [1, 2, 3, 4, 5, 6],
       startMin: Number(r.workday_start ?? 540),
@@ -276,6 +279,19 @@ async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
         log("comments: dropped, the post block was not found", { url: candidate.url });
         continue;
       }
+      /**
+       * Never answer yourself.
+       *
+       * Notifications are not only other people's posts: somebody commenting on YOUR post puts your
+       * own post in the list, and on 2026-09-06 the pass reached the point of writing a comment
+       * under one of Nicolas's. An account replying to itself under its own post is both absurd to
+       * a reader and the clearest possible signal that nobody is driving.
+       */
+      if (agent.ownName && post.author.trim().toLowerCase() === agent.ownName.toLowerCase()) {
+        log("comments: dropped, this is our own post", { url: candidate.url });
+        continue;
+      }
+
       const language = readLanguage(post.text);
       if (!language.english) {
         log("comments: dropped, not English", { author: post.author, why: language.reason });
