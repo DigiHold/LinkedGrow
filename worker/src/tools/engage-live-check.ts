@@ -7,6 +7,7 @@ import { draftComment } from "../engage/draft.ts";
 import { readPost } from "../engage/read.ts";
 import { readLanguage } from "../engage/language.ts";
 import { freshPosts } from "../engage/urn.ts";
+import { commentPass } from "../engage/pass.ts";
 import { inventsNothing } from "../engage/verify.ts";
 import { engagePost } from "../engage/act.ts";
 
@@ -88,9 +89,22 @@ async function main(): Promise<void> {
   const mode = (process.argv[2] ?? "").toLowerCase();
   const accountId = process.argv[3] ?? "";
   const postUrl = process.argv[4] ?? "";
-  if (!["draft", "post", "feed"].includes(mode) || !accountId || (mode !== "feed" && !postUrl)) {
-    console.log("usage: engage-live-check.ts feed|draft|post <accountId> [postUrl] [approved text]");
+  if (!["draft", "post", "feed", "pass"].includes(mode) || !accountId || (["draft", "post"].includes(mode) && !postUrl)) {
+    console.log("usage: engage-live-check.ts feed|pass|draft|post <accountId> [postUrl] [approved text]");
     process.exit(1);
+  }
+
+  /**
+   * One whole pass, outside the rhythm, with somebody watching.
+   *
+   * Everything the loop does: publish what was already approved, read the notifications, draft for
+   * the freshest posts, and mail the owner. It opens its own session, so it is not run alongside
+   * the worker.
+   */
+  if (mode === "pass") {
+    await commentPass({ ignoreVisit: true, onlyAccountId: accountId });
+    console.log("pass finished. Check /dashboard/comments and your inbox.");
+    return;
   }
 
   const acct = await account(accountId);

@@ -152,8 +152,20 @@ async function notificationPosts(page: import("patchright").Page): Promise<strin
     .catch(() => []);
 }
 
-async function runOne(agent: Enabled): Promise<void> {
-  const visit = currentVisit(agent.ctx.linkedinAccountId, agent.timezone, {
+export interface PassOptions {
+  /**
+   * Run outside the account's rhythm, for a supervised test with somebody watching.
+   *
+   * Never set by the loop. The rhythm is what keeps the account looking like a person, and the one
+   * case for stepping outside it is a human sitting in front of the output, once.
+   */
+  ignoreVisit?: boolean;
+  /** Only this account, for the same reason. */
+  onlyAccountId?: string;
+}
+
+async function runOne(agent: Enabled, opts: PassOptions = {}): Promise<void> {
+  const visit = opts.ignoreVisit ? { index: 0, count: 1, startMin: 0, endMin: 0 } : currentVisit(agent.ctx.linkedinAccountId, agent.timezone, {
     firstRun: agent.lastRunAt === null,
     lastRunAt: agent.lastRunAt,
     window: {
@@ -269,7 +281,7 @@ async function runOne(agent: Enabled): Promise<void> {
   }
 }
 
-export async function commentPass(): Promise<void> {
+export async function commentPass(opts: PassOptions = {}): Promise<void> {
   const expired = await expireStaleDrafts();
   if (expired > 0) log("comments: dropped drafts nobody answered in time", { expired });
 
@@ -277,8 +289,9 @@ export async function commentPass(): Promise<void> {
   if (agents.length === 0) return;
 
   for (const agent of agents) {
+    if (opts.onlyAccountId && agent.ctx.linkedinAccountId !== opts.onlyAccountId) continue;
     try {
-      await runOne(agent);
+      await runOne(agent, opts);
     } catch (error) {
       logError("comment pass failed", error);
     }
