@@ -6,7 +6,7 @@ test("the prompt carries the closed fact list and the comment", () => {
   const p = buildVerifyPrompt("We stopped that last year after it broke twice on us.", "You built a boat in 1998.");
   assert.ok(p.includes("You built a boat in 1998."), "the facts must be in the prompt");
   assert.ok(p.includes("We stopped that last year"), "the comment must be in the prompt");
-  assert.ok(/unsure whether a first\s+person claim is covered/.test(p.replace(/\n/g, " ")));
+  assert.ok(/Refuse it when it says something extra/.test(p));
 });
 
 /**
@@ -16,8 +16,8 @@ test("the prompt carries the closed fact list and the comment", () => {
  */
 test("the prompt refuses a method the sheet does not describe", () => {
   const p = buildVerifyPrompt("I capped mine, $200 a month total.", "Their AI costs about $200 a month.");
-  assert.ok(/METHOD/.test(p));
-  assert.ok(/capping is an action|capped mine/i.test(p));
+  assert.ok(/an action taken that the list does not describe/.test(p));
+  assert.ok(/capping, limiting or switching/i.test(p));
 });
 
 /**
@@ -26,8 +26,8 @@ test("the prompt refuses a method the sheet does not describe", () => {
  */
 test("a comment making no claim about the person needs nothing in the list", () => {
   const p = buildVerifyPrompt("How do you separate high intent keywords from the rest?", "Anything.");
-  assert.ok(/no first person claim at all is CLEAN/.test(p));
-  assert.ok(/is CLEAN\./.test(p));
+  assert.ok(/no first person claim at all/.test(p));
+  assert.ok(/There is nothing to check/.test(p));
 });
 
 test("only a clean verdict passes", () => {
