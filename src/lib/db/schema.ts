@@ -1789,3 +1789,37 @@ export const commentDrafts = sqliteTable("comment_drafts", {
   insightsReadAt: integer("insights_read_at"),
   error: text("error"),
 });
+
+/**
+ * An account's own numbers, read once a day off the three analytics pages LinkedIn gives an author.
+ *
+ * Two of these exist nowhere else: profile viewers and search appearances appear on no post page
+ * and in no API, and they are the two an author actually watches, because they say whether the
+ * writing is making anybody look. The demographics are who the followers are, which the code used
+ * to declare unreadable for a personal profile and is not.
+ *
+ * One row per account per day, so a year is 365 small rows and the page can draw a trend.
+ */
+export const accountInsights = sqliteTable(
+  "account_insights",
+  {
+    linkedinAccountId: text("linkedin_account_id").notNull(),
+    /** Days since the epoch, so one row per account per day. */
+    day: integer("day").notNull(),
+    impressions7d: integer("impressions_7d"),
+    membersReached: integer("members_reached"),
+    /** Share of impressions coming from followers and connections. */
+    inNetworkPercent: integer("in_network_percent"),
+    reactions: integer("reactions"),
+    comments: integer("comments"),
+    reposts: integer("reposts"),
+    saves: integer("saves"),
+    followers: integer("followers"),
+    profileViewers: integer("profile_viewers"),
+    searchAppearances: integer("search_appearances"),
+    /** JSON: the top slice per category, as LinkedIn ranks them. */
+    demographics: text("demographics"),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.linkedinAccountId, t.day] })]
+);

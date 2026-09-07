@@ -10,6 +10,7 @@ import { currentRun } from "../safety/run-context.ts";
 import { withAddress, groupKey } from "../safety/ip-lock.ts";
 import { dwell, randInt, sleep } from "../browser/human.ts";
 import { readFollowerCount, readPostStats } from "../linkedin/insights.ts";
+import { readCreatorContent, readCreatorAudience, readDashboard } from "../linkedin/creator.ts";
 import { ensureProfileCaptured, storeAvatar } from "../linkedin/profile.ts";
 import { db } from "../db.ts";
 import { timezoneForCountry } from "../browser/fingerprint.ts";
@@ -20,6 +21,8 @@ import {
   needsFollowerReading,
   saveLeadFace,
   saveFollowerCount,
+  saveAccountInsights,
+  accountInsightsReadToday,
   saveStats,
   type StalePost,
 } from "./store.ts";
@@ -137,6 +140,49 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
         if (count !== null) await saveFollowerCount(account.workspaceId, account.id, count);
       } catch (error) {
         logError("reading the follower count failed", error, { accountId: account.id });
+      }
+    }
+
+    /**
+     * Once a day, the three pages LinkedIn gives an author about their own account.
+     *
+     * They carry what no post page does: profile viewers, search appearances, and who the
+     * followers actually are. Three loads a day against the hundreds this pass used to spend
+     * opening every post twice every three hours, and against the exact counter that had a test
+     * account restricted in August.
+     *
+     * A failure on one page never costs the other two: each is read on its own and whatever came
+     * back is written. A day half read beats yesterday's numbers presented as today's.
+     */
+    if (!(await accountInsightsReadToday(account.id))) {
+      try {
+        const content = await withAddress(key, () => readCreatorContent(session.page));
+        const audience = await withAddress(key, () => readCreatorAudience(session.page));
+        const dashboard = await withAddress(key, () => readDashboard(session.page));
+
+        if (content || audience || dashboard) {
+          await saveAccountInsights(account.id, {
+            impressions7d: content?.impressions ?? dashboard?.impressions7d ?? null,
+            membersReached: content?.membersReached ?? null,
+            inNetworkPercent: content?.inNetworkPercent ?? null,
+            reactions: content?.reactions ?? null,
+            comments: content?.comments ?? null,
+            reposts: content?.reposts ?? null,
+            saves: content?.saves ?? null,
+            followers: audience?.followers ?? dashboard?.followers ?? null,
+            profileViewers: dashboard?.profileViewers ?? null,
+            searchAppearances: dashboard?.searchAppearances ?? null,
+            demographics: audience?.demographics ?? [],
+          });
+          log("account overview read", {
+            accountId: account.id,
+            impressions: content?.impressions ?? null,
+            followers: audience?.followers ?? null,
+            demographics: audience?.demographics.length ?? 0,
+          });
+        }
+      } catch (error) {
+        logError("reading the account overview failed", error, { accountId: account.id });
       }
     }
 

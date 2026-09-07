@@ -250,3 +250,78 @@ export async function forgetLeadFace(leadId: string): Promise<void> {
     args: [nowSeconds(), leadId],
   });
 }
+
+/**
+ * The account's own numbers, read once a day off the three pages LinkedIn gives an author.
+ *
+ * One row per account per day, so the page can draw a trend and nothing accumulates: a year of an
+ * account is 365 small rows. Written whole rather than field by field, because the three pages are
+ * read in one visit and a half written day is worse than yesterday's.
+ */
+export interface AccountInsights {
+  impressions7d: number | null;
+  membersReached: number | null;
+  inNetworkPercent: number | null;
+  reactions: number | null;
+  comments: number | null;
+  reposts: number | null;
+  saves: number | null;
+  followers: number | null;
+  profileViewers: number | null;
+  searchAppearances: number | null;
+  demographics: { category: string; label: string; percent: number }[];
+}
+
+export async function saveAccountInsights(
+  linkedinAccountId: string,
+  stats: AccountInsights
+): Promise<void> {
+  const now = nowSeconds();
+  const day = Math.floor(now / 86400);
+  await db().execute({
+    sql: `INSERT INTO account_insights
+            (linkedin_account_id, day, impressions_7d, members_reached, in_network_percent,
+             reactions, comments, reposts, saves, followers, profile_viewers,
+             search_appearances, demographics, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT (linkedin_account_id, day) DO UPDATE SET
+            impressions_7d = excluded.impressions_7d,
+            members_reached = excluded.members_reached,
+            in_network_percent = excluded.in_network_percent,
+            reactions = excluded.reactions,
+            comments = excluded.comments,
+            reposts = excluded.reposts,
+            saves = excluded.saves,
+            followers = excluded.followers,
+            profile_viewers = excluded.profile_viewers,
+            search_appearances = excluded.search_appearances,
+            demographics = excluded.demographics,
+            updated_at = excluded.updated_at`,
+    args: [
+      linkedinAccountId,
+      day,
+      stats.impressions7d,
+      stats.membersReached,
+      stats.inNetworkPercent,
+      stats.reactions,
+      stats.comments,
+      stats.reposts,
+      stats.saves,
+      stats.followers,
+      stats.profileViewers,
+      stats.searchAppearances,
+      stats.demographics.length ? JSON.stringify(stats.demographics) : null,
+      now,
+    ],
+  });
+}
+
+/** True when this account's overview has already been read today. */
+export async function accountInsightsReadToday(linkedinAccountId: string): Promise<boolean> {
+  const day = Math.floor(nowSeconds() / 86400);
+  const { rows } = await db().execute({
+    sql: `SELECT 1 FROM account_insights WHERE linkedin_account_id = ? AND day = ? LIMIT 1`,
+    args: [linkedinAccountId, day],
+  });
+  return rows.length > 0;
+}
