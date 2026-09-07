@@ -137,29 +137,35 @@ test("a page that did not load says nothing rather than zero", () => {
 
 
 /**
- * Everything LinkedIn serves comes from one host, so the host cannot say which picture is the
- * post's. What the file is FOR can: a profile photo and a company logo say so in their own path,
- * and they are the only two things likely to sit beside a post.
+ * The real banner, captured off Nicolas's account on 2026-09-07 when all nine of his posts came
+ * back wearing his cover image. The first version excluded profile photos and company logos and
+ * had never heard of profile-displaybackgroundimage, which is the lesson: a blacklist is only as
+ * complete as the last mistake, so this one accepts what a post picture IS instead.
  */
-test("the post's own picture is told apart from the faces around it", () => {
-  assert.equal(
-    postImageFrom([
-      "https://media.licdn.com/dms/image/v2/D4E03AQx/profile-displayphoto-shrink_100_100/0/1?e=1",
-      "https://media.licdn.com/dms/image/v2/D5622AQy/feedshare-shrink_2048_1536/0/2?e=2",
-    ]),
-    "https://media.licdn.com/dms/image/v2/D5622AQy/feedshare-shrink_2048_1536/0/2?e=2"
-  );
-  assert.equal(
-    postImageFrom(["https://media.licdn.com/dms/image/v2/C4D0BAQz/company-logo_100_100/0/3"]),
-    null
-  );
-  assert.equal(postImageFrom(["https://static.licdn.example/other.svg"]), null);
-  assert.equal(postImageFrom([]), null);
+const BANNER =
+  "https://media.licdn.com/dms/image/v2/D4D16AQFdCm8n2BGIYA/profile-displaybackgroundimage-shrink_200_800/B4DZ4shtRkG4AQ-/0/1778863494518?e=1790208000";
+const AVATAR =
+  "https://media.licdn.com/dms/image/v2/D4E03AQx/profile-displayphoto-shrink_100_100/0/1?e=1";
+const POST_IMAGE =
+  "https://media.licdn.com/dms/image/v2/D5622AQy/feedshare-shrink_2048_1536/0/2?e=2";
+
+test("the banner is never mistaken for the post", () => {
+  assert.equal(postImageFrom([BANNER]), null);
+  assert.equal(postImageFrom([BANNER, AVATAR]), null);
+  assert.equal(postImageFrom([BANNER, AVATAR, POST_IMAGE]), POST_IMAGE);
 });
 
-test("a post with only a face on the page keeps no picture", () => {
+test("only shared media, article covers and document covers count as the post", () => {
   assert.equal(
-    postImageFrom(["https://media.licdn.com/dms/image/v2/X/profile-framedphoto-shrink_100_100/0/9"]),
-    null
+    postImageFrom(["https://media.licdn.com/dms/image/v2/X/article-cover_image-shrink_720_1280/0/9"]),
+    "https://media.licdn.com/dms/image/v2/X/article-cover_image-shrink_720_1280/0/9"
   );
+  assert.equal(postImageFrom(["https://media.licdn.com/dms/image/v2/X/company-logo_100_100/0/3"]), null);
+  assert.equal(postImageFrom(["https://static.licdn.example/icon.svg"]), null);
+});
+
+/** No thumbnail beats the wrong one, which is exactly what the first version shipped. */
+test("a page with nothing recognisable keeps no picture", () => {
+  assert.equal(postImageFrom(["https://media.licdn.com/dms/image/v2/X/unknown-thing/0/1"]), null);
+  assert.equal(postImageFrom([]), null);
 });

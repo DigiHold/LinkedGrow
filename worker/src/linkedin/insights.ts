@@ -37,16 +37,25 @@ export interface PostStats {
 /**
  * Which picture on the page belongs to the post.
  *
- * Everything LinkedIn serves comes from the same host, so the host cannot decide it. What can is
- * what the file is FOR: a profile photo and a company logo say so in their own path, and are the
- * only two things likely to sit beside a post. Anything else on a post's own statistics page is
- * the post.
+ * The first version excluded what a post picture is not, and that list was wrong: it named profile
+ * photos and company logos and had never heard of profile-displaybackgroundimage, so on 2026-09-07
+ * all nine of Nicolas's posts came back wearing his LinkedIn cover image. A blacklist is only ever
+ * as complete as the last mistake.
+ *
+ * So it accepts only what a post picture IS. LinkedIn names a file by its purpose, and shared
+ * media, article covers and document covers say so in their own path, while everything a profile
+ * owns says "profile" in its own, banner included.
+ *
+ * A page with nothing recognisable keeps no picture. No thumbnail beats the wrong one, which is
+ * what the first version shipped.
  */
+const POST_MEDIA = /feedshare|article-cover|document-cover|image-shrink_\d|media-proxy/i;
+const NOT_A_POST = /profile-|company-logo|ghost|\/aero-v1\/|static\./i;
+
 export function postImageFrom(urls: readonly string[]): string | null {
   for (const url of urls) {
-    if (!/licdn\.com/i.test(url)) continue;
-    if (/profile-displayphoto|company-logo|profile-framedphoto|ghost/i.test(url)) continue;
-    return url;
+    if (NOT_A_POST.test(url)) continue;
+    if (POST_MEDIA.test(url)) return url;
   }
   return null;
 }
