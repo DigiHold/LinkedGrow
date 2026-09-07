@@ -116,6 +116,55 @@ export async function readFollowerCount(page: Page, profileUrl: string): Promise
 }
 
 /**
+ * The post's own statistics page, read line by line.
+ *
+ * The permalink writes "12 reactions" with the number first. This page does both: the headline
+ * tiles read "90 / Impressions" and the engagement breakdown reads "Reactions / 4". A pattern built
+ * for one order returns the neighbour's number on the other, which on Nicolas's own post turned
+ * 4 reactions and 3 comments into 0 and 4.
+ *
+ * So it is read structurally rather than by pattern. Every label sits on its own line, and its
+ * value is the nearest line that is nothing but a number. The line AFTER wins when both sides are
+ * numeric, because the only ambiguous labels are the ones stacked in the breakdown, where the
+ * previous number belongs to the label above.
+ *
+ * Verified against a capture of Nicolas's own post on 2026-09-07: 90 impressions, 4 reactions,
+ * 3 comments, 0 reposts, 41 members reached.
+ */
+const NUMERIC_LINE = /^[\d.,\s\u00a0]+[km]?$/i;
+
+export interface SummaryStats extends PostStats {
+  /** How many people the post reached, which LinkedIn separates from impressions. */
+  membersReached: number | null;
+}
+
+export function readSummaryStats(text: string): SummaryStats {
+  const lines = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const valueFor = (label: RegExp): number | null => {
+    for (let i = 0; i < lines.length; i += 1) {
+      if (!label.test(lines[i] as string)) continue;
+      const next = lines[i + 1];
+      if (next && NUMERIC_LINE.test(next)) return parseCount(next);
+      const previous = lines[i - 1];
+      if (previous && NUMERIC_LINE.test(previous)) return parseCount(previous);
+    }
+    return null;
+  };
+
+  return {
+    impressions: valueFor(/^impressions?$/i),
+    reactions: valueFor(/^r[eé]actions?$/i) ?? 0,
+    comments: valueFor(/^comment(aire)?s?$/i) ?? 0,
+    reposts: valueFor(/^(reposts?|republications?|partages?)$/i) ?? 0,
+    membersReached: valueFor(/^(members reached|membres touch[ée]s)$/i),
+  };
+}
+
+/**
  * The page that actually carries the impression count.
  *
  * A post's permalink shows reactions, comments and reposts, and nothing else. Impressions are the
@@ -181,8 +230,20 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
           .locator("main")
           .innerText()
           .catch(() => "");
-        const found = readStatsFromText(summary).impressions;
-        if (found !== null) stats.impressions = found;
+        /**
+         * This page is better than the permalink at everything, not only impressions.
+         *
+         * The permalink reported 1 reaction on a post this page says had 4: the counts under a post
+         * are collapsed and partial, while the author's own statistics are the real ones. So when
+         * the page answers, it wins outright.
+         */
+        const better = readSummaryStats(summary);
+        if (better.impressions !== null) {
+          stats.impressions = better.impressions;
+          stats.reactions = better.reactions;
+          stats.comments = better.comments;
+          stats.reposts = better.reposts;
+        }
       }
     }
   }

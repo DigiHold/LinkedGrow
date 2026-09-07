@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { analyticsUrlFor, readStatsFromText, parseCount } from "./insights.ts";
+import { analyticsUrlFor, readStatsFromText, readSummaryStats, parseCount } from "./insights.ts";
 
 /**
  * The permalink shows reactions, comments and reposts. Impressions are the author's own number and
@@ -39,4 +39,93 @@ test("both languages and both orders", () => {
   assert.equal(readStatsFromText("impressions : 842").impressions, 842);
   assert.equal(readStatsFromText("18 réactions").reactions, 18);
   assert.equal(parseCount("1.2k"), 1200);
+});
+
+
+/**
+ * The real page, captured off Nicolas's own post on 2026-09-07. Kept verbatim because the layout is
+ * the whole difficulty: the headline tiles put the number before the label, the engagement
+ * breakdown puts it after, and a pattern built for one order silently returns the neighbour's
+ * number on the other.
+ */
+const REAL_SUMMARY = `Nicolas Lecocq
+
+Let our AI agents find your clients on LinkedIn
+
+Post analytics
+
+Nicolas Lecocq posted this • 1d
+
+Discovery
+
+90
+
+Impressions
+
+In-network (followers and connections)
+
+61%
+
+Out-of-network
+
+39%
+
+41
+
+Members reached
+
+Profile activity
+
+0
+
+Profile viewers from this post
+
+0
+
+Followers gained from this post
+
+Engagement
+
+8
+
+Social engagements
+
+Reactions
+
+4
+
+Comments
+
+3
+
+Reposts
+
+0
+
+Saves
+
+1`;
+
+test("the real statistics page reads correctly, both layouts at once", () => {
+  const stats = readSummaryStats(REAL_SUMMARY);
+  assert.equal(stats.impressions, 90);
+  assert.equal(stats.reactions, 4);
+  assert.equal(stats.comments, 3);
+  assert.equal(stats.reposts, 0);
+  assert.equal(stats.membersReached, 41);
+});
+
+/**
+ * The failure this replaces: a pattern whose number class also matched whitespace captured a lone
+ * space, parsed it as zero, and never reached the branch that would have found the real figure.
+ */
+test("the old pattern returned its neighbour's numbers on this page", () => {
+  const wrong = readStatsFromText(REAL_SUMMARY);
+  assert.notEqual(wrong.reactions, 4);
+});
+
+test("a page that did not load says nothing rather than zero", () => {
+  const empty = readSummaryStats("");
+  assert.equal(empty.impressions, null);
+  assert.equal(empty.membersReached, null);
 });
