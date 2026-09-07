@@ -116,12 +116,17 @@ test("the real statistics page reads correctly, both layouts at once", () => {
 });
 
 /**
- * The failure this replaces: a pattern whose number class also matched whitespace captured a lone
- * space, parsed it as zero, and never reached the branch that would have found the real figure.
+ * The failure this pins: the number class also matched whitespace, so " reactions" captured a lone
+ * space, parsed as zero, and that zero looked exactly like an answer. It stopped the branch that
+ * reads the number after the word from ever running, and it stopped the statistics page from ever
+ * being opened, because the caller only reached for it when the permalink returned null.
+ *
+ * A capture must now contain a digit.
  */
-test("the old pattern returned its neighbour's numbers on this page", () => {
-  const wrong = readStatsFromText(REAL_SUMMARY);
-  assert.notEqual(wrong.reactions, 4);
+test("a capture with no digit in it is not an answer", () => {
+  assert.equal(readStatsFromText("engagements reactions").reactions, 0);
+  assert.equal(readStatsFromText("no numbers here at all impressions").impressions, null);
+  assert.equal(readStatsFromText("22 reactions").reactions, 22);
 });
 
 test("a page that did not load says nothing rather than zero", () => {

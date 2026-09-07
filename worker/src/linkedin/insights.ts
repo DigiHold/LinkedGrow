@@ -72,9 +72,9 @@ export function readStatsFromText(text: string): PostStats {
      * reach the word, and reported nothing, so every post above a thousand read as zero. Those are
      * the posts worth measuring.
      */
-    const after = new RegExp(`([\\d.,\\s\\u00a0]+[km]?)\\s*(?:${words})`, "i").exec(flat);
+    const after = new RegExp(`(\\d[\\d.,\\s\\u00a0]*[km]?)\\s*(?:${words})`, "i").exec(flat);
     if (after?.[1]) return parseCount(after[1]);
-    const before = new RegExp(`(?:${words})\\s*[:\\s]\\s*([\\d.,\\s\\u00a0]+[km]?)`, "i").exec(flat);
+    const before = new RegExp(`(?:${words})\\s*[:\\s]\\s*(\\d[\\d.,\\s\\u00a0]*[km]?)`, "i").exec(flat);
     if (before?.[1]) return parseCount(before[1]);
     return null;
   };
@@ -189,11 +189,54 @@ export function analyticsUrlFor(postUrl: string): string | null {
  * same in the database, or a bad session would quietly wipe somebody's history.
  */
 export async function readPostStats(page: Page, postUrl: string): Promise<PostStats | null> {
+  /**
+   * The author's own statistics page first, and usually only.
+   *
+   * It carries everything the permalink does and the impression count as well, and its numbers are
+   * the real ones: on 2026-09-07 the permalink reported 1 reaction on a post this page says had 4,
+   * because the counters under a post are collapsed and partial.
+   *
+   * This used to be a fallback, opened only when the permalink returned null for impressions. The
+   * permalink never returned null: the pattern matched a run of whitespace, parsed it as zero, and
+   * that zero looked exactly like an answer, so the better page was never opened at all and every
+   * post stayed at zero impressions for months.
+   *
+   * Reading it first also halves the page loads, since the permalink is now opened only when the
+   * statistics page says nothing.
+   */
+  const analytics = analyticsUrlFor(postUrl);
+  if (analytics) {
+    await page.goto(analytics, { waitUntil: "domcontentloaded" }).catch(() => {});
+    const loaded = await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
+    if (loaded) {
+      await dwell(1800, 3600);
+      await scrollHuman(page, 1);
+      await dwell(1200, 2600);
+      const summary = await page
+        .locator("main")
+        .innerText()
+        .catch(() => "");
+      const stats = readSummaryStats(summary);
+      if (stats.impressions !== null) {
+        return {
+          impressions: stats.impressions,
+          reactions: stats.reactions,
+          comments: stats.comments,
+          reposts: stats.reposts,
+        };
+      }
+    }
+  }
+
+  /**
+   * The permalink, for a post whose statistics page did not answer. It has no impressions on it,
+   * so this path records the three counts it does have and leaves impressions unknown rather than
+   * writing a zero that would read as "nobody saw it".
+   */
   await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
   const main = await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
   if (!main) return null;
   await dwell(1800, 3600);
-  // The counts sit below the post body, so the page has to be looked at.
   await scrollHuman(page, 1);
   await dwell(1200, 2600);
 
@@ -204,49 +247,8 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
   if (!text || text.length < 40) return null;
 
   const stats = readStatsFromText(text);
-  // A post page always names at least one of these, even at zero. Nothing at
-  // all means the page is not the one we think it is.
   const looksLikeAPost = /reaction|réaction|comment|commentaire|repost|republication|impression/i.test(
     text
   );
-  if (!looksLikeAPost) return null;
-
-  /**
-   * The second page, only for the number the first one never had.
-   *
-   * It is the account's own post statistics, opened by URL, so it runs no search and visits no
-   * profile: the cheapest read there is against the limits that matter. It can only add the
-   * number, never remove one, so a page that does not load leaves the permalink's answer alone.
-   */
-  if (stats.impressions === null) {
-    const analytics = analyticsUrlFor(postUrl);
-    if (analytics) {
-      await dwell(1500, 3000);
-      await page.goto(analytics, { waitUntil: "domcontentloaded" }).catch(() => {});
-      const loaded = await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
-      if (loaded) {
-        await dwell(1500, 3000);
-        const summary = await page
-          .locator("main")
-          .innerText()
-          .catch(() => "");
-        /**
-         * This page is better than the permalink at everything, not only impressions.
-         *
-         * The permalink reported 1 reaction on a post this page says had 4: the counts under a post
-         * are collapsed and partial, while the author's own statistics are the real ones. So when
-         * the page answers, it wins outright.
-         */
-        const better = readSummaryStats(summary);
-        if (better.impressions !== null) {
-          stats.impressions = better.impressions;
-          stats.reactions = better.reactions;
-          stats.comments = better.comments;
-          stats.reposts = better.reposts;
-        }
-      }
-    }
-  }
-
-  return stats;
+  return looksLikeAPost ? stats : null;
 }
