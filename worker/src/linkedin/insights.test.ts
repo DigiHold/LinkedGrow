@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { analyticsUrlFor, readStatsFromText, readSummaryStats, parseCount } from "./insights.ts";
+import { analyticsUrlFor, readStatsFromText, readSummaryStats, postImageFrom, parseCount } from "./insights.ts";
 
 /**
  * The permalink shows reactions, comments and reposts. Impressions are the author's own number and
@@ -133,4 +133,33 @@ test("a page that did not load says nothing rather than zero", () => {
   const empty = readSummaryStats("");
   assert.equal(empty.impressions, null);
   assert.equal(empty.membersReached, null);
+});
+
+
+/**
+ * Everything LinkedIn serves comes from one host, so the host cannot say which picture is the
+ * post's. What the file is FOR can: a profile photo and a company logo say so in their own path,
+ * and they are the only two things likely to sit beside a post.
+ */
+test("the post's own picture is told apart from the faces around it", () => {
+  assert.equal(
+    postImageFrom([
+      "https://media.licdn.com/dms/image/v2/D4E03AQx/profile-displayphoto-shrink_100_100/0/1?e=1",
+      "https://media.licdn.com/dms/image/v2/D5622AQy/feedshare-shrink_2048_1536/0/2?e=2",
+    ]),
+    "https://media.licdn.com/dms/image/v2/D5622AQy/feedshare-shrink_2048_1536/0/2?e=2"
+  );
+  assert.equal(
+    postImageFrom(["https://media.licdn.com/dms/image/v2/C4D0BAQz/company-logo_100_100/0/3"]),
+    null
+  );
+  assert.equal(postImageFrom(["https://static.licdn.example/other.svg"]), null);
+  assert.equal(postImageFrom([]), null);
+});
+
+test("a post with only a face on the page keeps no picture", () => {
+  assert.equal(
+    postImageFrom(["https://media.licdn.com/dms/image/v2/X/profile-framedphoto-shrink_100_100/0/9"]),
+    null
+  );
 });

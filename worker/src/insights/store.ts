@@ -146,6 +146,20 @@ export async function saveFollowerCount(
  */
 export async function saveStats(postId: string, stats: PostStats): Promise<void> {
   const now = nowSeconds();
+
+  /**
+   * The post's picture, written once and never overwritten with nothing.
+   *
+   * A later read that cannot find the image must not blank a thumbnail that already works, so this
+   * only ever fills an empty column.
+   */
+  if (stats.imageUrl) {
+    await db().execute({
+      sql: `UPDATE posts SET linkedin_image_url = ?
+             WHERE id = ? AND (linkedin_image_url IS NULL OR linkedin_image_url = '')`,
+      args: [stats.imageUrl, postId],
+    });
+  }
   const engagements = stats.reactions + stats.comments + stats.reposts;
   const rate =
     stats.impressions && stats.impressions > 0

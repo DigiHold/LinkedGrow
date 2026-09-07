@@ -24,6 +24,31 @@ export interface PostStats {
   reactions: number;
   comments: number;
   reposts: number;
+  /**
+   * The post's own picture, as LinkedIn serves it.
+   *
+   * The performance table has always drawn a thumbnail from this and it was filled on one post out
+   * of 277, because nothing ever wrote it. The statistics page is already open to read the counts,
+   * so the picture costs nothing to take while we are there.
+   */
+  imageUrl?: string | null;
+}
+
+/**
+ * Which picture on the page belongs to the post.
+ *
+ * Everything LinkedIn serves comes from the same host, so the host cannot decide it. What can is
+ * what the file is FOR: a profile photo and a company logo say so in their own path, and are the
+ * only two things likely to sit beside a post. Anything else on a post's own statistics page is
+ * the post.
+ */
+export function postImageFrom(urls: readonly string[]): string | null {
+  for (const url of urls) {
+    if (!/licdn\.com/i.test(url)) continue;
+    if (/profile-displayphoto|company-logo|profile-framedphoto|ghost/i.test(url)) continue;
+    return url;
+  }
+  return null;
 }
 
 /**
@@ -218,11 +243,16 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
         .catch(() => "");
       const stats = readSummaryStats(summary);
       if (stats.impressions !== null) {
+        const images = await page
+          .locator("main img")
+          .evaluateAll((nodes) => nodes.map((n) => (n as HTMLImageElement).src))
+          .catch(() => [] as string[]);
         return {
           impressions: stats.impressions,
           reactions: stats.reactions,
           comments: stats.comments,
           reposts: stats.reposts,
+          imageUrl: postImageFrom(images),
         };
       }
     }
