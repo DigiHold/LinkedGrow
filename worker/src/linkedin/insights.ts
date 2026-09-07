@@ -64,9 +64,17 @@ export function readStatsFromText(text: string): PostStats {
   const find = (words: string): number | null => {
     // "1,234 reactions" and, for the counts LinkedIn puts after the word,
     // "reactions 1,234".
-    const after = new RegExp(`([\\d.,\\s\\u00a0]+)\\s*(?:${words})`, "i").exec(flat);
+    /**
+     * The abbreviation is inside the number, not beside it.
+     *
+     * LinkedIn writes "2.4K impressions" and, in French, "2,4 k vues" with a space before the
+     * letter. A pattern that captures only digits and separators stopped at the space, failed to
+     * reach the word, and reported nothing, so every post above a thousand read as zero. Those are
+     * the posts worth measuring.
+     */
+    const after = new RegExp(`([\\d.,\\s\\u00a0]+[km]?)\\s*(?:${words})`, "i").exec(flat);
     if (after?.[1]) return parseCount(after[1]);
-    const before = new RegExp(`(?:${words})\\s*[:\\s]\\s*([\\d.,\\s\\u00a0]+)`, "i").exec(flat);
+    const before = new RegExp(`(?:${words})\\s*[:\\s]\\s*([\\d.,\\s\\u00a0]+[km]?)`, "i").exec(flat);
     if (before?.[1]) return parseCount(before[1]);
     return null;
   };
@@ -108,6 +116,23 @@ export async function readFollowerCount(page: Page, profileUrl: string): Promise
 }
 
 /**
+ * The page that actually carries the impression count.
+ *
+ * A post's permalink shows reactions, comments and reposts, and nothing else. Impressions are the
+ * author's own number and LinkedIn keeps them on a separate page, reachable only by the person who
+ * wrote the post: /analytics/post-summary/urn:li:activity:<id>. Reading the permalink and looking
+ * for the word "impressions" therefore finds nothing, every time, for everybody, which is why that
+ * column has been zero since the day it was written while reactions came through fine.
+ *
+ * Nicolas found it on 2026-09-07 looking at his own dashboard: every post at 0 impressions and 1
+ * reaction, on an account whose profile says 633 impressions over the week.
+ */
+export function analyticsUrlFor(postUrl: string): string | null {
+  const id = /(?:urn:li:activity:|activity[-:])(\d{6,25})/.exec(decodeURIComponent(postUrl))?.[1];
+  return id ? `https://www.linkedin.com/analytics/post-summary/urn:li:activity:${id}/` : null;
+}
+
+/**
  * Opens one post and reads how it is doing.
  *
  * Returns null when the page did not render as a post, rather than zeros: a
@@ -135,5 +160,32 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
   const looksLikeAPost = /reaction|réaction|comment|commentaire|repost|republication|impression/i.test(
     text
   );
-  return looksLikeAPost ? stats : null;
+  if (!looksLikeAPost) return null;
+
+  /**
+   * The second page, only for the number the first one never had.
+   *
+   * It is the account's own post statistics, opened by URL, so it runs no search and visits no
+   * profile: the cheapest read there is against the limits that matter. It can only add the
+   * number, never remove one, so a page that does not load leaves the permalink's answer alone.
+   */
+  if (stats.impressions === null) {
+    const analytics = analyticsUrlFor(postUrl);
+    if (analytics) {
+      await dwell(1500, 3000);
+      await page.goto(analytics, { waitUntil: "domcontentloaded" }).catch(() => {});
+      const loaded = await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
+      if (loaded) {
+        await dwell(1500, 3000);
+        const summary = await page
+          .locator("main")
+          .innerText()
+          .catch(() => "");
+        const found = readStatsFromText(summary).impressions;
+        if (found !== null) stats.impressions = found;
+      }
+    }
+  }
+
+  return stats;
 }
