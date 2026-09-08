@@ -353,6 +353,47 @@ export async function classifyReply(
   return { handOver: verdict, why: why || answer.trim().slice(0, 120), intent };
 }
 
+/**
+ * The customer's own targeting, written for a model rather than for a form.
+ *
+ * Pure and exported so the wording is testable without a model call, because
+ * the wording is the whole of it: a band list dropped into a prompt with no
+ * instruction is read as a filter, and a scorer that treats an unprintable fact
+ * as a filter scores good prospects at zero.
+ *
+ * "11-50" is a range LinkedIn prints on a company page and almost never on a
+ * person's profile, so the scorer is told to read it off what the person and
+ * their company say about themselves, and to leave the score alone when nothing
+ * says either way.
+ */
+export function targetingLines(companySizes: string[], industries: string[]): string[] {
+  const lines: string[] = [];
+  const bands = companySizes.filter((b) => b.trim());
+  const trades = industries.filter((t) => t.trim());
+
+  if (bands.length) {
+    lines.push(
+      `Company sizes the customer sells to, by headcount: ${bands.join(", ")}. ` +
+        "Judge it from what the person and their company say about themselves, an agency of a few people, a team, a department, a group. " +
+        "A company clearly bigger or smaller than every band listed is a weak match however good the title reads. " +
+        "When nothing here says how big the company is, that is neither evidence for nor against them, so score the rest and say the size is unknown."
+    );
+  }
+
+  if (trades.length) {
+    // The industry is the sector the prospect's company works in. Matching it
+    // against a job title is how a supermarket planning assistant reached a
+    // queue meant for website owners, and the fit judge next door carries the
+    // same warning for the same reason.
+    lines.push(
+      `Industries the customer sells to: ${trades.join(", ")}. ` +
+        "That is the sector their own company works in, not the words in their job title."
+    );
+  }
+
+  return lines;
+}
+
 /** Full scoring, still on the fast model. The writer here is the biggest cost mistake available. */
 export async function scoreLead(
   ctx: AgentContext,
@@ -442,6 +483,26 @@ export async function scoreLead(
     ? `The customer only sells to people in: ${places.map((c) => countryName(c)).join(", ")}. Anybody outside those scores 0, whatever their title reads.`
     : "";
 
+  /**
+   * The headcount bands and the sectors, which this prompt never carried.
+   *
+   * The wizard asks for both, stores both on the agent row, and until now only
+   * the yes/no fit judge in messages/generate.ts ever read them. So a customer
+   * who said "11-50, marketing agencies" got a queue scored by a model that had
+   * been told neither, and the number and the sentence they read on the
+   * dashboard came from a judgement their own targeting never entered. Two of
+   * the four things the wizard collects were decorative.
+   *
+   * Both are written as evidence to weigh rather than as a filter. The size of
+   * a company is rarely printed on a person's profile and inferring it from a
+   * headline is a guess; saying so keeps a good prospect from being scored down
+   * for a fact LinkedIn never showed us, which is the failure mode a hard rule
+   * here would create.
+   */
+  const bands = ctx.companySizes ?? [];
+  const trades = ctx.cfg.leads.industries ?? [];
+  const wantedShape = targetingLines(bands, trades).join("\n");
+
   const m = await models();
   const answer = await generate(
     ctx,
@@ -454,6 +515,7 @@ Headline: ${profile.headline}
 Company: ${profile.company ?? "unknown"}
 ${profile.location ? `Where LinkedIn says they are: ${profile.location}` : ""}
 ${wantedPlaces}
+${wantedShape}
 ${profile.signal ? `How they were found: ${profile.signal}` : ""}${repeats}
 ${profile.about ? `About: ${profile.about.slice(0, 600)}` : ""}
 

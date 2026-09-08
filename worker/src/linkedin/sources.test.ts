@@ -298,7 +298,23 @@ test("a card with no place on it is unknown, not allowed", () => {
   assert.equal(placeOf(FRANCE, null), "unknown");
   assert.equal(placeOf(FRANCE, ""), "unknown");
   assert.equal(placeOf(FRANCE, "   "), "unknown");
-  assert.equal(placeOf(FRANCE, "Greater Paris Metropolitan Region"), "unknown");
+  // A metro label built on a city that exists in two countries stays unread on
+  // purpose, which is the rule the whole table runs on: there is a Cambridge in
+  // England and one in Massachusetts, and LinkedIn prints both this way.
+  assert.equal(placeOf(FRANCE, "Greater Cambridge Area"), "unknown");
+});
+
+/**
+ * The metro labels, which used to be unreadable and are now read from the city.
+ *
+ * LinkedIn labels most of the United States, and Paris, Zurich and Mumbai with
+ * it, as a metro area with no country after it. Answering unknown for those
+ * sent an agent aimed at the United States to a profile visit for most of its
+ * own market and then closed the lead.
+ */
+test("a metro label with no country after it is read from its city", () => {
+  assert.equal(placeOf(FRANCE, "Greater Paris Metropolitan Region"), "in");
+  assert.equal(placeOf(FRANCE, "Greater Boston Area"), "out");
 });
 
 test("the country is read whatever language LinkedIn printed it in", () => {

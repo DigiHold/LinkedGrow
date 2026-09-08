@@ -194,19 +194,43 @@ test("the profile settling on the wrong country stops everything", async () => {
 /**
  * A country that still cannot be read is a refusal, not a shrug.
  *
- * "Greater Paris Metropolitan Region" names no country and neither does a blank
- * profile. Guessing at one is the whole shape of the bug, so a customer who
- * named their countries gets the strict reading and the row says why.
+ * "Greater Cambridge Area" names no country and neither does a blank profile.
+ * Guessing at one is the whole shape of the bug, so a customer who named their
+ * countries gets the strict reading and the row says why. The city is the
+ * example on purpose: there is a Cambridge in England and one in Massachusetts,
+ * so it is one of the few metro labels the table refuses to resolve.
  */
 test("a place the profile does not give either is refused and said so", async () => {
   await freshDb();
   const lead = await seed("Unreadable", null);
   const { actions, done } = spyActions();
-  const fenced = onlyInCountries(actions, ctxWith(AMERICAS), page, async () => "Greater Paris Metropolitan Region");
+  const fenced = onlyInCountries(actions, ctxWith(AMERICAS), page, async () => "Greater Cambridge Area");
 
   assert.equal(await fenced.sendConnect(lead, ""), "failed");
   assert.deepEqual(done, []);
   assert.equal((await rowOf("Unreadable")).excluded_reason, UNREADABLE_REASON);
+});
+
+/**
+ * A metro label the table does resolve is decided on, not sent to a visit.
+ *
+ * This is the half of the same change that matters to the customer: an agent
+ * aimed at the Americas keeps a lead labelled "Greater Boston Area" instead of
+ * spending a profile read to find out what the string already said.
+ */
+test("a metro label naming a city we know is decided without a second look", async () => {
+  await freshDb();
+  const lead = await seed("Bostonian", "Greater Boston Area");
+  const { actions, done } = spyActions();
+  let visits = 0;
+  const fenced = onlyInCountries(actions, ctxWith(AMERICAS), page, async () => {
+    visits += 1;
+    return null;
+  });
+
+  assert.equal(await fenced.sendConnect(lead, ""), "sent");
+  assert.deepEqual(done, ["invite:Bostonian"]);
+  assert.equal(visits, 0);
 });
 
 test("a profile that will not load is refused rather than allowed", async () => {

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cleanReason, parseScore } from "./ai.ts";
+import { cleanReason, parseScore, targetingLines } from "./ai.ts";
 
 /**
  * The shapes the scorer actually answered in.
@@ -100,4 +100,38 @@ test("the parser and the guard agree on a real answer", () => {
   const parsed = parseScore("SCORE|reason\n\n78|Co-founder with product architecture background.");
   assert.equal(parsed.score, 78);
   assert.equal(parsed.reason, "Co-founder with product architecture background.");
+});
+
+/**
+ * The targeting the wizard collects and the scorer used to ignore.
+ *
+ * Both fields were stored on the agent row from the first release and read only
+ * by the yes/no fit judge, so the number and the sentence a customer reads on
+ * the dashboard were produced by a model that had never been told the headcount
+ * bands or the sectors they asked for.
+ */
+
+test("the headcount bands reach the prompt, worded as evidence rather than as a filter", () => {
+  const [sizes] = targetingLines(["1-10", "11-50"], []);
+  assert.ok(sizes?.includes("1-10, 11-50"));
+  assert.ok(/neither evidence for nor against/i.test(sizes ?? ""));
+});
+
+test("the industries reach the prompt, and say they are a sector and not a job title", () => {
+  const lines = targetingLines([], ["Marketing agencies", "Ecommerce"]);
+  assert.equal(lines.length, 1);
+  assert.ok(lines[0]?.includes("Marketing agencies, Ecommerce"));
+  assert.ok(/not the words in their job title/i.test(lines[0] ?? ""));
+});
+
+test("an agent that named neither adds nothing to the prompt", () => {
+  assert.deepEqual(targetingLines([], []), []);
+  assert.deepEqual(targetingLines(["", "  "], [""]), []);
+});
+
+test("both named produce both lines, in the order the prompt reads them", () => {
+  const lines = targetingLines(["11-50"], ["SaaS"]);
+  assert.equal(lines.length, 2);
+  assert.ok(lines[0]?.startsWith("Company sizes"));
+  assert.ok(lines[1]?.startsWith("Industries"));
 });
