@@ -414,11 +414,148 @@ function nameIndex(): Map<string, string> {
  * order is the whole trick: "Georgia, United States" is Atlanta and not
  * Tbilisi, and reading forwards would answer the wrong one.
  *
- * Null is a real answer and not a failure. "Greater Paris Metropolitan Region"
- * names no country, and a reaction row names no place at all. The caller
- * decides what an unknown place is worth, which is the decision that was
- * missing when this returned a bare true.
+ * Null is a real answer and not a failure. A reaction row names no place at
+ * all, and "Viewed 2h ago" names nothing either. The caller decides what an
+ * unknown place is worth, which is the decision that was missing when this
+ * returned a bare true. A metro label with no country ("Greater Paris
+ * Metropolitan Region") is read from its city, see METRO_CITIES.
  */
+/**
+ * The metro areas LinkedIn prints with no country after them.
+ *
+ * "Greater Boston Area", "Dallas-Fort Worth Metroplex", "New York City
+ * Metropolitan Area": that is how LinkedIn labels most of the United States,
+ * and it is also how it labels Zurich, Munich, Paris, Mumbai and Buenos Aires.
+ * None of those strings names a country, so the resolver above answered null
+ * for all of them, the fence went to look at the profile, read the same words
+ * there, and closed the lead as unreadable. On one live database every place
+ * that could not be read was of this shape, and a third of them were American,
+ * which meant an agent aimed at the United States turned most of it away.
+ *
+ * The city carries the country, but only when the city is not in doubt. A city
+ * that exists in two countries and is printed this way in both (Cambridge,
+ * Birmingham, Santiago, Newcastle) is left out on purpose, so it stays unread
+ * rather than being guessed, which is the rule the whole file runs on. Nothing
+ * here is a small town: these are the anchors LinkedIn itself uses for its
+ * metro labels, plus the ones read off real profiles.
+ */
+const METRO_CITIES: ReadonlyArray<readonly [string, string]> = [
+  // United States
+  ["new york city", "US"], ["new york", "US"], ["los angeles", "US"], ["san francisco", "US"],
+  ["chicago", "US"], ["boston", "US"], ["washington dc", "US"], ["washington", "US"],
+  ["seattle", "US"], ["dallas", "US"], ["houston", "US"], ["austin", "US"], ["denver", "US"],
+  ["atlanta", "US"], ["miami", "US"], ["philadelphia", "US"], ["phoenix", "US"],
+  ["minneapolis", "US"], ["san diego", "US"], ["detroit", "US"], ["portland", "US"],
+  ["tampa", "US"], ["orlando", "US"], ["charlotte", "US"], ["raleigh", "US"],
+  ["nashville", "US"], ["salt lake city", "US"], ["las vegas", "US"], ["san antonio", "US"],
+  ["sacramento", "US"], ["pittsburgh", "US"], ["cleveland", "US"], ["cincinnati", "US"],
+  ["columbus", "US"], ["indianapolis", "US"], ["kansas city", "US"], ["st louis", "US"],
+  ["milwaukee", "US"], ["baltimore", "US"], ["richmond", "US"], ["hartford", "US"],
+  ["providence", "US"], ["buffalo", "US"], ["rochester", "US"], ["albany", "US"],
+  ["omaha", "US"], ["louisville", "US"], ["memphis", "US"], ["oklahoma city", "US"],
+  ["tulsa", "US"], ["boise", "US"], ["spokane", "US"], ["reno", "US"], ["tucson", "US"],
+  ["albuquerque", "US"], ["el paso", "US"], ["fresno", "US"], ["honolulu", "US"],
+  ["anchorage", "US"], ["des moines", "US"], ["madison", "US"], ["grand rapids", "US"],
+  ["knoxville", "US"], ["chattanooga", "US"], ["baton rouge", "US"], ["new orleans", "US"],
+  ["colorado springs", "US"], ["virginia beach", "US"], ["greenville", "US"],
+  ["charleston", "US"], ["dayton", "US"], ["toledo", "US"], ["akron", "US"],
+  ["syracuse", "US"], ["scranton", "US"], ["allentown", "US"], ["harrisburg", "US"],
+  ["savannah", "US"], ["huntsville", "US"], ["lexington", "US"], ["fort wayne", "US"],
+  ["boulder", "US"], ["fort collins", "US"], ["provo", "US"], ["bakersfield", "US"],
+  ["santa barbara", "US"], ["san luis obispo", "US"], ["santa rosa", "US"], ["eugene", "US"],
+  ["tacoma", "US"], ["fargo", "US"], ["sioux falls", "US"], ["wichita", "US"],
+  ["lincoln", "US"], ["cedar rapids", "US"], ["iowa city", "US"], ["rockford", "US"],
+  ["evansville", "US"], ["south bend", "US"], ["ann arbor", "US"], ["lansing", "US"],
+  ["green bay", "US"], ["duluth", "US"], ["jacksonville", "US"], ["little rock", "US"],
+  ["long island", "US"], ["hampton roads", "US"], ["silicon valley", "US"],
+  // Canada
+  ["toronto", "CA"], ["montreal", "CA"], ["vancouver", "CA"], ["calgary", "CA"],
+  ["ottawa", "CA"], ["edmonton", "CA"], ["winnipeg", "CA"], ["quebec city", "CA"],
+  ["halifax", "CA"], ["kitchener", "CA"], ["waterloo", "CA"],
+  // United Kingdom and Ireland
+  ["london", "GB"], ["manchester", "GB"], ["glasgow", "GB"], ["edinburgh", "GB"],
+  ["bristol", "GB"], ["leeds", "GB"], ["liverpool", "GB"], ["oxford", "GB"],
+  ["reading", "GB"], ["sheffield", "GB"], ["nottingham", "GB"], ["leicester", "GB"],
+  ["coventry", "GB"], ["southampton", "GB"], ["brighton", "GB"], ["cheltenham", "GB"],
+  ["milton keynes", "GB"], ["norwich", "GB"], ["ipswich", "GB"], ["exeter", "GB"],
+  ["aberdeen", "GB"], ["belfast", "GB"], ["cardiff", "GB"], ["dublin", "IE"], ["cork", "IE"],
+  // Australia and New Zealand
+  ["sydney", "AU"], ["melbourne", "AU"], ["brisbane", "AU"], ["perth", "AU"],
+  ["adelaide", "AU"], ["canberra", "AU"], ["gold coast", "AU"], ["auckland", "NZ"],
+  ["wellington", "NZ"], ["christchurch", "NZ"],
+  // Western and Northern Europe
+  ["paris", "FR"], ["lyon", "FR"], ["marseille", "FR"], ["bordeaux", "FR"],
+  ["toulouse", "FR"], ["nantes", "FR"], ["lille", "FR"], ["grenoble", "FR"], ["nice", "FR"],
+  ["strasbourg", "FR"], ["montpellier", "FR"], ["rennes", "FR"],
+  ["zurich", "CH"], ["geneva", "CH"], ["lausanne", "CH"], ["basel", "CH"], ["bern", "CH"],
+  ["lucerne", "CH"], ["lugano", "CH"],
+  ["berlin", "DE"], ["munich", "DE"], ["hamburg", "DE"], ["frankfurt", "DE"],
+  ["cologne", "DE"], ["stuttgart", "DE"], ["dusseldorf", "DE"], ["nuremberg", "DE"],
+  ["leipzig", "DE"], ["hanover", "DE"],
+  ["amsterdam", "NL"], ["rotterdam", "NL"], ["utrecht", "NL"], ["eindhoven", "NL"],
+  ["the hague", "NL"], ["brussels", "BE"], ["antwerp", "BE"], ["ghent", "BE"],
+  ["vienna", "AT"], ["copenhagen", "DK"], ["stockholm", "SE"], ["gothenburg", "SE"],
+  ["oslo", "NO"], ["helsinki", "FI"],
+  ["madrid", "ES"], ["barcelona", "ES"], ["valencia", "ES"], ["seville", "ES"],
+  ["malaga", "ES"], ["bilbao", "ES"], ["lisbon", "PT"], ["porto", "PT"],
+  ["milan", "IT"], ["rome", "IT"], ["turin", "IT"], ["bologna", "IT"], ["florence", "IT"],
+  ["naples", "IT"],
+  // Central and Eastern Europe, Middle East
+  ["warsaw", "PL"], ["krakow", "PL"], ["prague", "CZ"], ["budapest", "HU"],
+  ["bucharest", "RO"], ["athens", "GR"], ["istanbul", "TR"], ["dubai", "AE"],
+  ["abu dhabi", "AE"], ["tel aviv", "IL"], ["riyadh", "SA"],
+  // Asia
+  ["tokyo", "JP"], ["osaka", "JP"], ["seoul", "KR"], ["mumbai", "IN"], ["bengaluru", "IN"],
+  ["bangalore", "IN"], ["hyderabad", "IN"], ["delhi", "IN"], ["new delhi", "IN"],
+  ["chennai", "IN"], ["kolkata", "IN"], ["pune", "IN"], ["ahmedabad", "IN"], ["patna", "IN"],
+  ["lucknow", "IN"], ["jaipur", "IN"], ["chandigarh", "IN"], ["kochi", "IN"], ["indore", "IN"],
+  ["nagpur", "IN"], ["surat", "IN"], ["bhopal", "IN"], ["coimbatore", "IN"],
+  ["karachi", "PK"], ["lahore", "PK"], ["islamabad", "PK"], ["dhaka", "BD"], ["manila", "PH"],
+  ["jakarta", "ID"], ["kuala lumpur", "MY"], ["bangkok", "TH"], ["ho chi minh city", "VN"],
+  ["hanoi", "VN"],
+  // Latin America and Africa
+  ["sao paulo", "BR"], ["rio de janeiro", "BR"], ["buenos aires", "AR"], ["mexico city", "MX"],
+  ["bogota", "CO"], ["lima", "PE"], ["nairobi", "KE"], ["cairo", "EG"], ["johannesburg", "ZA"],
+  ["cape town", "ZA"], ["casablanca", "MA"],
+];
+
+/** The words a metro label is made of, around the city. Stripped before the lookup. */
+const METRO_WORDS = new Set(["greater", "metropolitan", "metro", "metroplex", "area", "region", "bay"]);
+
+let metroIndex: Map<string, string> | null = null;
+
+function metroCities(): Map<string, string> {
+  if (metroIndex) return metroIndex;
+  metroIndex = new Map(METRO_CITIES.map(([city, code]) => [fold(city), code]));
+  return metroIndex;
+}
+
+/**
+ * The country of a metro label, or null when it is not one or the city is not listed.
+ *
+ * Only fires on a string carrying one of the metro words, so a headline or a
+ * company name ("Paris Baguette", "Boston Consulting Group") is never read as a
+ * place. The city is the leading words of a segment once the metro words are
+ * gone, so "Dallas-Fort Worth Metroplex" is tried as "dallas fort worth", then
+ * "dallas fort", then "dallas".
+ */
+function metroCountry(segments: readonly string[]): string | null {
+  const tokensOf = (segment: string): string[] => segment.split(" ").filter(Boolean);
+  // "Austin, Texas Metropolitan Area" keeps the city in one segment and the
+  // metro words in the next, so the metro word only has to be somewhere in
+  // the place, and every segment is then read for a city, last one first.
+  if (!segments.some((s) => tokensOf(s).some((t) => METRO_WORDS.has(t)))) return null;
+  const cities = metroCities();
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const rest = tokensOf(segments[i] ?? "").filter((t) => !METRO_WORDS.has(t));
+    for (let n = Math.min(rest.length, 4); n >= 1; n--) {
+      const hit = cities.get(rest.slice(0, n).join(" "));
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
 export function countryOf(place: string | null | undefined): string | null {
   const text = (place ?? "").trim();
   if (!text) return null;
@@ -428,7 +565,8 @@ export function countryOf(place: string | null | undefined): string | null {
     const hit = names.get(segments[i] ?? "");
     if (hit) return hit;
   }
-  return null;
+  // No segment named a country. A metro label names a city instead.
+  return metroCountry(segments);
 }
 
 export type PlaceVerdict = "in" | "out" | "unknown";

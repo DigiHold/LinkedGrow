@@ -66,7 +66,75 @@ test("a place LinkedIn never printed is unknown, never allowed", () => {
   assert.equal(placeVerdict(AMERICAS, null), "unknown");
   assert.equal(placeVerdict(AMERICAS, ""), "unknown");
   assert.equal(placeVerdict(AMERICAS, "   "), "unknown");
-  assert.equal(placeVerdict(AMERICAS, "Greater Paris Metropolitan Region"), "unknown");
+  assert.equal(placeVerdict(AMERICAS, "Somewhere between two time zones"), "unknown");
+  // A metro area names its city, and the city names its country (see below).
+  assert.equal(placeVerdict(AMERICAS, "Greater Paris Metropolitan Region"), "out");
+});
+
+/**
+ * The place LinkedIn prints most often for the United States is not a country.
+ *
+ * A profile in Boston reads "Greater Boston Area", one in Dallas reads
+ * "Dallas-Fort Worth Metroplex", one in New York reads "New York City
+ * Metropolitan Area", and none of them says United States anywhere. Under the
+ * strict reading those were unknown, the fence went to look at the profile,
+ * read the same words there, and closed the lead as unreadable. An agent aimed
+ * at the United States was therefore refusing most of the United States: of
+ * the places stored on one live database, every one that could not be read
+ * was a metro area of this shape, and a third of those were American.
+ *
+ * The same shape covers Zurich, Munich, Paris, Mumbai and Buenos Aires, so the
+ * city carries the country whenever the city is not in doubt.
+ */
+test("a metro area LinkedIn prints without a country is read from its city", () => {
+  const cases: Array<[string, string]> = [
+    ["New York City Metropolitan Area", "US"],
+    ["San Francisco Bay Area", "US"],
+    ["Greater Boston Area", "US"],
+    ["Dallas-Fort Worth Metroplex", "US"],
+    ["Washington DC-Baltimore Area", "US"],
+    ["Miami-Fort Lauderdale Area", "US"],
+    ["Greater Minneapolis-St. Paul Area", "US"],
+    ["Charlotte Metro", "US"],
+    ["Denver Metropolitan Area", "US"],
+    ["Greater Colorado Springs Area", "US"],
+    ["Austin, Texas Metropolitan Area", "US"],
+    ["Greater Toronto Area", "CA"],
+    ["Greater Sydney Area", "AU"],
+    ["Greater Paris Metropolitan Region", "FR"],
+    ["Greater Lyon Area", "FR"],
+    ["Greater Bordeaux Metropolitan Area", "FR"],
+    ["Zürich Metropolitan Area", "CH"],
+    ["Geneva Metropolitan Area", "CH"],
+    ["Lausanne Metropolitan Area", "CH"],
+    ["Greater Bern Area", "CH"],
+    ["Greater Munich Metropolitan Area", "DE"],
+    ["Frankfurt Rhine-Main Metropolitan Area", "DE"],
+    ["Greater Bologna Metropolitan Area", "IT"],
+    ["Greater Oxford Area", "GB"],
+    ["Bucharest Metropolitan Area", "RO"],
+    ["Mumbai Metropolitan Region", "IN"],
+    ["Greater Bengaluru Area", "IN"],
+    ["Greater Hyderabad Area", "IN"],
+    ["Greater Buenos Aires", "AR"],
+  ];
+  for (const [place, code] of cases) {
+    assert.equal(countryOf(place), code, `failed on ${place}`);
+  }
+});
+
+test("the city fallback only fires on a metro area, never on loose text", () => {
+  // No metro word, no lookup: a headline or a company name stays unread.
+  assert.equal(countryOf("Paris Baguette"), null);
+  assert.equal(countryOf("Boston Consulting Group"), null);
+  // A metro word with a city that could be two countries stays unread too.
+  assert.equal(countryOf("Greater Cambridge Area"), null);
+  assert.equal(countryOf("Greater Birmingham Area"), null);
+  // The profile-viewer source once stored its timestamp in this column.
+  assert.equal(countryOf("Viewed 2h ago"), null);
+  // A spelled-out country still wins over the city, read from the end.
+  assert.equal(countryOf("Paris, Texas, United States"), "US");
+  assert.equal(countryOf("London, Ontario, Canada"), "CA");
 });
 
 /**
