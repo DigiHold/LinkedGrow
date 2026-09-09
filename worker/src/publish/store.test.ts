@@ -68,7 +68,7 @@ async function freshDb(): Promise<void> {
        status TEXT NOT NULL DEFAULT 'ready', created_at INTEGER)`,
     `CREATE TABLE linkedin_accounts (
        id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, country TEXT NOT NULL,
-       profile_url TEXT, status TEXT NOT NULL DEFAULT 'active',
+       profile_url TEXT, full_name TEXT, status TEXT NOT NULL DEFAULT 'active',
        created_at INTEGER NOT NULL)`,
     `CREATE TABLE agents (
        id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, linkedin_account_id TEXT,
@@ -124,13 +124,14 @@ async function addAccount(
   overrides: Record<string, unknown> = {}
 ): Promise<void> {
   await db().execute({
-    sql: `INSERT INTO linkedin_accounts (id, workspace_id, country, profile_url, status, created_at)
-          VALUES (?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO linkedin_accounts (id, workspace_id, country, profile_url, full_name, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       workspaceId,
       String(overrides.country ?? "FR"),
       (overrides.profile_url as string | null) ?? "https://www.linkedin.com/in/jane-doe-1a2b/",
+      (overrides.full_name as string | null) ?? null,
       String(overrides.status ?? "active"),
       Number(overrides.created_at ?? seconds(-HOUR)),
     ],
@@ -577,32 +578,64 @@ test("a team member's post belongs to the owner's workspace", async () => {
   assert.equal(post.workspaceId, "owner", "the post was scoped to the member, not the workspace");
 });
 
-test("the account is the one chosen at publish time, and a disconnected one is skipped", async () => {
+test("the account is the one chosen at publish time", async () => {
   await freshDb();
   await addUser("user-1");
   await addAccount("acct-old", "user-1", { created_at: seconds(-10 * HOUR) });
   await addAccount("acct-new", "user-1", { created_at: seconds(-HOUR) });
-  await addAccount("acct-gone", "user-1", { status: "disconnected" });
 
   // Nothing chosen: the oldest connected account, so the answer is stable.
   const fallback = await accountForPost(fakePost());
-  assert.equal(fallback?.id, "acct-old");
-  assert.equal(fallback?.timezone, "Europe/Paris", "a French account did not get a French clock");
+  assert.equal(fallback.account?.id, "acct-old");
+  assert.equal(
+    fallback.account?.timezone,
+    "Europe/Paris",
+    "a French account did not get a French clock"
+  );
 
   // Chosen in the dashboard: honoured.
   const chosen = await accountForPost(fakePost({ linkedinAccountId: "acct-new" }));
-  assert.equal(chosen?.id, "acct-new");
+  assert.equal(chosen.account?.id, "acct-new");
+});
 
-  // Chosen but since disconnected: falls back rather than failing, because the
-  // customer's intent was to publish, not to publish from that one row.
-  const stale = await accountForPost(fakePost({ linkedinAccountId: "acct-gone" }));
-  assert.equal(stale?.id, "acct-old");
+test("a post whose own account is out waits for it, and never borrows another", async () => {
+  await freshDb();
+  await addUser("user-1");
+  await addAccount("acct-maria", "user-1", {
+    full_name: "Maria Lecocq",
+    created_at: seconds(-10 * HOUR),
+  });
+  await addAccount("acct-nicolas", "user-1", {
+    full_name: "Nicolas Lecocq",
+    status: "challenged",
+    created_at: seconds(-HOUR),
+  });
+
+  const choice = await accountForPost(fakePost({ linkedinAccountId: "acct-nicolas" }));
+  assert.equal(
+    choice.account,
+    null,
+    "the post was published through somebody else's LinkedIn account"
+  );
+  assert.match(choice.waiting ?? "", /Nicolas Lecocq/);
+});
+
+test("a post whose chosen account was deleted waits rather than borrowing one", async () => {
+  await freshDb();
+  await addUser("user-1");
+  await addAccount("acct-other", "user-1");
+
+  const choice = await accountForPost(fakePost({ linkedinAccountId: "acct-removed" }));
+  assert.equal(choice.account, null);
+  assert.ok(choice.waiting, "nothing was said on a post that will never publish on its own");
 });
 
 test("a workspace with nothing connected has no account to publish through", async () => {
   await freshDb();
   await addUser("user-1");
-  assert.equal(await accountForPost(fakePost()), null);
+  const choice = await accountForPost(fakePost());
+  assert.equal(choice.account, null);
+  assert.ok(choice.waiting);
 });
 
 test("an agent's own timezone wins over the one guessed from the country", async () => {
@@ -613,7 +646,7 @@ test("an agent's own timezone wins over the one guessed from the country", async
     `INSERT INTO agents (id, workspace_id, linkedin_account_id, timezone)
      VALUES ('agent-1', 'user-1', 'acct-1', 'America/New_York')`
   );
-  const account = await accountForPost(fakePost());
+  const { account } = await accountForPost(fakePost());
   assert.equal(account?.timezone, "America/New_York");
 });
 

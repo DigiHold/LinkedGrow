@@ -33,6 +33,7 @@ import {
   releaseVideo,
   markPublished,
   mediaForPost,
+  NO_ACCOUNT_MESSAGE,
   releaseScheduled,
   releaseStaleClaims,
   unclaim,
@@ -91,10 +92,6 @@ const SIGNED_OUT_MESSAGE =
 /** What the account itself says while the sign-in pass has it back. */
 const SIGNED_OUT_REASON =
   "The session ended, so we are signing back in on this account's own address.";
-
-/** Said on a post whose owner has no LinkedIn account connected at all. */
-const NO_ACCOUNT_MESSAGE =
-  "This post is waiting for a connected LinkedIn account. Connect one and it goes out on its own.";
 
 const UNVERIFIED_NOTE =
   "This went to LinkedIn but we could not find it on your feed afterwards. Check your profile before posting it again.";
@@ -428,7 +425,7 @@ export async function publishPass(): Promise<void> {
   const byAccount = new Map<string, AccountWork>();
   let waitingForAccount = 0;
   for (const post of candidates) {
-    const account = await accountForPost(post);
+    const { account, waiting } = await accountForPost(post);
     if (!account) {
       // The owner has no connected LinkedIn account right now. The promise
       // made at the v2 cutover is that a scheduled post WAITS for its owner
@@ -440,7 +437,7 @@ export async function publishPass(): Promise<void> {
       // was the count logged below, so the customer saw a post sitting in
       // Scheduled hours past its time with nothing said anywhere.
       waitingForAccount += 1;
-      await noteWaitingForAccount(post.id, NO_ACCOUNT_MESSAGE).catch(() => {});
+      await noteWaitingForAccount(post.id, waiting ?? NO_ACCOUNT_MESSAGE).catch(() => {});
       continue;
     }
     // The account's own clock decides whether now is a reasonable hour to be

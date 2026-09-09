@@ -116,6 +116,32 @@ export interface PublishAccount {
   profileUrl: string | null;
 }
 
+/**
+ * What a post is published through, or why it is waiting instead.
+ *
+ * Two answers rather than a nullable account, because "nothing is connected"
+ * and "the profile this post belongs to is signed out" are different sentences
+ * and the customer reads one of them on the post itself.
+ */
+export interface AccountChoice {
+  account: PublishAccount | null;
+  /** The line the post carries while it waits. Null when there is an account. */
+  waiting: string | null;
+}
+
+/** Said on a post whose owner has no LinkedIn account connected at all. */
+export const NO_ACCOUNT_MESSAGE =
+  "This post is waiting for a connected LinkedIn account. Connect one and it goes out on its own.";
+
+/** Said when the profile the post was written for is signed out or challenged. */
+export function accountOutMessage(name: string): string {
+  return `This post is waiting for ${name} on LinkedIn, which needs to be reconnected before anything can be published from it. It goes out on that profile on its own once it is back.`;
+}
+
+/** Said when the chosen profile is no longer in this workspace at all. */
+export const ACCOUNT_REMOVED_MESSAGE =
+  "The LinkedIn account this post was written for is no longer connected here. Choose another account on the post and it goes out from there.";
+
 export interface PublishMedia {
   url: string;
   mimeType: string;
@@ -404,30 +430,49 @@ export async function publishingIsWaiting(linkedinAccountId: string): Promise<bo
   return rows.length > 0;
 }
 
-export async function accountForPost(post: DuePost): Promise<PublishAccount | null> {
+export async function accountForPost(post: DuePost): Promise<AccountChoice> {
   if (post.linkedinAccountId) {
+    /**
+     * The named account is looked up on its id alone, without asking whether it
+     * is usable, because those are two different answers and the second one
+     * must never turn into another profile.
+     *
+     * Until 2026-09-09 this query carried `AND status = 'active'` and a miss
+     * fell through to the block below, which returns the oldest connected
+     * account in the workspace. So on 2026-09-08 at 19:50 Nicolas's own
+     * account went `challenged` (LinkedIn ended the session and nobody entered
+     * the code), and at 20:02 the post he had written was published on Maria's
+     * profile, read back there, and marked published with her URL. A workspace
+     * with two accounts is the Business plan's whole reason to exist, and this
+     * is the worst thing that can happen inside one: one person's words under
+     * another person's name, with no way to tell afterwards, because claimPost
+     * writes the account it used back onto the row.
+     *
+     * A post that names an account belongs to that account. When the account
+     * cannot take it, the post waits and says so, which is what every other
+     * unavailable-account path here already does.
+     */
     const { rows } = await db().execute({
-      sql: `SELECT la.id, la.workspace_id, la.country, la.profile_url, a.timezone AS timezone
+      sql: `SELECT la.id, la.workspace_id, la.country, la.profile_url, la.status,
+                   la.full_name, a.timezone AS timezone
               FROM linkedin_accounts la
               LEFT JOIN agents a ON a.linkedin_account_id = la.id
-             WHERE la.id = ? AND la.workspace_id = ? AND la.status = 'active'
+             WHERE la.id = ? AND la.workspace_id = ?
              LIMIT 1`,
       args: [post.linkedinAccountId, post.workspaceId],
     });
     const row = rows[0];
-    if (row) {
-      return {
-        id: String(row.id),
-        workspaceId: String(row.workspace_id),
-        country: String(row.country),
-        timezone: row.timezone ? String(row.timezone) : timezoneForCountry(String(row.country)),
-        profileUrl: row.profile_url ? String(row.profile_url) : null,
-      };
+    if (!row) return { account: null, waiting: ACCOUNT_REMOVED_MESSAGE };
+    if (String(row.status) !== "active") {
+      const who = row.full_name ? String(row.full_name) : "the account you chose";
+      return { account: null, waiting: accountOutMessage(who) };
     }
+    return { account: accountFrom(row), waiting: null };
   }
 
   const { rows } = await db().execute({
-    sql: `SELECT la.id, la.workspace_id, la.country, la.profile_url, a.timezone AS timezone
+    sql: `SELECT la.id, la.workspace_id, la.country, la.profile_url, la.status,
+                 la.full_name, a.timezone AS timezone
             FROM linkedin_accounts la
             LEFT JOIN agents a ON a.linkedin_account_id = la.id
            WHERE la.workspace_id = ? AND la.status = 'active'
@@ -436,13 +481,17 @@ export async function accountForPost(post: DuePost): Promise<PublishAccount | nu
     args: [post.workspaceId],
   });
   const row = rows[0];
-  if (!row) return null;
+  if (!row) return { account: null, waiting: NO_ACCOUNT_MESSAGE };
+  return { account: accountFrom(row), waiting: null };
+}
+
+function accountFrom(row: Record<string, unknown>): PublishAccount {
   return {
     id: String(row.id),
     workspaceId: String(row.workspace_id),
     country: String(row.country),
     timezone: row.timezone ? String(row.timezone) : timezoneForCountry(String(row.country)),
-        profileUrl: row.profile_url ? String(row.profile_url) : null,
+    profileUrl: row.profile_url ? String(row.profile_url) : null,
   };
 }
 
