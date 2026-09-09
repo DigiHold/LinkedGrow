@@ -1315,22 +1315,27 @@ async function attachMedia(
 
     if ((await input.count()) === 0) {
       /**
-       * One more press, this time without coordinates.
+       * One more press, on a freshly measured box.
        *
-       * `clickHumanLocator` aims at a point measured before the mouse travels,
-       * and the composer's bottom bar moves under a long post, so the press can
-       * land on nothing at all: the right button resolved, no picker opened,
-       * and the post failed on its attachment. Playwright's own click resolves
-       * the element at press time instead, and it is what the live check used
-       * on 2026-09-09 when it opened this exact picker and mounted the input
-       * first time.
+       * The first press aims at a point taken before the mouse travels, and the
+       * composer's bottom bar moves down as a long post fills the editor, so it
+       * can land on nothing at all: the right button resolved, no picker
+       * opened, the post failed on its attachment. `clickHumanLocator` reads
+       * the box again after the travel now, so the second press follows the
+       * button rather than the memory of where it was.
+       *
+       * Deliberately the same human press as the first, never a library click
+       * that teleports the cursor onto the target with no approach: the motion
+       * is the signature LinkedIn can sample, and one convenient press is not
+       * worth an account (Nicolas, 2026-09-09).
        *
        * It costs nothing on the happy path, because we only reach here when
        * the first press produced neither a chooser nor an input.
        */
       let attached = false;
       const second = page.waitForEvent("filechooser", { timeout: 8_000 }).catch(() => null);
-      await addMedia.click({ timeout: 10_000 }).catch(() => {});
+      await dwell(400, 1100);
+      await clickHumanLocator(page, addMedia).catch(() => {});
       const retried = await second;
       if (retried) {
         await retried.setFiles(filePath);
