@@ -1239,6 +1239,12 @@ async function attachMedia(
        */
       const chooser = await firstVisible(page.locator(SEL.chooseFile));
       if (!chooser) {
+        /* The dump the other dead end already takes, and this one did not.
+           Mohamed's photo failed here three times on 2026-09-07 and left one
+           sentence in the log, so there was nothing to write a fix against:
+           no input mounted, no native chooser fired, no Choose file button,
+           and no record of what the composer was actually showing. */
+        await logAxView(page, "no file input after the media entry was clicked");
         throw new PublishError("LinkedIn would not accept the attachment, so nothing was posted.");
       }
       const [latePicker] = await Promise.all([
