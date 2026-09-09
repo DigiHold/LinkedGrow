@@ -880,6 +880,36 @@ async function firstVisible(loc: Locator): Promise<Locator | null> {
   return null;
 }
 
+/**
+ * The control inside a wrapper, when the wrapper is what matched.
+ *
+ * `byView` asks for `[data-view-name="x"]`, plus its button and its anchor,
+ * because LinkedIn puts that attribute on the control itself on some composers
+ * and on a surrounding div on others. A comma separated CSS selector answers in
+ * DOM order, and a wrapper always precedes the button inside it, so
+ * `firstVisible` handed back the wrapper every time both existed. Clicking a
+ * div does nothing: no picker opens, no file input is mounted, and the attach
+ * dies at the far end with "LinkedIn would not accept the attachment" on a
+ * composer that was working perfectly. Mohamed Elmelegey lost four posts to
+ * that between 2026-08-19 and 2026-09-09, on an account whose other posts with
+ * images went out normally the same fortnight.
+ *
+ * Structural only, never by label: an element that is not itself pressable
+ * hands back the first pressable thing it contains. A wrapper with nothing
+ * inside it stays itself, so the caller still fails and still says so.
+ */
+export async function actionable(found: Locator): Promise<Locator> {
+  const pressable = await found
+    .evaluate((el: Element) => {
+      const tag = el.tagName.toLowerCase();
+      return tag === "button" || tag === "a" || el.getAttribute("role") === "button";
+    })
+    .catch(() => true);
+  if (pressable) return found;
+  const inner = await firstVisible(found.locator('button, [role="button"], a'));
+  return inner ?? found;
+}
+
 function uploadTimeoutFor(mimeType: string | null): number {
   if (!mimeType) return UPLOAD_TIMEOUT_MS.image;
   if (mimeType.startsWith("video/")) return UPLOAD_TIMEOUT_MS.video;
@@ -1202,6 +1232,8 @@ async function attachMedia(
       `LinkedIn did not offer a way to attach a ${wanted.toLowerCase()} (looked for ${wantedNames.join(" or ")}), so nothing was posted.`
     );
   }
+  // The button, never the div around it. See `actionable`.
+  addMedia = await actionable(addMedia);
   /* Listening BEFORE the click: the closed-shadow composer opens the picker
      natively off the entry itself and never mounts a file input in the DOM,
      which is how Mohamed's photo died with "would not accept the attachment"
@@ -1244,6 +1276,19 @@ async function attachMedia(
            sentence in the log, so there was nothing to write a fix against:
            no input mounted, no native chooser fired, no Choose file button,
            and no record of what the composer was actually showing. */
+        /* What we actually pressed, so a wrapper that swallowed the click is
+           visible in the journal rather than inferred from its silence. */
+        const shape = await addMedia
+          .evaluate((el: Element) =>
+            [
+              el.tagName.toLowerCase(),
+              el.getAttribute("role") ?? "-",
+              el.getAttribute("data-view-name") ?? "-",
+              String(el.querySelectorAll('button, [role="button"], a').length),
+            ].join(" ")
+          )
+          .catch(() => "unreadable");
+        log("the media entry we pressed", { shape });
         await logAxView(page, "no file input after the media entry was clicked");
         throw new PublishError("LinkedIn would not accept the attachment, so nothing was posted.");
       }

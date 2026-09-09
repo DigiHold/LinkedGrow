@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  actionable,
   dateOrder,
   documentTitleFrom,
   formatDateFor,
@@ -84,4 +85,59 @@ test("the clock is twelve-hour or twenty-four, and noon and midnight are not swa
   // The two that a naive modulo gets wrong.
   assert.equal(formatTimeFor("h12", { hour: 0, minute: 30 }), "12:30 AM");
   assert.equal(formatTimeFor("h12", { hour: 12, minute: 30 }), "12:30 PM");
+});
+
+/**
+ * A stand-in for a Playwright Locator, carrying only what `actionable` uses:
+ * evaluate against the element itself, and a query for its descendants.
+ */
+function fakeLocator(node: {
+  tag: string;
+  role?: string | null;
+  inner?: { visible: boolean; name: string }[];
+}): unknown {
+  const inner = node.inner ?? [];
+  const list = {
+    count: async () => inner.length,
+    nth: (i: number) => ({
+      isVisible: async () => inner[i]?.visible ?? false,
+      name: inner[i]?.name,
+    }),
+  };
+  return {
+    evaluate: async (fn: (el: unknown) => boolean) =>
+      fn({
+        tagName: node.tag.toUpperCase(),
+        getAttribute: (attr: string) => (attr === "role" ? (node.role ?? null) : null),
+      }),
+    locator: () => list,
+  };
+}
+
+test("a control that matched directly is the one clicked", async () => {
+  const button = fakeLocator({ tag: "button" });
+  assert.equal(await actionable(button as never), button);
+
+  const link = fakeLocator({ tag: "a" });
+  assert.equal(await actionable(link as never), link);
+
+  const div = fakeLocator({ tag: "div", role: "button" });
+  assert.equal(await actionable(div as never), div);
+});
+
+test("a wrapper hands back the control inside it rather than swallowing the click", async () => {
+  const wrapper = fakeLocator({
+    tag: "div",
+    inner: [
+      { visible: false, name: "hidden" },
+      { visible: true, name: "the real button" },
+    ],
+  });
+  const chosen = (await actionable(wrapper as never)) as unknown as { name?: string };
+  assert.equal(chosen.name, "the real button", "the click would have landed on the wrapper");
+});
+
+test("a wrapper with nothing to press stays itself, so the caller still fails loudly", async () => {
+  const empty = fakeLocator({ tag: "div" });
+  assert.equal(await actionable(empty as never), empty);
 });
