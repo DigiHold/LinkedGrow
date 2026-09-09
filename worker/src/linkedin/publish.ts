@@ -880,6 +880,46 @@ async function firstVisible(loc: Locator): Promise<Locator | null> {
   return null;
 }
 
+/** Anything a person can press. */
+const PRESSABLE = 'button, a[href], [role="button"], [role="menuitem"]';
+
+/**
+ * The composer itself, found from the box we typed into and widening outwards.
+ *
+ * `dialog` above falls back to `page.locator("body")` whenever the composer is
+ * not a role="dialog" element, and since 2026-07-31 it never is: it lives in a
+ * shadow root as `div.share-creation-state`, which no selector in SEL.dialog
+ * matches. That fallback is harmless for the editor and the Post button, which
+ * the open composer really does own alone. It is not harmless for the media
+ * bar, because the feed underneath has its own.
+ *
+ * Read off Nicolas's live composer on 2026-09-09, page wide, in DOM order:
+ *
+ *   <div role="button"> icon=image-medium text="Photo"        the feed's
+ *   <button> icon=image-medium aria-label="Add media"         the composer's
+ *
+ * Playwright pierces the shadow root, so a page wide lookup sees both and
+ * `firstVisible` returns the first, which belongs to the feed and sits behind
+ * the open composer. Clicking it does nothing at all: no picker, no file
+ * input, and the attach dies three tries later reporting that LinkedIn would
+ * not accept the file. Mohamed Elmelegey lost 3 posts to it, and Nicolas's own
+ * account lost one on 2026-09-09 after two fixes aimed at the wrong thing.
+ *
+ * The editor is the one handle that cannot drift, because we typed into it.
+ * Its ancestors are walked from the nearest outwards and every one that holds
+ * something pressable becomes a scope, so the lookup starts inside the
+ * composer and widens only within it. The page is never a scope.
+ */
+export async function composerScopes(editor: Locator, maxDepth = 12): Promise<Locator[]> {
+  const scopes: Locator[] = [];
+  for (let up = 1; up <= maxDepth; up++) {
+    const ancestor = editor.locator(`xpath=ancestor::*[${up}]`);
+    if ((await ancestor.count()) === 0) break;
+    if ((await ancestor.locator(PRESSABLE).count()) > 0) scopes.push(ancestor);
+  }
+  return scopes;
+}
+
 /**
  * The control inside a wrapper, when the wrapper is what matched.
  *
@@ -1153,10 +1193,19 @@ async function waitForUpload(
 async function attachMedia(
   page: Page,
   dialog: Locator,
+  scopes: Locator[],
   filePath: string,
   mimeType: string | null,
   postText: string
 ): Promise<void> {
+  /**
+   * Where the media bar is looked for, and it is never the page.
+   *
+   * See `composerScopes`. An empty list means the editor had no pressable
+   * ancestor, which should not happen on an open composer, and the old
+   * behaviour is kept for that case rather than refusing to publish at all.
+   */
+  const within = scopes.length ? scopes : [dialog];
   /**
    * The right door for the kind of file this is.
    *
@@ -1200,10 +1249,10 @@ async function attachMedia(
     for (const name of wantedNames) {
       const icon = iconFor[name];
       if (!icon) continue;
-      const found =
-        (await firstVisible(page.locator(byIcon(icon)))) ??
-        (await firstVisible(dialog.locator(byIcon(icon))));
-      if (found) return found;
+      for (const scope of within) {
+        const found = await firstVisible(scope.locator(byIcon(icon)));
+        if (found) return found;
+      }
     }
     return null;
   };
@@ -1211,7 +1260,11 @@ async function attachMedia(
   let addMedia = await entry();
   if (!addMedia) {
     // Document sits behind the overflow; Photo and Video are on the bar.
-    const more = await firstVisible(page.locator(SEL.moreMediaTypes));
+    let more: Locator | null = null;
+    for (const scope of within) {
+      more = await firstVisible(scope.locator(SEL.moreMediaTypes));
+      if (more) break;
+    }
     if (more) {
       await clickHumanLocator(page, more);
       await dwell(1200, 2400);
@@ -1223,7 +1276,10 @@ async function attachMedia(
   // PDF fed to the image Editor dies on "File(s) not supported" with the
   // document flow never reached (2026-08-24). No entry means the truth.
   if (mimeType !== "application/pdf") {
-    addMedia ??= await firstVisible(dialog.locator(SEL.addMedia));
+    for (const scope of within) {
+      addMedia ??= await firstVisible(scope.locator(SEL.addMedia));
+      if (addMedia) break;
+    }
   }
 
   if (!addMedia) {
@@ -1774,7 +1830,7 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   }
 
   if (input.filePath) {
-    await attachMedia(page, dialog, input.filePath, input.mimeType, body);
+    await attachMedia(page, dialog, await composerScopes(editor), input.filePath, input.mimeType, body);
   }
 
   // Reading it once more before sending. Everybody does this, and on a long

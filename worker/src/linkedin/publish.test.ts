@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   actionable,
+  composerScopes,
   dateOrder,
   documentTitleFrom,
   formatDateFor,
@@ -140,4 +141,42 @@ test("a wrapper hands back the control inside it rather than swallowing the clic
 test("a wrapper with nothing to press stays itself, so the caller still fails loudly", async () => {
   const empty = fakeLocator({ tag: "div" });
   assert.equal(await actionable(empty as never), empty);
+});
+
+/**
+ * A locator that answers only what `composerScopes` asks: how many elements an
+ * ancestor step matches, and how many pressable things live inside it.
+ */
+function fakeEditor(levels: (number | null)[]): unknown {
+  return {
+    locator(sel: string) {
+      const m = /ancestor::\*\[(\d+)\]/.exec(sel);
+      if (m) {
+        const at = levels[Number(m[1]) - 1];
+        return {
+          count: async () => (at === null || at === undefined ? 0 : 1),
+          locator: () => ({ count: async () => at ?? 0 }),
+          level: Number(m[1]),
+        };
+      }
+      return { count: async () => 0 };
+    },
+  };
+}
+
+test("the composer is the ancestor that holds the buttons, not the page", async () => {
+  // Read off a live composer on 2026-09-09: the editor sits 8 levels inside
+  // share-creation-state, and every level under it holds nothing pressable.
+  const editor = fakeEditor([0, 0, 0, 0, 0, 0, 0, 7, 40]);
+  const scopes = (await composerScopes(editor as never)) as unknown as { level: number }[];
+  assert.deepEqual(
+    scopes.map((s) => s.level),
+    [8, 9],
+    "the scopes must start at the composer and widen, never jump to the page"
+  );
+});
+
+test("an editor with no pressable ancestor yields no scope rather than the whole page", async () => {
+  const editor = fakeEditor([0, 0, null]);
+  assert.deepEqual(await composerScopes(editor as never), []);
 });
