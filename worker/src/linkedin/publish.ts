@@ -1467,9 +1467,29 @@ async function typeBody(page: Page, editor: Locator, text: string): Promise<void
    * grow so the later attempts sit far outside any plausible mount.
    */
   for (let attempt = 1; attempt <= 8; attempt++) {
-    await clickHumanLocator(page, editor).catch(async () => {
-      await editor.click().catch(() => {});
-    });
+    /**
+     * The mouse arrives once. Every retry focuses the element itself.
+     *
+     * This clicked on all 8 attempts, and a click is a coordinate landing on
+     * whatever occupies that spot at that instant. The comment box on a post
+     * page sits directly under the Like / Comment / Repost / Send bar, and the
+     * page moves while the post's own image finishes loading, so a click aimed
+     * at the box lands on the bar above it. On 2026-09-09 four of these missed
+     * in a row on Nicolas's own post at 17:52, and a repost of that post
+     * appeared on his profile that he had to delete by hand.
+     *
+     * `focus()` needs no coordinates and cannot press anything, which is the
+     * rule for this codebase: activate by focus, never by a blind repeat click.
+     * A first pass with the mouse is kept because it is what a person does and
+     * it is the one that mounts TipTap's binding.
+     */
+    if (attempt === 1) {
+      await clickHumanLocator(page, editor).catch(async () => {
+        await editor.click().catch(() => {});
+      });
+    } else {
+      await editor.evaluate((el: HTMLElement) => el.focus()).catch(() => {});
+    }
     await sleep(randInt(300, 900));
     if (!(await holdsFocus(editor))) {
       log("editor focus not held", { attempt, of: 8 });
