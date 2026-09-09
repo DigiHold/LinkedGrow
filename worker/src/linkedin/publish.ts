@@ -1315,6 +1315,39 @@ async function attachMedia(
 
     if ((await input.count()) === 0) {
       /**
+       * One more press, this time without coordinates.
+       *
+       * `clickHumanLocator` aims at a point measured before the mouse travels,
+       * and the composer's bottom bar moves under a long post, so the press can
+       * land on nothing at all: the right button resolved, no picker opened,
+       * and the post failed on its attachment. Playwright's own click resolves
+       * the element at press time instead, and it is what the live check used
+       * on 2026-09-09 when it opened this exact picker and mounted the input
+       * first time.
+       *
+       * It costs nothing on the happy path, because we only reach here when
+       * the first press produced neither a chooser nor an input.
+       */
+      let attached = false;
+      const second = page.waitForEvent("filechooser", { timeout: 8_000 }).catch(() => null);
+      await addMedia.click({ timeout: 10_000 }).catch(() => {});
+      const retried = await second;
+      if (retried) {
+        await retried.setFiles(filePath);
+        attached = true;
+      } else {
+        await page
+          .waitForSelector(SEL.fileInput, { state: "attached", timeout: 8_000 })
+          .catch(() => {});
+        const late = page.locator(SEL.fileInput).first();
+        if ((await late.count()) > 0) {
+          await late.setInputFiles(filePath);
+          attached = true;
+        }
+      }
+
+      if (!attached) {
+      /**
        * A document has one more step: LinkedIn shows a "Share a document"
        * screen with a Choose file button, and there is no input in the page at
        * all until that button is pressed. Waiting for one is waiting for
@@ -1353,6 +1386,7 @@ async function attachMedia(
         clickHumanLocator(page, chooser),
       ]);
       await latePicker.setFiles(filePath);
+      }
     } else {
       await input.setInputFiles(filePath);
     }

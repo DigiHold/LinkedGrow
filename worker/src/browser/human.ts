@@ -217,15 +217,72 @@ export async function moveMouseHuman(
   setCursor(toX, toY);
 }
 
-async function clickBox(page: Page, box: { x: number; y: number; width: number; height: number }): Promise<void> {
-  // Off-centre, and biased differently every time rather than always the middle
-  // 40 percent of the element.
-  const x = box.x + box.width * (0.22 + Math.random() * 0.56);
-  const y = box.y + box.height * (0.24 + Math.random() * 0.52);
-  await moveMouseHuman(page, x, y);
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Whether the spot the mouse travelled to is still on the element. */
+export function pointIsOn(point: { x: number; y: number }, box: Box): boolean {
+  return (
+    point.x >= box.x &&
+    point.x <= box.x + box.width &&
+    point.y >= box.y &&
+    point.y <= box.y + box.height
+  );
+}
+
+/** Somewhere on the element, off centre, and biased differently every time. */
+function pointOn(box: Box): { x: number; y: number } {
+  return {
+    x: box.x + box.width * (0.22 + Math.random() * 0.56),
+    y: box.y + box.height * (0.24 + Math.random() * 0.52),
+  };
+}
+
+/**
+ * A press at a coordinate, checked against where the element is when it lands.
+ *
+ * The gap between measuring and pressing is not small: a human paced mouse
+ * move, then a settle of about 190ms, and one time in twelve a hesitation of up
+ * to another 1.1 seconds. A page that reflows inside that window leaves the
+ * cursor over whatever moved into the spot, and the press goes to that instead.
+ *
+ * Two of those landed on 2026-09-09, both on Nicolas's own account. A press
+ * meant for the comment box hit the Like / Comment / Repost / Send bar above
+ * it and reposted his own post, which he deleted by hand. A press meant for
+ * the composer's Add media button, on a composer whose bottom bar had just
+ * moved down under a long post, hit nothing at all, so no picker opened and
+ * the post failed with "LinkedIn would not accept the attachment" after three
+ * tries. The same post had published perfectly 18 minutes earlier: the element
+ * was right both times, the coordinate was stale once.
+ *
+ * So the box is read again after the travel, and if the cursor is no longer on
+ * the element it follows it before pressing. Which is what a person does when
+ * a page shifts under their hand.
+ */
+async function clickBox(
+  page: Page,
+  box: Box,
+  remeasure?: () => Promise<Box | null>
+): Promise<void> {
+  let point = pointOn(box);
+  await moveMouseHuman(page, point.x, point.y);
   // A person settles before pressing, and sometimes hesitates.
   await sleep(gaussAtLeast(190, 90, 60));
   if (Math.random() < 0.08) await sleep(randInt(280, 1100));
+
+  if (remeasure) {
+    const now = await remeasure().catch(() => null);
+    if (now && !pointIsOn(point, now)) {
+      point = pointOn(now);
+      await moveMouseHuman(page, point.x, point.y);
+      await sleep(gaussAtLeast(120, 50, 40));
+    }
+  }
+
   await page.mouse.down();
   await sleep(gaussAtLeast(72, 22, 28)); // press duration, not an instant click
   await page.mouse.up();
@@ -237,7 +294,7 @@ export async function clickHuman(page: Page, selector: string): Promise<void> {
   await el.scrollIntoViewIfNeeded();
   const box = await el.boundingBox();
   if (!box) throw new Error(`No bounding box for selector: ${selector}`);
-  await clickBox(page, box);
+  await clickBox(page, box, () => el.boundingBox());
 }
 
 /**
@@ -248,7 +305,7 @@ export async function clickHumanLocator(page: Page, locator: Locator): Promise<v
   await locator.scrollIntoViewIfNeeded();
   const box = await locator.boundingBox();
   if (!box) throw new Error("No bounding box for the target locator");
-  await clickBox(page, box);
+  await clickBox(page, box, () => locator.boundingBox());
 }
 
 /* ── the keyboard ──────────────────────────────────────────────────────────*/
