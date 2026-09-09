@@ -2038,7 +2038,7 @@ export async function POST(request: NextRequest) {
         }
         const updated = await db
           .update(posts)
-          .set({ status: "scheduled", scheduledAt: at, updatedAt: new Date() })
+          .set({ status: "scheduled", scheduledAt: at, failureNotifiedAt: null, updatedAt: new Date() })
           .where(and(eq(posts.id, String(args.id)), eq(posts.userId, userId)))
           .returning({ id: posts.id });
         if (!updated.length) {
@@ -2086,7 +2086,7 @@ export async function POST(request: NextRequest) {
         for (const p of parsed) {
           const updated = await db
             .update(posts)
-            .set({ status: "scheduled", scheduledAt: p.at, updatedAt: new Date() })
+            .set({ status: "scheduled", scheduledAt: p.at, failureNotifiedAt: null, updatedAt: new Date() })
             .where(and(eq(posts.id, p.id), eq(posts.userId, userId)))
             .returning({ id: posts.id });
           if (updated.length) done.push(`${p.id} to ${p.at.toISOString()}`);

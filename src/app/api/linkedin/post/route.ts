@@ -190,6 +190,15 @@ export async function POST(request: NextRequest) {
         publishAttempts: 0,
         publishClaimedAt: null,
         errorMessage: null,
+        /**
+         * A second run earns a second email.
+         *
+         * The stamp only says "we told them about the failure that just
+         * happened". Leaving it set meant a post that failed, was corrected and
+         * failed again went quiet: Mohamed Elmelegey's post was emailed at
+         * 14:15 on 2026-09-09 and its retry died at 14:47 with nothing sent.
+         */
+        failureNotifiedAt: null,
         metadata: Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
         updatedAt: now,
       })
