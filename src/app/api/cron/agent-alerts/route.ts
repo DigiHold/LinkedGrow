@@ -21,11 +21,14 @@ import {
   agentEvents,
   agentLeads,
   agentMessages,
+  linkedinAccounts,
+  posts,
 } from "@/lib/db/schema";
-import { and, desc, eq, isNull, inArray } from "drizzle-orm";
+import { and, desc, eq, isNull, inArray, gt } from "drizzle-orm";
 import {
   sendVerificationNeededEmail,
   sendAgentStoppedEmail,
+  sendPostFailedEmail,
   sendReplyEmail,
 } from "@/lib/email/notify";
 
@@ -225,12 +228,188 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
   return { sent, skipped };
 }
 
+/**
+ * Accounts LinkedIn is holding, read off the account itself.
+ *
+ * This does not go through agent_events, on purpose. An event has to be
+ * written by whichever code path noticed, `flagAccount` was the only one that
+ * ever wrote a `challenged` one, and `flagAccount` needs an agent. So the
+ * sign-in pass, which sets `status = 'challenged'` with its own SQL after three
+ * failed tries or a checkpoint, told nobody at all: on 2026-09-08 at 19:50
+ * Nicolas's own account went challenged in silence, and the post he had written
+ * for it was published on the other profile in his workspace twelve minutes
+ * later. Two more accounts had been challenged since 2026-08-20 with nothing
+ * sent about either.
+ *
+ * The account's status is the fact. Nothing has to remember to write it down,
+ * a status set by code that does not exist yet is still read here, and the
+ * stamp is cleared when the account recovers so the next challenge mails again.
+ *
+ * No backlog cutoff: an account challenged a week ago is still challenged, and
+ * that mail is late rather than stale. One per challenge is what the stamp
+ * guarantees.
+ */
+async function runChallengeAlerts(): Promise<{ sent: number; skipped: number }> {
+  const waiting = await db
+    .select({
+      id: linkedinAccounts.id,
+      fullName: linkedinAccounts.fullName,
+      email: users.email,
+      name: users.name,
+      agentId: agents.id,
+    })
+    .from(linkedinAccounts)
+    .innerJoin(users, eq(users.id, linkedinAccounts.workspaceId))
+    .leftJoin(agents, eq(agents.linkedinAccountId, linkedinAccounts.id))
+    .where(
+      and(
+        inArray(linkedinAccounts.status, ["challenged", "restricted"]),
+        isNull(linkedinAccounts.challengeNotifiedAt)
+      )
+    )
+    .limit(MAX_PER_RUN);
+
+  let sent = 0;
+  let skipped = 0;
+
+  /** One mail per account, even when several agents share the profile. */
+  const done = new Set<string>();
+
+  for (const account of waiting) {
+    if (done.has(account.id)) continue;
+    done.add(account.id);
+
+    // Stamped first, for the same reason the event above is: a send that
+    // throws after the mail left would send it again on the next pass.
+    await db
+      .update(linkedinAccounts)
+      .set({ challengeNotifiedAt: new Date() })
+      .where(eq(linkedinAccounts.id, account.id));
+
+    if (!account.email) {
+      skipped += 1;
+      continue;
+    }
+
+    try {
+      await sendVerificationNeededEmail({
+        to: account.email,
+        name: account.name,
+        accountName: account.fullName ?? "your LinkedIn account",
+        agentId: account.agentId,
+      });
+      sent += 1;
+    } catch {
+      skipped += 1;
+    }
+  }
+
+  return { sent, skipped };
+}
+
+/**
+ * Posts that spent their three attempts, and the person who wrote them.
+ *
+ * The worker marks a post `failed` with a sentence written for the customer
+ * and nothing else happens: `notifyOps` in the worker only ever mails us, and
+ * the publish path writes no event. So the post sat in the dashboard saying it
+ * had failed and the person who scheduled it found out by going to look.
+ *
+ * The backlog cutoff applies here, unlike a challenge: a failed post from last
+ * week is history, the customer has long since seen it or reposted by hand, and
+ * a pile of them arriving at once after an outage is noise.
+ */
+async function runPostFailureAlerts(): Promise<{ sent: number; skipped: number }> {
+  const cutoff = new Date(Date.now() - TOO_OLD_MS);
+
+  const failed = await db
+    .select({
+      id: posts.id,
+      content: posts.content,
+      scheduledAt: posts.scheduledAt,
+      reason: posts.errorMessage,
+      email: users.email,
+      name: users.name,
+    })
+    .from(posts)
+    .innerJoin(users, eq(users.id, posts.userId))
+    .where(
+      and(
+        eq(posts.status, "failed"),
+        isNull(posts.failureNotifiedAt),
+        gt(posts.updatedAt, cutoff)
+      )
+    )
+    .orderBy(desc(posts.updatedAt))
+    .limit(MAX_PER_RUN);
+
+  let sent = 0;
+  let skipped = 0;
+
+  for (const post of failed) {
+    await db
+      .update(posts)
+      .set({ failureNotifiedAt: new Date() })
+      .where(eq(posts.id, post.id));
+
+    if (!post.email) {
+      skipped += 1;
+      continue;
+    }
+
+    try {
+      await sendPostFailedEmail({
+        to: post.email,
+        name: post.name,
+        reason:
+          post.reason ??
+          "LinkedIn did not accept it, and the reason is on the post in your dashboard.",
+        excerpt: excerptOf(post.content),
+        scheduledFor: post.scheduledAt ? whenFor(post.scheduledAt) : null,
+      });
+      sent += 1;
+    } catch {
+      skipped += 1;
+    }
+  }
+
+  return { sent, skipped };
+}
+
+/** Enough of the post to recognise it in an inbox, and no more. */
+function excerptOf(content: string): string {
+  const oneLine = content.replace(/\s+/g, " ").trim();
+  return oneLine.length > 160 ? `${oneLine.slice(0, 157)}...` : oneLine;
+}
+
+/**
+ * The slot in words, in UTC.
+ *
+ * The post's own timezone lives on the agent, and an account with no agent has
+ * none, so the zone is named rather than guessed at. A wrong local time in an
+ * email about a missed slot is worse than an explicit UTC one.
+ */
+function whenFor(at: Date): string {
+  return `${at.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
 export async function POST(request: NextRequest) {
   const verified = await verifyCronRequest(request, "/api/cron/agent-alerts");
   if (!verified.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const result = await runAgentAlerts();
+    const [events, challenges, failures] = await Promise.all([
+      runAgentAlerts(),
+      runChallengeAlerts(),
+      runPostFailureAlerts(),
+    ]);
+    const result = {
+      sent: events.sent + challenges.sent + failures.sent,
+      skipped: events.skipped + challenges.skipped + failures.skipped,
+      events,
+      challenges,
+      failures,
+    };
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(

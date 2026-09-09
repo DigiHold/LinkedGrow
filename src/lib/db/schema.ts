@@ -216,6 +216,14 @@ export const posts = sqliteTable("posts", {
   publishAttempts: integer("publish_attempts").notNull().default(0),
   /** When a worker claimed it. A claim older than the lease is a dead worker, and the post is freed. */
   publishClaimedAt: integer("publish_claimed_at", { mode: "timestamp" }),
+  /**
+   * When the owner was emailed that this post did not go out.
+   *
+   * A failed post used to say so on its own row and nowhere else, so the only
+   * way to learn about it was to open the dashboard and notice. Set once, so a
+   * post is never mailed about twice, and left alone afterwards.
+   */
+  failureNotifiedAt: integer("failure_notified_at", { mode: "timestamp" }),
   /** Set once the first comment lands, so a retried post never comments twice. */
   firstCommentPostedAt: integer("first_comment_posted_at", { mode: "timestamp" }),
   /**
@@ -959,6 +967,20 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
    * to push it.
    */
   lastChallengeAt: integer("last_challenge_at", { mode: "timestamp" }),
+  /**
+   * When the owner was emailed about the challenge this account is sitting in.
+   *
+   * The alert used to hang off an agent_events row, which only `flagAccount`
+   * ever wrote, and `flagAccount` needs an agent. The sign-in pass sets
+   * `status = 'challenged'` with its own SQL and no event, so a challenge that
+   * came from a sign-in was never mailed to anybody: Nicolas's own account sat
+   * challenged from 2026-09-08 19:50 with nothing sent, and two others had been
+   * in that state for three weeks. Reading the account's own status instead
+   * cannot be forgotten by a code path that sets it.
+   *
+   * Cleared whenever the account leaves the challenge, so the next one mails.
+   */
+  challengeNotifiedAt: integer("challenge_notified_at", { mode: "timestamp" }),
   profileId: text("profile_id"),
   profileUrl: text("profile_url"),
   fullName: text("full_name"),

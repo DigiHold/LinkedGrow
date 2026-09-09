@@ -84,24 +84,43 @@ See all of them: ${params.app}/dashboard/agents/${params.agentId}`;
 
 export const verificationSubject = "Your LinkedIn needs 2 minutes";
 
+/**
+ * Where this mail sends somebody, which depends on what they run.
+ *
+ * `agentId` is null for an account with no agent behind it, and that is not a
+ * rare shape: every customer who only publishes posts has one. Sending them to
+ * an agent page that does not exist is how an alert stops being an alert.
+ */
+const reconnectLink = (app: string, agentId: string | null) =>
+  agentId ? `${app}/dashboard/agents/${agentId}` : `${app}/dashboard/settings/linkedin-accounts`;
+
 export function verificationEmailTemplate(params: {
   /** The instance address, resolved by the sender. */
   app: string;
   firstName: string;
   accountName: string;
-  agentId: string;
+  agentId: string | null;
   instanceName?: string;
 }): string {
   const { firstName, accountName, agentId } = params;
+  const stopped = agentId
+    ? `LinkedIn asked ${accountName} to verify itself, so your agent has stopped until that is answered.`
+    : `LinkedIn asked ${accountName} to verify itself, so nothing can be published from that profile until it is answered.`;
+  const nothingLost = agentId
+    ? "Nothing was lost while it waited and nobody was contacted. Your leads and your conversations are exactly where you left them."
+    : "Nothing was lost while it waited. Anything scheduled is still scheduled and goes out on its own once the account is back.";
+  const whatToDo = agentId
+    ? "Open LinkedIn, answer what it asks, then press Start on your agent. It signs itself back in within seconds and carries on."
+    : "Open LinkedIn, answer what it asks, then reconnect the account here. It signs itself back in within seconds and carries on.";
   return baseEmailTemplate({
     instanceName: params.instanceName,
-    preheader: "Your agent is paused until LinkedIn is answered. It takes two minutes.",
+    preheader: "Your LinkedIn account is waiting on a verification. It takes two minutes.",
     content: `
 ${p(`Hello ${firstName},`)}
-${lead(`LinkedIn asked ${accountName} to verify itself, so your agent has stopped until that is answered.`)}
-${p("Nothing was lost while it waited and nobody was contacted. Your leads and your conversations are exactly where you left them.")}
-${p("Open LinkedIn, answer what it asks, then press Start on your agent. It signs itself back in within seconds and carries on.")}
-${button(`${params.app}/dashboard/agents/${agentId}`, "Open my agent")}
+${lead(stopped)}
+${p(nothingLost)}
+${p(whatToDo)}
+${button(reconnectLink(params.app, agentId), agentId ? "Open my agent" : "Reconnect my account")}
 ${small("This happens to accounts that have been quiet for a while and then start reaching out. It is a check rather than a penalty, and it clears the moment you answer it.")}
 `,
   });
@@ -112,15 +131,82 @@ export const verificationEmailText = (params: {
   app: string;
   firstName: string;
   accountName: string;
-  agentId: string;
+  agentId: string | null;
 }) =>
   `Hello ${params.firstName},
 
-LinkedIn asked ${params.accountName} to verify itself, so your agent has stopped until that is answered. Nothing was lost and nobody was contacted.
+LinkedIn asked ${params.accountName} to verify itself, so ${params.agentId ? "your agent has stopped" : "nothing can be published from that profile"} until that is answered. Nothing was lost and nobody was contacted.
 
-Open LinkedIn, answer what it asks, then press Start on your agent. It signs itself back in within seconds.
+Open LinkedIn, answer what it asks, then ${params.agentId ? "press Start on your agent" : "reconnect the account"}. It signs itself back in within seconds.
 
-${params.app}/dashboard/agents/${params.agentId}`;
+${reconnectLink(params.app, params.agentId)}`;
+
+// ------------------------------------------------------------------- post failed
+
+export const postFailedSubject = "Your post did not go out";
+
+/**
+ * The mail nobody was sending.
+ *
+ * A post that spends its three attempts is marked `failed` with a sentence on
+ * the row, and until 2026-09-09 that was the entire notification: the customer
+ * found out by opening the dashboard and scrolling to a post that should have
+ * been live hours earlier. Mohamed Elmelegey reported exactly that on
+ * 2026-09-08 about a post scheduled for 09:00 the day before, and he was right
+ * that nothing had been sent.
+ *
+ * The reason is quoted rather than summarised, because it is already written
+ * as a finished sentence for the customer and rewording it here would give the
+ * dashboard and the inbox two different accounts of the same failure.
+ */
+export function postFailedEmailTemplate(params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
+  firstName: string;
+  reason: string;
+  excerpt: string;
+  scheduledFor: string | null;
+  instanceName?: string;
+}): string {
+  const { firstName, reason, excerpt, scheduledFor } = params;
+  return baseEmailTemplate({
+    instanceName: params.instanceName,
+    preheader: "It is still saved, and it takes one press to send it again.",
+    content: `
+${p(`Hello ${firstName},`)}
+${lead(
+  scheduledFor
+    ? `Your post scheduled for ${scheduledFor} did not go out, and it is still sitting in your dashboard waiting for you.`
+    : "Your post did not go out, and it is still sitting in your dashboard waiting for you."
+)}
+${p(reason)}
+${quote(excerpt)}
+${p("Nothing was published and nothing was lost. Open it, change whatever the message points at, and press Publish again.")}
+${button(`${params.app}/dashboard/posts`, "Open my posts")}
+${small("If it fails a second time for the same reason, reply to this email and we will look at the account ourselves.")}
+`,
+  });
+}
+
+export const postFailedEmailText = (params: {
+  /** The instance address, resolved by the sender. */
+  app: string;
+  firstName: string;
+  reason: string;
+  excerpt: string;
+  scheduledFor: string | null;
+}) =>
+  `Hello ${params.firstName},
+
+${params.scheduledFor ? `Your post scheduled for ${params.scheduledFor} did not go out.` : "Your post did not go out."} It is still saved in your dashboard.
+
+${params.reason}
+
+"${params.excerpt}"
+
+Nothing was published and nothing was lost. Open it, change whatever the message points at, and press Publish again.
+
+${params.app}/dashboard/posts`;
 
 // ------------------------------------------------------------------ agent stopped
 

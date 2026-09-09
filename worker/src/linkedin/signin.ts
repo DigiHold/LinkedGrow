@@ -877,7 +877,8 @@ async function markSignedIn(accountId: string): Promise<void> {
   await db().execute({
     sql: `UPDATE linkedin_accounts
              SET status = 'active', status_reason = NULL, challenge_state = 'none',
-                 challenge_kind = NULL, challenge_asked_at = NULL, updated_at = ?
+                 challenge_kind = NULL, challenge_asked_at = NULL,
+                 challenge_notified_at = NULL, updated_at = ?
            WHERE id = ?`,
     args: [Math.floor(Date.now() / 1000), accountId],
   });

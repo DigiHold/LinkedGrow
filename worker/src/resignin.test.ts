@@ -29,6 +29,7 @@ async function freshDb(): Promise<void> {
        challenge_state TEXT NOT NULL DEFAULT 'none',
        sign_in_attempts INTEGER NOT NULL DEFAULT 0,
        last_check_at INTEGER,
+       challenge_notified_at INTEGER,
        updated_at INTEGER NOT NULL DEFAULT 0)`,
   ]);
 }

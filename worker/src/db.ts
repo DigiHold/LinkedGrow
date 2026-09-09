@@ -894,7 +894,7 @@ export async function requestReSignIn(accountId: string, reason: string) {
   const result = await db().execute({
     sql: `UPDATE linkedin_accounts
              SET status = 'pending', status_reason = ?, sign_in_attempts = 0,
-                 last_check_at = NULL, updated_at = ?
+                 last_check_at = NULL, challenge_notified_at = NULL, updated_at = ?
            WHERE id = ? AND status = 'active' AND challenge_state = 'none'`,
     args: [reason, now, accountId],
   });

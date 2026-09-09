@@ -17,6 +17,9 @@ import {
   verificationSubject,
   verificationEmailTemplate,
   verificationEmailText,
+  postFailedSubject,
+  postFailedEmailTemplate,
+  postFailedEmailText,
   agentStoppedSubject,
   agentStoppedEmailTemplate,
   agentStoppedEmailText,
@@ -63,7 +66,8 @@ export async function sendVerificationNeededEmail(params: {
   to: string;
   name: string | null;
   accountName: string;
-  agentId: string;
+  /** Null for an account that publishes posts and runs no agent. */
+  agentId: string | null;
 }) {
   const firstName = firstNameOf(params.name);
   const instanceName = await instanceBrandName();
@@ -73,6 +77,24 @@ export async function sendVerificationNeededEmail(params: {
     subject: verificationSubject,
     html: verificationEmailTemplate({ ...params, firstName, instanceName, app }),
     text: verificationEmailText({ ...params, firstName, app }),
+  });
+}
+
+export async function sendPostFailedEmail(params: {
+  to: string;
+  name: string | null;
+  reason: string;
+  excerpt: string;
+  scheduledFor: string | null;
+}) {
+  const firstName = firstNameOf(params.name);
+  const instanceName = await instanceBrandName();
+  const app = await backgroundAppUrl();
+  return sendEmail({
+    to: params.to,
+    subject: postFailedSubject,
+    html: postFailedEmailTemplate({ ...params, firstName, instanceName, app }),
+    text: postFailedEmailText({ ...params, firstName, app }),
   });
 }
 
