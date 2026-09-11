@@ -1,5 +1,6 @@
 import type { Page } from "patchright";
 import { dwell, scrollHuman } from "../browser/human.ts";
+import { log } from "../logger.ts";
 
 /**
  * Reading a post's own numbers off LinkedIn, since there is no API to ask.
@@ -167,6 +168,26 @@ export async function readFollowerCount(page: Page, profileUrl: string): Promise
  */
 const NUMERIC_LINE = /^[\d.,\s\u00a0]+[km]?$/i;
 
+/**
+ * The labels on the statistics page, in the languages LinkedIn actually serves our customers.
+ *
+ * An account's interface language follows the member, not the browser and not the address. The
+ * first version of this reader knew English and French, which covered Nicolas and nobody else: on
+ * 2026-09-11 a Spanish customer had been looking at an empty page for four days while every read
+ * succeeded and every number came back null, because his page says "Impresiones".
+ *
+ * A missing language does not fail loudly. It reads as a post nobody saw, which is the worst shape
+ * a bug can take, so the list is wide on purpose and a new locale is one entry rather than an
+ * investigation.
+ */
+const LABEL = {
+  impressions: /^(impressions?|impresiones|impressões|impressioni|eindrücke|vertoningen|visualizaciones)$/i,
+  reactions: /^(r[eé]actions?|reacciones|reações|reazioni|reaktionen|reacties)$/i,
+  comments: /^(comment(aire)?s?|comentarios|comentários|commenti|kommentare|reacties op)$/i,
+  reposts: /^(reposts?|republications?|partages?|republicaciones|compartilhamentos|condivisioni|geteilte beiträge)$/i,
+  membersReached: /^(members reached|membres touch[ée]s|miembros alcanzados|membros alcançados|persone raggiunte|erreichte mitglieder)$/i,
+} as const;
+
 export interface SummaryStats extends PostStats {
   /** How many people the post reached, which LinkedIn separates from impressions. */
   membersReached: number | null;
@@ -190,11 +211,11 @@ export function readSummaryStats(text: string): SummaryStats {
   };
 
   return {
-    impressions: valueFor(/^impressions?$/i),
-    reactions: valueFor(/^r[eé]actions?$/i) ?? 0,
-    comments: valueFor(/^comment(aire)?s?$/i) ?? 0,
-    reposts: valueFor(/^(reposts?|republications?|partages?)$/i) ?? 0,
-    membersReached: valueFor(/^(members reached|membres touch[ée]s)$/i),
+    impressions: valueFor(LABEL.impressions),
+    reactions: valueFor(LABEL.reactions) ?? 0,
+    comments: valueFor(LABEL.comments) ?? 0,
+    reposts: valueFor(LABEL.reposts) ?? 0,
+    membersReached: valueFor(LABEL.membersReached),
   };
 }
 
@@ -251,6 +272,23 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
         .innerText()
         .catch(() => "");
       const stats = readSummaryStats(summary);
+
+      /**
+       * A page that loaded and said nothing is almost always a language we do not know.
+       *
+       * Silence here writes a zero, and a zero reads as "nobody saw this post", which is how a
+       * Spanish customer spent four days looking at an empty page while every read succeeded. The
+       * labels are printed so the next unknown locale is one log line instead of an investigation.
+       */
+      if (stats.impressions === null && summary.length > 200) {
+        const labels = summary
+          .split("\n")
+          .map((l) => l.trim())
+          .filter((l) => l.length > 2 && l.length < 30 && !/^[\d.,%\s]+$/.test(l))
+          .slice(0, 12);
+        log("the statistics page said nothing we recognise, labels follow", { labels });
+      }
+
       if (stats.impressions !== null) {
         const images = await page
           .locator("main img")

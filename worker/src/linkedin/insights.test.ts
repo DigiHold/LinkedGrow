@@ -169,3 +169,50 @@ test("a page with nothing recognisable keeps no picture", () => {
   assert.equal(postImageFrom(["https://media.licdn.com/dms/image/v2/X/unknown-thing/0/1"]), null);
   assert.equal(postImageFrom([]), null);
 });
+
+
+/**
+ * The same page on a Spanish account, which is what a customer had been looking at for four days
+ * while every read succeeded and every number came back null. An unknown language does not fail
+ * loudly, it reads as a post nobody saw, so each locale gets a test rather than a promise.
+ */
+test("the statistics page is read in Spanish too", () => {
+  const stats = readSummaryStats(`Descubrimiento
+
+312
+
+Impresiones
+
+En la red
+
+58%
+
+104
+
+Miembros alcanzados
+
+Interacciones
+
+Reacciones
+
+9
+
+Comentarios
+
+4
+
+Republicaciones
+
+1`);
+  assert.equal(stats.impressions, 312);
+  assert.equal(stats.reactions, 9);
+  assert.equal(stats.comments, 4);
+  assert.equal(stats.reposts, 1);
+  assert.equal(stats.membersReached, 104);
+});
+
+test("German and Italian labels answer as well", () => {
+  assert.equal(readSummaryStats("1.204\n\nEindrücke").impressions, 1204);
+  assert.equal(readSummaryStats("842\n\nImpressioni").impressions, 842);
+  assert.equal(readSummaryStats("Reaktionen\n\n17").reactions, 17);
+});
