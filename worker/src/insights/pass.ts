@@ -90,6 +90,35 @@ async function accountsFor(posts: StalePost[]): Promise<Map<string, Account>> {
   return found;
 }
 
+/**
+ * Every active account whose own overview has not been read today.
+ *
+ * The overview used to ride along with the posts, and that is exactly why one customer never got
+ * one: his single post had just been read, so it was no longer stale, so his account fell out of
+ * the pass entirely and the overview it was attached to never ran. An account is a thing in its own
+ * right and its numbers do not depend on whether it happens to have published lately.
+ */
+async function accountsNeedingOverview(): Promise<Account[]> {
+  const rows = await db().execute({
+    sql: `SELECT la.id, la.workspace_id, la.country, la.profile_url, a.timezone AS timezone
+            FROM linkedin_accounts la
+            LEFT JOIN agents a ON a.linkedin_account_id = la.id
+           WHERE la.status = 'active'
+             AND NOT EXISTS (
+               SELECT 1 FROM account_insights ai
+                WHERE ai.linkedin_account_id = la.id AND ai.day = ?
+             )`,
+    args: [Math.floor(Date.now() / 1000 / 86400)],
+  });
+  return rows.rows.map((row) => ({
+    id: String(row.id),
+    workspaceId: String(row.workspace_id),
+    country: String(row.country),
+    timezone: row.timezone ? String(row.timezone) : timezoneForCountry(String(row.country)),
+    profileUrl: row.profile_url ? String(row.profile_url) : null,
+  }));
+}
+
 async function readAccount(account: Account, posts: StalePost[]): Promise<void> {
   const address = await allocationFor(account.id);
   if (!address && isProduction()) {
@@ -256,8 +285,6 @@ export async function insightsPass(): Promise<void> {
   // LinkedIn URL that expires within days, and the dashboard showed grey
   // initials for ever. Found 2026-07-31 after Nicolas asked why 23 leads had
   // no avatar.
-  if (!stale.length) return;
-
   const accounts = await accountsFor(stale);
   const byAccount = new Map<string, { account: Account; posts: StalePost[] }>();
   for (const post of stale) {
@@ -269,6 +296,14 @@ export async function insightsPass(): Promise<void> {
     if (entry) entry.posts.push(post);
     else byAccount.set(account.id, { account, posts: [post] });
   }
+  /**
+   * An account with nothing to re-read still has an overview to fetch, so it joins the pass with an
+   * empty list of posts rather than being left out of it.
+   */
+  for (const account of await accountsNeedingOverview()) {
+    if (!byAccount.has(account.id)) byAccount.set(account.id, { account, posts: [] });
+  }
+
   if (!byAccount.size) return;
 
   log("insights pass starting", { accounts: byAccount.size, posts: stale.length });
