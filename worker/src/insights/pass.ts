@@ -10,7 +10,7 @@ import { currentRun } from "../safety/run-context.ts";
 import { withAddress, groupKey } from "../safety/ip-lock.ts";
 import { dwell, randInt, sleep } from "../browser/human.ts";
 import { readFollowerCount, readPostStats } from "../linkedin/insights.ts";
-import { readCreatorContent, readCreatorAudience, readDashboard } from "../linkedin/creator.ts";
+import { readCreatorContent, readCreatorAudience } from "../linkedin/creator.ts";
 import { ensureProfileCaptured, storeAvatar } from "../linkedin/profile.ts";
 import { db } from "../db.ts";
 import { timezoneForCountry } from "../browser/fingerprint.ts";
@@ -158,21 +158,26 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
       try {
         const content = await withAddress(key, () => readCreatorContent(session.page));
         const audience = await withAddress(key, () => readCreatorAudience(session.page));
-        const dashboard = await withAddress(key, () => readDashboard(session.page));
 
-        if (content || audience || dashboard) {
+        if (content || audience) {
           await saveAccountInsights(account.id, {
-            impressions7d: content?.impressions ?? dashboard?.impressions7d ?? null,
+            impressions7d: content?.impressions ?? null,
             membersReached: content?.membersReached ?? null,
             inNetworkPercent: content?.inNetworkPercent ?? null,
-            reactions: content?.reactions ?? null,
-            comments: content?.comments ?? null,
-            reposts: content?.reposts ?? null,
-            saves: content?.saves ?? null,
-            followers: audience?.followers ?? dashboard?.followers ?? null,
-            profileViewers: dashboard?.profileViewers ?? null,
-            searchAppearances: dashboard?.searchAppearances ?? null,
-            demographics: audience?.demographics ?? [],
+            /**
+             * No source any more, and that is deliberate rather than forgotten.
+             *
+             * The engagement breakdown and the account overview carry no component key, so reading
+             * them would mean matching words again. They stay null until LinkedIn names them.
+             */
+            reactions: null,
+            comments: null,
+            reposts: null,
+            saves: null,
+            followers: audience?.followers ?? null,
+            profileViewers: null,
+            searchAppearances: null,
+            demographics: audience?.demographics ?? content?.demographics ?? [],
           });
           log("account overview read", {
             accountId: account.id,

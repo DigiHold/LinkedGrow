@@ -1,204 +1,206 @@
 import type { Page } from "patchright";
 import { dwell, scrollHuman } from "../browser/human.ts";
-import { parseCount } from "./insights.ts";
+import { log } from "../logger.ts";
+import { toNumber } from "./summary-dom.ts";
 
 /**
- * The three pages LinkedIn gives an author about their own account.
+ * The two pages LinkedIn gives an author about their own account, read off its component keys.
  *
- * Until now the worker learned about an account by opening every one of its posts, twice, every
- * three hours. These pages carry more than that in three loads a day, and they carry things no
- * post page has: profile viewers, search appearances, and who the followers actually are.
+ * The first version of this file matched the visible labels, and it cost a Spanish customer five
+ * days of an empty page: his LinkedIn says "Impresiones", so every number came back null and the
+ * database recorded zeros, which read as an account nobody had seen. Adding languages would have
+ * been the same mistake made wider.
  *
- * The cost matters more than the extra data. Reading an account was hundreds of page loads a day
- * and is now three, against the exact counter that had a test account restricted in August for "an
- * unusually high volume of LinkedIn profile data". A feature that reads less and shows more is not
- * a trade.
+ * LinkedIn names these blocks itself. Verified on a live page 2026-09-13:
  *
- * Every parser here is fed the visible text and is tested against captures taken off Nicolas's own
- * account on 2026-09-07. Nothing reads a class name, so a rename cannot zero anybody's page.
+ *   #impressionsBreakdownCA   the in and out of network split, inside the impressions tile
+ *   #membersReachedFeatureCA  the members reached tile
+ *   #demographicsFeatureCA    the audience breakdown on the content page
+ *   #demographicsFeatureAA    the same on the audience page
+ *   [componentkey$="followers_module_replaceable_component_ref"]  the follower tile
+ *   [componentkey*="TOP_DEMOGRAPHICS"]  the ranked slices
+ *
+ * Those are identifiers, so they read the same in every language. Nothing below matches a word.
+ *
+ * The demographic CATEGORY names are the exception, and deliberately so: they are the content being
+ * displayed rather than a control being found. They are stored and shown exactly as LinkedIn wrote
+ * them, never matched against a list, so an account in Spanish shows Spanish categories instead of
+ * showing nothing.
  */
 
-/** A line that is nothing but a number. A percentage is deliberately not one. */
-const NUMERIC_LINE = /^[\d.,\s ]+[km]?$/i;
-
-const PERCENT_LINE = /^([\d.,]+)\s*%$/;
-
-function linesOf(text: string): string[] {
-  return text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-}
-
-/**
- * The number belonging to a label, whichever side LinkedIn put it on.
- *
- * These pages use both layouts at once: the headline tiles read "473 / Impressions" and the
- * engagement breakdown reads "Reactions / 22". The line after wins when both neighbours are
- * numeric, because the only labels with a number on each side are the stacked ones, where the
- * number above belongs to the label above.
- *
- * A label with no number on either side is skipped rather than answered, so a chart legend reading
- * "Impressions / Cumulative" does not shadow the tile below it.
- */
-export function valueNear(lines: readonly string[], label: RegExp): number | null {
-  for (let i = 0; i < lines.length; i += 1) {
-    if (!label.test(lines[i] as string)) continue;
-    const next = lines[i + 1];
-    if (next && NUMERIC_LINE.test(next)) return parseCount(next);
-    const previous = lines[i - 1];
-    if (previous && NUMERIC_LINE.test(previous)) return parseCount(previous);
-  }
-  return null;
-}
-
-function percentNear(lines: readonly string[], label: RegExp): number | null {
-  for (let i = 0; i < lines.length; i += 1) {
-    if (!label.test(lines[i] as string)) continue;
-    const next = PERCENT_LINE.exec(lines[i + 1] ?? "");
-    if (next) return Number(next[1]?.replace(",", "."));
-  }
-  return null;
-}
-
-export interface ContentAnalytics {
-  impressions: number | null;
-  membersReached: number | null;
-  /** Share of impressions from followers and connections, as a percentage. */
-  inNetworkPercent: number | null;
-  reactions: number | null;
-  comments: number | null;
-  reposts: number | null;
-  saves: number | null;
-  /** The posts LinkedIn itself picked out, with their own numbers. Free, no page per post. */
-  topPosts: { impressions: number; engagements: number }[];
-}
-
-/** "94 impressions • 8 engagements", the line above each post in the top performing list. */
-const TOP_POST = /^([\d.,]+)\s*impressions?\s*[•·|]\s*([\d.,]+)\s*engagements?$/i;
-
-export function readContentAnalytics(text: string): ContentAnalytics {
-  const lines = linesOf(text);
-  return {
-    impressions: valueNear(lines, /^impressions?$/i),
-    membersReached: valueNear(lines, /^(members reached|membres touch[ée]s)$/i),
-    inNetworkPercent: percentNear(lines, /^in-network/i),
-    reactions: valueNear(lines, /^r[eé]actions?$/i),
-    comments: valueNear(lines, /^comment(aire)?s?$/i),
-    reposts: valueNear(lines, /^(reposts?|republications?)$/i),
-    saves: valueNear(lines, /^(saves?|enregistrements?)$/i),
-    topPosts: lines.flatMap((line) => {
-      const m = TOP_POST.exec(line);
-      return m ? [{ impressions: parseCount(m[1] as string), engagements: parseCount(m[2] as string) }] : [];
-    }),
-  };
-}
-
-/** One slice of the audience, as LinkedIn ranks it. */
+/** A slice of the audience, in LinkedIn's own words because that is what gets displayed. */
 export interface Demographic {
   category: string;
   label: string;
   percent: number;
 }
 
-/**
- * The categories LinkedIn breaks an audience into.
- *
- * Matched exactly, because each name appears twice on the page: once as a tab in the selector, and
- * once as the heading of its own result. The tabs are skipped because a tab is followed by another
- * tab, and a result is followed by a label and a percentage.
- */
-const CATEGORIES = /^(job title|location|seniority|company|industry|company size)$/i;
+export interface ContentAnalytics {
+  impressions: number | null;
+  membersReached: number | null;
+  inNetworkPercent: number | null;
+  demographics: Demographic[];
+}
 
 export interface AudienceAnalytics {
   followers: number | null;
   demographics: Demographic[];
 }
 
-export function readAudienceAnalytics(text: string): AudienceAnalytics {
-  const lines = linesOf(text);
-  const demographics: Demographic[] = [];
-  const seen = new Set<string>();
-
-  for (let i = 0; i < lines.length - 2; i += 1) {
-    const category = lines[i] as string;
-    if (!CATEGORIES.test(category)) continue;
-    const label = lines[i + 1] as string;
-    const percent = PERCENT_LINE.exec(lines[i + 2] as string);
-    if (!percent || CATEGORIES.test(label)) continue;
-    const key = category.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    demographics.push({
-      category,
-      label,
-      percent: Number(percent[1]?.replace(",", ".")),
-    });
-  }
-
-  return {
-    followers: valueNear(lines, /^(total followers|abonn[ée]s au total)$/i),
-    demographics,
-  };
-}
-
-export interface DashboardStats {
-  impressions7d: number | null;
-  followers: number | null;
-  profileViewers: number | null;
-  searchAppearances: number | null;
-}
-
 /**
- * The account overview, which is the only place two of these numbers exist at all.
+ * The browser side of the read, shared by both pages.
  *
- * Profile viewers and search appearances appear on no post page and in no API. They are also the
- * two an author actually watches, because they say whether the writing is making anybody look.
+ * Everything it returns is a string, so the parsing and the locale arithmetic happen in Node where
+ * they can be tested without a browser.
  */
-export function readDashboardStats(text: string): DashboardStats {
-  const lines = linesOf(text);
-  return {
-    impressions7d: valueNear(lines, /^post impressions( in \d+ days?)?$/i),
-    followers: valueNear(lines, /^total followers$/i),
-    profileViewers: valueNear(lines, /^profile viewers( in \d+ days?)?$/i),
-    searchAppearances: valueNear(lines, /^search appearances/i),
+const SCRAPE = `(anchors) => {
+  const firstCount = (root) => {
+    if (!root) return null;
+    for (const node of Array.from(root.querySelectorAll("*"))) {
+      if (node.children.length > 0) continue;
+      const text = (node.textContent || "").trim();
+      if (!text || text.includes("%")) continue;
+      if (/^[\\d\\s\\u00a0\\u202f.,]+[km]?$/i.test(text)) return text;
+    }
+    return null;
   };
-}
 
-/** Opens a page, waits for it, and hands back its visible text. */
-async function textOf(page: Page, url: string): Promise<string> {
-  await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
-  const main = await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
-  if (!main) return "";
-  await dwell(2000, 4000);
-  await scrollHuman(page, 1);
-  await dwell(1200, 2600);
-  return page
-    .locator("main")
-    .innerText()
-    .catch(() => "");
-}
+  /** Climbs from a block until a bare count appears beside it, never further than the tile. */
+  const countBeside = (el) => {
+    let node = el ? el.parentElement : null;
+    for (let i = 0; i < 4 && node; i += 1) {
+      const found = firstCount(node);
+      if (found) return found;
+      node = node.parentElement;
+    }
+    return null;
+  };
+
+  /**
+   * The ranked slices, read as a shape rather than as words: every percentage is preceded by its
+   * label and that label by its category, so a percentage is the marker and the two leaves before
+   * it are the answer.
+   */
+  const slices = (root) => {
+    if (!root) return [];
+    const leaves = Array.from(root.querySelectorAll("*"))
+      .filter((n) => n.children.length === 0)
+      .map((n) => (n.textContent || "").trim())
+      .filter(Boolean);
+    const out = [];
+    for (let i = 2; i < leaves.length; i += 1) {
+      const pct = /^(\\d[\\d.,]*)\\s*%$/.exec(leaves[i]);
+      if (!pct) continue;
+      const label = leaves[i - 1];
+      const category = leaves[i - 2];
+      if (/%$/.test(label) || /%$/.test(category)) continue;
+      out.push({ category, label, percent: pct[1] });
+    }
+    return out;
+  };
+
+  const breakdown = document.querySelector(anchors.breakdown);
+  const percent = breakdown
+    ? (/(\\d[\\d.,]*)\\s*%/.exec(breakdown.innerText || "") || [null, null])[1]
+    : null;
+
+  return {
+    impressions: countBeside(breakdown),
+    membersReached: firstCount(document.querySelector(anchors.reached)),
+    followers: countBeside(document.querySelector(anchors.followers)) ||
+      firstCount(document.querySelector(anchors.followers)),
+    inNetwork: percent,
+    slices: slices(document.querySelector(anchors.demographics)),
+    anchorsFound: Boolean(
+      document.querySelector(anchors.breakdown) ||
+      document.querySelector(anchors.reached) ||
+      document.querySelector(anchors.followers) ||
+      document.querySelector(anchors.demographics)
+    ),
+  };
+}`;
+
+const ANCHORS = {
+  content: {
+    breakdown: "#impressionsBreakdownCA",
+    reached: "#membersReachedFeatureCA",
+    followers: "#never-on-this-page",
+    demographics: '[componentkey*="CA_TOP_DEMOGRAPHICS"]',
+  },
+  audience: {
+    breakdown: "#never-on-this-page",
+    reached: "#never-on-this-page",
+    followers: '[componentkey$="followers_module_replaceable_component_ref"]',
+    demographics: '[componentkey*="AA_TOP_DEMOGRAPHICS"]',
+  },
+} as const;
 
 export const CREATOR_URLS = {
   content: "https://www.linkedin.com/analytics/creator/content/",
   audience: "https://www.linkedin.com/analytics/creator/audience/",
-  dashboard: "https://www.linkedin.com/dashboard/",
 } as const;
 
+interface Scraped {
+  impressions: string | null;
+  membersReached: string | null;
+  followers: string | null;
+  inNetwork: string | null;
+  slices: { category: string; label: string; percent: string }[];
+  anchorsFound: boolean;
+}
+
+export function toDemographics(raw: Scraped["slices"]): Demographic[] {
+  const seen = new Set<string>();
+  const out: Demographic[] = [];
+  for (const s of raw) {
+    const key = s.category.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    /** Number("") is 0 and 0 is finite, so an empty reading would become a real looking slice. */
+    if (!/^\d/.test(s.percent.trim())) continue;
+    const percent = Number(s.percent.replace(",", "."));
+    if (!Number.isFinite(percent)) continue;
+    out.push({ category: s.category, label: s.label, percent });
+  }
+  return out;
+}
+
+async function scrape(page: Page, url: string, anchors: Record<string, string>): Promise<Scraped | null> {
+  await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
+  const main = await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
+  if (!main) return null;
+  await dwell(2000, 4000);
+  await scrollHuman(page, 1);
+  await dwell(1200, 2600);
+
+  const raw = (await page
+    .evaluate(SCRAPE as unknown as string, anchors)
+    .catch(() => null)) as Scraped | null;
+
+  if (raw && !raw.anchorsFound) {
+    // Said out loud rather than recorded as zero: a page that stopped carrying these keys and an
+    // account nobody looked at are the same row otherwise, which is how this went unnoticed.
+    log("a creator analytics page no longer carries the keys this reads", { url });
+  }
+  return raw;
+}
+
 export async function readCreatorContent(page: Page): Promise<ContentAnalytics | null> {
-  const text = await textOf(page, CREATOR_URLS.content);
-  if (!/impressions?/i.test(text)) return null;
-  return readContentAnalytics(text);
+  const raw = await scrape(page, CREATOR_URLS.content, ANCHORS.content);
+  if (!raw || !raw.anchorsFound) return null;
+  return {
+    impressions: raw.impressions === null ? null : toNumber(raw.impressions),
+    membersReached: raw.membersReached === null ? null : toNumber(raw.membersReached),
+    inNetworkPercent: raw.inNetwork === null ? null : Number(raw.inNetwork.replace(",", ".")),
+    demographics: toDemographics(raw.slices),
+  };
 }
 
 export async function readCreatorAudience(page: Page): Promise<AudienceAnalytics | null> {
-  const text = await textOf(page, CREATOR_URLS.audience);
-  if (!/followers?/i.test(text)) return null;
-  return readAudienceAnalytics(text);
-}
-
-export async function readDashboard(page: Page): Promise<DashboardStats | null> {
-  const text = await textOf(page, CREATOR_URLS.dashboard);
-  if (!/impressions?|followers?/i.test(text)) return null;
-  return readDashboardStats(text);
+  const raw = await scrape(page, CREATOR_URLS.audience, ANCHORS.audience);
+  if (!raw || !raw.anchorsFound) return null;
+  return {
+    followers: raw.followers === null ? null : toNumber(raw.followers),
+    demographics: toDemographics(raw.slices),
+  };
 }

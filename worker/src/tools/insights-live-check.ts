@@ -3,7 +3,7 @@ import { decryptSecret } from "../crypto.ts";
 import { openSession, closeSession, isSignedIn } from "../browser/driver.ts";
 import { sleep, randInt } from "../browser/human.ts";
 import { readPostStats } from "../linkedin/insights.ts";
-import { readCreatorContent, readCreatorAudience, readDashboard } from "../linkedin/creator.ts";
+import { readCreatorContent, readCreatorAudience } from "../linkedin/creator.ts";
 import { saveStats, saveAccountInsights } from "../insights/store.ts";
 
 /**
@@ -84,24 +84,23 @@ async function main(): Promise<void> {
 
     const content = await readCreatorContent(page);
     const audience = await readCreatorAudience(page);
-    const dashboard = await readDashboard(page);
-    if (content || audience || dashboard) {
+    if (content || audience) {
       await saveAccountInsights(accountId, {
-        impressions7d: content?.impressions ?? dashboard?.impressions7d ?? null,
+        impressions7d: content?.impressions ?? null,
         membersReached: content?.membersReached ?? null,
         inNetworkPercent: content?.inNetworkPercent ?? null,
-        reactions: content?.reactions ?? null,
-        comments: content?.comments ?? null,
-        reposts: content?.reposts ?? null,
-        saves: content?.saves ?? null,
-        followers: audience?.followers ?? dashboard?.followers ?? null,
-        profileViewers: dashboard?.profileViewers ?? null,
-        searchAppearances: dashboard?.searchAppearances ?? null,
-        demographics: audience?.demographics ?? [],
+        reactions: null,
+        comments: null,
+        reposts: null,
+        saves: null,
+        followers: audience?.followers ?? null,
+        profileViewers: null,
+        searchAppearances: null,
+        demographics: audience?.demographics ?? content?.demographics ?? [],
       });
       console.log(
         `account: ${content?.impressions ?? "?"} impressions, ${audience?.followers ?? "?"} followers, ` +
-          `${dashboard?.profileViewers ?? "?"} profile viewers, ${audience?.demographics.length ?? 0} slices`
+          `${content?.membersReached ?? "?"} reached, ${audience?.demographics.length ?? 0} slices`
       );
     }
 
