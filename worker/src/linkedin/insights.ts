@@ -1,5 +1,6 @@
 import type { Page } from "patchright";
 import { dwell, scrollHuman } from "../browser/human.ts";
+import { readSummaryNumbers, summaryAnchorsPresent } from "./summary-dom.ts";
 import { log } from "../logger.ts";
 
 /**
@@ -169,57 +170,6 @@ export async function readFollowerCount(page: Page, profileUrl: string): Promise
 const NUMERIC_LINE = /^[\d.,\s\u00a0]+[km]?$/i;
 
 /**
- * The labels on the statistics page, in the languages LinkedIn actually serves our customers.
- *
- * An account's interface language follows the member, not the browser and not the address. The
- * first version of this reader knew English and French, which covered Nicolas and nobody else: on
- * 2026-09-11 a Spanish customer had been looking at an empty page for four days while every read
- * succeeded and every number came back null, because his page says "Impresiones".
- *
- * A missing language does not fail loudly. It reads as a post nobody saw, which is the worst shape
- * a bug can take, so the list is wide on purpose and a new locale is one entry rather than an
- * investigation.
- */
-const LABEL = {
-  impressions: /^(impressions?|impresiones|impressões|impressioni|eindrücke|vertoningen|visualizaciones)$/i,
-  reactions: /^(r[eé]actions?|reacciones|reações|reazioni|reaktionen|reacties)$/i,
-  comments: /^(comment(aire)?s?|comentarios|comentários|commenti|kommentare|reacties op)$/i,
-  reposts: /^(reposts?|republications?|partages?|republicaciones|compartilhamentos|condivisioni|geteilte beiträge)$/i,
-  membersReached: /^(members reached|membres touch[ée]s|miembros alcanzados|membros alcançados|persone raggiunte|erreichte mitglieder)$/i,
-} as const;
-
-export interface SummaryStats extends PostStats {
-  /** How many people the post reached, which LinkedIn separates from impressions. */
-  membersReached: number | null;
-}
-
-export function readSummaryStats(text: string): SummaryStats {
-  const lines = text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-
-  const valueFor = (label: RegExp): number | null => {
-    for (let i = 0; i < lines.length; i += 1) {
-      if (!label.test(lines[i] as string)) continue;
-      const next = lines[i + 1];
-      if (next && NUMERIC_LINE.test(next)) return parseCount(next);
-      const previous = lines[i - 1];
-      if (previous && NUMERIC_LINE.test(previous)) return parseCount(previous);
-    }
-    return null;
-  };
-
-  return {
-    impressions: valueFor(LABEL.impressions),
-    reactions: valueFor(LABEL.reactions) ?? 0,
-    comments: valueFor(LABEL.comments) ?? 0,
-    reposts: valueFor(LABEL.reposts) ?? 0,
-    membersReached: valueFor(LABEL.membersReached),
-  };
-}
-
-/**
  * The page that actually carries the impression count.
  *
  * A post's permalink shows reactions, comments and reposts, and nothing else. Impressions are the
@@ -267,40 +217,37 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
       await dwell(1800, 3600);
       await scrollHuman(page, 1);
       await dwell(1200, 2600);
-      const summary = await page
-        .locator("main")
-        .innerText()
-        .catch(() => "");
-      const stats = readSummaryStats(summary);
 
       /**
-       * A page that loaded and said nothing is almost always a language we do not know.
-       *
-       * Silence here writes a zero, and a zero reads as "nobody saw this post", which is how a
-       * Spanish customer spent four days looking at an empty page while every read succeeded. The
-       * labels are printed so the next unknown locale is one log line instead of an investigation.
+       * Read off LinkedIn's own component keys, never off the words beside them. An account's
+       * interface follows the member, so a reader that matches "Impressions" writes zeros for every
+       * customer whose LinkedIn is not in English.
        */
-      if (stats.impressions === null && summary.length > 200) {
-        const labels = summary
-          .split("\n")
-          .map((l) => l.trim())
-          .filter((l) => l.length > 2 && l.length < 30 && !/^[\d.,%\s]+$/.test(l))
-          .slice(0, 12);
-        log("the statistics page said nothing we recognise, labels follow", { labels });
-      }
-
-      if (stats.impressions !== null) {
+      const numbers = await readSummaryNumbers(page);
+      if (numbers.impressions !== null) {
         const images = await page
           .locator("main img")
           .evaluateAll((nodes) => nodes.map((n) => (n as HTMLImageElement).src))
           .catch(() => [] as string[]);
         return {
-          impressions: stats.impressions,
-          reactions: stats.reactions,
-          comments: stats.comments,
-          reposts: stats.reposts,
+          impressions: numbers.impressions,
+          /**
+           * Left at zero here on purpose.
+           *
+           * The engagement block on this page carries a UUID that changes on every render and
+           * nothing inside it is identified, so there is no machine name to hold. Reading it by
+           * position or by its labels would be the same mistake in a different coat, so the three
+           * counts come from the post itself below.
+           */
+          reactions: 0,
+          comments: 0,
+          reposts: 0,
           imageUrl: postImageFrom(images),
         };
+      }
+
+      if (!(await summaryAnchorsPresent(page))) {
+        log("the statistics page no longer carries the keys this reads", { postUrl });
       }
     }
   }

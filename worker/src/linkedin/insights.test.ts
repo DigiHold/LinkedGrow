@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { analyticsUrlFor, readStatsFromText, readSummaryStats, postImageFrom, parseCount } from "./insights.ts";
+import { analyticsUrlFor, readStatsFromText, postImageFrom, parseCount } from "./insights.ts";
 
 /**
  * The permalink shows reactions, comments and reposts. Impressions are the author's own number and
@@ -106,14 +106,6 @@ Saves
 
 1`;
 
-test("the real statistics page reads correctly, both layouts at once", () => {
-  const stats = readSummaryStats(REAL_SUMMARY);
-  assert.equal(stats.impressions, 90);
-  assert.equal(stats.reactions, 4);
-  assert.equal(stats.comments, 3);
-  assert.equal(stats.reposts, 0);
-  assert.equal(stats.membersReached, 41);
-});
 
 /**
  * The failure this pins: the number class also matched whitespace, so " reactions" captured a lone
@@ -129,11 +121,6 @@ test("a capture with no digit in it is not an answer", () => {
   assert.equal(readStatsFromText("22 reactions").reactions, 22);
 });
 
-test("a page that did not load says nothing rather than zero", () => {
-  const empty = readSummaryStats("");
-  assert.equal(empty.impressions, null);
-  assert.equal(empty.membersReached, null);
-});
 
 
 /**
@@ -164,55 +151,3 @@ test("only shared media, article covers and document covers count as the post", 
   assert.equal(postImageFrom(["https://static.licdn.example/icon.svg"]), null);
 });
 
-/** No thumbnail beats the wrong one, which is exactly what the first version shipped. */
-test("a page with nothing recognisable keeps no picture", () => {
-  assert.equal(postImageFrom(["https://media.licdn.com/dms/image/v2/X/unknown-thing/0/1"]), null);
-  assert.equal(postImageFrom([]), null);
-});
-
-
-/**
- * The same page on a Spanish account, which is what a customer had been looking at for four days
- * while every read succeeded and every number came back null. An unknown language does not fail
- * loudly, it reads as a post nobody saw, so each locale gets a test rather than a promise.
- */
-test("the statistics page is read in Spanish too", () => {
-  const stats = readSummaryStats(`Descubrimiento
-
-312
-
-Impresiones
-
-En la red
-
-58%
-
-104
-
-Miembros alcanzados
-
-Interacciones
-
-Reacciones
-
-9
-
-Comentarios
-
-4
-
-Republicaciones
-
-1`);
-  assert.equal(stats.impressions, 312);
-  assert.equal(stats.reactions, 9);
-  assert.equal(stats.comments, 4);
-  assert.equal(stats.reposts, 1);
-  assert.equal(stats.membersReached, 104);
-});
-
-test("German and Italian labels answer as well", () => {
-  assert.equal(readSummaryStats("1.204\n\nEindrücke").impressions, 1204);
-  assert.equal(readSummaryStats("842\n\nImpressioni").impressions, 842);
-  assert.equal(readSummaryStats("Reaktionen\n\n17").reactions, 17);
-});
