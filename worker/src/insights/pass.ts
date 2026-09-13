@@ -10,7 +10,7 @@ import { currentRun } from "../safety/run-context.ts";
 import { withAddress, groupKey } from "../safety/ip-lock.ts";
 import { dwell, randInt, sleep } from "../browser/human.ts";
 import { readFollowerCount, readPostStats } from "../linkedin/insights.ts";
-import { readCreatorContent, readCreatorAudience } from "../linkedin/creator.ts";
+import { readCreatorContent, readCreatorAudience, readOverview } from "../linkedin/creator.ts";
 import { ensureProfileCaptured, storeAvatar } from "../linkedin/profile.ts";
 import { db } from "../db.ts";
 import { timezoneForCountry } from "../browser/fingerprint.ts";
@@ -158,8 +158,9 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
       try {
         const content = await withAddress(key, () => readCreatorContent(session.page));
         const audience = await withAddress(key, () => readCreatorAudience(session.page));
+        const overview = await withAddress(key, () => readOverview(session.page));
 
-        if (content || audience) {
+        if (content || audience || overview) {
           await saveAccountInsights(account.id, {
             impressions7d: content?.impressions ?? null,
             membersReached: content?.membersReached ?? null,
@@ -178,12 +179,14 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
             profileViewers: null,
             searchAppearances: null,
             demographics: audience?.demographics ?? content?.demographics ?? [],
+            overviewTiles: overview ?? [],
           });
           log("account overview read", {
             accountId: account.id,
             impressions: content?.impressions ?? null,
             followers: audience?.followers ?? null,
             demographics: audience?.demographics.length ?? 0,
+            tiles: overview?.length ?? 0,
           });
         }
       } catch (error) {

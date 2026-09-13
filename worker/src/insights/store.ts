@@ -284,6 +284,8 @@ export interface AccountInsights {
   profileViewers: number | null;
   searchAppearances: number | null;
   demographics: { category: string; label: string; percent: number }[];
+  /** Whatever tiles the account overview showed, in LinkedIn's own words. */
+  overviewTiles: { label: string; value: number; change: string | null }[];
 }
 
 export async function saveAccountInsights(
@@ -296,8 +298,8 @@ export async function saveAccountInsights(
     sql: `INSERT INTO account_insights
             (linkedin_account_id, day, impressions_7d, members_reached, in_network_percent,
              reactions, comments, reposts, saves, followers, profile_viewers,
-             search_appearances, demographics, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             search_appearances, demographics, overview_tiles, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT (linkedin_account_id, day) DO UPDATE SET
             impressions_7d = excluded.impressions_7d,
             members_reached = excluded.members_reached,
@@ -310,6 +312,7 @@ export async function saveAccountInsights(
             profile_viewers = excluded.profile_viewers,
             search_appearances = excluded.search_appearances,
             demographics = excluded.demographics,
+            overview_tiles = excluded.overview_tiles,
             updated_at = excluded.updated_at`,
     args: [
       linkedinAccountId,
@@ -325,6 +328,7 @@ export async function saveAccountInsights(
       stats.profileViewers,
       stats.searchAppearances,
       stats.demographics.length ? JSON.stringify(stats.demographics) : null,
+      stats.overviewTiles.length ? JSON.stringify(stats.overviewTiles) : null,
       now,
     ],
   });

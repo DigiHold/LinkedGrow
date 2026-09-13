@@ -42,6 +42,24 @@ export interface ContentAnalytics {
   demographics: Demographic[];
 }
 
+/**
+ * One tile of the account overview, in LinkedIn's own words.
+ *
+ * That page carries a single component key around the whole module and names none of the tiles
+ * inside it, so there is no anchor to hold per figure. Reading them by label is the bug this file
+ * exists to undo, and reading them by position would be a silent wrong number the day LinkedIn
+ * inserts a tile.
+ *
+ * So the shape is read instead, and the label travels with the value as DATA: each tile is a count,
+ * the words beside it, and the change underneath. The screen shows whatever LinkedIn wrote, in the
+ * reader's own language, and nothing in the code ever matches those words.
+ */
+export interface OverviewTile {
+  label: string;
+  value: number;
+  change: string | null;
+}
+
 export interface AudienceAnalytics {
   followers: number | null;
   demographics: Demographic[];
@@ -138,7 +156,39 @@ const ANCHORS = {
 export const CREATOR_URLS = {
   content: "https://www.linkedin.com/analytics/creator/content/",
   audience: "https://www.linkedin.com/analytics/creator/audience/",
+  overview: "https://www.linkedin.com/dashboard/",
 } as const;
+
+/** The one key that page carries, verified live 2026-09-13. */
+const OVERVIEW_ANCHOR = '[componentkey$="creator_overview_content_replaceable_component_ref"]';
+
+const SCRAPE_OVERVIEW = `() => {
+  const root = document.querySelector('[componentkey$="creator_overview_content_replaceable_component_ref"]');
+  if (!root) return null;
+  const leaves = Array.from(root.querySelectorAll("*"))
+    .filter((n) => n.children.length === 0)
+    .map((n) => (n.textContent || "").trim())
+    .filter(Boolean);
+
+  /**
+   * A tile is a bare count, the words that name it, and usually a change underneath. The count is
+   * the marker: everything between it and the next count belongs to it.
+   */
+  const isCount = (t) => /^[\d\s\u00a0\u202f.,]+[km]?$/i.test(t) && !t.includes("%");
+  const out = [];
+  for (let i = 0; i < leaves.length; i += 1) {
+    if (!isCount(leaves[i])) continue;
+    const label = leaves[i + 1];
+    if (!label || isCount(label) || /%$/.test(label)) continue;
+    const maybeChange = leaves[i + 2];
+    out.push({
+      value: leaves[i],
+      label,
+      change: maybeChange && /%$/.test(maybeChange) ? maybeChange : null,
+    });
+  }
+  return out;
+}`;
 
 interface Scraped {
   impressions: string | null;
@@ -203,4 +253,36 @@ export async function readCreatorAudience(page: Page): Promise<AudienceAnalytics
     followers: raw.followers === null ? null : toNumber(raw.followers),
     demographics: toDemographics(raw.slices),
   };
+}
+
+/**
+ * The account overview, as a list of whatever tiles LinkedIn chose to show.
+ *
+ * Profile viewers and search appearances live only here, and they are the two an author actually
+ * watches, because they say whether the writing is making anybody look.
+ */
+export async function readOverview(page: Page): Promise<OverviewTile[] | null> {
+  await page.goto(CREATOR_URLS.overview, { waitUntil: "domcontentloaded" }).catch(() => {});
+  const main = await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
+  if (!main) return null;
+  await dwell(2000, 4000);
+  await scrollHuman(page, 1);
+  await dwell(1200, 2600);
+
+  const raw = (await page
+    .evaluate(SCRAPE_OVERVIEW as unknown as string)
+    .catch(() => null)) as { value: string; label: string; change: string | null }[] | null;
+
+  if (raw === null) {
+    log("the account overview no longer carries the key this reads", { anchor: OVERVIEW_ANCHOR });
+    return null;
+  }
+
+  const tiles: OverviewTile[] = [];
+  for (const tile of raw) {
+    const value = toNumber(tile.value);
+    if (value === null) continue;
+    tiles.push({ label: tile.label, value, change: tile.change });
+  }
+  return tiles;
 }

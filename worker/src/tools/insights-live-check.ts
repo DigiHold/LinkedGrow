@@ -3,7 +3,7 @@ import { decryptSecret } from "../crypto.ts";
 import { openSession, closeSession, isSignedIn } from "../browser/driver.ts";
 import { sleep, randInt } from "../browser/human.ts";
 import { readPostStats } from "../linkedin/insights.ts";
-import { readCreatorContent, readCreatorAudience } from "../linkedin/creator.ts";
+import { readCreatorContent, readCreatorAudience, readOverview } from "../linkedin/creator.ts";
 import { saveStats, saveAccountInsights } from "../insights/store.ts";
 
 /**
@@ -84,7 +84,8 @@ async function main(): Promise<void> {
 
     const content = await readCreatorContent(page);
     const audience = await readCreatorAudience(page);
-    if (content || audience) {
+    const overview = await readOverview(page);
+    if (content || audience || overview) {
       await saveAccountInsights(accountId, {
         impressions7d: content?.impressions ?? null,
         membersReached: content?.membersReached ?? null,
@@ -97,10 +98,12 @@ async function main(): Promise<void> {
         profileViewers: null,
         searchAppearances: null,
         demographics: audience?.demographics ?? content?.demographics ?? [],
+        overviewTiles: overview ?? [],
       });
       console.log(
         `account: ${content?.impressions ?? "?"} impressions, ${audience?.followers ?? "?"} followers, ` +
-          `${content?.membersReached ?? "?"} reached, ${audience?.demographics.length ?? 0} slices`
+          `${content?.membersReached ?? "?"} reached, ${audience?.demographics.length ?? 0} slices, ` +
+          `${overview?.length ?? 0} tiles`
       );
     }
 

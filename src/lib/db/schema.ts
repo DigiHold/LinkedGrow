@@ -1841,6 +1841,14 @@ export const accountInsights = sqliteTable(
     searchAppearances: integer("search_appearances"),
     /** JSON: the top slice per category, as LinkedIn ranks them. */
     demographics: text("demographics"),
+    /**
+     * JSON: whatever tiles the account overview showed, label included.
+     *
+     * That page carries one component key around the whole module and names no tile inside it, so
+     * there is nothing to anchor per figure. The shape is read instead and the label travels with
+     * the value as data, which is why a Spanish account shows Spanish tiles rather than nothing.
+     */
+    overviewTiles: text("overview_tiles"),
     updatedAt: integer("updated_at").notNull(),
   },
   (t) => [primaryKey({ columns: [t.linkedinAccountId, t.day] })]
