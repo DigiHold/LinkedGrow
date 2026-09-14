@@ -68,24 +68,35 @@ export interface AudienceAnalytics {
 /**
  * The browser side of the read, shared by both pages.
  *
- * Everything it returns is a string, so the parsing and the locale arithmetic happen in Node where
- * they can be tested without a browser.
+ * Written as a real function rather than as a string of source. The first version was a template
+ * literal full of escaped backslashes, handed to evaluate as text, and when it failed to parse the
+ * catch beside it turned that into a plain null. Three readers returned nothing, nothing was
+ * written, and not one line reached the log. A function is checked by the compiler and cannot
+ * fail that way.
  */
-const SCRAPE = `(anchors) => {
-  const firstCount = (root) => {
-    if (!root) return null;
-    for (const node of Array.from(root.querySelectorAll("*"))) {
-      if (node.children.length > 0) continue;
-      const text = (node.textContent || "").trim();
-      if (!text || text.includes("%")) continue;
-      if (/^[\\d\\s\\u00a0\\u202f.,]+[km]?$/i.test(text)) return text;
-    }
-    return null;
-  };
+function scrapeInPage(anchors: {
+  breakdown: string;
+  reached: string;
+  followers: string;
+  demographics: string;
+}) {
+  const isCount = (text: string): boolean =>
+    /^[\d\s\u00a0\u202f.,]+[km]?$/i.test(text) && !text.includes("%");
+
+  const leavesOf = (root: Element | null): string[] =>
+    !root
+      ? []
+      : Array.from(root.querySelectorAll("*"))
+          .filter((n) => n.children.length === 0)
+          .map((n) => (n.textContent ?? "").trim())
+          .filter(Boolean);
+
+  const firstCount = (root: Element | null): string | null =>
+    leavesOf(root).find((t) => isCount(t)) ?? null;
 
   /** Climbs from a block until a bare count appears beside it, never further than the tile. */
-  const countBeside = (el) => {
-    let node = el ? el.parentElement : null;
+  const countBeside = (el: Element | null): string | null => {
+    let node: Element | null = el ? el.parentElement : null;
     for (let i = 0; i < 4 && node; i += 1) {
       const found = firstCount(node);
       if (found) return found;
@@ -95,48 +106,39 @@ const SCRAPE = `(anchors) => {
   };
 
   /**
-   * The ranked slices, read as a shape rather than as words: every percentage is preceded by its
-   * label and that label by its category, so a percentage is the marker and the two leaves before
-   * it are the answer.
+   * The ranked slices, read as a shape rather than as words: a percentage marks a slice and the two
+   * leaves before it are its category and its value.
    */
-  const slices = (root) => {
-    if (!root) return [];
-    const leaves = Array.from(root.querySelectorAll("*"))
-      .filter((n) => n.children.length === 0)
-      .map((n) => (n.textContent || "").trim())
-      .filter(Boolean);
-    const out = [];
+  const slices = (root: Element | null) => {
+    const leaves = leavesOf(root);
+    const out: { category: string; label: string; percent: string }[] = [];
     for (let i = 2; i < leaves.length; i += 1) {
-      const pct = /^(\\d[\\d.,]*)\\s*%$/.exec(leaves[i]);
+      const pct = /^(\d[\d.,]*)\s*%$/.exec(leaves[i] as string);
       if (!pct) continue;
-      const label = leaves[i - 1];
-      const category = leaves[i - 2];
-      if (/%$/.test(label) || /%$/.test(category)) continue;
-      out.push({ category, label, percent: pct[1] });
+      const label = leaves[i - 1] as string;
+      const category = leaves[i - 2] as string;
+      if (label.endsWith("%") || category.endsWith("%")) continue;
+      out.push({ category, label, percent: pct[1] as string });
     }
     return out;
   };
 
   const breakdown = document.querySelector(anchors.breakdown);
-  const percent = breakdown
-    ? (/(\\d[\\d.,]*)\\s*%/.exec(breakdown.innerText || "") || [null, null])[1]
-    : null;
+  const followers = document.querySelector(anchors.followers);
+  const reached = document.querySelector(anchors.reached);
+  const demographics = document.querySelector(anchors.demographics);
 
   return {
     impressions: countBeside(breakdown),
-    membersReached: firstCount(document.querySelector(anchors.reached)),
-    followers: countBeside(document.querySelector(anchors.followers)) ||
-      firstCount(document.querySelector(anchors.followers)),
-    inNetwork: percent,
-    slices: slices(document.querySelector(anchors.demographics)),
-    anchorsFound: Boolean(
-      document.querySelector(anchors.breakdown) ||
-      document.querySelector(anchors.reached) ||
-      document.querySelector(anchors.followers) ||
-      document.querySelector(anchors.demographics)
-    ),
+    membersReached: firstCount(reached),
+    followers: countBeside(followers) ?? firstCount(followers),
+    inNetwork: breakdown
+      ? /(\d[\d.,]*)\s*%/.exec((breakdown as HTMLElement).innerText ?? "")?.[1] ?? null
+      : null,
+    slices: slices(demographics),
+    anchorsFound: Boolean(breakdown || reached || followers || demographics),
   };
-}`;
+}
 
 const ANCHORS = {
   content: {
@@ -162,33 +164,32 @@ export const CREATOR_URLS = {
 /** The one key that page carries, verified live 2026-09-13. */
 const OVERVIEW_ANCHOR = '[componentkey$="creator_overview_content_replaceable_component_ref"]';
 
-const SCRAPE_OVERVIEW = `() => {
-  const root = document.querySelector('[componentkey$="creator_overview_content_replaceable_component_ref"]');
+function scrapeOverviewInPage(anchor: string) {
+  const root = document.querySelector(anchor);
   if (!root) return null;
   const leaves = Array.from(root.querySelectorAll("*"))
     .filter((n) => n.children.length === 0)
-    .map((n) => (n.textContent || "").trim())
+    .map((n) => (n.textContent ?? "").trim())
     .filter(Boolean);
 
   /**
    * A tile is a bare count, the words that name it, and usually a change underneath. The count is
-   * the marker: everything between it and the next count belongs to it.
+   * the marker, and the words after it belong to it.
    */
-  const isCount = (t) => /^[\d\s\u00a0\u202f.,]+[km]?$/i.test(t) && !t.includes("%");
-  const out = [];
+  const isCount = (t: string): boolean =>
+    /^[\d\s\u00a0\u202f.,]+[km]?$/i.test(t) && !t.includes("%");
+
+  const out: { value: string; label: string; change: string | null }[] = [];
   for (let i = 0; i < leaves.length; i += 1) {
-    if (!isCount(leaves[i])) continue;
+    const value = leaves[i] as string;
+    if (!isCount(value)) continue;
     const label = leaves[i + 1];
-    if (!label || isCount(label) || /%$/.test(label)) continue;
-    const maybeChange = leaves[i + 2];
-    out.push({
-      value: leaves[i],
-      label,
-      change: maybeChange && /%$/.test(maybeChange) ? maybeChange : null,
-    });
+    if (!label || isCount(label) || label.endsWith("%")) continue;
+    const change = leaves[i + 2];
+    out.push({ value, label, change: change && change.endsWith("%") ? change : null });
   }
   return out;
-}`;
+}
 
 interface Scraped {
   impressions: string | null;
@@ -223,9 +224,22 @@ async function scrape(page: Page, url: string, anchors: Record<string, string>):
   await scrollHuman(page, 1);
   await dwell(1200, 2600);
 
-  const raw = (await page
-    .evaluate(SCRAPE as unknown as string, anchors)
-    .catch(() => null)) as Scraped | null;
+  /**
+   * An error here is said out loud rather than swallowed.
+   *
+   * The previous version caught everything into a null, so a broken script and a page with nothing
+   * on it looked identical, and the whole feature was quiet for a day.
+   */
+  let raw: Scraped | null = null;
+  try {
+    raw = (await page.evaluate(scrapeInPage, anchors as never)) as Scraped;
+  } catch (error) {
+    log("reading a creator analytics page failed", {
+      url,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 
   if (raw && !raw.anchorsFound) {
     // Said out loud rather than recorded as zero: a page that stopped carrying these keys and an
@@ -269,9 +283,15 @@ export async function readOverview(page: Page): Promise<OverviewTile[] | null> {
   await scrollHuman(page, 1);
   await dwell(1200, 2600);
 
-  const raw = (await page
-    .evaluate(SCRAPE_OVERVIEW as unknown as string)
-    .catch(() => null)) as { value: string; label: string; change: string | null }[] | null;
+  let raw: { value: string; label: string; change: string | null }[] | null = null;
+  try {
+    raw = await page.evaluate(scrapeOverviewInPage, OVERVIEW_ANCHOR);
+  } catch (error) {
+    log("reading the account overview failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 
   if (raw === null) {
     log("the account overview no longer carries the key this reads", { anchor: OVERVIEW_ANCHOR });
