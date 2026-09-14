@@ -1,6 +1,6 @@
 import type { Page } from "patchright";
 import { dwell, scrollHuman } from "../browser/human.ts";
-import { readSummaryNumbers, summaryAnchorsPresent } from "./summary-dom.ts";
+import { readSummaryNumbers, summaryAnchorsPresent, readSocialCounts } from "./summary-dom.ts";
 import { log } from "../logger.ts";
 
 /**
@@ -229,19 +229,28 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
           .locator("main img")
           .evaluateAll((nodes) => nodes.map((n) => (n as HTMLImageElement).src))
           .catch(() => [] as string[]);
+        /**
+         * The three counts come from the post itself, not from this page.
+         *
+         * The engagement block here carries a UUID that changes on every render and names nothing
+         * inside it. The post's own bar does have names: every icon has an id, and the counts sit
+         * in a fixed relation to them. This was briefly left at zero, which is how Enrique ended up
+         * with impressions and no reactions, so the visit is worth its one page load.
+         */
+        await dwell(1500, 3000);
+        await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
+        await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
+        await dwell(1500, 3000);
+        await scrollHuman(page, 1);
+        await dwell(1200, 2400);
+        const counts = await readSocialCounts(page);
+        if (!counts) log("the post's own counters could not be found", { postUrl });
+
         return {
           impressions: numbers.impressions,
-          /**
-           * Left at zero here on purpose.
-           *
-           * The engagement block on this page carries a UUID that changes on every render and
-           * nothing inside it is identified, so there is no machine name to hold. Reading it by
-           * position or by its labels would be the same mistake in a different coat, so the three
-           * counts come from the post itself below.
-           */
-          reactions: 0,
-          comments: 0,
-          reposts: 0,
+          reactions: counts?.reactions ?? 0,
+          comments: counts?.comments ?? 0,
+          reposts: counts?.reposts ?? 0,
           imageUrl: postImageFrom(images),
         };
       }
