@@ -1495,7 +1495,12 @@ async function holdsFocus(editor: Locator): Promise<boolean> {
   return focused();
 }
 
-async function typeBody(page: Page, editor: Locator, text: string): Promise<void> {
+async function typeBody(
+  page: Page,
+  editor: Locator,
+  text: string,
+  maxAttempts = 8
+): Promise<void> {
   const lines = text.replace(/\r/g, "").split("\n");
 
   /**
@@ -1504,8 +1509,14 @@ async function typeBody(page: Page, editor: Locator, text: string): Promise<void
    * runs for several seconds, and three sub-second retries all landed inside
    * it on 2026-08-20, on every attempt, on two different posts. The waits
    * grow so the later attempts sit far outside any plausible mount.
+   *
+   * The comment box asks for fewer, and passes its own number. Eight rounds of
+   * retyping a comment that the box keeps dropping held one account for ten
+   * minutes on 2026-09-23 and held the publishing loop with it, which is the
+   * loop a customer watching a spinner is waiting on. A comment that will not
+   * go in now has two more sweeps to go in later.
    */
-  for (let attempt = 1; attempt <= 8; attempt++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     /**
      * The mouse arrives once. Every retry focuses the element itself.
      *
@@ -1531,7 +1542,7 @@ async function typeBody(page: Page, editor: Locator, text: string): Promise<void
     }
     await sleep(randInt(300, 900));
     if (!(await holdsFocus(editor))) {
-      log("editor focus not held", { attempt, of: 8 });
+      log("editor focus not held", { attempt, of: maxAttempts });
       await sleep(attempt * 800 + randInt(200, 600));
       continue;
     }
@@ -2121,6 +2132,9 @@ export async function likePost(page: Page, postUrl: string): Promise<boolean> {
  * It arrives at the post the way a person does, by opening it and reading it,
  * rather than by firing a comment at a URL the instant the post lands.
  */
+/** Rounds of retyping a comment before the visit is given up on. */
+const COMMENT_TYPE_ATTEMPTS = 3;
+
 /** The rendered comments of a post, the same markup the miner reads them from. */
 const COMMENT_LIST_SELECTOR =
   ".comments-comments-list, article.comments-comment-entity, .comments-comment-item";
@@ -2209,7 +2223,7 @@ export async function postFirstComment(
   // Focus-checked and read back, same as the post body: the comment box is the
   // same two-step TipTap mount, and a comment typed into nothing used to reach
   // the submit click anyway.
-  await typeBody(page, box, body);
+  await typeBody(page, box, body, COMMENT_TYPE_ATTEMPTS);
   if (flatten(await box.innerText().catch(() => "")) !== flatten(body)) {
     log("first comment: the box did not take the comment, leaving it");
     return false;
