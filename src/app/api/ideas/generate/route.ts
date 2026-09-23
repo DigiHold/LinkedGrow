@@ -5,6 +5,7 @@ import { getAISettingsUser } from "@/lib/team-utils";
 import { checkAIRateLimit } from "@/lib/rate-limit";
 import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 import { buildLanguageInstruction } from "@/lib/content-languages";
+import { parseRecordArray } from "@/lib/ai-json";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 
 export const maxDuration = 120;
@@ -118,8 +119,7 @@ Return ONLY a JSON array:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseRecordArray<Idea>(content, ["hook"]);
   } else if (provider === "anthropic") {
     response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -145,8 +145,7 @@ Return ONLY a JSON array:
 
     const data = await response.json();
     const content = extractAnthropicText(data) || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseRecordArray<Idea>(content, ["hook"]);
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
@@ -191,8 +190,7 @@ Return ONLY a JSON array:
         break;
       }
     }
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseRecordArray<Idea>(content, ["hook"]);
   } else if (provider === "grok") {
     response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
@@ -214,8 +212,7 @@ Return ONLY a JSON array:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseRecordArray<Idea>(content, ["hook"]);
   } else if (provider === "perplexity") {
     response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -237,8 +234,7 @@ Return ONLY a JSON array:
 
     const data = await response.json();
     const content = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseRecordArray<Idea>(content, ["hook"]);
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
     response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
@@ -261,14 +257,14 @@ Return ONLY a JSON array:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseRecordArray<Idea>(content, ["hook"]);
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
   // Sanitize em dashes from all hook texts
-  return ideas.map(idea => ({
+  // As many as were asked for, whatever the model felt like sending.
+  return ideas.slice(0, Math.max(count, 1)).map(idea => ({
     ...idea,
     hook: idea.hook.replace(/—/g, " - ").replace(/–/g, " - ")
   }));

@@ -8,8 +8,12 @@ import { buildLanguageInstruction } from "@/lib/content-languages";
 import { checkGenerationLimit, incrementGenerationUsage } from "@/lib/generation-usage";
 import { HOOK_RULES, POST_STYLE_RULES, stripSlop } from "@/lib/post-style";
 import { effectivePlan } from "@/lib/plans";
+import { parseStringArray, parseRecordArray, capStrings } from "@/lib/ai-json";
 
 export const maxDuration = 120;
+
+/** Ideas offered per round. The button says this number, so the list holds it. */
+const IDEA_COUNT = 5;
 
 /**
  * What actually leaves this route, whatever the model returned.
@@ -400,7 +404,7 @@ async function generateIdeas(
   // Get current year for accurate data
   const currentYear = new Date().getFullYear();
 
-  const prompt = `You are an expert LinkedIn content strategist. Generate 5 compelling post ideas about the following topic.
+  const prompt = `You are an expert LinkedIn content strategist. Generate ${IDEA_COUNT} compelling post ideas about the following topic.
 
 IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If mentioning AI models, use YOUR OWN current knowledge to cite accurate latest model names - never use old names like GPT-4, Claude 3, etc.
 
@@ -414,7 +418,7 @@ Requirements:
 - Each idea should be 1-2 sentences max
 - NEVER use em dashes (—) or en dashes (–). Use regular hyphens or commas instead.${buildLanguageInstruction(contentLanguage)}
 
-Return ONLY a JSON array of 5 strings. Example:
+Return ONLY a JSON array of ${IDEA_COUNT} strings. Example:
 ["Idea 1 here", "Idea 2 here", "Idea 3 here", "Idea 4 here", "Idea 5 here"]`;
 
   let response;
@@ -459,8 +463,7 @@ Return ONLY a JSON array of 5 strings. Example:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseStringArray(content);
   } else if (provider === "anthropic") {
     response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -486,8 +489,7 @@ Return ONLY a JSON array of 5 strings. Example:
 
     const data = await response.json();
     const content = extractAnthropicText(data) || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseStringArray(content);
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
@@ -531,8 +533,7 @@ Return ONLY a JSON array of 5 strings. Example:
         break;
       }
     }
-    const cleanContent = googleContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseStringArray(googleContent);
   } else if (provider === "grok") {
     // xAI Grok uses OpenAI-compatible API
     response = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -555,8 +556,7 @@ Return ONLY a JSON array of 5 strings. Example:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseStringArray(content);
   } else if (provider === "perplexity") {
     // Perplexity uses OpenAI-compatible API
     response = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -579,8 +579,7 @@ Return ONLY a JSON array of 5 strings. Example:
 
     const data = await response.json();
     const content = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseStringArray(content);
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
     response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
@@ -603,14 +602,15 @@ Return ONLY a JSON array of 5 strings. Example:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    ideas = JSON.parse(cleanContent);
+    ideas = parseStringArray(content);
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
   // Sanitize each idea to remove em dashes
-  return ideas.map((idea: string) => sanitizeAIOutput(idea));
+  // The screen shows one card per idea, so the list is the promise the button
+  // made ("Generate 5 ideas") rather than whatever length came back.
+  return capStrings(ideas, IDEA_COUNT).map((idea) => sanitizeAIOutput(idea));
 }
 
 async function editPost(
@@ -1103,8 +1103,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
 
       const data = await response.json();
       const jsonContent = data.choices[0]?.message?.content || "[]";
-      const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      slides = JSON.parse(cleanContent);
+      slides = parseRecordArray<CarouselSlide>(jsonContent, ["title", "content", "imagePrompt"]);
     } else if (provider === "anthropic") {
       response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -1130,8 +1129,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
 
       const data = await response.json();
       const jsonContent = extractAnthropicText(data) || "[]";
-      const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      slides = JSON.parse(cleanContent);
+      slides = parseRecordArray<CarouselSlide>(jsonContent, ["title", "content", "imagePrompt"]);
     } else if (provider === "google") {
       const googleModel = model || "gemini-3-flash-preview";
       const isProModel = googleModel.includes("-pro");
@@ -1175,8 +1173,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
           break;
         }
       }
-      const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      slides = JSON.parse(cleanContent);
+      slides = parseRecordArray<CarouselSlide>(jsonContent, ["title", "content", "imagePrompt"]);
     } else if (provider === "grok") {
       response = await fetch("https://api.x.ai/v1/chat/completions", {
         method: "POST",
@@ -1198,8 +1195,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
 
       const data = await response.json();
       const jsonContent = data.choices[0]?.message?.content || "[]";
-      const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      slides = JSON.parse(cleanContent);
+      slides = parseRecordArray<CarouselSlide>(jsonContent, ["title", "content", "imagePrompt"]);
     } else if (provider === "perplexity") {
       response = await fetch("https://api.perplexity.ai/chat/completions", {
         method: "POST",
@@ -1221,8 +1217,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
 
       const data = await response.json();
       const jsonContent = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
-      const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      slides = JSON.parse(cleanContent);
+      slides = parseRecordArray<CarouselSlide>(jsonContent, ["title", "content", "imagePrompt"]);
     } else if (provider === "kimi") {
       // Kimi uses OpenAI-compatible API
       response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
@@ -1245,8 +1240,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
 
       const data = await response.json();
       const jsonContent = data.choices[0]?.message?.content || "[]";
-      const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      slides = JSON.parse(cleanContent);
+      slides = parseRecordArray<CarouselSlide>(jsonContent, ["title", "content", "imagePrompt"]);
     } else {
       throw new Error(`Unsupported AI provider: ${provider}`);
     }
@@ -1256,7 +1250,8 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
       throw new Error("Invalid response format from AI");
     }
 
-    const validatedSlides = slides.map(slide => ({
+    // Never more slides than the carousel was asked for.
+    const validatedSlides = slides.slice(0, Math.max(slideCount, 1)).map(slide => ({
       title: String(slide.title || ""),
       content: String(slide.content || ""),
       imagePrompt: String(slide.imagePrompt || ""),

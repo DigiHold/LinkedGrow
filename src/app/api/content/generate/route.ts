@@ -6,6 +6,7 @@ import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
 import { buildLanguageInstruction } from "@/lib/content-languages";
 import { fetchAIWithRetry, anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
+import { parseStringArray, normalizePosts } from "@/lib/ai-json";
 
 export const maxDuration = 120;
 
@@ -176,7 +177,9 @@ async function generatePosts(
   prompt: string,
   apiKey: string,
   provider: string,
-  model: string
+  model: string,
+  count: number,
+  hook: string
 ): Promise<string[]> {
   let response;
   let posts: string[] = [];
@@ -215,8 +218,7 @@ async function generatePosts(
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    posts = JSON.parse(cleanContent);
+    posts = parseStringArray(content);
   } else if (provider === "anthropic") {
     response = await fetchAIWithRetry("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -241,8 +243,7 @@ async function generatePosts(
 
     const data = await response.json();
     const content = extractAnthropicText(data) || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    posts = JSON.parse(cleanContent);
+    posts = parseStringArray(content);
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
@@ -282,8 +283,7 @@ async function generatePosts(
         break;
       }
     }
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    posts = JSON.parse(cleanContent);
+    posts = parseStringArray(content);
   } else if (provider === "grok") {
     response = await fetchAIWithRetry("https://api.x.ai/v1/chat/completions", {
       method: "POST",
@@ -304,8 +304,7 @@ async function generatePosts(
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    posts = JSON.parse(cleanContent);
+    posts = parseStringArray(content);
   } else if (provider === "perplexity") {
     response = await fetchAIWithRetry("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -326,8 +325,7 @@ async function generatePosts(
 
     const data = await response.json();
     const content = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    posts = JSON.parse(cleanContent);
+    posts = parseStringArray(content);
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
     response = await fetchAIWithRetry("https://api.moonshot.ai/v1/chat/completions", {
@@ -350,13 +348,21 @@ async function generatePosts(
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    posts = JSON.parse(cleanContent);
+    posts = parseStringArray(content);
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  return posts.map(post => sanitizeAIOutput(post));
+  // The screen renders one card per entry, so an array that is not the length
+  // the prompt asked for is a customer looking at 30 drafts instead of 3.
+  const normalized = normalizePosts(posts, count, hook);
+  if (normalized.length !== posts.length) {
+    console.error(
+      `[content/generate] ${provider}/${model} returned ${posts.length} entries for ${count} posts (lengths: ${posts.map(p => String(p).length).slice(0, 40).join(",")}), rebuilt into ${normalized.length}`
+    );
+  }
+
+  return normalized.map(post => sanitizeAIOutput(post));
 }
 
 export async function POST(request: NextRequest) {
@@ -375,11 +381,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { hook, content: contentInput, count = 3 } = await request.json();
+    const { hook, content: contentInput, count: requestedCount } = await request.json();
 
-    if (!hook) {
+    if (typeof hook !== "string" || !hook.trim() || hook.length > 1000) {
       return NextResponse.json({ error: "Hook is required" }, { status: 400 });
     }
+
+    // The number of drafts is the screen's promise, and it is worth nothing if
+    // the caller can ask for fifty.
+    const count = Math.min(Math.max(Math.trunc(Number(requestedCount)) || 3, 1), 5);
 
     if (!contentInput || !contentInput.source) {
       return NextResponse.json({ error: "Content data is required" }, { status: 400 });
@@ -458,7 +468,7 @@ export async function POST(request: NextRequest) {
       aiSettingsUser.contentLanguage || undefined
     );
 
-    const posts = await generatePosts(prompt, apiKey, provider, model);
+    const posts = await generatePosts(prompt, apiKey, provider, model, count, hook);
 
     return NextResponse.json({ posts });
   } catch (error) {

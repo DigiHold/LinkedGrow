@@ -7,6 +7,7 @@ import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
 import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 import { buildLanguageInstruction } from "@/lib/content-languages";
+import { parseRecordArray } from "@/lib/ai-json";
 
 export const maxDuration = 120;
 
@@ -181,8 +182,7 @@ Example format:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    hooks = parseRecordArray<HookPair>(content, ["firstLine", "secondLine"]);
   } else if (provider === "anthropic") {
     response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -208,8 +208,7 @@ Example format:
 
     const data = await response.json();
     const content = extractAnthropicText(data) || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    hooks = parseRecordArray<HookPair>(content, ["firstLine", "secondLine"]);
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
@@ -254,8 +253,7 @@ Example format:
         break;
       }
     }
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    hooks = parseRecordArray<HookPair>(content, ["firstLine", "secondLine"]);
   } else if (provider === "grok") {
     // xAI Grok uses OpenAI-compatible API
     response = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -278,8 +276,7 @@ Example format:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    hooks = parseRecordArray<HookPair>(content, ["firstLine", "secondLine"]);
   } else if (provider === "perplexity") {
     // Perplexity uses OpenAI-compatible API
     response = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -302,8 +299,7 @@ Example format:
 
     const data = await response.json();
     const content = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    hooks = parseRecordArray<HookPair>(content, ["firstLine", "secondLine"]);
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
     response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
@@ -326,14 +322,14 @@ Example format:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    hooks = parseRecordArray<HookPair>(content, ["firstLine", "secondLine"]);
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
   // Sanitize each hook to remove em dashes
-  return hooks.map(hook => ({
+  // As many as the screen asked for, never the model's own idea of enough.
+  return hooks.slice(0, Math.max(count, 1)).map(hook => ({
     firstLine: sanitizeHookOutput(hook.firstLine),
     secondLine: sanitizeHookOutput(hook.secondLine),
   }));

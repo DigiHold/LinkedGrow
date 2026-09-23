@@ -648,7 +648,9 @@ function ContentRepurposingContent() {
       }
 
       const data = await response.json();
-      setPosts(data.posts || []);
+      // The card list is one per entry, so it never takes more than it asked
+      // for, whatever comes back.
+      setPosts(Array.isArray(data.posts) ? data.posts.slice(0, 3) : []);
       setStep(3);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate posts");
@@ -1250,7 +1252,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             <CardHeader>
               <CardTitle>Pick a post</CardTitle>
               <CardDescription>
-                Two drafts from the same hook. Pick the one that sounds like you.
+                Three drafts from the same hook. Pick the one that sounds like you.
               </CardDescription>
             </CardHeader>
           </Card>
