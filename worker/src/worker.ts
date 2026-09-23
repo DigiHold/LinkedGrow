@@ -21,6 +21,7 @@ import { allocationFor, isProduction } from "./proxy/allocation.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { connectPass } from "./linkedin/connect-pass.ts";
 import { publishPass } from "./publish/pass.ts";
+import { firstCommentPass } from "./publish/comments.ts";
 import { publishingIsWaiting } from "./publish/store.ts";
 import { insightsPass, copyLeadFaces } from "./insights/pass.ts";
 import { isWithinBusinessHours } from "./safety/envelope.ts";
@@ -569,6 +570,14 @@ async function publishLoop(): Promise<void> {
       await publishPass();
     } catch (error) {
       logError("publish pass failed", error);
+    }
+    // After the queue, never instead of it: a first comment that is owed is
+    // owed by a post that is already live, so it waits its turn behind the
+    // posts somebody is watching for.
+    try {
+      await firstCommentPass();
+    } catch (error) {
+      logError("first comment sweep failed", error);
     }
     await sleep(PUBLISH_INTERVAL_MS);
   }

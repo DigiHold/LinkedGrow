@@ -643,7 +643,12 @@ export default function PostsPage() {
                       to open a support ticket to find out which. Amber rather
                       than red unless it actually failed, because most of these
                       are "still working on it" rather than "this is over". */}
-                  {post.errorMessage && post.status !== "published" && (
+                  {/* A published post carries a note too: "we could not find it
+                      on your feed", or the first comment that could not be
+                      added. Both were written on the row and shown nowhere,
+                      so the customer's only way of finding out was to open
+                      LinkedIn and notice (Mohamed, 2026-09-23). */}
+                  {post.errorMessage && (
                     <p
                       className={cn(
                         "mt-2 text-xs leading-relaxed",

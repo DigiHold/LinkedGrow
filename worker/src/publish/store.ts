@@ -430,7 +430,9 @@ export async function publishingIsWaiting(linkedinAccountId: string): Promise<bo
   return rows.length > 0;
 }
 
-export async function accountForPost(post: DuePost): Promise<AccountChoice> {
+export async function accountForPost(
+  post: Pick<DuePost, "linkedinAccountId" | "workspaceId">
+): Promise<AccountChoice> {
   if (post.linkedinAccountId) {
     /**
      * The named account is looked up on its id alone, without asking whether it
@@ -802,5 +804,146 @@ export async function noteWaitingForAccount(postId: string, message: string): Pr
              AND status IN ('queued', 'scheduled')
              AND (error_message IS NULL OR error_message <> ?)`,
     args: [message, nowSeconds(), postId, message],
+  });
+}
+
+/**
+ * Tries the first comment gets before the post is left alone.
+ *
+ * The comment is written after the post is already live, so a failure here
+ * cannot cost the post anything and cannot go back through the queue. What it
+ * did until now was disappear: the comment was attempted exactly once, inside
+ * the publishing session, and a post that went up while the feed lagged (no
+ * URL to open, so the comment was skipped entirely) or a comment box that
+ * refused the text left the comment unwritten for good. Three tries, spaced by
+ * the passes between them, and then it stops rather than visiting the post
+ * every minute for a day.
+ */
+export const MAX_FIRST_COMMENT_ATTEMPTS = 3;
+
+/** How far back the sweep looks. Older than this and the moment has passed. */
+const FIRST_COMMENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/** A published post whose first comment never made it. */
+export interface PendingComment {
+  id: string;
+  userId: string;
+  workspaceId: string;
+  content: string;
+  firstComment: string;
+  postUrl: string | null;
+  linkedinAccountId: string | null;
+  attempts: number;
+}
+
+/**
+ * Published posts still owing their first comment.
+ *
+ * Deliberately narrow: published only, a comment that exists and has not
+ * landed, published within the last day, and tries left. Nothing here is ever
+ * requeued, reclaimed or republished, and no row this returns is in the
+ * publish queue at all, which is the property that makes retrying safe.
+ */
+export async function loadPendingFirstComments(
+  limit = 10,
+  edition: Edition = EDITION
+): Promise<PendingComment[]> {
+  const { rows } = await db().execute({
+    sql: `SELECT
+            p.id                   AS id,
+            p.user_id              AS user_id,
+            p.content              AS content,
+            p.first_comment        AS first_comment,
+            p.linkedin_post_url    AS linkedin_post_url,
+            p.linkedin_account_id  AS linkedin_account_id,
+            COALESCE(p.first_comment_attempts, 0) AS attempts,
+            COALESCE(
+              (SELECT t.owner_id
+                 FROM team_members tm
+                 JOIN teams t ON t.id = tm.team_id
+                WHERE tm.user_id = p.user_id
+                LIMIT 1),
+              p.user_id
+            )                      AS workspace_id
+          FROM posts p
+          JOIN users u ON u.id = p.user_id
+         WHERE p.status = 'published'
+           AND p.first_comment IS NOT NULL
+           AND TRIM(p.first_comment) <> ''
+           AND p.first_comment_posted_at IS NULL
+           AND p.published_at IS NOT NULL
+           AND p.published_at >= ?
+           AND COALESCE(p.first_comment_attempts, 0) < ?
+           ${paywallClause(edition)}
+         ORDER BY p.published_at ASC
+         LIMIT ?`,
+    args: [
+      nowSeconds() - Math.floor(FIRST_COMMENT_WINDOW_MS / 1000),
+      MAX_FIRST_COMMENT_ATTEMPTS,
+      limit,
+    ],
+  });
+
+  return rows.map((row) => ({
+    id: String(row.id),
+    userId: String(row.user_id),
+    workspaceId: String(row.workspace_id),
+    content: String(row.content ?? ""),
+    firstComment: String(row.first_comment ?? ""),
+    postUrl: row.linkedin_post_url === null ? null : String(row.linkedin_post_url),
+    linkedinAccountId:
+      row.linkedin_account_id === null ? null : String(row.linkedin_account_id),
+    attempts: Number(row.attempts ?? 0),
+  }));
+}
+
+/**
+ * What a post says once the comment has had its tries.
+ *
+ * Said on the post rather than nowhere, which is where it was said until now:
+ * the customer's only way of learning that their first comment never went up
+ * was to open LinkedIn and notice, or to write in, which is what happened on
+ * 2026-09-23.
+ */
+export const FIRST_COMMENT_GAVE_UP_NOTE =
+  "Your post is live, but we could not add your first comment. You can still add it yourself on LinkedIn.";
+
+/** The tries are spent and the comment is not up. */
+export async function noteFirstCommentGaveUp(postId: string): Promise<void> {
+  const now = nowSeconds();
+  await db().execute({
+    sql: `UPDATE posts
+             SET error_message = ?, updated_at = ?
+           WHERE id = ? AND first_comment_posted_at IS NULL`,
+    args: [FIRST_COMMENT_GAVE_UP_NOTE, now, postId],
+  });
+}
+
+/** One try spent, whatever came of it. Counted before the attempt, never after. */
+export async function noteFirstCommentAttempt(postId: string): Promise<void> {
+  const now = nowSeconds();
+  await db().execute({
+    sql: `UPDATE posts
+             SET first_comment_attempts = COALESCE(first_comment_attempts, 0) + 1,
+                 updated_at = ?
+           WHERE id = ?`,
+    args: [now, postId],
+  });
+}
+
+/**
+ * The URL of a post we could not find at the time, found later.
+ *
+ * Only ever fills a blank, and clears the note that told the customer to go and
+ * check their profile, because by now we have looked and it is there. The
+ * status is not touched: the post was already published.
+ */
+export async function recordPostUrl(postId: string, url: string): Promise<void> {
+  const now = nowSeconds();
+  await db().execute({
+    sql: `UPDATE posts
+             SET linkedin_post_url = ?, error_message = NULL, updated_at = ?
+           WHERE id = ? AND linkedin_post_url IS NULL`,
+    args: [url, now, postId],
   });
 }

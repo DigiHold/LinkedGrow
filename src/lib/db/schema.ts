@@ -227,6 +227,17 @@ export const posts = sqliteTable("posts", {
   /** Set once the first comment lands, so a retried post never comments twice. */
   firstCommentPostedAt: integer("first_comment_posted_at", { mode: "timestamp" }),
   /**
+   * How many times the first comment has been tried.
+   *
+   * The comment happens after the post is already published, so a failure there
+   * cannot cost the post an attempt and cannot go back through the queue. Until
+   * this column existed it could not be retried either: a post published while
+   * the feed lagged, or a comment box that refused the text, left the comment
+   * unwritten for good (Mohamed, 2026-09-23). The sweep reads this to stop
+   * after a few honest tries instead of visiting the post every minute.
+   */
+  firstCommentAttempts: integer("first_comment_attempts").notNull().default(0),
+  /**
    * When this post was handed to LinkedIn's own scheduler.
    *
    * A scheduled post is not published by us at its minute. Hours earlier, in

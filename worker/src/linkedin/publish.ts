@@ -1762,6 +1762,13 @@ export async function findPublishedUrl(
   const activity = `${profileUrl.replace(/\/?$/, "/")}recent-activity/all/`;
   await page.goto(activity, { waitUntil: "domcontentloaded" }).catch(() => {});
   await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
+  // `main` is there long before the activity cards are, and this page renders
+  // them late. Reading the DOM at that moment finds no card at all and reports
+  // the post missing, which costs the post its URL and its first comment with
+  // it (Mohamed, 2026-09-23 08:11). Wait for the thing being read.
+  await page
+    .waitForSelector("div[data-urn], div[data-id]", { timeout: 10_000 })
+    .catch(() => {});
   await dwell(1800, 3200);
 
   const needle = flatten(text).slice(0, 60).toLowerCase();
@@ -2114,6 +2121,26 @@ export async function likePost(page: Page, postUrl: string): Promise<boolean> {
  * It arrives at the post the way a person does, by opening it and reading it,
  * rather than by firing a comment at a URL the instant the post lands.
  */
+/** The rendered comments of a post, the same markup the miner reads them from. */
+const COMMENT_LIST_SELECTOR =
+  ".comments-comments-list, article.comments-comment-entity, .comments-comment-item";
+
+/**
+ * Whether this comment is already under the post.
+ *
+ * Read off the comments themselves, never the post body: a first comment often
+ * repeats a line of the post, and matching against the post would skip a
+ * comment that was never written. The probe is the opening of the comment,
+ * because LinkedIn folds a long one behind "see more".
+ */
+export function hasOurComment(commentsText: string, comment: string): boolean {
+  const body = flatten(comment).toLowerCase();
+  if (!body) return false;
+  const probe = body.slice(0, 60);
+  if (probe.length < 20) return false;
+  return flatten(commentsText).toLowerCase().includes(probe);
+}
+
 export async function postFirstComment(
   page: Page,
   postUrl: string,
@@ -2128,6 +2155,45 @@ export async function postFirstComment(
   // Looking at your own post before adding to it.
   await scrollHuman(page, 1);
   await dwell(1500, 3500);
+
+  /**
+   * Already there means done, and this is what makes a retry safe.
+   *
+   * Success is read off the composer clearing, and a comment that lands while
+   * that read fails would otherwise be written a second time by the sweep. A
+   * comment nobody can see is worth retrying; two of the same comment under one
+   * post is not.
+   *
+   * The thread is opened out first, twice at most, because a comment folded
+   * behind "load more" reads exactly like a comment that was never written.
+   * Same selectors as the miner uses, which are markup rather than wording and
+   * so hold on an account in any language.
+   */
+  for (let round = 0; round < 2; round++) {
+    const loadMore = page
+      .locator(
+        '[id*="loadmorecomments" i] [role="button"], ' +
+          '[componentkey*="loadmorecomments" i] [role="button"], ' +
+          byView(VIEW.moreComments)
+      )
+      .first();
+    if (!(await loadMore.isVisible().catch(() => false))) break;
+    try {
+      await clickHumanLocator(page, loadMore);
+    } catch {
+      break;
+    }
+    await dwell(1200, 2600);
+  }
+
+  const written = await page
+    .locator(COMMENT_LIST_SELECTOR)
+    .allInnerTexts()
+    .catch(() => [] as string[]);
+  if (hasOurComment(written.join("\n"), body)) {
+    log("first comment: already under the post, leaving it alone");
+    return true;
+  }
 
   const box = await firstVisible(
     page.locator(
