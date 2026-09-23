@@ -78,6 +78,12 @@ const PASS_INTERVAL_MS = 5 * 60 * 1000;
 /** Publishing checks more often than agents act, because somebody is waiting on it. */
 const PUBLISH_INTERVAL_MS = 60 * 1000;
 
+/** How often the first comment sweep runs, inside the publishing loop. */
+const COMMENT_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+
+/** When it last ran. The first pass after a start does not wait for it. */
+let lastCommentSweep = 0;
+
 /** Reading back how posts did is never urgent, and the numbers move slowly. */
 const INSIGHTS_INTERVAL_MS = 30 * 60 * 1000;
 
@@ -573,11 +579,17 @@ async function publishLoop(): Promise<void> {
     }
     // After the queue, never instead of it: a first comment that is owed is
     // owed by a post that is already live, so it waits its turn behind the
-    // posts somebody is watching for.
-    try {
-      await firstCommentPass();
-    } catch (error) {
-      logError("first comment sweep failed", error);
+    // posts somebody is watching for. And not every minute: the sweep opens a
+    // browser and holds this loop while it types, and the loop's whole reason
+    // to run every minute is the person watching a spinner after pressing
+    // Publish. Five minutes is soon enough for a comment that is already late.
+    if (Date.now() - lastCommentSweep >= COMMENT_SWEEP_INTERVAL_MS) {
+      lastCommentSweep = Date.now();
+      try {
+        await firstCommentPass();
+      } catch (error) {
+        logError("first comment sweep failed", error);
+      }
     }
     await sleep(PUBLISH_INTERVAL_MS);
   }
