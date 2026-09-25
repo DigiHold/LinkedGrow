@@ -130,6 +130,15 @@ export interface RawSocialCounts {
   reactedText: string | null;
   /** The other texts in that same row, in order: the comments count, then the reposts count. */
   rowTexts: string[];
+  /**
+   * Whether the card carries any reaction icon at all.
+   *
+   * This is what tells a post nobody engaged with from a post whose numbers we failed to read.
+   * LinkedIn draws no reaction icon when there are no reactions: Enrique's post of 2026-09-04 has
+   * 194 impressions, an action bar reading "Recomendar Comentar Compartir Enviar", and nothing
+   * else, and its card holds no consumption icon anywhere.
+   */
+  hasReactionIcon: boolean;
 }
 
 /**
@@ -163,9 +172,12 @@ export function parseSocialCounts(raw: RawSocialCounts): SocialCounts {
     };
   }
 
-  // The row layout. Nothing in it means nobody did it: LinkedIn leaves the line out rather than
-  // writing a zero, so an absent number here is zero and not an unreadable one.
-  if (raw.reactedText === null && raw.rowTexts.length === 0) {
+  /*
+   * The row layout. An absent line is a real zero here, because LinkedIn leaves the line out
+   * rather than writing one, and the icons say which of the two it is: a post with reactions
+   * draws them, a post without draws nothing at all.
+   */
+  if (raw.reactedText === null && raw.rowTexts.length === 0 && raw.hasReactionIcon) {
     return { reactions: null, comments: null, reposts: null };
   }
 
@@ -174,7 +186,12 @@ export function parseSocialCounts(raw: RawSocialCounts): SocialCounts {
     .filter((n): n is number => n !== null);
 
   return {
-    reactions: reactionsFromPhrase(raw.reactedText),
+    reactions:
+      raw.reactedText !== null
+        ? reactionsFromPhrase(raw.reactedText)
+        : raw.hasReactionIcon
+          ? null
+          : 0,
     comments: numbers[0] ?? 0,
     reposts: numbers[1] ?? 0,
   };
@@ -252,7 +269,12 @@ export async function readSocialCounts(page: Page): Promise<SocialCounts | null>
         }
       }
 
+      const hasReactionIcon = Boolean(
+        scope.querySelector('svg[id$="consumption-ring-small" i], svg[id="like-consumption-small" i]')
+      );
+
       return {
+        hasReactionIcon,
         commentText: clean(commentButton.innerText ?? ""),
         repostText: repostHost ? clean(repostHost.innerText ?? "") : "",
         likeText: likeHost ? clean(likeHost.innerText ?? "") : null,

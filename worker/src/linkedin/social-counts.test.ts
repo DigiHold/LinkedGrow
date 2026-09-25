@@ -10,6 +10,7 @@ test("the layout that puts the counts on the buttons", () => {
     likeText: "7",
     reactedText: "",
     rowTexts: [],
+    hasReactionIcon: true,
   });
   assert.deepEqual(counts, { reactions: 7, comments: 3, reposts: 0 });
 });
@@ -22,6 +23,7 @@ test("the layout that says it in words above the buttons", () => {
     likeText: null,
     reactedText: "Vidhi Toshniwal and 17 others reacted",
     rowTexts: ["14 comments"],
+    hasReactionIcon: true,
   });
   assert.deepEqual(counts, { reactions: 18, comments: 14, reposts: 0 });
 });
@@ -33,6 +35,7 @@ test("a repost count in the same row is read after the comments", () => {
     likeText: null,
     reactedText: "Marie Dupont et 5 autres personnes ont réagi",
     rowTexts: ["8 commentaires", "2 republications"],
+    hasReactionIcon: true,
   });
   assert.deepEqual(counts, { reactions: 6, comments: 8, reposts: 2 });
 });
@@ -44,20 +47,35 @@ test("one named person and no number is one reaction", () => {
     likeText: null,
     reactedText: "Maria Lecocq reacted",
     rowTexts: [],
+    hasReactionIcon: true,
   });
   assert.equal(counts.reactions, 1);
   assert.equal(counts.comments, 0);
 });
 
-test("a social bar that says nothing at all is unknown, never zero", () => {
+test("a bar that draws reaction icons but gives no number is unknown, never zero", () => {
   const counts = parseSocialCounts({
     commentText: "Comment",
     repostText: "Repost",
     likeText: null,
     reactedText: null,
     rowTexts: [],
+    hasReactionIcon: true,
   });
   assert.deepEqual(counts, { reactions: null, comments: null, reposts: null });
+});
+
+// Enrique's post of 2026-09-04: 194 impressions, an action bar, and no engagement line at all.
+test("a post nobody engaged with draws no reaction icon, and that is a real zero", () => {
+  const counts = parseSocialCounts({
+    commentText: "Comentar",
+    repostText: "Compartir",
+    likeText: null,
+    reactedText: null,
+    rowTexts: [],
+    hasReactionIcon: false,
+  });
+  assert.deepEqual(counts, { reactions: 0, comments: 0, reposts: 0 });
 });
 
 test("thousands are read with their separator", () => {
@@ -67,6 +85,7 @@ test("thousands are read with their separator", () => {
     likeText: "2.4K",
     reactedText: "",
     rowTexts: [],
+    hasReactionIcon: true,
   });
   assert.deepEqual(counts, { reactions: 2400, comments: 1204, reposts: 31 });
 });
