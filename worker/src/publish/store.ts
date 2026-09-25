@@ -829,9 +829,10 @@ const FIRST_COMMENT_WINDOW_MS = 24 * 60 * 60 * 1000;
  *
  * Longer, because that address is not a nicety: without it the post can never be opened again, so
  * its numbers are never read and the customer's analytics show one post carrying everything and
- * the rest at zero (Enrique, 2026-09-25). The profile's recent activity still holds a week.
+ * the rest at zero (Enrique, 2026-09-25). The profile's recent activity still holds two weeks of
+ * a weekly poster.
  */
-const MISSING_URL_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const MISSING_URL_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 /** A published post that still owes something: its address, its first comment, or both. */
 export interface UnfinishedPost {

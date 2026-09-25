@@ -1778,21 +1778,35 @@ export async function findPublishedUrl(
   // the post missing, which costs the post its URL and its first comment with
   // it (Mohamed, 2026-09-23 08:11). Wait for the thing being read.
   await page
-    .waitForSelector("div[data-urn], div[data-id]", { timeout: 10_000 })
+    .waitForSelector('div[data-urn], div[data-id], main [role="listitem"]', { timeout: 10_000 })
     .catch(() => {});
   await dwell(1800, 3200);
 
   const needle = flatten(text).slice(0, 60).toLowerCase();
+  /**
+   * Two layouts of this page, and the post's id sits in a different place on each.
+   *
+   * The older one puts it on the card itself, as `data-urn` or `data-id`. The newer one has
+   * neither: its cards are `role="listitem"` blocks and the id appears only inside their markup.
+   * Read off Enrique's account on 2026-09-25, his post from two days earlier was the first card on
+   * the page and this found no card at all, every time, so the post never got its address: no
+   * first comment could be left under it and its numbers could never be read, which is how his
+   * analytics ended up with one post carrying every view.
+   *
+   * The match is still on the post's own opening words, card by card, which is what makes this
+   * safe to use as the guard against posting the same thing twice.
+   */
   const urn = await page.evaluate((probe) => {
     const cards = Array.from(
-      document.querySelectorAll("div[data-urn], div[data-id]")
+      document.querySelectorAll('div[data-urn], div[data-id], main [role="listitem"]')
     ) as HTMLElement[];
     for (const card of cards) {
-      const id = card.getAttribute("data-urn") ?? card.getAttribute("data-id") ?? "";
-      if (!id.includes("activity")) continue;
       const body = (card.innerText ?? "").replace(/\s+/g, " ").trim().toLowerCase();
       if (probe.length > 0 && !body.includes(probe)) continue;
-      return id;
+      const own = card.getAttribute("data-urn") ?? card.getAttribute("data-id") ?? "";
+      if (own.includes("activity")) return own;
+      const inside = card.outerHTML.match(/urn:li:activity:\d{10,}/);
+      if (inside) return inside[0];
     }
     return "";
   }, needle);
