@@ -113,83 +113,155 @@ export async function summaryAnchorsPresent(page: Page): Promise<boolean> {
 
 
 export interface SocialCounts {
-  reactions: number;
-  comments: number;
-  reposts: number;
+  /** Null means the number could not be read, which is never the same as zero. */
+  reactions: number | null;
+  comments: number | null;
+  reposts: number | null;
+}
+
+/** What the page gave us, before any of it is turned into numbers. */
+export interface RawSocialCounts {
+  /** The action bar's Comment control: "3" where the counts live on the buttons, else a word. */
+  commentText: string;
+  repostText: string;
+  /** The reaction control that carries a bare count, on the layout that has one. */
+  likeText: string | null;
+  /** "Vidhi Toshniwal and 17 others reacted", on the layout that says it in words. */
+  reactedText: string | null;
+  /** The other texts in that same row, in order: the comments count, then the reposts count. */
+  rowTexts: string[];
 }
 
 /**
- * The three counts under a post, taken off the icons rather than the words beside them.
+ * The three counts, from either of the two social bars LinkedIn serves.
  *
- * They were briefly written as zeros, because the statistics page has no name for its engagement
- * block and guessing by position would have been the label mistake again. The post's own bar does
- * have names: LinkedIn puts an id on every icon, and the counts sit in a fixed relation to them.
+ * Read off two live accounts on 2026-09-25, the same post page renders two different ways:
  *
- * Read off a live page 2026-09-14, the bar is one row holding, in order:
+ *   counts on the buttons   the Comment button's own text is "3", the Repost button's is a zero
+ *                           width space, and a button beside the reaction icons reads "7"
+ *   counts in a row above   the buttons read "Like", "Comment", "Repost", and the numbers sit in
+ *                           the line above them: "Vidhi Toshniwal and 17 others reacted" and
+ *                           "14 comments"
  *
- *   a list of reaction icons  (svg id ending consumption-ring-small)
- *   the reaction count        (a bare number beside that list)
- *   the comment button        (holding svg#comment-small, its text is the count)
- *   the repost button         (holding svg#repost-small, same)
+ * The reader only knew the first one. On the second it parsed the word "Comment" as a number,
+ * got nothing, and wrote a zero, so every customer on that layout saw a month of posts with
+ * impressions and no engagement at all (Enrique and Mohamed, 2026-09-24).
  *
- * The first such row in the document is the post's own. Later ones belong to comments and to the
- * cards LinkedIn suggests underneath.
+ * Which layout is in front of us is decided by the Comment button: a number means the first, a
+ * word means the second. Nothing here reads a word to decide anything, because the account's own
+ * language decides those words and half these accounts are not in English.
+ */
+export function parseSocialCounts(raw: RawSocialCounts): SocialCounts {
+  const onButtons = toNumber(raw.commentText);
+  if (onButtons !== null) {
+    return {
+      // The bare number beside the reaction icons. An empty control is a real zero here: LinkedIn
+      // writes it as a zero width space rather than as nothing.
+      reactions: raw.likeText === null ? null : toNumber(raw.likeText) ?? 0,
+      comments: onButtons,
+      reposts: toNumber(raw.repostText) ?? 0,
+    };
+  }
+
+  // The row layout. Nothing in it means nobody did it: LinkedIn leaves the line out rather than
+  // writing a zero, so an absent number here is zero and not an unreadable one.
+  if (raw.reactedText === null && raw.rowTexts.length === 0) {
+    return { reactions: null, comments: null, reposts: null };
+  }
+
+  const numbers = raw.rowTexts
+    .map((text) => lastNumberIn(text))
+    .filter((n): n is number => n !== null);
+
+  return {
+    reactions: reactionsFromPhrase(raw.reactedText),
+    comments: numbers[0] ?? 0,
+    reposts: numbers[1] ?? 0,
+  };
+}
+
+/** The last number in a string, so "14 comments" and "comentarios 14" both answer 14. */
+function lastNumberIn(text: string): number | null {
+  const matches = text.match(/[\d][\d.,\s\u00a0\u202f]*[km]?/gi);
+  if (!matches || matches.length === 0) return null;
+  return toNumber(matches[matches.length - 1] ?? "");
+}
+
+/**
+ * "Vidhi Toshniwal and 17 others reacted" is 18 people, because the named one is one of them.
  *
- * An empty button is zero. LinkedIn writes it as a zero width space rather than as nothing, which
- * is why the text is stripped of those before it is read.
+ * A phrase with no number at all is one person. A phrase that is only a number is that number,
+ * which is what the other layout writes.
+ */
+function reactionsFromPhrase(phrase: string | null): number | null {
+  if (phrase === null) return null;
+  const text = phrase.trim();
+  if (!text) return null;
+  const bare = toNumber(text);
+  if (bare !== null) return bare;
+  const others = lastNumberIn(text);
+  return others === null ? 1 : others + 1;
+}
+
+/**
+ * Reads the raw text out of the post's own social bar, and leaves the arithmetic to
+ * `parseSocialCounts`, which is a pure function and therefore testable against both layouts.
+ *
+ * Everything is anchored on the icons, which carry the same ids in every language, and everything
+ * is scoped to the container holding the post's own Comment button, so the reaction count of a
+ * comment underneath can never be mistaken for the post's.
  */
 export async function readSocialCounts(page: Page): Promise<SocialCounts | null> {
-  const raw = await page
+  const raw = (await page
     .evaluate(() => {
-      const clean = (text: string): string => text.replace(/[\u200b\u200c\ufeff]/g, "").trim();
+      const clean = (text: string): string =>
+        text.replace(/[\u200b\u200c\ufeff]/g, "").replace(/\s+/g, " ").trim();
 
-      const buttonFor = (iconId: string): HTMLElement | null => {
-        const icon = document.querySelector(`svg[id="${iconId}" i]`);
-        return icon ? (icon.closest("button") as HTMLElement | null) : null;
-      };
+      const hostOf = (node: Element | null): HTMLElement | null =>
+        node ? ((node.closest('button, a, div[role="button"]') as HTMLElement | null) ?? null) : null;
 
-      const commentButton = buttonFor("comment-small");
+      const commentButton = hostOf(document.querySelector('svg[id="comment-small" i]'));
       if (!commentButton) return null;
 
-      /** The row is the nearest block that holds the comment button and the reaction icons. */
-      let row: HTMLElement | null = commentButton.parentElement;
-      for (let i = 0; i < 4 && row; i += 1) {
-        if (row.querySelector('svg[id$="consumption-ring-small" i]')) break;
-        row = row.parentElement;
+      /** The post's own card: the nearest ancestor that also holds the reaction icons. */
+      let card: HTMLElement | null = commentButton.parentElement;
+      for (let i = 0; i < 6 && card; i += 1) {
+        if (card.querySelector('svg[id$="consumption-ring-small" i]')) break;
+        card = card.parentElement;
       }
+      const scope: HTMLElement | Document = card ?? document;
+
+      const ringHost = hostOf(scope.querySelector('svg[id$="consumption-ring-small" i]'));
+      const likeHost = hostOf(scope.querySelector('svg[id="like-consumption-small" i]'));
+      const repostHost = hostOf(scope.querySelector('svg[id="repost-small" i]'));
 
       /**
-       * The reaction count is the bare number in that row that belongs to neither button. The
-       * buttons carry their own counts, so anything left over is the reactions.
+       * The rest of the line the reactions sit on, which is where the other layout keeps its
+       * comment and repost counts. Scoped to that line so the post's own words never get read as
+       * a count, and deduplicated because LinkedIn renders each of them twice.
        */
-      let reactions: string | null = null;
+      const rowTexts: string[] = [];
+      const row = ringHost ? ringHost.parentElement : null;
       if (row) {
-        const repostButton = buttonFor("repost-small");
         for (const node of Array.from(row.querySelectorAll("*"))) {
           if (node.children.length > 0) continue;
-          if (commentButton.contains(node)) continue;
-          if (repostButton && repostButton.contains(node)) continue;
+          if (ringHost && ringHost.contains(node)) continue;
           const text = clean(node.textContent ?? "");
-          if (text && /^[\d\s\u00a0\u202f.,]+[km]?$/i.test(text)) {
-            reactions = text;
-            break;
-          }
+          if (!text || !/\d/.test(text)) continue;
+          if (!rowTexts.includes(text)) rowTexts.push(text);
         }
       }
 
-      const repostButton = buttonFor("repost-small");
       return {
-        reactions,
-        comments: clean(commentButton.innerText ?? ""),
-        reposts: repostButton ? clean(repostButton.innerText ?? "") : "",
+        commentText: clean(commentButton.innerText ?? ""),
+        repostText: repostHost ? clean(repostHost.innerText ?? "") : "",
+        likeText: likeHost ? clean(likeHost.innerText ?? "") : null,
+        reactedText: ringHost ? clean(ringHost.innerText ?? "") : null,
+        rowTexts,
       };
     })
-    .catch(() => null);
+    .catch(() => null)) as RawSocialCounts | null;
 
   if (!raw) return null;
-  return {
-    reactions: raw.reactions === null ? 0 : toNumber(raw.reactions) ?? 0,
-    comments: toNumber(raw.comments) ?? 0,
-    reposts: toNumber(raw.reposts) ?? 0,
-  };
+  return parseSocialCounts(raw);
 }

@@ -821,16 +821,25 @@ export async function noteWaitingForAccount(postId: string, message: string): Pr
  */
 export const MAX_FIRST_COMMENT_ATTEMPTS = 3;
 
-/** How far back the sweep looks. Older than this and the moment has passed. */
+/** How far back the sweep looks for a comment. Older than this and the moment has passed. */
 const FIRST_COMMENT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-/** A published post whose first comment never made it. */
-export interface PendingComment {
+/**
+ * How far back it looks for a post whose address was never found.
+ *
+ * Longer, because that address is not a nicety: without it the post can never be opened again, so
+ * its numbers are never read and the customer's analytics show one post carrying everything and
+ * the rest at zero (Enrique, 2026-09-25). The profile's recent activity still holds a week.
+ */
+const MISSING_URL_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** A published post that still owes something: its address, its first comment, or both. */
+export interface UnfinishedPost {
   id: string;
   userId: string;
   workspaceId: string;
   content: string;
-  firstComment: string;
+  firstComment: string | null;
   postUrl: string | null;
   linkedinAccountId: string | null;
   attempts: number;
@@ -844,16 +853,18 @@ export interface PendingComment {
  * requeued, reclaimed or republished, and no row this returns is in the
  * publish queue at all, which is the property that makes retrying safe.
  */
-export async function loadPendingFirstComments(
+export async function loadPostsToFinish(
   limit = 10,
   edition: Edition = EDITION
-): Promise<PendingComment[]> {
+): Promise<UnfinishedPost[]> {
+  const now = nowSeconds();
   const { rows } = await db().execute({
     sql: `SELECT
             p.id                   AS id,
             p.user_id              AS user_id,
             p.content              AS content,
             p.first_comment        AS first_comment,
+            p.first_comment_posted_at AS first_comment_posted_at,
             p.linkedin_post_url    AS linkedin_post_url,
             p.linkedin_account_id  AS linkedin_account_id,
             COALESCE(p.first_comment_attempts, 0) AS attempts,
@@ -868,18 +879,22 @@ export async function loadPendingFirstComments(
           FROM posts p
           JOIN users u ON u.id = p.user_id
          WHERE p.status = 'published'
-           AND p.first_comment IS NOT NULL
-           AND TRIM(p.first_comment) <> ''
-           AND p.first_comment_posted_at IS NULL
            AND p.published_at IS NOT NULL
-           AND p.published_at >= ?
            AND COALESCE(p.first_comment_attempts, 0) < ?
+           AND (
+                 (p.linkedin_post_url IS NULL AND p.published_at >= ?)
+              OR (p.first_comment IS NOT NULL
+                  AND TRIM(p.first_comment) <> ''
+                  AND p.first_comment_posted_at IS NULL
+                  AND p.published_at >= ?)
+           )
            ${paywallClause(edition)}
          ORDER BY p.published_at ASC
          LIMIT ?`,
     args: [
-      nowSeconds() - Math.floor(FIRST_COMMENT_WINDOW_MS / 1000),
       MAX_FIRST_COMMENT_ATTEMPTS,
+      now - Math.floor(MISSING_URL_WINDOW_MS / 1000),
+      now - Math.floor(FIRST_COMMENT_WINDOW_MS / 1000),
       limit,
     ],
   });
@@ -889,7 +904,10 @@ export async function loadPendingFirstComments(
     userId: String(row.user_id),
     workspaceId: String(row.workspace_id),
     content: String(row.content ?? ""),
-    firstComment: String(row.first_comment ?? ""),
+    firstComment:
+      row.first_comment_posted_at === null && row.first_comment !== null
+        ? String(row.first_comment)
+        : null,
     postUrl: row.linkedin_post_url === null ? null : String(row.linkedin_post_url),
     linkedinAccountId:
       row.linkedin_account_id === null ? null : String(row.linkedin_account_id),
@@ -900,10 +918,9 @@ export async function loadPendingFirstComments(
 /**
  * What a post says once the comment has had its tries.
  *
- * Said on the post rather than nowhere, which is where it was said until now:
- * the customer's only way of learning that their first comment never went up
- * was to open LinkedIn and notice, or to write in, which is what happened on
- * 2026-09-23.
+ * Said on the post rather than nowhere, which is where it was said until now: the customer's only
+ * way of learning that their first comment never went up was to open LinkedIn and notice, or to
+ * write in, which is what happened on 2026-09-23.
  */
 export const FIRST_COMMENT_GAVE_UP_NOTE =
   "Your post is live, but we could not add your first comment. You can still add it yourself on LinkedIn.";

@@ -12,13 +12,13 @@ import { db } from "../db.ts";
 import { findPublishedUrl, postFirstComment } from "../linkedin/publish.ts";
 import {
   accountForPost,
-  loadPendingFirstComments,
+  loadPostsToFinish,
   markFirstCommentPosted,
   MAX_FIRST_COMMENT_ATTEMPTS,
   noteFirstCommentAttempt,
   noteFirstCommentGaveUp,
   recordPostUrl,
-  type PendingComment,
+  type UnfinishedPost,
   type PublishAccount,
 } from "./store.ts";
 
@@ -55,13 +55,13 @@ type Address = Awaited<ReturnType<typeof allocationFor>>;
 
 interface AccountWork {
   account: PublishAccount;
-  posts: PendingComment[];
+  posts: UnfinishedPost[];
 }
 
-async function commentOne(
+async function finishOne(
   session: Session,
   account: PublishAccount,
-  post: PendingComment
+  post: UnfinishedPost
 ): Promise<void> {
   let url = post.postUrl;
   if (!url && !account.profileUrl) {
@@ -77,19 +77,26 @@ async function commentOne(
   const spent = post.attempts + 1;
   // The last one that fails is the one that has to say so on the post.
   const giveUpIfDone = async () => {
-    if (spent >= MAX_FIRST_COMMENT_ATTEMPTS) await noteFirstCommentGaveUp(post.id);
+    if (post.firstComment && spent >= MAX_FIRST_COMMENT_ATTEMPTS) {
+      await noteFirstCommentGaveUp(post.id);
+    }
   };
 
   if (!url) {
     url = await findPublishedUrl(session.page, account.profileUrl as string, post.content);
     if (!url) {
-      log("first comment retry: the post is still not on the profile", { postId: post.id });
+      log("the post is still not on the profile", { postId: post.id });
       await giveUpIfDone();
       return;
     }
     await recordPostUrl(post.id, url);
-    log("first comment retry: found the post that had no URL", { postId: post.id, url });
+    // With an address the post can be opened again, which is also the only way its numbers are
+    // ever read: a post without one shows zeros on the analytics page for ever.
+    log("found the post that had no URL", { postId: post.id, url });
   }
+
+  // The address was the whole job for a post that owes no comment.
+  if (!post.firstComment) return;
 
   const landed = await postFirstComment(session.page, url, post.firstComment).catch(
     (error: unknown) => {
@@ -146,7 +153,7 @@ async function runAccount(work: AccountWork, address: Address): Promise<void> {
       if (!post) continue;
       // The same address lock the agent and the publisher take, so a comment
       // and an invitation never leave this household in the same instant.
-      await withAddress(key, () => commentOne(session, account, post)).catch((error: unknown) =>
+      await withAddress(key, () => finishOne(session, account, post)).catch((error: unknown) =>
         logError("first comment retry failed", error, { postId: post.id })
       );
       if (i < serve.length - 1) await sleep(randInt(45_000, 120_000));
@@ -159,7 +166,7 @@ async function runAccount(work: AccountWork, address: Address): Promise<void> {
 
 /** One sweep: whose comment is missing, on which account, and go and write it. */
 export async function firstCommentPass(): Promise<void> {
-  const pending = await loadPendingFirstComments(SWEEP_LIMIT);
+  const pending = await loadPostsToFinish(SWEEP_LIMIT);
   if (!pending.length) return;
 
   const byAccount = new Map<string, AccountWork>();
@@ -174,7 +181,7 @@ export async function firstCommentPass(): Promise<void> {
   }
   if (!byAccount.size) return;
 
-  log("first comment sweep starting", {
+  log("finishing sweep starting", {
     accounts: byAccount.size,
     posts: [...byAccount.values()].reduce((n, w) => n + w.posts.length, 0),
   });

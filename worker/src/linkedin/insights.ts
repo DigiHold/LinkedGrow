@@ -23,9 +23,15 @@ import { log } from "../logger.ts";
 
 export interface PostStats {
   impressions: number | null;
-  reactions: number;
-  comments: number;
-  reposts: number;
+  /**
+   * Null means the page did not say, and it is never written over a number we already have.
+   *
+   * These were zeros for anything unreadable until 2026-09-25, and a zero is an answer: it sat on
+   * the customer's analytics page next to a real impression count and read as "nobody engaged".
+   */
+  reactions: number | null;
+  comments: number | null;
+  reposts: number | null;
   /**
    * The post's own picture, as LinkedIn serves it.
    *
@@ -245,12 +251,19 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
         await dwell(1200, 2400);
         const counts = await readSocialCounts(page);
         if (!counts) log("the post's own counters could not be found", { postUrl });
+        else if (counts.reactions === null || counts.comments === null) {
+          log("the post's social bar did not give its numbers", {
+            postUrl,
+            reactions: counts.reactions,
+            comments: counts.comments,
+          });
+        }
 
         return {
           impressions: numbers.impressions,
-          reactions: counts?.reactions ?? 0,
-          comments: counts?.comments ?? 0,
-          reposts: counts?.reposts ?? 0,
+          reactions: counts?.reactions ?? null,
+          comments: counts?.comments ?? null,
+          reposts: counts?.reposts ?? null,
           imageUrl: postImageFrom(images),
         };
       }

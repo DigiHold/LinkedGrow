@@ -160,17 +160,33 @@ export async function saveStats(postId: string, stats: PostStats): Promise<void>
       args: [stats.imageUrl, postId],
     });
   }
-  const engagements = stats.reactions + stats.comments + stats.reposts;
+  const { rows } = await db().execute({
+    sql: `SELECT id, impressions, reactions, comments, shares
+            FROM post_analytics WHERE post_id = ? LIMIT 1`,
+    args: [postId],
+  });
+  const existing = rows[0];
+
+  /**
+   * A count the page did not give us keeps the number already stored.
+   *
+   * Writing a zero for an unreadable count is how a customer ends up looking at a post with 563
+   * impressions and no reactions at all, which is what LinkedIn's second social bar did to every
+   * account that was served it (2026-09-24). Unknown is not zero, and the last real number is a
+   * better answer than a fresh lie.
+   */
+  const keep = (read: number | null, stored: unknown): number =>
+    read !== null ? read : Number(stored ?? 0);
+
+  const reactions = keep(stats.reactions, existing?.reactions);
+  const comments = keep(stats.comments, existing?.comments);
+  const reposts = keep(stats.reposts, existing?.shares);
+
+  const engagements = reactions + comments + reposts;
   const rate =
     stats.impressions && stats.impressions > 0
       ? ((engagements / stats.impressions) * 100).toFixed(1)
       : null;
-
-  const { rows } = await db().execute({
-    sql: `SELECT id, impressions FROM post_analytics WHERE post_id = ? LIMIT 1`,
-    args: [postId],
-  });
-  const existing = rows[0];
 
   if (!existing) {
     await db().execute({
@@ -182,9 +198,9 @@ export async function saveStats(postId: string, stats: PostStats): Promise<void>
         postId,
         now,
         stats.impressions ?? 0,
-        stats.reactions,
-        stats.comments,
-        stats.reposts,
+        reactions,
+        comments,
+        reposts,
         rate,
         now,
       ],
@@ -199,9 +215,9 @@ export async function saveStats(postId: string, stats: PostStats): Promise<void>
     args: [
       now,
       stats.impressions ?? Number(existing.impressions ?? 0),
-      stats.reactions,
-      stats.comments,
-      stats.reposts,
+      reactions,
+      comments,
+      reposts,
       rate,
       String(existing.id),
     ],
