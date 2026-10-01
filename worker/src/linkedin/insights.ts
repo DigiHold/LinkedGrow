@@ -195,6 +195,35 @@ const NUMERIC_LINE = /^[\d.,\s\u00a0]+[km]?$/i;
  * Nicolas found it on 2026-09-07 looking at his own dashboard: every post at 0 impressions and 1
  * reaction, on an account whose profile says 633 impressions over the week.
  */
+/**
+ * The activity urn that belongs to a v1 share id, chosen by when it was made.
+ *
+ * Both ids carry their creation time in their top bits (the id shifted right by 22 is the epoch in
+ * milliseconds), and LinkedIn creates the share and its activity together: 126 ms apart on
+ * Enrique's post of 2026-05-14, 266 ms on his post of 2026-08-12. So the right activity is the one
+ * made in the same few seconds, whatever else the page happens to name around it, a comment's or
+ * a suggested post's. Requiring the page to name exactly one, as this did at first, failed on
+ * every post whose page carried anything else (Greg, 2026-10-01).
+ */
+export function activityForShare(shareId: string, candidates: string[]): string | null {
+  if (!/^\d{10,}$/.test(shareId)) return null;
+  const created = (id: string): bigint => BigInt(id) >> BigInt(22);
+  const shareAt = created(shareId);
+  let best: string | null = null;
+  let bestGap = BigInt(10_000);
+  for (const urn of candidates) {
+    const id = /urn:li:activity:(\d{10,})$/.exec(urn)?.[1];
+    if (!id) continue;
+    const at = created(id);
+    const gap = at > shareAt ? at - shareAt : shareAt - at;
+    if (gap <= bestGap) {
+      best = urn;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
 export function analyticsUrlFor(postUrl: string): string | null {
   const id = /(?:urn:li:activity:|activity[-:])(\d{6,25})/.exec(decodeURIComponent(postUrl))?.[1];
   return id ? `https://www.linkedin.com/analytics/post-summary/urn:li:activity:${id}/` : null;
@@ -215,22 +244,22 @@ export async function readPostStats(page: Page, postUrl: string): Promise<PostSt
    * urn:li:share:7493208656969162752 opens a page holding urn:li:activity:7493208658084986880 and
    * nothing else), so it is opened once to learn it.
    */
-  if (!analyticsUrlFor(postUrl) && /urn:li:(share|ugcPost):\d/.test(decodeURIComponent(postUrl))) {
+  const v1 = /urn:li:(?:share|ugcPost):(\d{10,})/.exec(decodeURIComponent(postUrl));
+  if (!analyticsUrlFor(postUrl) && v1) {
     await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
     await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
     await dwell(1800, 3400);
-    const activity = await page
-      .evaluate(() => {
-        const link = document.querySelector("a[href*='analytics/post-summary/urn:li:activity:']");
-        const fromLink = link?.getAttribute("href")?.match(/urn:li:activity:\d{10,}/)?.[0];
-        if (fromLink) return fromLink;
-        const all = Array.from(new Set(document.documentElement.outerHTML.match(/urn:li:activity:\d{10,}/g) ?? []));
-        // Only when the page names exactly one: a feed page around the post would name several.
-        return all.length === 1 ? (all[0] ?? "") : "";
-      })
-      .catch(() => "");
+    const candidates = (await page
+      .evaluate(() =>
+        Array.from(new Set(document.documentElement.outerHTML.match(/urn:li:activity:\d{10,}/g) ?? []))
+      )
+      .catch(() => [] as string[])) as string[];
+    const activity = activityForShare(v1[1] ?? "", candidates);
     if (!activity) {
-      log("could not find the activity behind this v1 post", { postUrl });
+      log("could not find the activity behind this v1 post", {
+        postUrl,
+        candidates: candidates.length,
+      });
       return null;
     }
     const activityUrl = `https://www.linkedin.com/feed/update/${activity}/`;
