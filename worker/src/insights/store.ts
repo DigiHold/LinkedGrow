@@ -55,10 +55,19 @@ export const FIRST_READ_MAX_AGE = 180 * 24 * HOUR;
 export function isStale(
   publishedAt: number,
   lastReadAt: number | null,
-  at: number = nowSeconds()
+  at: number = nowSeconds(),
+  hasNumbers = true
 ): boolean {
-  if (lastReadAt === null) return at - publishedAt <= FIRST_READ_MAX_AGE;
-  const interval = refreshIntervalFor(at - publishedAt);
+  const age = at - publishedAt;
+  if (lastReadAt === null) return age <= FIRST_READ_MAX_AGE;
+  /*
+   * A first read that failed left a row with no numbers. Past the thirty day schedule that row
+   * would freeze the post for good, so it is tried again once a day instead: a restart or a slow
+   * page is not a verdict, and a post that really is gone costs one page load a day, not one every
+   * half hour.
+   */
+  const interval =
+    refreshIntervalFor(age) ?? (!hasNumbers && age <= FIRST_READ_MAX_AGE ? 24 * HOUR : null);
   if (interval === null) return false;
   return at - lastReadAt >= interval;
 }
@@ -70,11 +79,10 @@ export function isStale(
  * posts a workspace has, and the per-post decision is left to `isStale`, which
  * is a pure function and therefore testable.
  */
-export async function loadPostsNeedingStats(limit = 40): Promise<StalePost[]> {
+export async function loadPostsNeedingStats(limit = 40, backlogLimit = 24): Promise<StalePost[]> {
   const since = nowSeconds() - 30 * 24 * HOUR;
   const firstReadSince = nowSeconds() - FIRST_READ_MAX_AGE;
-  const { rows } = await db().execute({
-    sql: `SELECT
+  const select = `SELECT
             p.id                  AS post_id,
             -- A v1 post kept only the urn the API handed back. It opens the post all the same,
             -- and the reader learns the activity address from that page.
@@ -86,6 +94,7 @@ export async function loadPostsNeedingStats(limit = 40): Promise<StalePost[]> {
             p.published_at        AS published_at,
             p.linkedin_account_id AS linkedin_account_id,
             a.date                AS last_read_at,
+            (a.id IS NOT NULL AND a.impressions IS NOT NULL) AS has_numbers,
             COALESCE(
               (SELECT t.owner_id
                  FROM team_members tm
@@ -98,18 +107,39 @@ export async function loadPostsNeedingStats(limit = 40): Promise<StalePost[]> {
           LEFT JOIN post_analytics a ON a.post_id = p.id
          WHERE p.status = 'published'
            AND (p.linkedin_post_url IS NOT NULL OR p.linkedin_post_id LIKE 'urn:li:%')
-           AND p.published_at IS NOT NULL
-           AND (p.published_at >= ? OR (a.id IS NULL AND p.published_at >= ?))
+           AND p.published_at IS NOT NULL`;
+
+  /*
+   * Two reads, not one. The limit used to apply before the staleness check, to the newest posts
+   * of every customer together, so the forty most recent filled it and anything older than them
+   * was never reached at all: Enrique's posts from May to August sat behind it for good. The
+   * backlog of posts with no numbers now has its own small share of every pass.
+   */
+  const [recent, backlog] = await Promise.all([
+    db().execute({
+      sql: `${select}
+           AND p.published_at >= ?
          ORDER BY p.published_at DESC
          LIMIT ?`,
-    args: [since, firstReadSince, limit],
-  });
+      args: [since, limit],
+    }),
+    db().execute({
+      sql: `${select}
+           AND p.published_at < ?
+           AND p.published_at >= ?
+           AND (a.id IS NULL OR a.impressions IS NULL)
+         ORDER BY p.published_at DESC
+         LIMIT ?`,
+      args: [since, firstReadSince, backlogLimit],
+    }),
+  ]);
 
   const out: StalePost[] = [];
-  for (const row of rows) {
+  for (const row of [...recent.rows, ...backlog.rows]) {
     const publishedAt = Number(row.published_at);
     const lastReadAt = row.last_read_at === null ? null : Number(row.last_read_at);
-    if (!isStale(publishedAt, lastReadAt)) continue;
+    const hasNumbers = Number(row.has_numbers ?? 0) === 1;
+    if (!isStale(publishedAt, lastReadAt, nowSeconds(), hasNumbers)) continue;
     out.push({
       postId: String(row.post_id),
       workspaceId: String(row.workspace_id),
