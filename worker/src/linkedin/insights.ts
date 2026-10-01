@@ -33,6 +33,14 @@ export interface PostStats {
   comments: number | null;
   reposts: number | null;
   /**
+   * The post's activity address, when it was opened under another one.
+   *
+   * Posts published by v1 kept only the id the API handed back, a share or ugcPost urn, and the
+   * statistics page answers to the activity urn alone. Returned so the caller can store it and the
+   * next read goes straight there.
+   */
+  activityUrl?: string;
+  /**
    * The post's own picture, as LinkedIn serves it.
    *
    * The performance table has always drawn a thumbnail from this and it was filled on one post out
@@ -200,6 +208,37 @@ export function analyticsUrlFor(postUrl: string): string | null {
  * same in the database, or a bad session would quietly wipe somebody's history.
  */
 export async function readPostStats(page: Page, postUrl: string): Promise<PostStats | null> {
+  /**
+   * A v1 post is known by its share or ugcPost urn, and the statistics page only takes the
+   * activity urn. The post page under the share urn carries the activity one, both as its own
+   * "post-summary" link and in its markup (read off Enrique's post of 2026-08-12 on 2026-10-01:
+   * urn:li:share:7493208656969162752 opens a page holding urn:li:activity:7493208658084986880 and
+   * nothing else), so it is opened once to learn it.
+   */
+  if (!analyticsUrlFor(postUrl) && /urn:li:(share|ugcPost):\d/.test(decodeURIComponent(postUrl))) {
+    await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
+    await page.waitForSelector("main", { timeout: 20_000 }).catch(() => null);
+    await dwell(1800, 3400);
+    const activity = await page
+      .evaluate(() => {
+        const link = document.querySelector("a[href*='analytics/post-summary/urn:li:activity:']");
+        const fromLink = link?.getAttribute("href")?.match(/urn:li:activity:\d{10,}/)?.[0];
+        if (fromLink) return fromLink;
+        const all = Array.from(new Set(document.documentElement.outerHTML.match(/urn:li:activity:\d{10,}/g) ?? []));
+        // Only when the page names exactly one: a feed page around the post would name several.
+        return all.length === 1 ? (all[0] ?? "") : "";
+      })
+      .catch(() => "");
+    if (!activity) {
+      log("could not find the activity behind this v1 post", { postUrl });
+      return null;
+    }
+    const activityUrl = `https://www.linkedin.com/feed/update/${activity}/`;
+    await dwell(1200, 2600);
+    const stats = await readPostStats(page, activityUrl);
+    return stats ? { ...stats, activityUrl } : null;
+  }
+
   /**
    * The author's own statistics page first, and usually only.
    *

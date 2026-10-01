@@ -16,6 +16,8 @@ export interface StalePost {
   url: string;
   publishedAt: number;
   linkedinAccountId: string | null;
+  /** True when this post has never been read, which is when a failed read must still be recorded. */
+  neverRead: boolean;
 }
 
 function nowSeconds(): number {
@@ -39,14 +41,25 @@ export function refreshIntervalFor(ageSeconds: number): number | null {
 }
 
 /** True when this post is worth opening again. */
+/**
+ * How old a post can be and still get its first read.
+ *
+ * The refresh schedule stops at thirty days because an old post's numbers barely move. But a post
+ * that has never been read at all has no numbers, not old ones, and that is what every post
+ * published by v1 looked like: Enrique's twenty posts since May showed four in his analytics,
+ * because only the four published by v2 had ever been opened. One read is worth it up to six
+ * months back.
+ */
+export const FIRST_READ_MAX_AGE = 180 * 24 * HOUR;
+
 export function isStale(
   publishedAt: number,
   lastReadAt: number | null,
   at: number = nowSeconds()
 ): boolean {
+  if (lastReadAt === null) return at - publishedAt <= FIRST_READ_MAX_AGE;
   const interval = refreshIntervalFor(at - publishedAt);
   if (interval === null) return false;
-  if (lastReadAt === null) return true;
   return at - lastReadAt >= interval;
 }
 
@@ -59,10 +72,17 @@ export function isStale(
  */
 export async function loadPostsNeedingStats(limit = 40): Promise<StalePost[]> {
   const since = nowSeconds() - 30 * 24 * HOUR;
+  const firstReadSince = nowSeconds() - FIRST_READ_MAX_AGE;
   const { rows } = await db().execute({
     sql: `SELECT
             p.id                  AS post_id,
-            p.linkedin_post_url   AS url,
+            -- A v1 post kept only the urn the API handed back. It opens the post all the same,
+            -- and the reader learns the activity address from that page.
+            COALESCE(
+              p.linkedin_post_url,
+              CASE WHEN p.linkedin_post_id LIKE 'urn:li:%'
+                   THEN 'https://www.linkedin.com/feed/update/' || p.linkedin_post_id || '/' END
+            )                     AS url,
             p.published_at        AS published_at,
             p.linkedin_account_id AS linkedin_account_id,
             a.date                AS last_read_at,
@@ -77,12 +97,12 @@ export async function loadPostsNeedingStats(limit = 40): Promise<StalePost[]> {
           FROM posts p
           LEFT JOIN post_analytics a ON a.post_id = p.id
          WHERE p.status = 'published'
-           AND p.linkedin_post_url IS NOT NULL
+           AND (p.linkedin_post_url IS NOT NULL OR p.linkedin_post_id LIKE 'urn:li:%')
            AND p.published_at IS NOT NULL
-           AND p.published_at >= ?
+           AND (p.published_at >= ? OR (a.id IS NULL AND p.published_at >= ?))
          ORDER BY p.published_at DESC
          LIMIT ?`,
-    args: [since, limit],
+    args: [since, firstReadSince, limit],
   });
 
   const out: StalePost[] = [];
@@ -97,6 +117,7 @@ export async function loadPostsNeedingStats(limit = 40): Promise<StalePost[]> {
       publishedAt,
       linkedinAccountId:
         row.linkedin_account_id === null ? null : String(row.linkedin_account_id),
+      neverRead: lastReadAt === null,
     });
   }
   return out;
@@ -358,4 +379,34 @@ export async function accountInsightsReadToday(linkedinAccountId: string): Promi
     args: [linkedinAccountId, day],
   });
   return rows.length > 0;
+}
+
+/**
+ * The activity address of a post that was known by its v1 share urn.
+ *
+ * Stored once it has been learned, so the next read opens the statistics page directly instead of
+ * going through the post page first.
+ */
+export async function savePostUrl(postId: string, url: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE posts SET linkedin_post_url = ? WHERE id = ?`,
+    args: [url, postId],
+  });
+}
+
+/**
+ * A first read that found nothing, recorded so it is not attempted again every half hour.
+ *
+ * A v1 post deleted on LinkedIn since, or one whose page no longer names its activity, would
+ * otherwise be opened on every pass for six months. The row holds no numbers, which is what the
+ * page already showed for it, and it carries the date so the refresh schedule takes over.
+ */
+export async function recordUnreadable(postId: string): Promise<void> {
+  const now = nowSeconds();
+  await db().execute({
+    sql: `INSERT INTO post_analytics (id, post_id, date, impressions, reactions, comments, shares, created_at)
+          SELECT ?, ?, ?, NULL, NULL, NULL, NULL, ?
+           WHERE NOT EXISTS (SELECT 1 FROM post_analytics WHERE post_id = ?)`,
+    args: [crypto.randomUUID(), postId, now, now, postId],
+  });
 }

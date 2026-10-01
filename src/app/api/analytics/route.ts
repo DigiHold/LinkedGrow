@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { accountFollowers, linkedinAccounts, posts, postAnalytics } from "@/lib/db/schema";
-import { and, asc, desc, eq, gte } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 import { bestPostingTime } from "@/lib/best-time";
 
@@ -61,8 +61,11 @@ export async function GET(request: NextRequest) {
         })
         .from(posts)
         .leftJoin(postAnalytics, eq(postAnalytics.postId, posts.id))
-        .where(and(eq(posts.userId, ownerId), gte(posts.createdAt, since)))
-        .orderBy(desc(posts.createdAt)),
+        // The window is the publishing date, not the day the draft was started: a post written
+        // in August and published in September belongs to September, and filtering on creation
+        // dropped it a month early.
+        .where(and(eq(posts.userId, ownerId), sql`COALESCE(${posts.publishedAt}, ${posts.createdAt}) >= ${Math.floor(since.getTime() / 1000)}`))
+        .orderBy(desc(sql`COALESCE(${posts.publishedAt}, ${posts.createdAt})`)),
       db
         .select({ id: linkedinAccounts.id })
         .from(linkedinAccounts)

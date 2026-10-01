@@ -24,6 +24,8 @@ import {
   saveAccountInsights,
   accountInsightsReadToday,
   saveStats,
+  savePostUrl,
+  recordUnreadable,
   type StalePost,
 } from "./store.ts";
 
@@ -235,9 +237,13 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
         const stats = await withAddress(key, () => readPostStats(session.page, post.url));
         if (!stats) {
           log("could not read this post's numbers", { postId: post.postId });
+          if (post.neverRead) await recordUnreadable(post.postId);
           continue;
         }
         await saveStats(post.postId, stats);
+        if (stats.activityUrl && stats.activityUrl !== post.url) {
+          await savePostUrl(post.postId, stats.activityUrl);
+        }
       } catch (error) {
         logError("reading a post's numbers failed", error, { postId: post.postId });
       }
