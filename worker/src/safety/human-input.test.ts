@@ -73,6 +73,32 @@ test("nothing types into LinkedIn with a flat delay instead of the persona's key
   );
 });
 
+/**
+ * Only a post's body is pasted. Nicolas chose that for posts on 2026-10-12, and
+ * a comment or a message landing whole, with no keystroke behind it, is the
+ * flat rhythm the test above exists to keep out.
+ */
+test("only the post body is pasted, comments and messages are still typed", () => {
+  const dirs = ["../linkedin", "../publish", "../insights", "../engage"];
+  const inserts: string[] = [];
+  for (const dir of dirs) {
+    const base = new URL(`${dir}/`, import.meta.url);
+    for (const name of readdirSync(base)) {
+      if (!name.endsWith(".ts") || name.endsWith(".test.ts")) continue;
+      const src = readFileSync(new URL(name, base), "utf8");
+      src.split("\n").forEach((line, i) => {
+        if (line.includes("insertText(")) inserts.push(`${dir}/${name}:${i + 1}`);
+      });
+    }
+  }
+  assert.equal(inserts.length, 1, `text is inserted outside the post body: ${inserts.join(", ")}`);
+  assert.match(inserts[0] ?? "", /^\.\.\/linkedin\/publish\.ts:/);
+
+  const publish = read("../linkedin/publish.ts");
+  const pasted = publish.match(/typeBody\([^)]*paste: true/g) ?? [];
+  assert.deepEqual(pasted, ["typeBody(page, editor, body, { paste: true"]);
+});
+
 test("publishing reads the feed before it opens the composer", () => {
   const src = read("../linkedin/publish.ts");
   const settle = src.indexOf("async function settleOnFeed");

@@ -17,6 +17,7 @@ import {
   MAX_FIRST_COMMENT_ATTEMPTS,
   noteFirstCommentAttempt,
   noteFirstCommentGaveUp,
+  noteFirstCommentUnconfirmed,
   recordPostUrl,
   type UnfinishedPost,
   type PublishAccount,
@@ -30,9 +31,9 @@ import {
  * posts are already published. Every state-writing call in that pass
  * (`claimPost`, `failOrRequeue`, `releaseScheduled`, `unclaim`) moves a post
  * back towards the queue, and a published post that re-enters the queue is
- * published twice. Nothing in this file can reach any of them. It writes
- * exactly three things: the attempt counter, the URL when it was missing, and
- * the timestamp once the comment is up.
+ * published twice. Nothing in this file can reach any of them. It writes the
+ * attempt counter, the URL when it was missing, the timestamp the moment before
+ * the comment is sent, and the note on the post when the comment cannot be.
  *
  * What it fixes, from 2026-09-22 and 2026-09-23 on the live worker:
  *
@@ -95,18 +96,28 @@ async function finishOne(
     log("found the post that had no URL", { postId: post.id, url });
   }
 
-  // The address was the whole job for a post that owes no comment.
-  if (!post.firstComment) return;
+  // The address was the whole job for a post that owes no comment. One whose
+  // comment window closed while its address was missing says so on the post.
+  if (!post.firstComment) {
+    if (post.commentOverdue) await noteFirstCommentGaveUp(post.id);
+    return;
+  }
 
-  const landed = await postFirstComment(session.page, url, post.firstComment).catch(
-    (error: unknown) => {
-      logError("first comment retry failed", error, { postId: post.id });
-      return false;
-    }
-  );
-  if (landed) {
-    await markFirstCommentPosted(post.id);
-    log("first comment posted on a later pass", { postId: post.id });
+  const outcome = await postFirstComment(
+    session.page,
+    url,
+    post.firstComment,
+    () => markFirstCommentPosted(post.id)
+  ).catch((error: unknown) => {
+    logError("first comment retry failed", error, { postId: post.id });
+    return "not-sent" as const;
+  });
+  if (outcome === "posted" || outcome === "already-there") {
+    log("first comment posted on a later pass", { postId: post.id, outcome });
+    return;
+  }
+  if (outcome === "unconfirmed") {
+    await noteFirstCommentUnconfirmed(post.id);
     return;
   }
   await giveUpIfDone();

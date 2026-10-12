@@ -28,6 +28,7 @@ import {
   loadDuePosts,
   markFailed,
   markFirstCommentPosted,
+  noteFirstCommentUnconfirmed,
   noteWaitingForAccount,
   markHandedToScheduler,
   releaseVideo,
@@ -207,15 +208,16 @@ async function afterPublishing(
   await sleep(randInt(FIRST_COMMENT_DELAY_MS.min, FIRST_COMMENT_DELAY_MS.max));
 
   if (wantsComment) {
-    const landed = await postFirstComment(
+    const outcome = await postFirstComment(
       session.page,
       url,
-      post.firstComment as string
+      post.firstComment as string,
+      () => markFirstCommentPosted(post.id)
     ).catch((error: unknown) => {
       logError("first comment failed", error, { postId: post.id });
-      return false;
+      return "not-sent" as const;
     });
-    if (landed) await markFirstCommentPosted(post.id);
+    if (outcome === "unconfirmed") await noteFirstCommentUnconfirmed(post.id);
     await sleep(randInt(8_000, 25_000));
   }
 

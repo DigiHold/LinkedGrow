@@ -15,6 +15,7 @@ import {
   typeHumanHere,
 } from "../browser/human.ts";
 import { byIcon as byIconShared, byView, VIEW } from "./locate.ts";
+import { readSocialCounts } from "./summary-dom.ts";
 
 /**
  * Posting to LinkedIn by using LinkedIn, because there is no API any more.
@@ -1569,7 +1570,7 @@ async function typeBody(
     // what is left of a round that did not take. Writing over it is how one
     // post became eight copies, so nothing is written until the box is empty,
     // and a box that never empties is left for the caller's read back to refuse.
-    const before = flatten(await editor.innerText().catch(() => ""));
+    const before = flatten(await editor.innerText().catch(() => "unreadable"));
     if (before !== "" && !(await clearEditor(page, editor))) {
       log("the editor would not empty, not writing over it", { attempt, of: maxAttempts });
       await sleep(attempt * 800 + randInt(200, 600));
@@ -1583,10 +1584,15 @@ async function typeBody(
         const line = lines[i] ?? "";
         if (line.length > 0) await page.keyboard.insertText(line);
         if (i < lines.length - 1) {
+          // The same beat before Enter as when typed, which posts with a
+          // hashtag ending a line have gone through without the tag picker
+          // taking the Enter.
+          await sleep(randInt(90, 260));
           await page.keyboard.press("Enter");
-          await sleep(randInt(40, 120));
         }
       }
+      // The editor turns links and tags into its own nodes a moment later.
+      await sleep(randInt(600, 1200));
     } else {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i] ?? "";
@@ -2237,33 +2243,96 @@ export async function likePost(page: Page, postUrl: string): Promise<boolean> {
 /** Rounds of retyping a comment before the visit is given up on. */
 const COMMENT_TYPE_ATTEMPTS = 3;
 
-/** The rendered comments of a post, the same markup the miner reads them from. */
-const COMMENT_LIST_SELECTOR =
-  ".comments-comments-list, article.comments-comment-entity, .comments-comment-item";
+/**
+ * Text reduced to what survives being typed again by hand or rendered by
+ * LinkedIn: typographic quotes and dashes made plain, case and every space
+ * gone. Spaces go entirely because the page splits a comment across elements
+ * and line breaks, and how those join is the page's business, not the words'.
+ */
+function squash(value: string): string {
+  return value
+    .replace(/[‘’‚′]/g, "'")
+    .replace(/[“”„″]/g, '"')
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
 
 /**
  * Whether this comment is already under the post.
  *
- * Read off the comments themselves, never the post body: a first comment often
- * repeats a line of the post, and matching against the post would skip a
- * comment that was never written. The probe is the opening of the comment,
- * because LinkedIn folds a long one behind "see more".
+ * Read off the comments, never the post body: a first comment often repeats a
+ * line of the post, and matching against the post would skip a comment that
+ * was never written. The probe is the opening of the comment, because LinkedIn
+ * folds a long one behind "see more", and quotes are compared plain, because
+ * the copy under Mohamed's post on 2026-09-23 had been typed again by hand.
  */
 export function hasOurComment(commentsText: string, comment: string): boolean {
-  const body = flatten(comment).toLowerCase();
-  if (!body) return false;
-  const probe = body.slice(0, 60);
+  const probe = squash(comment).slice(0, 60);
   if (probe.length < 20) return false;
-  return flatten(commentsText).toLowerCase().includes(probe);
+  return squash(commentsText).includes(probe);
 }
 
+/** What the post page showed before anything was written under it. */
+export interface CommentsSeen {
+  /** The text under the post's own action bar, editors left out. Null when the bar was not found. */
+  commentsText: string | null;
+  /** Rendered comments recognised by markup, on either of the two layouts. */
+  markers: number;
+  /** The post's own comment count. Null means it could not be read, never zero. */
+  commentCount: number | null;
+}
+
+/**
+ * Whether to write the first comment, decided before the box is touched.
+ *
+ * Doubt means no. The reader that ran until 2026-10-12 knew one layout's
+ * comment markup, read nothing on the other, took nothing for "not there yet",
+ * and wrote a second copy under a post that already carried one. A comment
+ * that is not written leaves a note the customer can act on; a duplicate is on
+ * their profile for everyone to see.
+ */
+export function firstCommentDecision(
+  seen: CommentsSeen,
+  comment: string
+): "post" | "already-there" | "unverifiable" {
+  if (seen.commentsText === null || seen.commentCount === null) return "unverifiable";
+  if (hasOurComment(seen.commentsText, comment)) return "already-there";
+  if (seen.commentCount > 0 && seen.markers === 0) return "unverifiable";
+  return "post";
+}
+
+/**
+ * How a visit to write the first comment ended.
+ *
+ * `posted` and `already-there` are done. `unconfirmed` means the comment may
+ * have left and must not be written again. `not-sent` and `unverifiable` left
+ * nothing behind and can be tried on a later visit.
+ */
+export type FirstCommentOutcome =
+  | "posted"
+  | "already-there"
+  | "unconfirmed"
+  | "not-sent"
+  | "unverifiable";
+
+/**
+ * `markSent` records the comment as written, and is called before the submit
+ * click rather than after the box clears. Recorded after, a kill or a failed
+ * read between the click and the write left a comment on LinkedIn that the
+ * database did not know about, and the next visit wrote it again. Recorded
+ * before, the worst case is one comment we cannot confirm, which the caller
+ * says on the post. If it cannot be recorded, nothing is clicked.
+ */
 export async function postFirstComment(
   page: Page,
   postUrl: string,
-  comment: string
-): Promise<boolean> {
+  comment: string,
+  markSent: () => Promise<void>
+): Promise<FirstCommentOutcome> {
   const body = comment.trim();
-  if (!body) return false;
+  if (!body) return "not-sent";
 
   await page.goto(postUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
   await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
@@ -2302,13 +2371,50 @@ export async function postFirstComment(
     await dwell(1200, 2600);
   }
 
-  const written = await page
-    .locator(COMMENT_LIST_SELECTOR)
-    .allInnerTexts()
-    .catch(() => [] as string[]);
-  if (hasOurComment(written.join("\n"), body)) {
+  /**
+   * Everything after the post's own Comment control, which is where the
+   * comments are on both layouts, read as text so no class name decides it.
+   * Editors are left out, so a comment sitting unsent in a box never counts
+   * as one already posted. The icon id is the same anchor the counts use.
+   */
+  const onPage = await page
+    .evaluate(() => {
+      const anchor = document.querySelector('svg[id="comment-small" i]');
+      if (!anchor) return null;
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      walker.currentNode = anchor;
+      const texts: string[] = [];
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (node.parentElement?.closest('[contenteditable="true"]')) continue;
+        texts.push(node.nodeValue ?? "");
+      }
+      const markers = document.querySelectorAll(
+        'article.comments-comment-entity, .comments-comment-item, ' +
+          '[data-view-name="comment-actor-description"], [data-view-name="comment-reply"]'
+      ).length;
+      return { text: texts.join(""), markers };
+    })
+    .catch(() => null);
+  const counts = await readSocialCounts(page).catch(() => null);
+  const seen: CommentsSeen = {
+    commentsText: onPage?.text ?? null,
+    markers: onPage?.markers ?? 0,
+    commentCount: counts?.comments ?? null,
+  };
+  const decision = firstCommentDecision(seen, body);
+  if (decision === "already-there") {
     log("first comment: already under the post, leaving it alone");
-    return true;
+    await markSent();
+    return "already-there";
+  }
+  if (decision === "unverifiable") {
+    log("first comment: the comments under the post could not be read, not writing it", {
+      anchor: seen.commentsText !== null,
+      markers: seen.markers,
+      count: seen.commentCount,
+    });
+    return "unverifiable";
   }
 
   const box = await firstVisible(
@@ -2319,7 +2425,7 @@ export async function postFirstComment(
   );
   if (!box) {
     log("first comment: no comment box on the post");
-    return false;
+    return "not-sent";
   }
 
   // Focus-checked and read back, same as the post body: the comment box is the
@@ -2328,7 +2434,7 @@ export async function postFirstComment(
   await typeBody(page, box, body, { attempts: COMMENT_TYPE_ATTEMPTS });
   if (flatten(await box.innerText().catch(() => "")) !== flatten(body)) {
     log("first comment: the box did not take the comment, leaving it");
-    return false;
+    return "not-sent";
   }
   await dwell(1200, 3000);
 
@@ -2371,28 +2477,36 @@ export async function postFirstComment(
     (await firstVisible(namedButton(container, BUTTON_NAME.post)));
   if (!submit || (await submit.isDisabled().catch(() => true))) {
     log("first comment: the submit button never became available");
-    return false;
+    return "not-sent";
   }
-  await clickHumanLocator(page, submit);
-  await dwell(1500, 2800);
 
-  // Cleared box means it left, and a box that detached entirely cleared too:
-  // LinkedIn collapses the composer once the comment is up.
-  let left = (await box.innerText().catch(() => "")).trim().length === 0;
-  if (!left) {
-    // The named button did nothing on the redesigned comment box (2026-08-18:
-    // comment typed and held, submit clicked, box untouched, nothing on the
-    // post). Enter posts a comment on LinkedIn, and the keyboard survives DOM
-    // renames that break every button lookup.
-    await box.click().catch(() => {});
-    await sleep(randInt(300, 700));
-    await page.keyboard.press("Enter").catch(() => {});
+  // From the click on, the comment may be on LinkedIn, so it is recorded first.
+  await markSent();
+  try {
+    await clickHumanLocator(page, submit).catch(() => {});
     await dwell(1500, 2800);
-    left = (await box.innerText().catch(() => "x")).trim().length === 0;
+
+    // Cleared box means it left, and a box that detached entirely cleared too:
+    // LinkedIn collapses the composer once the comment is up.
+    let left = (await box.innerText().catch(() => "")).trim().length === 0;
+    if (!left) {
+      // The named button did nothing on the redesigned comment box (2026-08-18:
+      // comment typed and held, submit clicked, box untouched, nothing on the
+      // post). Enter posts a comment on LinkedIn, and the keyboard survives DOM
+      // renames that break every button lookup.
+      await box.click().catch(() => {});
+      await sleep(randInt(300, 700));
+      await page.keyboard.press("Enter").catch(() => {});
+      await dwell(1500, 2800);
+      left = (await box.innerText().catch(() => "x")).trim().length === 0;
+    }
+    if (!left) {
+      log("first comment: typed but the box did not clear");
+      await capturePage(page, "comment-box", "first comment would not submit").catch(() => "");
+      return "unconfirmed";
+    }
+    return "posted";
+  } catch {
+    return "unconfirmed";
   }
-  if (!left) {
-    log("first comment: typed but the box did not clear");
-    await capturePage(page, "comment-box", "first comment would not submit").catch(() => "");
-  }
-  return left;
 }

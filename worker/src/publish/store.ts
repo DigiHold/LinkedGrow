@@ -821,8 +821,16 @@ export async function noteWaitingForAccount(postId: string, message: string): Pr
  */
 export const MAX_FIRST_COMMENT_ATTEMPTS = 3;
 
-/** How far back the sweep looks for a comment. Older than this and the moment has passed. */
-const FIRST_COMMENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+/**
+ * How long after publishing the sweep may still write the first comment.
+ *
+ * Two hours, down from a day. A first comment is worth something in the post's
+ * first hour, and past that its owner has usually noticed it missing and
+ * written it by hand: on 2026-09-23 Mohamed did, 35 minutes after his post,
+ * and the sweep added ours under it five hours later. A comment past the
+ * window is not written; the post says so instead.
+ */
+const FIRST_COMMENT_WINDOW_MS = 2 * 60 * 60 * 1000;
 
 /**
  * How far back it looks for a post whose address was never found.
@@ -844,13 +852,15 @@ export interface UnfinishedPost {
   postUrl: string | null;
   linkedinAccountId: string | null;
   attempts: number;
+  /** A first comment is owed but the window for writing it has closed. */
+  commentOverdue: boolean;
 }
 
 /**
  * Published posts still owing their first comment.
  *
  * Deliberately narrow: published only, a comment that exists and has not
- * landed, published within the last day, and tries left. Nothing here is ever
+ * landed, published within the comment window, and tries left. Nothing here is ever
  * requeued, reclaimed or republished, and no row this returns is in the
  * publish queue at all, which is the property that makes retrying safe.
  */
@@ -859,6 +869,7 @@ export async function loadPostsToFinish(
   edition: Edition = EDITION
 ): Promise<UnfinishedPost[]> {
   const now = nowSeconds();
+  const commentSince = now - Math.floor(FIRST_COMMENT_WINDOW_MS / 1000);
   const { rows } = await db().execute({
     sql: `SELECT
             p.id                   AS id,
@@ -866,6 +877,7 @@ export async function loadPostsToFinish(
             p.content              AS content,
             p.first_comment        AS first_comment,
             p.first_comment_posted_at AS first_comment_posted_at,
+            p.published_at         AS published_at,
             p.linkedin_post_url    AS linkedin_post_url,
             p.linkedin_account_id  AS linkedin_account_id,
             COALESCE(p.first_comment_attempts, 0) AS attempts,
@@ -895,25 +907,32 @@ export async function loadPostsToFinish(
     args: [
       MAX_FIRST_COMMENT_ATTEMPTS,
       now - Math.floor(MISSING_URL_WINDOW_MS / 1000),
-      now - Math.floor(FIRST_COMMENT_WINDOW_MS / 1000),
+      commentSince,
       limit,
     ],
   });
 
-  return rows.map((row) => ({
-    id: String(row.id),
-    userId: String(row.user_id),
-    workspaceId: String(row.workspace_id),
-    content: String(row.content ?? ""),
-    firstComment:
-      row.first_comment_posted_at === null && row.first_comment !== null
-        ? String(row.first_comment)
-        : null,
-    postUrl: row.linkedin_post_url === null ? null : String(row.linkedin_post_url),
-    linkedinAccountId:
-      row.linkedin_account_id === null ? null : String(row.linkedin_account_id),
-    attempts: Number(row.attempts ?? 0),
-  }));
+  return rows.map((row) => {
+    // A post found through its missing address can be two weeks old, so the
+    // comment window is applied here as well as in the query.
+    const owed =
+      row.first_comment_posted_at === null &&
+      row.first_comment !== null &&
+      String(row.first_comment).trim() !== "";
+    const fresh = Number(row.published_at) >= commentSince;
+    return {
+      id: String(row.id),
+      userId: String(row.user_id),
+      workspaceId: String(row.workspace_id),
+      content: String(row.content ?? ""),
+      firstComment: owed && fresh ? String(row.first_comment) : null,
+      postUrl: row.linkedin_post_url === null ? null : String(row.linkedin_post_url),
+      linkedinAccountId:
+        row.linkedin_account_id === null ? null : String(row.linkedin_account_id),
+      attempts: Number(row.attempts ?? 0),
+      commentOverdue: owed && !fresh,
+    };
+  });
 }
 
 /**
@@ -934,6 +953,25 @@ export async function noteFirstCommentGaveUp(postId: string): Promise<void> {
              SET error_message = ?, updated_at = ?
            WHERE id = ? AND first_comment_posted_at IS NULL`,
     args: [FIRST_COMMENT_GAVE_UP_NOTE, now, postId],
+  });
+}
+
+/**
+ * What a post says when its first comment may have gone up and we cannot tell.
+ *
+ * Never the give up note, which tells the customer to add the comment
+ * themselves: the comment was recorded as sent before the click, so it may well
+ * be there already, and asking for it again is how a post ends up with two.
+ */
+export const FIRST_COMMENT_UNCONFIRMED_NOTE =
+  "Your post is live, but we could not confirm that your first comment went up. Please check under the post on LinkedIn before you add it again.";
+
+/** The comment was sent and its arrival could not be read back. */
+export async function noteFirstCommentUnconfirmed(postId: string): Promise<void> {
+  const now = nowSeconds();
+  await db().execute({
+    sql: `UPDATE posts SET error_message = ?, updated_at = ? WHERE id = ?`,
+    args: [FIRST_COMMENT_UNCONFIRMED_NOTE, now, postId],
   });
 }
 

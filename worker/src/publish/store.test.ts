@@ -17,9 +17,14 @@ import {
   DIRECT_HEAD_START_MS,
   leadMsFor,
   loadDuePosts,
+  loadPostsToFinish,
   markHandedToScheduler,
   markPublished,
   mediaForPost,
+  noteFirstCommentGaveUp,
+  noteFirstCommentUnconfirmed,
+  FIRST_COMMENT_GAVE_UP_NOTE,
+  FIRST_COMMENT_UNCONFIRMED_NOTE,
   noteWaitingForAccount,
   releaseScheduled,
   releaseStaleClaims,
@@ -735,4 +740,58 @@ test("a published post is never annotated after the fact", async () => {
 
   const { rows } = await db().execute("SELECT error_message FROM posts WHERE id = 'post-1'");
   assert.equal(rows[0]?.error_message, null);
+});
+
+async function addPublished(
+  id: string,
+  publishedAgoSeconds: number,
+  url: string | null,
+  firstComment: string | null
+): Promise<void> {
+  await addPost(id, "user-1", { status: "published", first_comment: firstComment });
+  await db().execute({
+    sql: `UPDATE posts SET published_at = ?, linkedin_post_url = ? WHERE id = ?`,
+    args: [seconds(-publishedAgoSeconds), url, id],
+  });
+}
+
+test("a late first comment is only written while the post is fresh", async () => {
+  await freshDb();
+  await db().execute("ALTER TABLE posts ADD COLUMN first_comment_attempts INTEGER");
+  await addUser("user-1");
+  const comment = "The full breakdown with every number is in the guide";
+  const url = "https://www.linkedin.com/feed/update/urn:li:activity:1/";
+  await addPublished("fresh", 30 * 60, url, comment);
+  // 2026-09-23: no URL at first, found five hours later, and the comment went up
+  // under a post whose owner had already written it by hand.
+  await addPublished("late-no-url", 5 * HOUR, null, comment);
+  await addPublished("late-with-url", 5 * HOUR, url, comment);
+
+  const posts = await loadPostsToFinish(10);
+  const byId = new Map(posts.map((p) => [p.id, p]));
+
+  assert.equal(byId.get("fresh")?.firstComment, comment);
+  assert.equal(byId.get("fresh")?.commentOverdue, false);
+  // Still served, because its address is still worth finding, but owing no comment.
+  assert.equal(byId.get("late-no-url")?.firstComment, null);
+  assert.equal(byId.get("late-no-url")?.commentOverdue, true);
+  assert.equal(byId.has("late-with-url"), false);
+});
+
+test("a comment that may have gone up says so, and is never offered back to the customer", async () => {
+  await freshDb();
+  await addUser("user-1");
+  await addPost("post-1", "user-1", { status: "published" });
+  await db().execute(`UPDATE posts SET first_comment_posted_at = ${seconds()} WHERE id = 'post-1'`);
+
+  // Marked as sent before the click, so the give up note, which tells the
+  // customer to add it themselves, must not land on top of it.
+  await noteFirstCommentGaveUp("post-1");
+  let { rows } = await db().execute("SELECT error_message FROM posts WHERE id = 'post-1'");
+  assert.equal(rows[0]?.error_message, null);
+
+  await noteFirstCommentUnconfirmed("post-1");
+  ({ rows } = await db().execute("SELECT error_message FROM posts WHERE id = 'post-1'"));
+  assert.equal(rows[0]?.error_message, FIRST_COMMENT_UNCONFIRMED_NOTE);
+  assert.notEqual(FIRST_COMMENT_UNCONFIRMED_NOTE, FIRST_COMMENT_GAVE_UP_NOTE);
 });

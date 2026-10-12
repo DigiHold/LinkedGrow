@@ -60,7 +60,10 @@ export interface Engagement {
  * result; the reverse, retrying because the like failed, would post the comment twice.
  */
 export async function engagePost(page: Page, postUrl: string, comment: string): Promise<Engagement> {
-  const commented = await postFirstComment(page, postUrl, comment);
+  // The engage pass records the draft's outcome itself once this returns, so
+  // there is nothing to mark before the click.
+  const outcome = await postFirstComment(page, postUrl, comment, async () => {});
+  const commented = outcome === "posted" || outcome === "already-there";
 
   await dwell(1800, 4000);
   await scrollHuman(page, 1);

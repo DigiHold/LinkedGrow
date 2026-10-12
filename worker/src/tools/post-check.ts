@@ -274,10 +274,12 @@ async function main(): Promise<void> {
       } else {
         const text = "Testing the comment box, this comment is removed straight away.";
         const attempt = await within("comment", BUDGET.comment, () =>
-          postFirstComment(session.page, mine, text).catch((error: unknown) => {
-            void capturePage(session.page, accountId, "first-comment");
-            return error instanceof Error ? error.message : String(error);
-          })
+          postFirstComment(session.page, mine, text, async () => {})
+            .then((outcome) => outcome === "posted" || outcome === "already-there" || outcome)
+            .catch((error: unknown) => {
+              void capturePage(session.page, accountId, "first-comment");
+              return error instanceof Error ? error.message : String(error);
+            })
         );
         const landed = "timedOut" in attempt ? "gave up waiting on the comment box" : attempt.value;
         results.push({
