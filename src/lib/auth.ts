@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db, users } from "./db";
-import { loadSessionUser, invalidateSessionUser } from "./auth-user";
+import { loadSessionUser, invalidateSessionUser, type SessionUser } from "./auth-user";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { verifyTOTP } from "./totp";
@@ -141,7 +141,19 @@ const authConfig: NextAuthConfig = {
       // One joined, briefly cached read instead of four chained queries.
       // See src/lib/auth-user.ts for why.
       if (token.id) {
-        const data = await loadSessionUser(token.id as string);
+        // A failed read is not a revoked session. Auth.js answers any throw
+        // from this callback by deleting the session cookie, so one dropped
+        // Turso connection (ECONNRESET in the proxy on 2026-10-12) signed people
+        // out in the middle of a click. A refresh keeps the claims the token
+        // already carries and the next request reads again. A sign-in still
+        // fails, rather than issue a session with no plan on it.
+        let data: SessionUser | null;
+        try {
+          data = await loadSessionUser(token.id as string);
+        } catch (error) {
+          if (user) throw error;
+          return token;
+        }
 
         if (data) {
           const { user: dbUser } = data;
