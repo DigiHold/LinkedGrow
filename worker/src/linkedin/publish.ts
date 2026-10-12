@@ -33,8 +33,9 @@ import { byIcon as byIconShared, byView, VIEW } from "./locate.ts";
  *    minute, every time, from a session that opens at that minute, is the
  *    pattern that would give the whole thing away.
  *  - **Publishing is a human action too.** The feed is read before the composer
- *    opens, text is typed rather than pasted, media goes in through the same
- *    button a person clicks, and the whole thing takes minutes.
+ *    opens, the body is pasted in after a pause the way a post written
+ *    elsewhere goes in, media goes in through the same button a person clicks,
+ *    and comments are still typed.
  *  - **Never claim a post went up without reading it back.** A user who is told
  *    they posted and did not is the worst thing this system can produce.
  *  - **Uploads get patience, not a fixed sleep.** The image, the PDF and above
@@ -78,8 +79,8 @@ export interface PublishInput {
   /**
    * Walk the whole composer and then throw it away.
    *
-   * Everything happens for real: the composer opens, the body is typed through
-   * the persona's keyboard, the file is attached and the upload is waited out,
+   * Everything happens for real: the composer opens, the body goes in the way
+   * it does for a real post, the file is attached and the upload is waited out,
    * the text is read back. Only the last click is not made, and the dialog is
    * discarded instead.
    *
@@ -1447,19 +1448,6 @@ async function fillDocumentTitle(page: Page, dialog: Locator, postText: string):
 }
 
 /**
- * Types the body into the composer, line by line.
- *
- * Through the same keyboard model the agent's messages use: this account's own
- * speed, pauses that cluster at words and sentences, and the occasional typo
- * backspaced out a character or two later. The first version of this used a
- * flat random delay, which meant an account's posts went in at a steadier
- * rhythm than its messages. Two rhythms from one person is worth nothing and
- * costs a tell.
- *
- * Enter behaves itself in this editor, unlike the message composer, so a line
- * break is a plain Enter rather than Shift+Enter.
- */
-/**
  * True once the editor holds focus and keeps it across a beat.
  *
  * The composer is TipTap now, and it mounts in two steps: the contenteditable
@@ -1495,13 +1483,42 @@ async function holdsFocus(editor: Locator): Promise<boolean> {
   return focused();
 }
 
+/**
+ * Rounds that actually write into the editor, whatever the attempt budget.
+ *
+ * The attempts below are cheap while focus is not held, because nothing is
+ * written. A round that writes is not: typed at a human pace it is minutes, and
+ * eight of them stacked eight copies of one post on 2026-10-09 and held the
+ * publishing loop for 67 minutes. A box that refused the text twice is not
+ * going to take it the third time, and the caller's own read back reports it.
+ */
+const MAX_WRITE_ROUNDS = 2;
+
+/**
+ * Writes the body into the editor and leaves it there.
+ *
+ * Comments are typed through the same keyboard model the agent's messages use:
+ * this account's own speed, pauses that cluster at words and sentences, and
+ * the occasional typo backspaced out a character or two later.
+ *
+ * A post's body is pasted instead (`paste`), Nicolas's call on 2026-10-12.
+ * Typed at a human pace, 1,200 characters held the session for 9 minutes and
+ * the publishing loop with it, and a person posting something they wrote
+ * elsewhere pastes it. It does not go through the clipboard: every browser on
+ * the worker shares one X display and so one clipboard, and two accounts
+ * pasting at the same moment could swap their posts.
+ *
+ * Enter behaves itself in this editor, unlike the message composer, so a line
+ * break is a plain Enter rather than Shift+Enter, in both modes.
+ */
 async function typeBody(
   page: Page,
   editor: Locator,
   text: string,
-  maxAttempts = 8
+  options: { attempts?: number; paste?: boolean } = {}
 ): Promise<void> {
   const lines = text.replace(/\r/g, "").split("\n");
+  let rounds = 0;
 
   /**
    * Eight patient attempts, not three quick ones. TipTap's binding window is
@@ -1516,6 +1533,7 @@ async function typeBody(
    * loop a customer watching a spinner is waiting on. A comment that will not
    * go in now has two more sweeps to go in later.
    */
+  const maxAttempts = options.attempts ?? 8;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     /**
      * The mouse arrives once. Every retry focuses the element itself.
@@ -1547,28 +1565,98 @@ async function typeBody(
       continue;
     }
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i] ?? "";
-      if (line.length > 0) await typeHumanHere(page, line);
-      if (i < lines.length - 1) {
-        await page.keyboard.press("Enter");
-        await sleep(randInt(90, 260));
-      }
-      // People stop mid-post. Rarely, and never for the same length of time.
-      if (i > 0 && i % 4 === 0) await dwell(400, 1600);
+    // Whatever is already in the box goes first: a draft LinkedIn restored, or
+    // what is left of a round that did not take. Writing over it is how one
+    // post became eight copies, so nothing is written until the box is empty,
+    // and a box that never empties is left for the caller's read back to refuse.
+    const before = flatten(await editor.innerText().catch(() => ""));
+    if (before !== "" && !(await clearEditor(page, editor))) {
+      log("the editor would not empty, not writing over it", { attempt, of: maxAttempts });
+      await sleep(attempt * 800 + randInt(200, 600));
+      continue;
     }
 
-    const landed = flatten(await editor.innerText().catch(() => ""));
-    if (landed === flatten(text)) return;
+    if (options.paste) {
+      // The moment of deciding to post it, then it lands at once.
+      await dwell(800, 2400);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i] ?? "";
+        if (line.length > 0) await page.keyboard.insertText(line);
+        if (i < lines.length - 1) {
+          await page.keyboard.press("Enter");
+          await sleep(randInt(40, 120));
+        }
+      }
+    } else {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i] ?? "";
+        if (line.length > 0) await typeHumanHere(page, line);
+        if (i < lines.length - 1) {
+          await page.keyboard.press("Enter");
+          await sleep(randInt(90, 260));
+        }
+        // People stop mid-post. Rarely, and never for the same length of time.
+        if (i > 0 && i % 4 === 0) await dwell(400, 1600);
+      }
+    }
+    rounds++;
 
-    // Something swallowed part of the typing. Clear whatever is in the box and
-    // start the attempt over, rather than leaving a half-post for the caller's
-    // own check to reject without a retry.
-    await editor.click().catch(() => {});
-    await page.keyboard.press("ControlOrMeta+a").catch(() => {});
-    await page.keyboard.press("Backspace").catch(() => {});
+    const landed = flatten(await editor.innerText().catch(() => ""));
+    if (landed === flatten(text) || rounds >= MAX_WRITE_ROUNDS) return;
     await sleep(randInt(400, 900));
   }
+}
+
+/**
+ * Empties the editor, and says whether it is empty.
+ *
+ * Not with select all on the keyboard. The worker runs on Linux, where
+ * ControlOrMeta+a is Ctrl+A, and an account whose fingerprint is a Mac gets
+ * TipTap's Mac keymap, where Ctrl+A moves the caret to the start of the line.
+ * The Backspace after it merged two lines, the next round wrote the whole post
+ * again, and on 2026-10-09 a post went out after three attempts of eight
+ * stacked copies each. The selection is set on the element itself instead,
+ * which no keymap can reinterpret, and the Backspace that removes it is a real
+ * key the editor handles.
+ *
+ * When that leaves text behind, as it can for the composer variant that lives
+ * in a shadow root, select all is sent with the modifier the fingerprint's own
+ * platform uses, which TipTap's keymap answers on either platform.
+ */
+async function clearEditor(page: Page, editor: Locator): Promise<boolean> {
+  const isEmpty = async () =>
+    flatten(await editor.innerText().catch(() => "unreadable")) === "";
+
+  const selected = await editor
+    .evaluate((el: HTMLElement) => {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const selection = window.getSelection();
+      if (!selection) return false;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return true;
+    })
+    .catch(() => false);
+  // A Backspace with no selection in the editor lands on whatever else holds
+  // focus, a document title field for one.
+  if (!selected) return false;
+  // The editor reads the selection off the selectionchange event, which lands
+  // a task later.
+  await sleep(randInt(150, 400));
+  await page.keyboard.press("Backspace").catch(() => {});
+  await sleep(randInt(300, 700));
+  if (await isEmpty()) return true;
+
+  const mac = await editor
+    .evaluate(() => /Mac/.test(navigator.platform))
+    .catch(() => false);
+  await page.keyboard.press(mac ? "Meta+a" : "Control+a").catch(() => {});
+  await sleep(randInt(150, 400));
+  await page.keyboard.press("Backspace").catch(() => {});
+  await sleep(randInt(300, 700));
+  return isEmpty();
 }
 
 /** Whitespace-insensitive comparison, because the editor renders breaks its own way. */
@@ -1897,7 +1985,7 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
       ? realDialog
       : page.locator("body");
 
-  await typeBody(page, editor, body);
+  await typeBody(page, editor, body, { paste: true });
   await dwell(700, 1600);
 
   // What is in the box must be what we meant to say. An autocomplete, a stray
@@ -2237,7 +2325,7 @@ export async function postFirstComment(
   // Focus-checked and read back, same as the post body: the comment box is the
   // same two-step TipTap mount, and a comment typed into nothing used to reach
   // the submit click anyway.
-  await typeBody(page, box, body, COMMENT_TYPE_ATTEMPTS);
+  await typeBody(page, box, body, { attempts: COMMENT_TYPE_ATTEMPTS });
   if (flatten(await box.innerText().catch(() => "")) !== flatten(body)) {
     log("first comment: the box did not take the comment, leaving it");
     return false;
