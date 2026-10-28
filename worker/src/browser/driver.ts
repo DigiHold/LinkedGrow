@@ -196,7 +196,16 @@ export async function openSession(
   // The assertion, before anything else touches the network. Section 8a: if
   // the observed address is not the one allocated to this account, the session
   // does not run. Sending from a substitute address is worse than not sending.
-  const observedIp = await publicIp(page);
+  let observedIp: string;
+  try {
+    observedIp = await publicIp(page);
+  } catch (error) {
+    // An address that answers neither lookup fails here, before the comparison below, and the
+    // browser it had just launched stayed open: on 2026-10-28 one account's dead address left a
+    // Chrome behind on every pass, 27 of them on one profile by 11:00.
+    await context.close().catch(() => {});
+    throw error;
+  }
   if (proxy && observedIp !== proxy.expectedIp) {
     await context.close().catch(() => {});
     throw new ProxyMismatchError(proxy.expectedIp, observedIp);
