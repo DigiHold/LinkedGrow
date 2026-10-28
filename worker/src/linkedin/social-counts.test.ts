@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { parseSocialCounts } from "./summary-dom.ts";
 
 // Read off Nicolas's own post page, 2026-09-25: the counts sit on the buttons.
@@ -88,4 +89,22 @@ test("thousands are read with their separator", () => {
     hasReactionIcon: true,
   });
   assert.deepEqual(counts, { reactions: 2400, comments: 1204, reposts: 31 });
+});
+
+/**
+ * The bar LinkedIn served from 2026-10-27 renamed its icons, comment-small to comment-feed-compact
+ * and repost-small to repost-feed-compact, and dropped like-consumption-small: the reaction count
+ * sits on the reaction button, whose icon changes with the account's own reaction. The reader
+ * started from comment-small, found nothing, and every post read since showed impressions with no
+ * reactions or comments (Enrique's post of 2026-10-21: 1,609 impressions, 7 reactions, 4 comments).
+ */
+test("the reader knows the bar LinkedIn served from 2026-10-27", () => {
+  const src = readFileSync(new URL("./summary-dom.ts", import.meta.url), "utf8");
+  assert.match(src, /comment-feed-compact/, "the Comment button of the new bar is never found");
+  assert.match(src, /repost-feed-compact/, "the Repost button of the new bar is never found");
+  assert.match(
+    src,
+    /previousElementSibling/,
+    "the reaction count is not found by where it sits beside the Comment button"
+  );
 });

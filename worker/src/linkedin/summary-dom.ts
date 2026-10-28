@@ -237,7 +237,11 @@ export async function readSocialCounts(page: Page): Promise<SocialCounts | null>
       const hostOf = (node: Element | null): HTMLElement | null =>
         node ? ((node.closest('button, a, div[role="button"]') as HTMLElement | null) ?? null) : null;
 
-      const commentButton = hostOf(document.querySelector('svg[id="comment-small" i]'));
+      // comment-feed-compact and repost-feed-compact are the bar served from 2026-10-27, which
+      // renamed the icons and left this returning null on every post.
+      const commentButton = hostOf(
+        document.querySelector('svg[id="comment-small" i], svg[id="comment-feed-compact" i]')
+      );
       if (!commentButton) return null;
 
       /** The post's own card: the nearest ancestor that also holds the reaction icons. */
@@ -249,8 +253,18 @@ export async function readSocialCounts(page: Page): Promise<SocialCounts | null>
       const scope: HTMLElement | Document = card ?? document;
 
       const ringHost = hostOf(scope.querySelector('svg[id$="consumption-ring-small" i]'));
-      const likeHost = hostOf(scope.querySelector('svg[id="like-consumption-small" i]'));
-      const repostHost = hostOf(scope.querySelector('svg[id="repost-small" i]'));
+      /**
+       * The new bar has no like-consumption-small. Its count sits on the reaction button, the first
+       * button of the group just before Comment, and that button's icon changes with the account's
+       * own reaction, so it is found by where it sits rather than by what it draws.
+       */
+      const likeHost =
+        hostOf(scope.querySelector('svg[id="like-consumption-small" i]')) ??
+        ((commentButton.previousElementSibling?.querySelector("button") as HTMLElement | null) ??
+          null);
+      const repostHost = hostOf(
+        scope.querySelector('svg[id="repost-small" i], svg[id="repost-feed-compact" i]')
+      );
 
       /**
        * The rest of the line the reactions sit on, which is where the other layout keeps its
