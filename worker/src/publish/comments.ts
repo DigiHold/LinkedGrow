@@ -5,6 +5,7 @@ import { allocationFor, isProduction } from "../proxy/allocation.ts";
 import { NoSlotError, takeSlot } from "../safety/slots.ts";
 import { withWatchdog } from "../safety/watchdog.ts";
 import { currentRun } from "../safety/run-context.ts";
+import { currentVisit } from "../safety/rhythm.ts";
 import { groupKey, withAddress } from "../safety/ip-lock.ts";
 import { dwell, randInt, sleep } from "../browser/human.ts";
 import { ensureProfileCaptured } from "../linkedin/profile.ts";
@@ -186,6 +187,12 @@ export async function firstCommentPass(): Promise<void> {
     // No account, or one that is out: the post keeps its comment and its tries
     // for a pass where the account is back.
     if (!account) continue;
+    // A later search for a missing address is in no hurry, so it waits for one
+    // of the account's planned visits, as the statistics do, rather than opening
+    // a browser at whatever hour its spacing runs out.
+    if (post.attempts >= MAX_FIRST_COMMENT_ATTEMPTS && !currentVisit(account.id, account.timezone)) {
+      continue;
+    }
     const existing = byAccount.get(account.id);
     if (existing) existing.posts.push(post);
     else byAccount.set(account.id, { account, posts: [post] });

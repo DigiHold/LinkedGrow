@@ -1890,24 +1890,50 @@ export async function findPublishedUrl(
    * The match is still on the post's own opening words, card by card, which is what makes this
    * safe to use as the guard against posting the same thing twice.
    */
-  const urn = await page.evaluate((probe) => {
+  const found = await page.evaluate((probe) => {
+    const flat = (el: Element) =>
+      ((el as HTMLElement).innerText ?? "").replace(/\s+/g, " ").trim().toLowerCase();
     const cards = Array.from(
       document.querySelectorAll('div[data-urn], div[data-id], main [role="listitem"]')
     ) as HTMLElement[];
     for (const card of cards) {
-      const body = (card.innerText ?? "").replace(/\s+/g, " ").trim().toLowerCase();
-      if (probe.length > 0 && !body.includes(probe)) continue;
+      if (probe.length > 0 && !flat(card).includes(probe)) continue;
       const own = card.getAttribute("data-urn") ?? card.getAttribute("data-id") ?? "";
-      if (own.includes("activity")) return own;
+      if (own.includes("activity")) return { urn: own, commentaryKey: "" };
       const inside = card.outerHTML.match(/urn:li:activity:\d{10,}/);
-      if (inside) return inside[0];
+      if (inside) return { urn: inside[0], commentaryKey: "" };
+      // The commentary holding our own words, never a reshared post's underneath it. The cards
+      // run newest first, so this one wins over an older post that opens the same way.
+      const commentary = Array.from(
+        card.querySelectorAll('[componentkey^="translatable-commentary-"]')
+      ).find((el) => probe.length > 0 && flat(el).includes(probe));
+      const key = commentary?.getAttribute("componentkey") ?? "";
+      if (key) return { urn: "", commentaryKey: key };
     }
-    return "";
+    return { urn: "", commentaryKey: "" };
   }, needle);
 
-  if (!urn) return null;
-  const id = urn.split(":").pop();
-  return id ? `https://www.linkedin.com/feed/update/urn:li:activity:${id}/` : null;
+  const id = found.urn ? found.urn.split(":").pop() : "";
+  if (id) return `https://www.linkedin.com/feed/update/urn:li:activity:${id}/`;
+  return postUrlFromCommentaryKey(found.commentaryKey);
+}
+
+/**
+ * The post's address from the key LinkedIn puts on its commentary, when the card names nothing else.
+ *
+ * On the activity layout of 2026-10, a card can carry no activity urn at all. Enrique's post of
+ * 2026-10-21 was the third card on his page, its words matched, and its only id sat in this key as
+ * a share id, so this returned nothing on all five tries and the post never got its address. A
+ * share or ugcPost address opens the post just the same, and the statistics reader learns the
+ * activity from that page and stores it: on his post, the one activity the share page named was
+ * made 336 ms after the share.
+ */
+export function postUrlFromCommentaryKey(key: string): string | null {
+  const share = /shareId=(\d{10,})/.exec(key)?.[1];
+  if (share) return `https://www.linkedin.com/feed/update/urn:li:share:${share}/`;
+  const ugcPost = /userGeneratedContentId=(\d{10,})/.exec(key)?.[1];
+  if (ugcPost) return `https://www.linkedin.com/feed/update/urn:li:ugcPost:${ugcPost}/`;
+  return null;
 }
 
 /**

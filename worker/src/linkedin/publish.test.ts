@@ -8,6 +8,7 @@ import {
   formatDateFor,
   formatTimeFor,
   partsInZone,
+  postUrlFromCommentaryKey,
 } from "./publish.ts";
 
 /**
@@ -77,6 +78,34 @@ test("a document gets a title taken from the post's own opening line", () => {
   assert.ok(!/\S$/.test(long) || long.split(" ").length > 1, "the title was cut mid-word");
   // Never empty: an empty title is exactly the state that blocks the post.
   assert.equal(documentTitleFrom("   \n  "), "Document");
+});
+
+/**
+ * The keys below have the shape of the ones on Enrique's activity page on 2026-10-28, with the ids
+ * changed. His post of 2026-10-21 was the third card, its words matched, and the card carried no
+ * activity urn anywhere: only this key, so the post never got its address and its numbers were
+ * never read.
+ */
+test("a card that names only its share or ugcPost id still gives the post's address", () => {
+  assert.equal(
+    postUrlFromCommentaryKey(
+      "translatable-commentary-FeTranslationUrn(contentUrnCommentUrn=null, contentUrnGroupPostUrn=null, contentUrnShareUrn=ContentUrnShareUrn(shareUrn=ShareUrn(shareId=7500000000000000001)), contentUrnUgcPostUrn=null, detectedLocale=, targetLocale=en)"
+    ),
+    "https://www.linkedin.com/feed/update/urn:li:share:7500000000000000001/"
+  );
+  assert.equal(
+    postUrlFromCommentaryKey(
+      "translatable-commentary-FeTranslationUrn(contentUrnCommentUrn=null, contentUrnGroupPostUrn=null, contentUrnShareUrn=null, contentUrnUgcPostUrn=ContentUrnUgcPostUrn(userGeneratedContentPostUrn=UserGeneratedContentPostUrn(userGeneratedContentId=7500000000000000002)), detectedLocale=, targetLocale=en)"
+    ),
+    "https://www.linkedin.com/feed/update/urn:li:ugcPost:7500000000000000002/"
+  );
+  assert.equal(
+    postUrlFromCommentaryKey(
+      "translatable-commentary-FeTranslationUrn(contentUrnCommentUrn=null, contentUrnGroupPostUrn=null, contentUrnShareUrn=null, contentUrnUgcPostUrn=null, detectedLocale=, targetLocale=en)"
+    ),
+    null
+  );
+  assert.equal(postUrlFromCommentaryKey(""), null);
 });
 
 test("the clock is twelve-hour or twenty-four, and noon and midnight are not swapped", () => {

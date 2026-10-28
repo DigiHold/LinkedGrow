@@ -842,6 +842,25 @@ const FIRST_COMMENT_WINDOW_MS = 2 * 60 * 60 * 1000;
  */
 const MISSING_URL_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
+/**
+ * How many times in all a missing address is looked for, the comment's three tries included.
+ *
+ * The search and the comment shared one counter, so those three tries were the address's whole
+ * budget and the window above was never reached. Enrique's post of 2026-10-21 spent them in
+ * thirteen minutes, it was never looked for again, and with no address its numbers were never read
+ * while LinkedIn showed it reactions and views. The address now gets five more tries after the
+ * comment's, each one URL_SEARCH_SPACING_SECONDS after the last, and the comment still gets three.
+ */
+export const MAX_URL_SEARCHES = 8;
+
+/**
+ * Time between two of those later searches, counted from the last try.
+ *
+ * The last try is the post's updated_at, which noteFirstCommentAttempt writes. Any other write to a
+ * published post only pushes the next search back, which costs a few hours and nothing else.
+ */
+const URL_SEARCH_SPACING_SECONDS = 6 * 60 * 60;
+
 /** A published post that still owes something: its address, its first comment, or both. */
 export interface UnfinishedPost {
   id: string;
@@ -893,21 +912,32 @@ export async function loadPostsToFinish(
           JOIN users u ON u.id = p.user_id
          WHERE p.status = 'published'
            AND p.published_at IS NOT NULL
-           AND COALESCE(p.first_comment_attempts, 0) < ?
            AND (
-                 (p.linkedin_post_url IS NULL AND p.published_at >= ?)
-              OR (p.first_comment IS NOT NULL
+                 (p.linkedin_post_url IS NULL
+                  AND p.published_at >= ?
+                  AND (COALESCE(p.first_comment_attempts, 0) < ?
+                       OR (COALESCE(p.first_comment_attempts, 0) < ?
+                           AND ? - COALESCE(p.updated_at, 0) >= ?)))
+              OR (COALESCE(p.first_comment_attempts, 0) < ?
+                  AND p.first_comment IS NOT NULL
                   AND TRIM(p.first_comment) <> ''
                   AND p.first_comment_posted_at IS NULL
                   AND p.published_at >= ?)
            )
            ${paywallClause(edition)}
-         ORDER BY p.published_at ASC
+         -- The quick tries after a publish first, so a backlog of later searches never holds up a
+         -- comment somebody is waiting for.
+         ORDER BY COALESCE(p.first_comment_attempts, 0) >= ?, p.published_at ASC
          LIMIT ?`,
     args: [
-      MAX_FIRST_COMMENT_ATTEMPTS,
       now - Math.floor(MISSING_URL_WINDOW_MS / 1000),
+      MAX_FIRST_COMMENT_ATTEMPTS,
+      MAX_URL_SEARCHES,
+      now,
+      URL_SEARCH_SPACING_SECONDS,
+      MAX_FIRST_COMMENT_ATTEMPTS,
       commentSince,
+      MAX_FIRST_COMMENT_ATTEMPTS,
       limit,
     ],
   });
@@ -920,17 +950,20 @@ export async function loadPostsToFinish(
       row.first_comment !== null &&
       String(row.first_comment).trim() !== "";
     const fresh = Number(row.published_at) >= commentSince;
+    const attempts = Number(row.attempts ?? 0);
+    // A later search for the address never writes the comment: its three tries are spent.
+    const writable = owed && fresh && attempts < MAX_FIRST_COMMENT_ATTEMPTS;
     return {
       id: String(row.id),
       userId: String(row.user_id),
       workspaceId: String(row.workspace_id),
       content: String(row.content ?? ""),
-      firstComment: owed && fresh ? String(row.first_comment) : null,
+      firstComment: writable ? String(row.first_comment) : null,
       postUrl: row.linkedin_post_url === null ? null : String(row.linkedin_post_url),
       linkedinAccountId:
         row.linkedin_account_id === null ? null : String(row.linkedin_account_id),
-      attempts: Number(row.attempts ?? 0),
-      commentOverdue: owed && !fresh,
+      attempts,
+      commentOverdue: owed && !writable,
     };
   });
 }

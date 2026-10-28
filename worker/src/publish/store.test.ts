@@ -18,6 +18,8 @@ import {
   leadMsFor,
   loadDuePosts,
   loadPostsToFinish,
+  MAX_FIRST_COMMENT_ATTEMPTS,
+  MAX_URL_SEARCHES,
   markHandedToScheduler,
   markPublished,
   mediaForPost,
@@ -776,6 +778,49 @@ test("a late first comment is only written while the post is fresh", async () =>
   assert.equal(byId.get("late-no-url")?.firstComment, null);
   assert.equal(byId.get("late-no-url")?.commentOverdue, true);
   assert.equal(byId.has("late-with-url"), false);
+});
+
+/**
+ * 2026-10-21: Enrique's post went out, its address was not on his activity page during the three
+ * sweeps that followed, and those three tries were the whole budget. The post kept no address for
+ * good, so its numbers were never read while LinkedIn showed it reactions and views.
+ */
+test("an address still missing after the three quick tries is looked for again, hours apart", async () => {
+  await freshDb();
+  await db().execute("ALTER TABLE posts ADD COLUMN first_comment_attempts INTEGER");
+  await addUser("user-1");
+  const comment = "The full breakdown with every number is in the guide";
+  await addPublished("spent-long-ago", 2 * 24 * HOUR, null, null);
+  await addPublished("spent-just-now", 30 * 60, null, comment);
+  await addPublished("out-of-searches", 3 * 24 * HOUR, null, null);
+  await db().execute(
+    `UPDATE posts SET first_comment_attempts = ${MAX_FIRST_COMMENT_ATTEMPTS}, updated_at = ${seconds(-7 * HOUR)}
+      WHERE id = 'spent-long-ago'`
+  );
+  await db().execute(
+    `UPDATE posts SET first_comment_attempts = ${MAX_FIRST_COMMENT_ATTEMPTS}, updated_at = ${seconds(-10 * 60)}
+      WHERE id = 'spent-just-now'`
+  );
+  await db().execute(
+    `UPDATE posts SET first_comment_attempts = ${MAX_URL_SEARCHES}, updated_at = ${seconds(-24 * HOUR)}
+      WHERE id = 'out-of-searches'`
+  );
+
+  const posts = await loadPostsToFinish(10);
+  const byId = new Map(posts.map((p) => [p.id, p]));
+
+  assert.equal(byId.has("spent-long-ago"), true);
+  assert.equal(byId.get("spent-long-ago")?.firstComment, null);
+  // Its last try is ten minutes old, so it waits, and its comment budget stays spent.
+  assert.equal(byId.has("spent-just-now"), false);
+  assert.equal(byId.has("out-of-searches"), false);
+
+  // A later search never writes the comment, even inside the comment window.
+  await db().execute(`UPDATE posts SET updated_at = ${seconds(-7 * HOUR)} WHERE id = 'spent-just-now'`);
+  const again = await loadPostsToFinish(10);
+  const late = again.find((p) => p.id === "spent-just-now");
+  assert.equal(late?.firstComment, null);
+  assert.ok((late?.attempts ?? 0) >= MAX_FIRST_COMMENT_ATTEMPTS);
 });
 
 test("a comment that may have gone up says so, and is never offered back to the customer", async () => {
