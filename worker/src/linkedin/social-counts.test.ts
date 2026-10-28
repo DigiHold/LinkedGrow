@@ -79,6 +79,24 @@ test("a post nobody engaged with draws no reaction icon, and that is a real zero
   assert.deepEqual(counts, { reactions: 0, comments: 0, reposts: 0 });
 });
 
+/**
+ * A post with reactions and no comments, read off a live page on 2026-10-28. The Comment button
+ * holds only a zero width space, which the parser took for the layout written in words, and it
+ * then read the reaction count beside it as the comment count: 4 comments stored for a post with 4
+ * reactions and none.
+ */
+test("an empty Comment button on the bar with counts is zero comments, not the other layout", () => {
+  const counts = parseSocialCounts({
+    commentText: "",
+    repostText: "",
+    likeText: "4",
+    reactedText: "",
+    rowTexts: ["4"],
+    hasReactionIcon: true,
+  });
+  assert.deepEqual(counts, { reactions: 4, comments: 0, reposts: 0 });
+});
+
 test("thousands are read with their separator", () => {
   const counts = parseSocialCounts({
     commentText: "1,204",

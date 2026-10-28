@@ -161,7 +161,13 @@ export interface RawSocialCounts {
  * language decides those words and half these accounts are not in English.
  */
 export function parseSocialCounts(raw: RawSocialCounts): SocialCounts {
-  const onButtons = toNumber(raw.commentText);
+  /*
+   * An empty Comment button is this layout at zero, since LinkedIn writes zero as a zero width
+   * space here, while the other layout's button always carries a word. Taken for the other layout,
+   * it had the reaction count beside it read as comments (4 comments stored for a post with 4
+   * reactions and none, 2026-10-28).
+   */
+  const onButtons = toNumber(raw.commentText) ?? (raw.commentText === "" ? 0 : null);
   if (onButtons !== null) {
     return {
       // The bare number beside the reaction icons. An empty control is a real zero here: LinkedIn
